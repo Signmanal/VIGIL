@@ -21,12 +21,12 @@ import pytest
 
 @pytest.fixture()
 def fake_home(tmp_path, monkeypatch):
-    """Point ``_hermes_home_path()`` at a tmp dir for isolated checks."""
+    """Point ``_vigil_home_path()`` at a tmp dir for isolated checks."""
     import agent.file_safety as fs
 
-    home = tmp_path / "hermes_home"
+    home = tmp_path / "vigil_home"
     home.mkdir()
-    monkeypatch.setattr(fs, "_hermes_home_path", lambda: home)
+    monkeypatch.setattr(fs, "_vigil_home_path", lambda: home)
     return home
 
 
@@ -76,7 +76,7 @@ def test_google_oauth_json_blocked(fake_home):
     assert "credential store" in err
 
 
-def test_arbitrary_hermes_home_file_not_blocked(fake_home):
+def test_arbitrary_vigil_home_file_not_blocked(fake_home):
     """Non-credential files inside VIGIL_HOME stay readable."""
     from agent.file_safety import get_read_block_error
 
@@ -111,7 +111,7 @@ def test_path_traversal_resolves_to_blocked(fake_home, tmp_path):
     _create(fake_home, "auth.json")
     sibling = tmp_path / "elsewhere"
     sibling.mkdir()
-    traversal = sibling / ".." / "hermes_home" / "auth.json"
+    traversal = sibling / ".." / "vigil_home" / "auth.json"
     err = get_read_block_error(str(traversal))
     assert err is not None
     assert "credential store" in err
@@ -246,7 +246,7 @@ def test_mcp_tokens_dir_itself_blocked(fake_home):
     assert "MCP token" in err
 
 
-def test_identically_named_hermes_files_outside_home_not_blocked(
+def test_identically_named_vigil_files_outside_home_not_blocked(
     fake_home, tmp_path
 ):
     """VIGIL-specific filenames (``auth.json``, ``mcp-tokens/``, ``google_oauth.json``)
@@ -304,8 +304,8 @@ def test_profile_mode_blocks_root_credentials(tmp_path, monkeypatch):
     root = tmp_path / "vigil"
     profile = root / "profiles" / "coder"
     profile.mkdir(parents=True)
-    monkeypatch.setattr(fs, "_hermes_home_path", lambda: profile)
-    monkeypatch.setattr(fs, "_hermes_root_path", lambda: root)
+    monkeypatch.setattr(fs, "_vigil_home_path", lambda: profile)
+    monkeypatch.setattr(fs, "_vigil_root_path", lambda: root)
 
     from agent.file_safety import get_read_block_error
 

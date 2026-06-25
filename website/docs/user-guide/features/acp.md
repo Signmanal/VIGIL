@@ -19,7 +19,7 @@ ACP is a good fit when you want VIGIL to behave like an editor-native coding age
 
 ## What VIGIL exposes in ACP mode
 
-VIGIL runs with a curated `hermes-acp` toolset designed for editor workflows. It includes:
+VIGIL runs with a curated `vigil-acp` toolset designed for editor workflows. It includes:
 
 - file tools: `read_file`, `write_file`, `patch`, `search_files`
 - terminal tools: `terminal`, `process`
@@ -41,14 +41,14 @@ pip install -e '.[acp]'
 
 This installs the `agent-client-protocol` dependency and enables:
 
-- `hermes acp`
-- `hermes-acp`
+- `vigil acp`
+- `vigil-acp`
 - `python -m acp_adapter`
 
 For Zed registry installs, Zed launches VIGIL through the official ACP Registry entry. That entry uses a `uvx` distribution that runs:
 
 ```bash
-uvx --from 'vigil-agent[acp]==<version>' hermes-acp
+uvx --from 'vigil-agent[acp]==<version>' vigil-acp
 ```
 
 Make sure `uv` is available on `PATH` before using the registry install path.
@@ -58,11 +58,11 @@ Make sure `uv` is available on `PATH` before using the registry install path.
 Any of the following starts VIGIL in ACP mode:
 
 ```bash
-hermes acp
+vigil acp
 ```
 
 ```bash
-hermes-acp
+vigil-acp
 ```
 
 ```bash
@@ -74,8 +74,8 @@ VIGIL logs to stderr so stdout remains reserved for ACP JSON-RPC traffic.
 For non-interactive checks:
 
 ```bash
-hermes acp --version
-hermes acp --check
+vigil acp --version
+vigil acp --check
 ```
 
 ### Browser tools (optional)
@@ -85,11 +85,11 @@ Browser tools (`browser_navigate`, `browser_click`, etc.) depend on the
 wheel. Install them with:
 
 ```bash
-hermes acp --setup-browser           # interactive (prompts before ~400 MB download)
-hermes acp --setup-browser --yes     # accept the download non-interactively
+vigil acp --setup-browser           # interactive (prompts before ~400 MB download)
+vigil acp --setup-browser --yes     # accept the download non-interactively
 ```
 
-This is the standalone command. The Zed registry's terminal-auth flow (`hermes acp --setup`) also offers the browser bootstrap as a follow-up question after model selection, so most users never need to run `--setup-browser` directly.
+This is the standalone command. The Zed registry's terminal-auth flow (`vigil acp --setup`) also offers the browser bootstrap as a follow-up question after model selection, so most users never need to run `--setup-browser` directly.
 
 What it does:
 
@@ -117,7 +117,7 @@ If you want to define VIGIL manually, add it through VS Code settings under `acp
 {
   "acp.agents": {
     "VIGIL Agent": {
-      "command": "hermes",
+      "command": "vigil",
       "args": ["acp"]
     }
   }
@@ -135,8 +135,8 @@ Zed v0.221.x and newer installs external agents through the official ACP Registr
 
 Prerequisites:
 
-- Configure VIGIL provider credentials first with `hermes model`, or set them in `~/.vigil/.env` / `~/.vigil/config.yaml`.
-- Install `uv` so the registry launcher can run `uvx --from 'vigil-agent[acp]==<version>' hermes-acp`.
+- Configure VIGIL provider credentials first with `vigil model`, or set them in `~/.vigil/.env` / `~/.vigil/config.yaml`.
+- Install `uv` so the registry launcher can run `uvx --from 'vigil-agent[acp]==<version>' vigil-acp`.
 
 For local development before the registry entry is available, use a custom agent server in Zed settings:
 
@@ -145,7 +145,7 @@ For local development before the registry entry is available, use a custom agent
   "agent_servers": {
     "vigil-agent": {
       "type": "custom",
-      "command": "hermes",
+      "command": "vigil",
       "args": ["acp"]
     }
   }
@@ -174,7 +174,7 @@ The upstream registry PR copies those files into the top-level `vigil-agent/` di
 The registry entry uses a `uvx` distribution that points directly at the `vigil-agent` PyPI release:
 
 ```text
-uvx --from 'vigil-agent[acp]==<version>' hermes-acp
+uvx --from 'vigil-agent[acp]==<version>' vigil-acp
 ```
 
 The registry CI verifies that the pinned version exists on PyPI, so the manifest's `version` and uvx `package` pin must always match `pyproject.toml`. `scripts/release.py` keeps them in lockstep automatically.
@@ -240,7 +240,7 @@ The ACP bridge maps these options onto VIGIL' internal approval semantics — `a
 Check:
 
 - In Zed, open the ACP Registry with `zed: acp registry` and search for **VIGIL Agent**.
-- For manual/local development, verify the custom `agent_servers` command points to `hermes acp`.
+- For manual/local development, verify the custom `agent_servers` command points to `vigil acp`.
 - VIGIL is installed and on your PATH.
 - The ACP extra is installed (`pip install -e '.[acp]'`).
 - `uv` is installed if launching from the official Zed registry entry.
@@ -250,10 +250,10 @@ Check:
 Try these checks:
 
 ```bash
-hermes acp --version
-hermes acp --check
-hermes doctor
-hermes status
+vigil acp --version
+vigil acp --check
+vigil doctor
+vigil status
 ```
 
 ### Missing credentials
@@ -261,7 +261,7 @@ hermes status
 ACP mode uses VIGIL' existing provider setup. Configure credentials with:
 
 ```bash
-hermes model
+vigil model
 ```
 
 or by editing `~/.vigil/.env`. Registry clients can also trigger VIGIL' terminal auth flow, which runs the same interactive provider/model setup.

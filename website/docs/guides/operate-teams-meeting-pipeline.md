@@ -19,7 +19,7 @@ This page covers:
 ### Validate the config snapshot
 
 ```bash
-hermes teams-pipeline validate
+vigil teams-pipeline validate
 ```
 
 Use this first after any config change.
@@ -27,8 +27,8 @@ Use this first after any config change.
 ### Inspect token health
 
 ```bash
-hermes teams-pipeline token-health
-hermes teams-pipeline token-health --force-refresh
+vigil teams-pipeline token-health
+vigil teams-pipeline token-health --force-refresh
 ```
 
 Use `--force-refresh` when you suspect stale auth state.
@@ -36,14 +36,14 @@ Use `--force-refresh` when you suspect stale auth state.
 ### Inspect subscriptions
 
 ```bash
-hermes teams-pipeline subscriptions
+vigil teams-pipeline subscriptions
 ```
 
 ### Renew near-expiry subscriptions
 
 ```bash
-hermes teams-pipeline maintain-subscriptions
-hermes teams-pipeline maintain-subscriptions --dry-run
+vigil teams-pipeline maintain-subscriptions
+vigil teams-pipeline maintain-subscriptions --dry-run
 ```
 
 ### Automating subscription renewal (REQUIRED for production)
@@ -60,7 +60,7 @@ VIGIL ships a built-in cron scheduler. The `--no-agent` mode runs a script as th
 mkdir -p ~/.vigil/scripts
 cat > ~/.vigil/scripts/maintain-teams-subscriptions.sh <<'EOF'
 #!/usr/bin/env bash
-exec hermes teams-pipeline maintain-subscriptions
+exec vigil teams-pipeline maintain-subscriptions
 EOF
 chmod +x ~/.vigil/scripts/maintain-teams-subscriptions.sh
 ```
@@ -68,7 +68,7 @@ chmod +x ~/.vigil/scripts/maintain-teams-subscriptions.sh
 Then register a script-only cron job that runs every 12 hours (gives 6x headroom against the 72h expiry window):
 
 ```bash
-hermes cron create "0 */12 * * *" \
+vigil cron create "0 */12 * * *" \
   --name "teams-pipeline-maintain-subscriptions" \
   --no-agent \
   --script maintain-teams-subscriptions.sh \
@@ -78,13 +78,13 @@ hermes cron create "0 */12 * * *" \
 Verify it was registered and inspect the next run time:
 
 ```bash
-hermes cron list
-hermes cron status        # scheduler status
+vigil cron list
+vigil cron status        # scheduler status
 ```
 
 #### Option 2: systemd timer (recommended for Linux production deployments)
 
-Create `/etc/systemd/system/hermes-teams-pipeline-maintain.service`:
+Create `/etc/systemd/system/vigil-teams-pipeline-maintain.service`:
 
 ```ini
 [Unit]
@@ -93,12 +93,12 @@ After=network-online.target
 
 [Service]
 Type=oneshot
-User=hermes
+User=vigil
 EnvironmentFile=/etc/vigil/env
 ExecStart=/usr/local/bin/vigil teams-pipeline maintain-subscriptions
 ```
 
-And `/etc/systemd/system/hermes-teams-pipeline-maintain.timer`:
+And `/etc/systemd/system/vigil-teams-pipeline-maintain.timer`:
 
 ```ini
 [Unit]
@@ -117,8 +117,8 @@ Enable:
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable --now hermes-teams-pipeline-maintain.timer
-systemctl list-timers hermes-teams-pipeline-maintain.timer
+sudo systemctl enable --now vigil-teams-pipeline-maintain.timer
+systemctl list-timers vigil-teams-pipeline-maintain.timer
 ```
 
 #### Option 3: Plain crontab
@@ -134,8 +134,8 @@ Make sure the cron environment has the `MSGRAPH_*` credentials. Simplest fix: so
 After you've set up the schedule, check renewal activity after the first scheduled run:
 
 ```bash
-hermes teams-pipeline subscriptions   # should show expirationDateTime advanced
-hermes teams-pipeline maintain-subscriptions --dry-run   # should show "0 expiring soon" most of the time
+vigil teams-pipeline subscriptions   # should show expirationDateTime advanced
+vigil teams-pipeline maintain-subscriptions --dry-run   # should show "0 expiring soon" most of the time
 ```
 
 If you ever see your Graph webhook mysteriously "stop working" after exactly ~72 hours, this is the first thing to check: did the renewal job actually run?
@@ -143,22 +143,22 @@ If you ever see your Graph webhook mysteriously "stop working" after exactly ~72
 ### Inspect recent jobs
 
 ```bash
-hermes teams-pipeline list
-hermes teams-pipeline list --status failed
-hermes teams-pipeline show <job-id>
+vigil teams-pipeline list
+vigil teams-pipeline list --status failed
+vigil teams-pipeline show <job-id>
 ```
 
 ### Replay a stored job
 
 ```bash
-hermes teams-pipeline run <job-id>
+vigil teams-pipeline run <job-id>
 ```
 
 ### Dry-run meeting artifact fetches
 
 ```bash
-hermes teams-pipeline fetch --meeting-id <meeting-id>
-hermes teams-pipeline fetch --join-web-url "<join-url>"
+vigil teams-pipeline fetch --meeting-id <meeting-id>
+vigil teams-pipeline fetch --join-web-url "<join-url>"
 ```
 
 ## Routine Runbook
@@ -168,28 +168,28 @@ hermes teams-pipeline fetch --join-web-url "<join-url>"
 Run these in order:
 
 ```bash
-hermes teams-pipeline validate
-hermes teams-pipeline token-health --force-refresh
-hermes teams-pipeline subscriptions
+vigil teams-pipeline validate
+vigil teams-pipeline token-health --force-refresh
+vigil teams-pipeline subscriptions
 ```
 
 Then trigger or wait for a real meeting event and confirm:
 
 ```bash
-hermes teams-pipeline list
-hermes teams-pipeline show <job-id>
+vigil teams-pipeline list
+vigil teams-pipeline show <job-id>
 ```
 
 ### Daily or periodic checks
 
-- run `hermes teams-pipeline maintain-subscriptions --dry-run`
-- inspect `hermes teams-pipeline list --status failed`
+- run `vigil teams-pipeline maintain-subscriptions --dry-run`
+- inspect `vigil teams-pipeline list --status failed`
 - verify the Teams delivery target is still the correct chat or channel
 
 ### Before changing webhook URLs or delivery targets
 
 - update the public notification URL or Teams target config
-- run `hermes teams-pipeline validate`
+- run `vigil teams-pipeline validate`
 - renew or recreate affected subscriptions
 - confirm new events land in the expected sink
 
@@ -223,7 +223,7 @@ Check:
 ### Duplicate or unexpected replays
 
 Check:
-- whether you manually replayed a job with `hermes teams-pipeline run`
+- whether you manually replayed a job with `vigil teams-pipeline run`
 - whether the sink record already exists for that meeting
 - whether you intentionally enabled a resend path in your local config
 
@@ -237,8 +237,8 @@ Check:
 - [ ] `ffmpeg` is installed if recording fallback is enabled
 - [ ] Teams outbound delivery target is configured and verified
 - [ ] Notion and Linear sinks are configured only if actually needed
-- [ ] `hermes teams-pipeline validate` returns an OK snapshot
-- [ ] `hermes teams-pipeline token-health --force-refresh` succeeds
+- [ ] `vigil teams-pipeline validate` returns an OK snapshot
+- [ ] `vigil teams-pipeline token-health --force-refresh` succeeds
 - [ ] **`maintain-subscriptions` is scheduled** (VIGIL cron, systemd timer, or crontab — see [Automating subscription renewal](#automating-subscription-renewal-required-for-production)). Without this, Graph subscriptions silently expire within 72 hours.
 - [ ] a real end-to-end meeting event has produced a stored job
 - [ ] at least one summary has reached the intended delivery sink

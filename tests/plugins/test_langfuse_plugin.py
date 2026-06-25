@@ -49,7 +49,7 @@ class TestManifest:
 class TestDiscovery:
     def test_plugin_is_discovered_as_standalone_opt_in(self, tmp_path, monkeypatch):
         """Scanner should find the plugin but NOT load it by default."""
-        from hermes_cli import plugins as plugins_mod
+        from vigil_cli import plugins as plugins_mod
 
         # Isolated VIGIL_HOME so we don't read the developer's config.yaml.
         home = tmp_path / ".vigil"
@@ -125,7 +125,7 @@ class TestRuntimeGate:
             "it should short-circuit via _INIT_FAILED"
         )
 
-    def test_get_langfuse_does_not_import_hermes_config(self, monkeypatch):
+    def test_get_langfuse_does_not_import_vigil_config(self, monkeypatch):
         """The plugin must not re-read config.yaml per hook."""
         for k in (
             "VIGIL_LANGFUSE_PUBLIC_KEY", "VIGIL_LANGFUSE_SECRET_KEY",
@@ -133,15 +133,15 @@ class TestRuntimeGate:
         ):
             monkeypatch.delenv(k, raising=False)
 
-        # Drop any cached import of hermes_cli.config.
-        sys.modules.pop("hermes_cli.config", None)
+        # Drop any cached import of vigil_cli.config.
+        sys.modules.pop("vigil_cli.config", None)
 
         langfuse_plugin = self._fresh_plugin()
         for _ in range(20):
             langfuse_plugin._get_langfuse()
 
-        assert "hermes_cli.config" not in sys.modules, (
-            "langfuse plugin imported hermes_cli.config — regression toward "
+        assert "vigil_cli.config" not in sys.modules, (
+            "langfuse plugin imported vigil_cli.config — regression toward "
             "the rejected per-hook load_config() design"
         )
 

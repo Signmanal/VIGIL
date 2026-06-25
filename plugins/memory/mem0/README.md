@@ -10,24 +10,24 @@ Server-side LLM fact extraction with semantic search and hybrid multi-signal ret
 ## Setup
 
 ```bash
-hermes memory setup    # select "mem0"
+vigil memory setup    # select "mem0"
 ```
 
 Or manually:
 ```bash
-hermes config set memory.provider mem0
+vigil config set memory.provider mem0
 echo "MEM0_API_KEY=your-key" >> ~/.vigil/.env
 ```
 
 ## Config
 
-Behavioral settings live in `$VIGIL_HOME/mem0.json` (set them via `hermes memory setup`). Only the secret `MEM0_API_KEY` belongs in `~/.vigil/.env`.
+Behavioral settings live in `$VIGIL_HOME/mem0.json` (set them via `vigil memory setup`). Only the secret `MEM0_API_KEY` belongs in `~/.vigil/.env`.
 
 | Key | Default | Description |
 |-----|---------|-------------|
 | `mode` | `platform` | `platform` (Mem0 Cloud) or `oss` (self-hosted) |
-| `user_id` | `hermes-user` | User identifier on Mem0 |
-| `agent_id` | `hermes` | Agent identifier |
+| `user_id` | `vigil-user` | User identifier on Mem0 |
+| `agent_id` | `vigil` | Agent identifier |
 | `rerank` | `true` | Rerank search results for relevance (platform mode only) |
 
 ## OSS (Self-Hosted) Mode
@@ -37,7 +37,7 @@ Run Mem0 locally with your own LLM, embedder, and vector store.
 ### Interactive Setup
 
 ```bash
-hermes memory setup
+vigil memory setup
 # Select "mem0" → "Open Source (self-hosted)"
 # Follow prompts for LLM, embedder, and vector store
 ```
@@ -45,7 +45,7 @@ hermes memory setup
 ### Agent-Driven Setup (Flags)
 
 ```bash
-hermes memory setup mem0 --mode oss \
+vigil memory setup mem0 --mode oss \
   --oss-llm openai --oss-llm-key sk-... \
   --oss-vector qdrant
 ```
@@ -75,7 +75,7 @@ hermes memory setup mem0 --mode oss \
 ### Platform to OSS
 
 ```bash
-hermes memory setup mem0 --mode oss --oss-llm-key sk-...
+vigil memory setup mem0 --mode oss --oss-llm-key sk-...
 ```
 
 Or edit `$VIGIL_HOME/mem0.json` directly:
@@ -93,13 +93,13 @@ Or edit `$VIGIL_HOME/mem0.json` directly:
 ### OSS to Platform
 
 ```bash
-hermes memory setup mem0 --mode platform --api-key sk-...
+vigil memory setup mem0 --mode platform --api-key sk-...
 ```
 
 ### Dry Run (preview without writing)
 
 ```bash
-hermes memory setup mem0 --mode oss --oss-llm-key sk-... --dry-run
+vigil memory setup mem0 --mode oss --oss-llm-key sk-... --dry-run
 ```
 
 ## Tools

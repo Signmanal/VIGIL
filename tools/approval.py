@@ -18,7 +18,7 @@ import threading
 import time
 import unicodedata
 from typing import Optional
-from hermes_cli.config import cfg_get
+from vigil_cli.config import cfg_get
 
 from tools.interrupt import is_interrupted
 from utils import env_var_enabled, is_truthy_value
@@ -59,7 +59,7 @@ def _fire_approval_hook(hook_name: str, **kwargs) -> None:
     pre_approval_request, post_approval_response.
     """
     try:
-        from hermes_cli.plugins import invoke_hook
+        from vigil_cli.plugins import invoke_hook
     except Exception:
         # Plugin system not available in this execution context
         # (e.g. bare tool-only imports, minimal test environments).
@@ -164,7 +164,7 @@ _SSH_SENSITIVE_PATH = r'(?:~|\$home|\$\{home\})/\.ssh(?:/|$)'
 _VIGIL_ENV_PATH = (
     r'(?:~\/\.vigil/|'
     r'(?:\$home|\$\{home\})/\.vigil/|'
-    r'(?:\$hermes_home|\$\{hermes_home\})/)'
+    r'(?:\$vigil_home|\$\{vigil_home\})/)'
     r'\.env\b'
 )
 # ~/.vigil/config.yaml IS the security policy: approvals.mode, yolo, and the
@@ -178,7 +178,7 @@ _VIGIL_ENV_PATH = (
 _VIGIL_CONFIG_PATH = (
     r'(?:~\/\.vigil/|'
     r'(?:\$home|\$\{home\})/\.vigil/|'
-    r'(?:\$hermes_home|\$\{hermes_home\})/)'
+    r'(?:\$vigil_home|\$\{vigil_home\})/)'
     r'config\.yaml\b'
 )
 _PROJECT_ENV_PATH = r'(?:(?:/|\.{1,2}/)?(?:[^\s/"\'`]+/)*\.env(?:\.[^/\s"\'`]+)*)'
@@ -424,23 +424,23 @@ DANGEROUS_PATTERNS = [
     # Gateway lifecycle protection: prevent the agent from killing its own
     # gateway process.  These commands trigger a gateway restart/stop that
     # terminates all running agents mid-work.
-    (r'\bhermes\s+gateway\s+(stop|restart)\b', "stop/restart hermes gateway (kills running agents)"),
-    (r'\bhermes\s+update\b', "hermes update (restarts gateway, kills running agents)"),
+    (r'\bhermes\s+gateway\s+(stop|restart)\b', "stop/restart vigil gateway (kills running agents)"),
+    (r'\bhermes\s+update\b', "vigil update (restarts gateway, kills running agents)"),
     # Docker container lifecycle — any user with docker.sock mounted (a common
     # Docker Compose pattern) gives the agent the ability to restart/stop/kill
     # containers without approval.  These are agent-initiated lifecycle operations
-    # that should always require user consent, just like `hermes gateway restart`
+    # that should always require user consent, just like `vigil gateway restart`
     # already does for the gateway process.
     (r'\bdocker\s+compose\s+(restart|stop|kill|down)\b', "docker compose restart/stop/kill/down (container lifecycle)"),
     (r'\bdocker\s+(restart|stop|kill)\b', "docker restart/stop/kill (container lifecycle)"),
     # Gateway protection: never start gateway outside systemd management
-    (r'gateway\s+run\b.*(&\s*$|&\s*;|\bdisown\b|\bsetsid\b)', "start gateway outside systemd (use 'systemctl --user restart hermes-gateway')"),
-    (r'\bnohup\b.*gateway\s+run\b', "start gateway outside systemd (use 'systemctl --user restart hermes-gateway')"),
+    (r'gateway\s+run\b.*(&\s*$|&\s*;|\bdisown\b|\bsetsid\b)', "start gateway outside systemd (use 'systemctl --user restart vigil-gateway')"),
+    (r'\bnohup\b.*gateway\s+run\b', "start gateway outside systemd (use 'systemctl --user restart vigil-gateway')"),
     # Self-termination protection: prevent agent from killing its own process
-    (r'\b(pkill|killall)\b.*\b(hermes|gateway|cli\.py)\b', "kill hermes/gateway process (self-termination)"),
+    (r'\b(pkill|killall)\b.*\b(vigil|gateway|cli\.py)\b', "kill vigil/gateway process (self-termination)"),
     # Self-termination via kill + command substitution (pgrep/pidof).
-    # The name-based pattern above catches `pkill hermes` but not
-    # `kill -9 $(pgrep -f hermes)` because the substitution is opaque
+    # The name-based pattern above catches `pkill vigil` but not
+    # `kill -9 $(pgrep -f vigil)` because the substitution is opaque
     # to regex at detection time. Catch the structural pattern instead.
     (r'\bkill\b.*\$\(\s*pgrep\b', "kill process via pgrep expansion (self-termination)"),
     (r'\bkill\b.*`\s*pgrep\b', "kill process via backtick pgrep expansion (self-termination)"),
@@ -587,7 +587,7 @@ def _normalize_command_for_detection(command: str) -> str:
     # ~, $HOME, or $VIGIL_HOME. Done at detection time (not via an import-time
     # pattern snapshot) so it tracks the live VIGIL_HOME even when that is set
     # after this module is imported — as the hermetic test conftest does.
-    command = _rewrite_resolved_hermes_home(command)
+    command = _rewrite_resolved_vigil_home(command)
     return command
 
 
@@ -621,7 +621,7 @@ def _rewrite_resolved_user_home(command: str) -> str:
     return command
 
 
-def _rewrite_resolved_hermes_home(command: str) -> str:
+def _rewrite_resolved_vigil_home(command: str) -> str:
     """Rewrite the resolved absolute VIGIL home prefix to ``~/.vigil/``.
 
     Resolves the active ``VIGIL_HOME`` at call time (and its symlink-resolved
@@ -630,8 +630,8 @@ def _rewrite_resolved_hermes_home(command: str) -> str:
     patterns match. No-op when the path can't be resolved or doesn't appear.
     """
     try:
-        from hermes_constants import get_hermes_home
-        home = get_hermes_home().expanduser()
+        from vigil_constants import get_vigil_home
+        home = get_vigil_home().expanduser()
         candidates = [
             str(home).rstrip("/"),
             str(home.resolve(strict=False)).rstrip("/"),
@@ -893,7 +893,7 @@ def load_permanent_allowlist() -> set:
     patterns added via 'always' in a previous session.
     """
     try:
-        from hermes_cli.config import load_config
+        from vigil_cli.config import load_config
         config = load_config()
         patterns = set(config.get("command_allowlist", []) or [])
         if patterns:
@@ -907,7 +907,7 @@ def load_permanent_allowlist() -> set:
 def save_permanent_allowlist(patterns: set):
     """Save permanently allowed command patterns to config."""
     try:
-        from hermes_cli.config import load_config, save_config
+        from vigil_cli.config import load_config, save_config
         config = load_config()
         config["command_allowlist"] = list(patterns)
         save_config(config)
@@ -1052,7 +1052,7 @@ def _normalize_approval_mode(mode) -> str:
 def _get_approval_config() -> dict:
     """Read the approvals config block. Returns a dict with 'mode', 'timeout', etc."""
     try:
-        from hermes_cli.config import load_config
+        from vigil_cli.config import load_config
         config = load_config()
         return config.get("approvals", {}) or {}
     except Exception as e:
@@ -1077,7 +1077,7 @@ def _get_approval_timeout() -> int:
 def _get_cron_approval_mode() -> str:
     """Read the cron approval mode from config. Returns 'deny' or 'approve'."""
     try:
-        from hermes_cli.config import load_config
+        from vigil_cli.config import load_config
         config = load_config()
         mode = str(cfg_get(config, "approvals", "cron_mode", default="deny")).lower().strip()
         if mode in {"approve", "off", "allow", "yes"}:

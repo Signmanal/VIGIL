@@ -4,7 +4,7 @@ The Chronos provider speaks ONLY to NAS — it names no scheduler vendor and
 holds no scheduler credentials. NAS owns the external scheduler (an internal
 implementation detail) and that scheduler's account; the agent just asks NAS to
 "arm a one-shot at time T" / "cancel" / "list", authenticated with the agent's
-existing Nous Portal access token (the same token it already uses to call the
+existing VIGIL Portal access token (the same token it already uses to call the
 portal — no new secret).
 
 Wire contract: ``docs/chronos-managed-cron-contract.md``.
@@ -41,8 +41,8 @@ class NasCronClient:
     # -- auth -------------------------------------------------------------
 
     def _access_token(self) -> str:
-        """The agent's existing Nous Portal access token (refresh-aware)."""
-        from hermes_cli.auth import resolve_nous_access_token
+        """The agent's existing VIGIL Portal access token (refresh-aware)."""
+        from vigil_cli.auth import resolve_nous_access_token
         return resolve_nous_access_token()
 
     def _headers(self) -> Dict[str, str]:

@@ -43,9 +43,9 @@ Las habilidades incluidas (en `skills/`) se envían con cada instalación de VIG
 - Manejo de documentos, investigación web, flujos de trabajo de desarrollo comunes, administración de sistemas
 - Usadas regularmente por una amplia gama de personas
 
-Si tu habilidad es oficial y útil pero no universalmente necesaria (ej., una integración de servicio de pago, una dependencia pesada), ponla en **`optional-skills/`** — se envía con el repositorio pero no está activada por defecto. Los usuarios pueden descubrirla a través de `hermes skills browse` (etiquetada como "oficial") e instalarla con `hermes skills install` (sin advertencia de terceros, confianza integrada).
+Si tu habilidad es oficial y útil pero no universalmente necesaria (ej., una integración de servicio de pago, una dependencia pesada), ponla en **`optional-skills/`** — se envía con el repositorio pero no está activada por defecto. Los usuarios pueden descubrirla a través de `vigil skills browse` (etiquetada como "oficial") e instalarla con `vigil skills install` (sin advertencia de terceros, confianza integrada).
 
-Si tu habilidad es especializada, contribuida por la comunidad o de nicho, es mejor para un **Skills Hub** — súbela a un registro de habilidades y compártela en el [Discord de Nous Research](https://discord.gg/NousResearch). Los usuarios pueden instalarla con `hermes skills install`.
+Si tu habilidad es especializada, contribuida por la comunidad o de nicho, es mejor para un **Skills Hub** — súbela a un registro de habilidades y compártela en el [Discord de Nous Research](https://discord.gg/NousResearch). Los usuarios pueden instalarla con `vigil skills install`.
 
 ---
 
@@ -55,9 +55,9 @@ Si tu habilidad es especializada, contribuida por la comunidad o de nicho, es me
 
 Los plugins de memoria independientes:
 
-- Implementan el mismo ABC `MemoryProvider` (`agent/memory_provider.py`) — `sync_turn`, `prefetch`, `shutdown` y opcionalmente `post_setup(hermes_home, config)` para integración con el asistente de configuración
+- Implementan el mismo ABC `MemoryProvider` (`agent/memory_provider.py`) — `sync_turn`, `prefetch`, `shutdown` y opcionalmente `post_setup(vigil_home, config)` para integración con el asistente de configuración
 - Usan el mismo sistema de descubrimiento — `discover_memory_providers()` los recoge desde directorios de plugins de usuario/proyecto y entry points de pip
-- Se integran con `hermes memory setup` a través de `post_setup()` — sin necesidad de tocar el código base
+- Se integran con `vigil memory setup` a través de `post_setup()` — sin necesidad de tocar el código base
 - Pueden registrar sus propios subcomandos CLI a través de `register_cli(subparser)` en un archivo `cli.py`
 - Obtienen todos los mismos hooks de ciclo de vida y plomería de configuración que los proveedores incluidos en el árbol
 
@@ -111,11 +111,11 @@ echo "OPENROUTER_API_KEY=***" >> ~/.vigil/.env
 ```bash
 # Enlace simbólico para acceso global
 mkdir -p ~/.local/bin
-ln -sf "$(pwd)/venv/bin/hermes" ~/.local/bin/hermes
+ln -sf "$(pwd)/venv/bin/vigil" ~/.local/bin/vigil
 
 # Verificar
-hermes doctor
-hermes chat -q "Hola"
+vigil doctor
+vigil chat -q "Hola"
 ```
 
 ### Ejecutar tests
@@ -138,8 +138,8 @@ vigil-agent/
 ├── run_agent.py              # Clase AIAgent — bucle de conversación central, despacho de herramientas, persistencia de sesión
 ├── cli.py                    # Clase VIGILCLI — TUI interactiva, integración prompt_toolkit
 ├── model_tools.py            # Orquestación de herramientas (capa delgada sobre tools/registry.py)
-├── toolsets.py               # Agrupaciones y presets de herramientas (hermes-cli, hermes-telegram, etc.)
-├── hermes_state.py           # Base de datos de sesiones SQLite con búsqueda de texto completo FTS5, títulos de sesión
+├── toolsets.py               # Agrupaciones y presets de herramientas (vigil-cli, vigil-telegram, etc.)
+├── vigil_state.py           # Base de datos de sesiones SQLite con búsqueda de texto completo FTS5, títulos de sesión
 ├── batch_runner.py           # Procesamiento en lote paralelo para generación de trayectorias
 │
 ├── agent/                    # Internos del agente (módulos extraídos)
@@ -150,11 +150,11 @@ vigil-agent/
 │   ├── model_metadata.py         # Longitudes de contexto del modelo, estimación de tokens
 │   └── trajectory.py             # Ayudantes para guardar trayectorias
 │
-├── hermes_cli/               # Implementaciones de comandos CLI
+├── vigil_cli/               # Implementaciones de comandos CLI
 │   ├── main.py                   # Punto de entrada, análisis de argumentos, despacho de comandos
 │   ├── config.py                 # Gestión de configuración, migración, definiciones de variables de entorno
 │   ├── setup.py                  # Asistente de configuración interactivo
-│   ├── auth.py                   # Resolución de proveedor, OAuth, Nous Portal
+│   ├── auth.py                   # Resolución de proveedor, OAuth, VIGIL Portal
 │   ├── models.py                 # Listas de selección de modelos de OpenRouter
 │   ├── banner.py                 # Banner de bienvenida, arte ASCII
 │   ├── commands.py               # Registro central de comandos de barra (CommandDef), autocompletado, ayudantes del gateway
@@ -206,7 +206,7 @@ vigil-agent/
 |------|-----------|
 | `~/.vigil/config.yaml` | Configuración (modelo, terminal, toolsets, compresión, etc.) |
 | `~/.vigil/.env` | Claves API y secretos |
-| `~/.vigil/auth.json` | Credenciales OAuth (Nous Portal) |
+| `~/.vigil/auth.json` | Credenciales OAuth (VIGIL Portal) |
 | `~/.vigil/skills/` | Todas las habilidades activas (incluidas + instaladas desde hub + creadas por el agente) |
 | `~/.vigil/memories/` | Memoria persistente (MEMORY.md, USER.md) |
 | `~/.vigil/state.db` | Base de datos de sesiones SQLite |
@@ -239,7 +239,7 @@ Mensaje del usuario → AIAgent._run_agent_loop()
 
 - **Herramientas auto-registradas**: Cada archivo de herramienta llama a `registry.register()` en el momento de importación. `model_tools.py` activa el descubrimiento importando todos los módulos de herramientas.
 - **Agrupación en toolsets**: Las herramientas se agrupan en toolsets (`web`, `terminal`, `file`, `browser`, etc.) que pueden habilitarse/deshabilitarse por plataforma.
-- **Persistencia de sesión**: Todas las conversaciones se almacenan en SQLite (`hermes_state.py`) con búsqueda de texto completo y títulos de sesión únicos.
+- **Persistencia de sesión**: Todas las conversaciones se almacenan en SQLite (`vigil_state.py`) con búsqueda de texto completo y títulos de sesión únicos.
 - **Inyección efímera**: Los prompts del sistema y los mensajes de relleno se inyectan en el momento de la llamada API, nunca se persisten en la base de datos ni en los logs.
 - **Abstracción de proveedor**: El agente funciona con cualquier API compatible con OpenAI. La resolución del proveedor ocurre en el momento de la inicialización.
 - **Enrutamiento de proveedor**: Al usar OpenRouter, `provider_routing` en config.yaml controla la selección del proveedor.
@@ -357,7 +357,7 @@ prerequisites:                     # Requisitos de tiempo de ejecución heredado
   env_vars: [MY_API_KEY]
   commands: [curl, jq]
 metadata:
-  hermes:
+  vigil:
     tags: [Categoría, Subcategoría, Palabras clave]
     related_skills: [other-skill-name]
     fallback_for_toolsets: [web]
@@ -444,7 +444,7 @@ Todos los campos son opcionales — los valores faltantes se heredan de la skin 
 
 **Opción B: Skin integrada**
 
-Añade al dict `_BUILTIN_SKINS` en `hermes_cli/skin_engine.py`. Usa el mismo esquema que arriba pero como dict de Python.
+Añade al dict `_BUILTIN_SKINS` en `vigil_cli/skin_engine.py`. Usa el mismo esquema que arriba pero como dict de Python.
 
 **Activar:**
 - CLI: `/skin mitema` o establece `display.skin: mitema` en config.yaml
@@ -538,7 +538,7 @@ refactor/descripcion   # Reestructuración de código
 ### Antes de enviar
 
 1. **Ejecutar tests**: `scripts/run_tests.sh` (recomendado; igual que CI) o `pytest tests/ -v` con el venv del proyecto activado
-2. **Probar manualmente**: Ejecuta `hermes` y ejercita la ruta de código que cambiaste
+2. **Probar manualmente**: Ejecuta `vigil` y ejercita la ruta de código que cambiaste
 3. **Verificar impacto multiplataforma**: Si tocas E/S de archivos, gestión de procesos o manejo del terminal, considera macOS, Linux y WSL2
 4. **Mantén los PRs enfocados**: Un cambio lógico por PR. No mezcles una corrección de error con una refactorización con una nueva funcionalidad.
 
@@ -582,7 +582,7 @@ test(tools): añadir tests unitarios para file_operations
 ## Reportar Issues
 
 - Usa [GitHub Issues](https://github.com/NousResearch/vigil-agent/issues)
-- Incluye: SO, versión de Python, versión de VIGIL (`hermes version`), traza de error completa
+- Incluye: SO, versión de Python, versión de VIGIL (`vigil version`), traza de error completa
 - Incluye pasos para reproducir
 - Verifica los issues existentes antes de crear duplicados
 - Para vulnerabilidades de seguridad, por favor reporta de forma privada

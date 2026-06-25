@@ -1,4 +1,4 @@
-import type { VIGILConfigRecord, ToolsetInfo } from '@/types/hermes'
+import type { VIGILConfigRecord, ToolsetInfo } from '@/types/vigil'
 
 import { BUILTIN_PERSONALITIES, ENUM_OPTIONS, PROVIDER_GROUPS } from './constants'
 

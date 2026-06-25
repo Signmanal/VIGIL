@@ -48,7 +48,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 
 try:
     import httpx
-except ImportError:  # pragma: no cover - httpx is a hermes dependency
+except ImportError:  # pragma: no cover - httpx is a vigil dependency
     httpx = None  # type: ignore[assignment]
 
 logger = logging.getLogger(__name__)
@@ -88,8 +88,8 @@ E164_RE = re.compile(r"^\+[1-9]\d{6,14}$")
 def _auth_json_path() -> Path:
     """Resolve ``~/.vigil/auth.json`` honouring the active VIGIL profile."""
     try:
-        from hermes_constants import get_hermes_home
-        return Path(get_hermes_home()) / "auth.json"
+        from vigil_constants import get_vigil_home
+        return Path(get_vigil_home()) / "auth.json"
     except Exception:
         return Path(os.path.expanduser("~/.vigil")) / "auth.json"
 
@@ -252,9 +252,9 @@ def _persist_runtime_env(spectrum_project_id: str, project_secret: str) -> None:
     caller — same CodeQL-clean-flow rationale as the rest of this module.
     """
     try:
-        from hermes_cli.config import save_env_value
+        from vigil_cli.config import save_env_value
     except ImportError:
-        logger.warning("photon: hermes_cli.config unavailable — skipping .env write")
+        logger.warning("photon: vigil_cli.config unavailable — skipping .env write")
         return
     try:
         save_env_value("PHOTON_PROJECT_ID", spectrum_project_id)
@@ -916,7 +916,7 @@ def _configured_operator_phone() -> Optional[str]:
 
 def _get_config_env_value(key: str) -> Optional[str]:
     try:
-        from hermes_cli.config import get_env_value
+        from vigil_cli.config import get_env_value
     except Exception:
         return os.getenv(key)
     return get_env_value(key)
@@ -986,7 +986,7 @@ def print_credential_summary(emit: Any = print) -> None:
     labels: Dict[str, str] = {}
     labels["device_token"] = (
         "✓ stored" if load_photon_token()
-        else "✗ missing (run `hermes photon setup`)"
+        else "✗ missing (run `vigil photon setup`)"
     )
     sid, sec = load_project_credentials()
     # Dashboard id and Spectrum id are the same value now (ids unified), so
@@ -995,10 +995,10 @@ def print_credential_summary(emit: Any = print) -> None:
     labels["project_key"] = "✓ stored" if sec else "✗ missing"
     phone, assigned = load_user_numbers()
     labels["phone_number"] = (
-        phone if phone else "✗ missing (run `hermes photon setup --phone ...`)"
+        phone if phone else "✗ missing (run `vigil photon setup --phone ...`)"
     )
     labels["assigned_phone_number"] = (
-        assigned if assigned else "✗ missing (run `hermes photon setup`)"
+        assigned if assigned else "✗ missing (run `vigil photon setup`)"
     )
 
     rows = [
@@ -1018,7 +1018,7 @@ def credential_summary() -> Dict[str, str]:
     def _present_token() -> str:
         return (
             "✓ stored" if load_photon_token()
-            else "✗ missing (run `hermes photon setup`)"
+            else "✗ missing (run `vigil photon setup`)"
         )
 
     def _present_project_id() -> str:
@@ -1031,11 +1031,11 @@ def credential_summary() -> Dict[str, str]:
 
     def _present_phone() -> str:
         phone, _assigned = load_user_numbers()
-        return phone or "✗ missing (run `hermes photon setup --phone ...`)"
+        return phone or "✗ missing (run `vigil photon setup --phone ...`)"
 
     def _present_assigned_phone() -> str:
         _phone, assigned = load_user_numbers()
-        return assigned or "✗ missing (run `hermes photon setup`)"
+        return assigned or "✗ missing (run `vigil photon setup`)"
 
     return {
         "device_token": _present_token(),

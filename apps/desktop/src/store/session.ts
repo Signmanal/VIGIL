@@ -5,21 +5,21 @@ import type { ContextSuggestion } from '@/app/types'
 import type { VIGILConnection } from '@/global'
 import type { ChatMessage } from '@/lib/chat-messages'
 import { persistBoolean, persistString, storedBoolean, storedString } from '@/lib/storage'
-import type { SessionInfo, UsageStats } from '@/types/hermes'
+import type { SessionInfo, UsageStats } from '@/types/vigil'
 
 type Updater<T> = T | ((current: T) => T)
 
-const WORKSPACE_CWD_KEY = 'hermes.desktop.workspace-cwd'
+const WORKSPACE_CWD_KEY = 'vigil.desktop.workspace-cwd'
 
 // The composer's model/effort/fast is sticky UI state, NOT the profile default
 // (that lives in Settings → Model). Persisting it in localStorage makes a pick
 // follow across Cmd+N and app restarts instead of snapping back to the default.
 // It's deliberately global (not per-profile): a profile switch force-reseeds to
 // that profile's default, while within a profile new chats keep your last pick.
-const COMPOSER_MODEL_KEY = 'hermes.desktop.composer.model'
-const COMPOSER_PROVIDER_KEY = 'hermes.desktop.composer.provider'
-const COMPOSER_EFFORT_KEY = 'hermes.desktop.composer.reasoning-effort'
-const COMPOSER_FAST_KEY = 'hermes.desktop.composer.fast'
+const COMPOSER_MODEL_KEY = 'vigil.desktop.composer.model'
+const COMPOSER_PROVIDER_KEY = 'vigil.desktop.composer.provider'
+const COMPOSER_EFFORT_KEY = 'vigil.desktop.composer.reasoning-effort'
+const COMPOSER_FAST_KEY = 'vigil.desktop.composer.fast'
 
 let configuredDefaultProjectDir = ''
 

@@ -51,7 +51,7 @@ export function recordParentLifecycle(line: string): void {
   } catch {
     if (!warned) {
       warned = true
-      process.stderr.write('hermes-tui: parent lifecycle log unavailable\n')
+      process.stderr.write('vigil-tui: parent lifecycle log unavailable\n')
     }
   }
 }

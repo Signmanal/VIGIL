@@ -60,20 +60,20 @@ Example: `q3-product-teaser`, `ascii-mood-loop`, `interview-cut-2026-q1`.
 The setup script does six things in order:
 
 1. **Create workspace tree** — all directories above
-2. **Create profiles** — `hermes profile create <name> --clone`
+2. **Create profiles** — `vigil profile create <name> --clone`
 3. **Configure profiles** — patch each profile's
    `~/.vigil/profiles/<name>/config.yaml` to set toolsets, always_load skills,
    and `cwd`
 4. **Write SOUL.md per profile** — the personality + role definition
 5. **Copy any provided assets + write `brief.md`, `TEAM.md`, and `taste/`**
-6. **Fire the initial kanban task** — `hermes kanban create` assigned to the director
+6. **Fire the initial kanban task** — `vigil kanban create` assigned to the director
 
 See `assets/setup.sh.tmpl` for the skeleton.
 
 ### Profile creation pattern
 
 ```bash
-hermes profile create director --clone 2>/dev/null || true
+vigil profile create director --clone 2>/dev/null || true
 ```
 
 The `--clone` flag clones from the active profile (preserving model, base
@@ -149,7 +149,7 @@ system prompt, so no profile needs to load a kanban skill.
 The final action of setup.sh is firing the kanban:
 
 ```bash
-hermes kanban create "Direct production of <video title>" \
+vigil kanban create "Direct production of <video title>" \
     --assignee director \
     --workspace dir:"$HOME/projects/video-pipeline/${PROJECT_SLUG}" \
     --tenant ${PROJECT_SLUG} \
@@ -226,21 +226,21 @@ check_key() {
     local var="$1"
     local kc_account="$2"
     local kc_service="$3"
-    local _hermes_env="${VIGIL_HOME:-$HOME/.vigil}/.env"
-    if grep -q "^${var}=" "$_hermes_env" 2>/dev/null && \
-       [ -n "$(grep "^${var}=" "$_hermes_env" | cut -d= -f2-)" ]; then
+    local _vigil_env="${VIGIL_HOME:-$HOME/.vigil}/.env"
+    if grep -q "^${var}=" "$_vigil_env" 2>/dev/null && \
+       [ -n "$(grep "^${var}=" "$_vigil_env" | cut -d= -f2-)" ]; then
         return 0
     fi
     if command -v security >/dev/null 2>&1 && \
        security find-generic-password -a "${kc_account}" -s "${kc_service}" -w >/dev/null 2>&1; then
         return 0
     fi
-    echo "ERROR: ${var} not set in ${_hermes_env} or Keychain (${kc_account}/${kc_service})"
+    echo "ERROR: ${var} not set in ${_vigil_env} or Keychain (${kc_account}/${kc_service})"
     return 1
 }
 
-check_key ELEVENLABS_API_KEY hermes ELEVENLABS_API_KEY || exit 1
-check_key OPENROUTER_API_KEY hermes OPENROUTER_API_KEY || exit 1
+check_key ELEVENLABS_API_KEY vigil ELEVENLABS_API_KEY || exit 1
+check_key OPENROUTER_API_KEY vigil OPENROUTER_API_KEY || exit 1
 # ...
 ```
 

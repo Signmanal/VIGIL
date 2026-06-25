@@ -6,7 +6,7 @@ author: VIGIL Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  hermes:
+  vigil:
     tags: [Research, Arxiv, Papers, Academic, Science, API]
     related_skills: [ocr-and-documents]
 ---

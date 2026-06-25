@@ -11,7 +11,7 @@ The API server exposes vigil-agent as an OpenAI-compatible HTTP endpoint. Any fr
 Your agent handles requests with its full toolset (terminal, file operations, web search, memory, skills) and returns the final response. When streaming, tool progress indicators appear inline so frontends can show what the agent is doing.
 
 :::tip One backend covers models + tools
-VIGIL itself needs a configured provider and tool backends for the API server to be useful. A [Nous Portal](/user-guide/features/tool-gateway) subscription handles both — 300+ models plus web/image/TTS/browser via the Tool Gateway. Run `hermes setup --portal` once before starting the API server and frontends like Open WebUI or LobeChat get a fully tool-equipped backend.
+VIGIL itself needs a configured provider and tool backends for the API server to be useful. A [VIGIL Portal](/user-guide/features/tool-gateway) subscription handles both — 300+ models plus web/image/TTS/browser via the Tool Gateway. Run `vigil setup --portal` once before starting the API server and frontends like Open WebUI or LobeChat get a fully tool-equipped backend.
 :::
 
 ## Quick Start
@@ -30,7 +30,7 @@ API_SERVER_KEY=change-me-local-dev
 ### 2. Start the gateway
 
 ```bash
-hermes gateway
+vigil gateway
 ```
 
 You'll see:
@@ -106,10 +106,10 @@ Standard OpenAI Chat Completions format. Stateless — the full conversation is 
 
 Uploaded files (`file` / `input_file` / `file_id`) and non-image `data:` URLs return `400 unsupported_content_type`.
 
-**Streaming** (`"stream": true`): Returns Server-Sent Events (SSE) with token-by-token response chunks. For **Chat Completions**, the stream uses standard `chat.completion.chunk` events plus VIGIL' custom `hermes.tool.progress` event for tool-start UX. For **Responses**, the stream uses OpenAI Responses event types such as `response.created`, `response.output_text.delta`, `response.output_item.added`, `response.output_item.done`, and `response.completed`.
+**Streaming** (`"stream": true`): Returns Server-Sent Events (SSE) with token-by-token response chunks. For **Chat Completions**, the stream uses standard `chat.completion.chunk` events plus VIGIL' custom `vigil.tool.progress` event for tool-start UX. For **Responses**, the stream uses OpenAI Responses event types such as `response.created`, `response.output_text.delta`, `response.output_item.added`, `response.output_item.done`, and `response.completed`.
 
 **Tool progress in streams**:
-- **Chat Completions**: VIGIL emits `event: hermes.tool.progress` for tool-start visibility without polluting persisted assistant text.
+- **Chat Completions**: VIGIL emits `event: vigil.tool.progress` for tool-start visibility without polluting persisted assistant text.
 - **Responses**: VIGIL emits spec-native `function_call` and `function_call_output` output items during the SSE stream, so clients can render structured tool UI in real time.
 
 ### POST /v1/responses
@@ -204,7 +204,7 @@ Returns a machine-readable description of the API server's stable surface for ex
 
 ```json
 {
-  "object": "hermes.api_server.capabilities",
+  "object": "vigil.api_server.capabilities",
   "platform": "vigil-agent",
   "model": "vigil-agent",
   "auth": {"type": "bearer", "required": true},
@@ -252,7 +252,7 @@ Poll the current run state. This is useful for dashboards that need status witho
 
 ```json
 {
-  "object": "hermes.run",
+  "object": "vigil.run",
   "run_id": "run_abc123",
   "status": "completed",
   "session_id": "space-session",
@@ -286,7 +286,7 @@ List all scheduled jobs.
 
 ### POST /api/jobs
 
-Create a new scheduled job. Body accepts the same shape as `hermes cron` — prompt, schedule, skills, provider override, delivery target.
+Create a new scheduled job. Body accepts the same shape as `vigil cron` — prompt, schedule, skills, provider override, delivery target.
 
 ### GET /api/jobs/\{job_id\}
 
@@ -461,8 +461,8 @@ To give multiple users their own isolated VIGIL instance (separate config, memor
 
 ```bash
 # Create a profile per user
-hermes profile create alice
-hermes profile create bob
+vigil profile create alice
+vigil profile create bob
 
 # Configure each profile's API server on a different port. API_SERVER_* are env
 # vars (not config.yaml keys), so write them to each profile's .env:
@@ -479,8 +479,8 @@ API_SERVER_KEY=bob-secret
 EOF
 
 # Start each profile's gateway
-hermes -p alice gateway &
-hermes -p bob gateway &
+vigil -p alice gateway &
+vigil -p bob gateway &
 ```
 
 Each profile's API server automatically advertises the profile name as the model ID:

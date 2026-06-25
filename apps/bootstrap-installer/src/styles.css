@@ -27,7 +27,7 @@
 
 /* Installer-only additions: a fade-in animation and a warm radial glow
    for the welcome screen. Everything else inherits from the desktop. */
-@keyframes hermes-fade-in {
+@keyframes vigil-fade-in {
   from {
     opacity: 0;
     transform: translateY(4px);
@@ -39,7 +39,7 @@
 }
 
 .vigil-fade-in {
-  animation: hermes-fade-in 0.45s ease-out both;
+  animation: vigil-fade-in 0.45s ease-out both;
 }
 
 .vigil-glow {

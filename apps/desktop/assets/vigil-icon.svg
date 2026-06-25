@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="VIGIL app icon">
+  <defs>
+    <linearGradient id="bg" x1="120" y1="80" x2="900" y2="940" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#07111f"/>
+      <stop offset="0.54" stop-color="#0b2537"/>
+      <stop offset="1" stop-color="#052e2b"/>
+    </linearGradient>
+    <linearGradient id="signal" x1="236" y1="202" x2="798" y2="818" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7dd3fc"/>
+      <stop offset="0.5" stop-color="#22d3ee"/>
+      <stop offset="1" stop-color="#34d399"/>
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="18" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="1024" height="1024" rx="228" fill="url(#bg)"/>
+  <path d="M178 708C254 846 386 916 512 916s258-70 334-208" fill="none" stroke="#164e63" stroke-width="30" stroke-linecap="round" opacity=".75"/>
+  <path d="M156 504c92-150 220-226 356-226s264 76 356 226c-92 150-220 226-356 226s-264-76-356-226Z" fill="none" stroke="#155e75" stroke-width="30" opacity=".78"/>
+  <path d="M242 504c68-104 160-156 270-156s202 52 270 156c-68 104-160 156-270 156s-202-52-270-156Z" fill="none" stroke="#22d3ee" stroke-width="26" opacity=".7"/>
+  <circle cx="512" cy="504" r="84" fill="#07111f" stroke="url(#signal)" stroke-width="26" filter="url(#glow)"/>
+  <path d="M512 162 754 262v176c0 186-96 315-242 424C366 753 270 624 270 438V262l242-100Z" fill="#07111f" stroke="url(#signal)" stroke-width="34" stroke-linejoin="round" opacity=".96"/>
+  <path d="M382 328 512 698 642 328h-78l-52 174-52-174h-78Z" fill="url(#signal)" filter="url(#glow)"/>
+  <path d="M330 760h364" stroke="#5eead4" stroke-width="28" stroke-linecap="round" opacity=".86"/>
+  <path d="M212 320h104M708 320h104M170 504h88M766 504h88" stroke="#7dd3fc" stroke-width="24" stroke-linecap="round" opacity=".7"/>
+</svg>

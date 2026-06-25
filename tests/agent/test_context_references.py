@@ -328,15 +328,15 @@ def test_defaults_allowed_root_to_cwd(tmp_path: Path):
 
 
 @pytest.mark.asyncio
-async def test_blocks_sensitive_home_and_hermes_paths(tmp_path: Path, monkeypatch):
+async def test_blocks_sensitive_home_and_vigil_paths(tmp_path: Path, monkeypatch):
     from agent.context_references import preprocess_context_references_async
 
     monkeypatch.setenv("HOME", str(tmp_path))
     monkeypatch.setenv("VIGIL_HOME", str(tmp_path / ".vigil"))
 
-    hermes_env = tmp_path / ".vigil" / ".env"
-    hermes_env.parent.mkdir(parents=True)
-    hermes_env.write_text("API_KEY=super-secret\n", encoding="utf-8")
+    vigil_env = tmp_path / ".vigil" / ".env"
+    vigil_env.parent.mkdir(parents=True)
+    vigil_env.write_text("API_KEY=super-secret\n", encoding="utf-8")
 
     ssh_key = tmp_path / ".ssh" / "id_rsa"
     ssh_key.parent.mkdir(parents=True)

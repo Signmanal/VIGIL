@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import type { VIGILWorktreeInfo } from '@/global'
-import type { SessionInfo } from '@/types/hermes'
+import type { SessionInfo } from '@/types/vigil'
 
 import { uniqueCwds, workspaceGroupsFor, workspaceTreeFor, type WorktreeResolver } from './workspace-groups'
 
@@ -83,7 +83,7 @@ describe('workspaceTreeFor', () => {
 
     expect(tree).toHaveLength(1)
     expect(tree[0].label).toBe('vigil-agent')
-    expect(tree[0].groups.map(g => g.label).sort()).toEqual(['vigil-agent', 'rtl'])
+    expect(tree[0].groups.map(g => g.label).sort()).toEqual(['rtl', 'vigil-agent'])
   })
 
   it('git metadata is authoritative — worktrees group by repoRoot regardless of directory naming', () => {

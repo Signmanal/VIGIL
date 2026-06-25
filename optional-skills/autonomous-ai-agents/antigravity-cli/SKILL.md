@@ -6,7 +6,7 @@ author: Tony Simons (asimons81), VIGIL Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  hermes:
+  vigil:
     tags: [Coding-Agent, Antigravity, CLI, Auth, Plugins, Sandbox]
     related_skills: [grok, codex, claude-code, vigil-agent]
 ---

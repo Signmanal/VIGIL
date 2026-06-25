@@ -43,7 +43,7 @@ You'll land on the app's overview page. Copy two values:
 
 1. In the left nav, open **Certificates & secrets**.
 2. Click **New client secret**.
-3. **Description:** `hermes-graph-secret`. **Expires:** pick a value that matches your rotation policy (6-24 months is typical).
+3. **Description:** `vigil-graph-secret`. **Expires:** pick a value that matches your rotation policy (6-24 months is typical).
 4. Click **Add**.
 5. Copy the **Value** column immediately — it's only shown once. That value is `MSGRAPH_CLIENT_SECRET`.
 
@@ -165,7 +165,7 @@ Azure client secrets have a hard expiry. Before yours expires:
 
 1. Create a second client secret in step 2 without deleting the first one.
 2. Update `MSGRAPH_CLIENT_SECRET` in `~/.vigil/.env` with the new value.
-3. Restart the gateway so the new secret is picked up: `hermes gateway restart`.
+3. Restart the gateway so the new secret is picked up: `vigil gateway restart`.
 4. Verify with the smoke test above.
 5. Delete the old secret from the Azure portal.
 

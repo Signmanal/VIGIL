@@ -52,34 +52,34 @@ from **Settings → Appearance**.
 
 ```bash
 # Browse the gallery (filter by substring)
-hermes pets list
-hermes pets list cat
+vigil pets list
+vigil pets list cat
 
 # Install a pet and make it active in one step
-hermes pets install boba --select
+vigil pets install boba --select
 
 # Preview / animate it in your terminal (Ctrl+C to stop)
-hermes pets show
+vigil pets show
 
 # Check your setup
-hermes pets doctor
+vigil pets doctor
 ```
 
-## `hermes pets` commands
+## `vigil pets` commands
 
 | Goal | Command |
 | --- | --- |
-| Browse the gallery | `hermes pets list [query] [--limit N]` |
-| List installed pets | `hermes pets list --installed` |
-| Install a pet | `hermes pets install <slug> [--select] [--force]` |
-| Set the active pet | `hermes pets select [slug]` (omit slug for a picker) |
-| Resize the pet everywhere | `hermes pets scale <factor>` (e.g. `0.5`, clamped 0.1–3.0) |
-| Preview/animate | `hermes pets show [slug] [--state <s>] [--cycle] [--once] [--mode <m>] [--scale <f>]` |
-| Disable the pet | `hermes pets off` |
-| Remove an installed pet | `hermes pets remove <slug>` |
-| Diagnose setup | `hermes pets doctor` |
+| Browse the gallery | `vigil pets list [query] [--limit N]` |
+| List installed pets | `vigil pets list --installed` |
+| Install a pet | `vigil pets install <slug> [--select] [--force]` |
+| Set the active pet | `vigil pets select [slug]` (omit slug for a picker) |
+| Resize the pet everywhere | `vigil pets scale <factor>` (e.g. `0.5`, clamped 0.1–3.0) |
+| Preview/animate | `vigil pets show [slug] [--state <s>] [--cycle] [--once] [--mode <m>] [--scale <f>]` |
+| Disable the pet | `vigil pets off` |
+| Remove an installed pet | `vigil pets remove <slug>` |
+| Diagnose setup | `vigil pets doctor` |
 
-`hermes pets show` flags:
+`vigil pets show` flags:
 
 - `--state` — play a single state (`idle`, `wave`, `run`, `failed`, `review`,
   `jump`).
@@ -166,7 +166,7 @@ display:
 
 ## Troubleshooting
 
-Run `hermes pets doctor` — it reports:
+Run `vigil pets doctor` — it reports:
 
 - the pets directory and which pets are installed,
 - `display.pet.enabled`, `display.pet.slug`, and the resolved active pet,
@@ -182,7 +182,7 @@ Common gotchas:
 - A pet only shows once one is **installed AND selected** (`enabled: true`).
 - Inside a pipe/redirect (no TTY), terminal rendering is disabled by design.
 - The petdex npm CLI installs to `~/.codex/pets`; VIGIL uses its own
-  profile-scoped `<VIGIL_HOME>/pets/` instead — install through `hermes pets`.
+  profile-scoped `<VIGIL_HOME>/pets/` instead — install through `vigil pets`.
 
 ## See also
 

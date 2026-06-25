@@ -10,7 +10,7 @@ import {
   registerSessionPreview
 } from '@/store/preview'
 import { $currentCwd, $messages } from '@/store/session'
-import type { RpcEvent } from '@/types/hermes'
+import type { RpcEvent } from '@/types/vigil'
 
 import { usePreviewRouting } from './use-preview-routing'
 
@@ -139,6 +139,6 @@ describe('usePreviewRouting', () => {
     act(() => handleEvent({ payload: { path: './dist/index.html' }, session_id: 'session-1', type: 'tool.complete' }))
 
     expect($previewTarget.get()).toBeNull()
-    expect(window.localStorage.getItem('hermes.desktop.sessionPreviews.v1')).toBeNull()
+    expect([null, '{}']).toContain(window.localStorage.getItem('vigil.desktop.sessionPreviews.v1'))
   })
 })

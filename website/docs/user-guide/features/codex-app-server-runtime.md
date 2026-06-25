@@ -10,7 +10,7 @@ VIGIL can optionally hand `openai/*` and `openai-codex/*` turns to the [Codex CL
 This is **opt-in only**. Default VIGIL behavior is unchanged unless you flip the flag. VIGIL never auto-routes you onto this runtime.
 
 :::tip
-Not using OpenAI Codex? `hermes setup --portal` configures a non-Codex backend with Claude/Gemini/etc. in one step. See [Nous Portal](/integrations/nous-portal).
+Not using OpenAI Codex? `vigil setup --portal` configures a non-Codex backend with Claude/Gemini/etc. in one step. See [VIGIL Portal](/integrations/nous-portal).
 :::
 
 ## Why
@@ -66,7 +66,7 @@ VIGIL registers itself as an MCP server so codex can call back for tools codex d
 - **`skill_view` / `skills_list`** — read from VIGIL' skill library.
 - **`text_to_speech`** — TTS through VIGIL' configured provider.
 
-When the model wants one of these, codex spawns the `hermes_tools_mcp_server` subprocess via stdio MCP, the call is dispatched through `model_tools.handle_function_call()` (same code path as VIGIL' default runtime), and the result is returned to codex like any other MCP response.
+When the model wants one of these, codex spawns the `vigil_tools_mcp_server` subprocess via stdio MCP, the call is dispatched through `model_tools.handle_function_call()` (same code path as VIGIL' default runtime), and the result is returned to codex like any other MCP response.
 
 ### What's NOT available on this runtime
 
@@ -87,7 +87,7 @@ These four VIGIL tools require the running AIAgent context (mid-loop state) to d
 
 ### Kanban (multi-agent worktree dispatch)
 
-**Works on this runtime, with one subtle dependency.** The kanban dispatcher spawns each worker as a separate `hermes chat -q` subprocess that reads the user's config — which means if `model.openai_runtime: codex_app_server` is set globally, workers also come up on the codex runtime.
+**Works on this runtime, with one subtle dependency.** The kanban dispatcher spawns each worker as a separate `vigil chat -q` subprocess that reads the user's config — which means if `model.openai_runtime: codex_app_server` is set globally, workers also come up on the codex runtime.
 
 What works inside a codex-runtime worker:
 - Codex's full toolset (shell, apply_patch, update_plan, view_image, web_search) — the worker does its actual task work natively
@@ -99,7 +99,7 @@ What also works because the MCP callback exposes them:
 - **`kanban_show` / `kanban_list`** — read-only board queries for the worker to check its own context.
 - **`kanban_create` / `kanban_unblock` / `kanban_link`** — orchestrator-only operations. Available for orchestrator agents running on the codex runtime that need to dispatch new tasks.
 
-The kanban tools are gated by `VIGIL_KANBAN_TASK` env var the dispatcher sets — that var is propagated to the codex subprocess (codex inherits env) and from there to the spawned `hermes-tools` MCP server subprocess. So the tools see the right task id and gate correctly. For Codex app-server workers, VIGIL also passes narrow app-server sandbox overrides when `VIGIL_KANBAN_TASK` is present: keep `workspace-write` sandboxing, add the **board DB directory plus every Kanban path the dispatcher pinned** as extra writable roots (`VIGIL_KANBAN_WORKSPACES_ROOT`, `VIGIL_KANBAN_WORKSPACE`, legacy `VIGIL_KANBAN_ROOT` — deduplicated, DB-dir first), and keep network disabled by default. This avoids the brittle `:danger-no-sandbox` workaround while letting `kanban_complete` / `kanban_block` update the board DB **and** letting workers write reports/artifacts under workspace mounts that live outside the DB directory (e.g. `/media/.../kanban-workspaces/...` on a separate drive — [issue #27941](https://github.com/NousResearch/vigil-agent/issues/27941)).
+The kanban tools are gated by `VIGIL_KANBAN_TASK` env var the dispatcher sets — that var is propagated to the codex subprocess (codex inherits env) and from there to the spawned `vigil-tools` MCP server subprocess. So the tools see the right task id and gate correctly. For Codex app-server workers, VIGIL also passes narrow app-server sandbox overrides when `VIGIL_KANBAN_TASK` is present: keep `workspace-write` sandboxing, add the **board DB directory plus every Kanban path the dispatcher pinned** as extra writable roots (`VIGIL_KANBAN_WORKSPACES_ROOT`, `VIGIL_KANBAN_WORKSPACE`, legacy `VIGIL_KANBAN_ROOT` — deduplicated, DB-dir first), and keep network disabled by default. This avoids the brittle `:danger-no-sandbox` workaround while letting `kanban_complete` / `kanban_block` update the board DB **and** letting workers write reports/artifacts under workspace mounts that live outside the DB directory (e.g. `/media/.../kanban-workspaces/...` on a separate drive — [issue #27941](https://github.com/NousResearch/vigil-agent/issues/27941)).
 
 ### Cron jobs
 
@@ -143,7 +143,7 @@ The kanban tools are gated by `VIGIL_KANBAN_TASK` env var the dispatcher sets �
    ```bash
    codex login                  # writes tokens to ~/.codex/auth.json
    ```
-   VIGIL' own `hermes auth login codex` writes to `~/.vigil/auth.json` — that's a separate session. **Run `codex login` separately** if you haven't.
+   VIGIL' own `vigil auth login codex` writes to `~/.vigil/auth.json` — that's a separate session. **Run `codex login` separately** if you haven't.
 
 3. **(Optional) Install the Codex plugins you want.** When you enable the runtime, VIGIL auto-migrates whichever curated plugins you've already installed via Codex CLI:
    ```bash
@@ -275,7 +275,7 @@ The self-improvement review fork inherits the main runtime via `_current_main_ru
 VIGIL wraps everything it manages between two marker comments:
 
 ```toml
-# managed by vigil-agent — `hermes codex-runtime migrate` regenerates this section
+# managed by vigil-agent — `vigil codex-runtime migrate` regenerates this section
 default_permissions = ":workspace"
 [mcp_servers.filesystem]
 ...
@@ -295,16 +295,16 @@ Anything you add **inside** the managed block will get clobbered on the next mig
 
 ## Multi-profile / multi-tenant setups
 
-By default, VIGIL points the codex subprocess at `~/.codex/` regardless of which VIGIL profile is active. This means `hermes -p work` and `hermes -p personal` share the same Codex auth, plugins, and config. For most users this is the right behavior — it matches what running `codex` CLI directly would do.
+By default, VIGIL points the codex subprocess at `~/.codex/` regardless of which VIGIL profile is active. This means `vigil -p work` and `vigil -p personal` share the same Codex auth, plugins, and config. For most users this is the right behavior — it matches what running `codex` CLI directly would do.
 
 If you want per-profile Codex isolation (separate auth, separate installed plugins, separate config), set `CODEX_HOME` explicitly per profile. The cleanest way is to point at a directory under your `VIGIL_HOME`:
 
 ```bash
-# Inside the work profile, you might wrap hermes:
-CODEX_HOME=~/.vigil/profiles/work/codex hermes chat
+# Inside the work profile, you might wrap vigil:
+CODEX_HOME=~/.vigil/profiles/work/codex vigil chat
 ```
 
-You'll need to re-run `codex login` once with that `CODEX_HOME` set so the OAuth tokens land in the profile-scoped location. After that, `hermes -p work` will operate on isolated Codex state.
+You'll need to re-run `codex login` once with that `CODEX_HOME` set so the OAuth tokens land in the profile-scoped location. After that, `vigil -p work` will operate on isolated Codex state.
 
 We don't auto-scope this because moving an existing user's `~/.codex/` would silently invalidate their Codex CLI auth — anyone who already ran `codex login` would have to re-authenticate. Opt-in feels safer than surprising users.
 
@@ -359,7 +359,7 @@ startup_timeout_sec = 30.0
 tool_timeout_sec = 600.0
 ```
 
-When the model calls `web_search` (or another exposed VIGIL tool), codex spawns the `hermes_tools_mcp_server` subprocess via stdio, the request is dispatched through `model_tools.handle_function_call()`, and the result is projected back to codex like any other MCP response.
+When the model calls `web_search` (or another exposed VIGIL tool), codex spawns the `vigil_tools_mcp_server` subprocess via stdio, the request is dispatched through `model_tools.handle_function_call()`, and the result is projected back to codex like any other MCP response.
 
 **Tools available via the callback:** `web_search`, `web_extract`, `browser_navigate`, `browser_click`, `browser_type`, `browser_press`, `browser_snapshot`, `browser_scroll`, `browser_back`, `browser_get_images`, `browser_console`, `browser_vision`, `vision_analyze`, `image_generate`, `skill_view`, `skills_list`, `text_to_speech`.
 
@@ -381,7 +381,7 @@ This runtime is **opt-in beta**. Working as of VIGIL Agent 2026.5 + Codex CLI 0.
 
 - Multi-turn conversations
 - `commandExecution` and `fileChange` (apply_patch) approvals via VIGIL UI
-- MCP tool calls (verified against `@modelcontextprotocol/server-filesystem` and the new `hermes-tools` callback)
+- MCP tool calls (verified against `@modelcontextprotocol/server-filesystem` and the new `vigil-tools` callback)
 - Native Codex plugin migration (verified against Linear / GitHub / Calendar inventory)
 - Deny/cancel paths
 - Toggle on/off cycle
@@ -390,12 +390,12 @@ This runtime is **opt-in beta**. Working as of VIGIL Agent 2026.5 + Codex CLI 0.
 
 Known limitations:
 
-- **VIGIL auth and codex auth are separate sessions.** You need both `codex login` AND `hermes auth login codex` for the cleanest UX (the runtime uses codex's session for the LLM call). This is a deliberate design choice in VIGIL' `_import_codex_cli_tokens` — VIGIL won't share OAuth state with codex CLI to avoid clobbering each other on token refresh.
+- **VIGIL auth and codex auth are separate sessions.** You need both `codex login` AND `vigil auth login codex` for the cleanest UX (the runtime uses codex's session for the LLM call). This is a deliberate design choice in VIGIL' `_import_codex_cli_tokens` — VIGIL won't share OAuth state with codex CLI to avoid clobbering each other on token refresh.
 - **`delegate_task`, `memory`, `session_search`, `todo` are unavailable on this runtime.** They need the running AIAgent context which a stateless MCP callback can't provide. Use `/codex-runtime auto` when you need these.
 - **No inline patch preview in approval prompts when codex doesn't track the changeset.** Codex's `fileChange` approval params don't always carry the changeset. VIGIL caches the data from the corresponding `item/started` notification when possible, but if approval arrives before the item has streamed, the prompt falls back to whatever `reason` codex provides.
 - **Sub-second cancellation isn't guaranteed.** Mid-stream interrupts (Ctrl+C while codex is responding) are sent via `turn/interrupt`, but if codex has already flushed the final message, you get the response anyway.
 
-If you find a bug, [open an issue](https://github.com/NousResearch/vigil-agent/issues) with the output of `hermes logs --since 5m`. Mention `codex-runtime` in the title so it's easy to triage.
+If you find a bug, [open an issue](https://github.com/NousResearch/vigil-agent/issues) with the output of `vigil logs --since 5m`. Mention `codex-runtime` in the title so it's easy to triage.
 
 ## Architecture
 
@@ -427,7 +427,7 @@ If you find a bug, [open an issue](https://github.com/NousResearch/vigil-agent/i
         │   │  │   (linear, github,   │     │
         │   │  │    gmail, calendar,  │     │
         │   │  │    canva, ...)       │     │
-        │   │  └─ hermes-tools ───────┼─────────────────┐
+        │   │  └─ vigil-tools ───────┼─────────────────┐
         │   │       (callback to     │     │           │
         │   │        VIGIL' richer  │     │           │
         │   │        tools)          │     │           │
@@ -436,7 +436,7 @@ If you find a bug, [open an issue](https://github.com/NousResearch/vigil-agent/i
                                                         │
                                                         ▼
         ┌──────────────────────────────────────────────────────────┐
-        │  hermes_tools_mcp_server.py (subprocess on demand)        │
+        │  vigil_tools_mcp_server.py (subprocess on demand)        │
         │   web_search, web_extract, browser_*, vision_analyze,    │
         │   image_generate, skill_view, skills_list, text_to_speech│
         └──────────────────────────────────────────────────────────┘

@@ -21,7 +21,7 @@ import subprocess
 from pathlib import Path
 from urllib.parse import urlparse
 
-from hermes_constants import get_hermes_home
+from vigil_constants import get_vigil_home
 from typing import Any, Dict, List, Optional, Tuple
 from utils import base_url_host_matches, normalize_proxy_env_vars
 
@@ -890,13 +890,17 @@ def _read_claude_code_credentials_from_keychain() -> Optional[Dict[str, Any]]:
         logger.debug("Keychain: no entry found for 'Claude Code-credentials'")
         return None
 
+    if not isinstance(result.stdout, str):
+        logger.debug("Keychain: credentials payload was not text")
+        return None
+
     raw = result.stdout.strip()
     if not raw:
         return None
 
     try:
         data = json.loads(raw)
-    except json.JSONDecodeError:
+    except (json.JSONDecodeError, TypeError):
         logger.debug("Keychain: credentials payload is not valid JSON")
         return None
 
@@ -931,7 +935,9 @@ def read_claude_code_credentials() -> Optional[Dict[str, Any]]:
     # Try macOS Keychain first (covers Claude Code >=2.1.114)
     kc_creds = _read_claude_code_credentials_from_keychain()
     if kc_creds:
-        return kc_creds
+        if is_claude_code_token_valid(kc_creds) or kc_creds.get("refreshToken"):
+            return kc_creds
+        logger.debug("Keychain: credentials expired and cannot refresh; checking file fallback")
 
     # Fall back to JSON file
     cred_path = Path.home() / ".claude" / ".credentials.json"
@@ -1164,7 +1170,7 @@ def _resolve_anthropic_pool_token() -> Optional[str]:
 
     Read-only: enumerates with ``clear_expired=False, refresh=False`` so a bare
     token *resolve* (which runs from diagnostic/read-only call sites such as
-    ``account_usage`` and ``hermes models``) never mutates ``~/.vigil/auth.json``
+    ``account_usage`` and ``vigil models``) never mutates ``~/.vigil/auth.json``
     or makes a network refresh call. Refresh-on-expiry is owned by the API call
     path's pool recovery, not the resolver.
     """
@@ -1308,7 +1314,7 @@ _OAUTH_TOKEN_URLS = [
 _OAUTH_TOKEN_URL = _OAUTH_TOKEN_URLS[0]
 _OAUTH_REDIRECT_URI = "https://console.anthropic.com/oauth/code/callback"
 _OAUTH_SCOPES = "org:create_api_key user:profile user:inference"
-_VIGIL_OAUTH_FILE = get_hermes_home() / ".anthropic_oauth.json"
+_VIGIL_OAUTH_FILE = get_vigil_home() / ".anthropic_oauth.json"
 
 
 def _generate_pkce() -> tuple:
@@ -1324,7 +1330,7 @@ def _generate_pkce() -> tuple:
     return verifier, challenge
 
 
-def run_hermes_oauth_login_pure() -> Optional[Dict[str, Any]]:
+def run_vigil_oauth_login_pure() -> Optional[Dict[str, Any]]:
     """Run VIGIL-native OAuth PKCE flow and return credential state."""
     import secrets
     import time
@@ -1359,7 +1365,7 @@ def run_hermes_oauth_login_pure() -> Optional[Dict[str, Any]]:
     print()
 
     try:
-        from hermes_cli.auth import _can_open_graphical_browser as _can_open_gui
+        from vigil_cli.auth import _can_open_graphical_browser as _can_open_gui
     except Exception:
         _can_open_gui = lambda: True  # noqa: E731 — degrade to prior behavior
 
@@ -1451,7 +1457,7 @@ def run_hermes_oauth_login_pure() -> Optional[Dict[str, Any]]:
     }
 
 
-def read_hermes_oauth_credentials() -> Optional[Dict[str, Any]]:
+def read_vigil_oauth_credentials() -> Optional[Dict[str, Any]]:
     """Read VIGIL-managed OAuth credentials from ~/.vigil/.anthropic_oauth.json."""
     if _VIGIL_OAUTH_FILE.exists():
         try:

@@ -344,7 +344,7 @@ function buildRoutes(
   return routes;
 }
 
-const SIDEBAR_COLLAPSED_KEY = "hermes-sidebar-collapsed";
+const SIDEBAR_COLLAPSED_KEY = "vigil-sidebar-collapsed";
 
 export default function App() {
   const { t } = useI18n();
@@ -631,7 +631,7 @@ export default function App() {
 
               {sidebarNav.pluginItems.length > 0 && (
                 <div
-                  aria-labelledby="hermes-sidebar-plugin-nav-heading"
+                  aria-labelledby="vigil-sidebar-plugin-nav-heading"
                   className="flex flex-col border-t border-current/10 pb-2"
                   role="group"
                 >
@@ -641,7 +641,7 @@ export default function App() {
                       "font-mondwest text-display text-xs tracking-[0.12em] text-text-tertiary",
                       isDesktopCollapsed && "lg:hidden",
                     )}
-                    id="hermes-sidebar-plugin-nav-heading"
+                    id="vigil-sidebar-plugin-nav-heading"
                   >
                     {t.app.pluginNavSection}
                   </span>

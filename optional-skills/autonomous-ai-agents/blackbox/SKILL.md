@@ -6,7 +6,7 @@ author: VIGIL Agent (Nous Research)
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  hermes:
+  vigil:
     tags: [Coding-Agent, Blackbox, Multi-Agent, Judge, Multi-Model]
     related_skills: [claude-code, codex, vigil-agent]
 ---

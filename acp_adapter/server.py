@@ -78,7 +78,7 @@ from acp_adapter.tools import build_tool_complete, build_tool_start
 logger = logging.getLogger(__name__)
 
 try:
-    from hermes_cli import __version__ as VIGIL_VERSION
+    from vigil_cli import __version__ as VIGIL_VERSION
 except Exception:
     VIGIL_VERSION = "0.0.0"
 
@@ -582,7 +582,7 @@ class VIGILACPAgent(acp.Agent):
         provider = getattr(state.agent, "provider", None) or detect_provider() or "openrouter"
 
         try:
-            from hermes_cli.models import curated_models_for_provider, normalize_provider, provider_label
+            from vigil_cli.models import curated_models_for_provider, normalize_provider, provider_label
 
             normalized_provider = normalize_provider(provider)
             provider_name = provider_label(normalized_provider)
@@ -645,7 +645,7 @@ class VIGILACPAgent(acp.Agent):
         new_model = raw_model.strip()
 
         try:
-            from hermes_cli.models import detect_provider_for_model, parse_model_input
+            from vigil_cli.models import detect_provider_for_model, parse_model_input
 
             target_provider, new_model = parse_model_input(new_model, current_provider)
             if target_provider == current_provider:
@@ -713,16 +713,16 @@ class VIGILACPAgent(acp.Agent):
     def _provenance_meta(
         self,
         acp_session_id: str,
-        current_hermes_session_id: str,
-        previous_hermes_session_id: Optional[str] = None,
+        current_vigil_session_id: str,
+        previous_vigil_session_id: Optional[str] = None,
     ) -> Optional[dict]:
         """Best-effort ``_meta.vigil.sessionProvenance`` for an ACP session."""
         try:
             return session_provenance_meta(
                 self.session_manager._get_db(),
                 acp_session_id,
-                current_hermes_session_id,
-                previous_hermes_session_id=previous_hermes_session_id,
+                current_vigil_session_id,
+                previous_vigil_session_id=previous_vigil_session_id,
             )
         except Exception:
             logger.debug(
@@ -734,13 +734,13 @@ class VIGILACPAgent(acp.Agent):
         self,
         session_id: str,
         *,
-        current_hermes_session_id: Optional[str] = None,
-        previous_hermes_session_id: Optional[str] = None,
+        current_vigil_session_id: Optional[str] = None,
+        previous_vigil_session_id: Optional[str] = None,
     ) -> None:
         """Send ACP native session metadata after VIGIL changes it.
 
         When the internal VIGIL head rotated (e.g. compression-driven session
-        split during a turn), pass ``previous_hermes_session_id`` so the
+        split during a turn), pass ``previous_vigil_session_id`` so the
         attached ``_meta.vigil.sessionProvenance`` flags the rotation reason.
         """
         if not self._conn:
@@ -755,14 +755,14 @@ class VIGILACPAgent(acp.Agent):
 
         title = row.get("title")
         # The `sessions` table does not have an `updated_at` column (see
-        # hermes_state.py schema — only started_at/ended_at). Use "now" as
+        # vigil_state.py schema — only started_at/ended_at). Use "now" as
         # the updated_at since we're emitting this notification precisely
         # because the title was just refreshed.
         updated_at = datetime.now(timezone.utc).isoformat()
         meta = self._provenance_meta(
             session_id,
-            current_hermes_session_id or session_id,
-            previous_hermes_session_id,
+            current_vigil_session_id or session_id,
+            previous_vigil_session_id,
         )
         update = SessionInfoUpdate(
             session_update="session_info_update",
@@ -827,7 +827,7 @@ class VIGILACPAgent(acp.Agent):
             from agent.memory_manager import inject_memory_provider_tools
 
             enabled_toolsets = _expand_acp_enabled_toolsets(
-                getattr(state.agent, "enabled_toolsets", None) or ["hermes-acp"],
+                getattr(state.agent, "enabled_toolsets", None) or ["vigil-acp"],
                 mcp_server_names=[server.name for server in mcp_servers],
             )
             state.agent.enabled_toolsets = enabled_toolsets
@@ -1547,7 +1547,7 @@ class VIGILACPAgent(acp.Agent):
             # can detect a compression-driven session rotation afterwards. The
             # ACP `session_id` stays the stable client handle; agent.session_id
             # is the live internal head that compression may rotate.
-            pre_turn_hermes_id = getattr(state.agent, "session_id", None)
+            pre_turn_vigil_id = getattr(state.agent, "session_id", None)
             # Wrap the executor call in a fresh copy of the current context so
             # concurrent ACP sessions on the shared ThreadPoolExecutor don't
             # stomp on each other's ContextVar writes (VIGIL_SESSION_KEY in
@@ -1570,18 +1570,18 @@ class VIGILACPAgent(acp.Agent):
         # DB head moved during the turn, emit a session_info_update carrying
         # _meta.vigil.sessionProvenance so ACP clients can render the boundary
         # and keep old/new ids in lineage. The ACP session_id is unchanged.
-        post_turn_hermes_id = getattr(state.agent, "session_id", None)
+        post_turn_vigil_id = getattr(state.agent, "session_id", None)
         if (
             conn
-            and post_turn_hermes_id
-            and pre_turn_hermes_id
-            and post_turn_hermes_id != pre_turn_hermes_id
+            and post_turn_vigil_id
+            and pre_turn_vigil_id
+            and post_turn_vigil_id != pre_turn_vigil_id
         ):
             try:
                 await self._send_session_info_update(
                     session_id,
-                    current_hermes_session_id=post_turn_hermes_id,
-                    previous_hermes_session_id=pre_turn_hermes_id,
+                    current_vigil_session_id=post_turn_vigil_id,
+                    previous_vigil_session_id=pre_turn_vigil_id,
                 )
             except Exception:
                 logger.debug(
@@ -1785,7 +1785,7 @@ class VIGILACPAgent(acp.Agent):
             from agent.memory_manager import inject_memory_provider_tools
 
             toolsets = _expand_acp_enabled_toolsets(
-                getattr(state.agent, "enabled_toolsets", None) or ["hermes-acp"]
+                getattr(state.agent, "enabled_toolsets", None) or ["vigil-acp"]
             )
             tools = get_tool_definitions(enabled_toolsets=toolsets, quiet_mode=True)
             tool_view = SimpleNamespace(

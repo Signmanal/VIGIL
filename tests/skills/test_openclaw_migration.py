@@ -10,14 +10,14 @@ SCRIPT_PATH = (
     Path(__file__).resolve().parents[2]
     / "optional-skills"
     / "migration"
-    / "openclaw-migration"
-    / "scripts"
-    / "openclaw_to_hermes.py"
-)
+	    / "openclaw-migration"
+	    / "scripts"
+	    / "openclaw_to_vigil.py"
+	)
 
 
 def load_module():
-    spec = importlib.util.spec_from_file_location("openclaw_to_hermes", SCRIPT_PATH)
+    spec = importlib.util.spec_from_file_location("openclaw_to_vigil", SCRIPT_PATH)
     module = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     sys.modules[spec.name] = module
@@ -823,7 +823,7 @@ def test_cron_store_is_archived_without_config_cron_section(tmp_path: Path):
     assert Path(archived_store["destination"]).joinpath("jobs.json").exists()
 
     notes_text = (output_dir / "MIGRATION_NOTES.md").read_text(encoding="utf-8")
-    assert "Run `hermes cron` to recreate scheduled tasks" in notes_text
+    assert "Run `vigil cron` to recreate scheduled tasks" in notes_text
     assert "archive/cron-config.json" not in notes_text
 
 
@@ -841,13 +841,13 @@ def test_skill_installs_cleanly_under_skills_guard():
     # agent_config_mod   — references AGENTS.md to migrate workspace instructions
     # python_os_environ  — reads MIGRATION_JSON_OUTPUT to enable JSON output mode
     #                      (feature flag, not an env dump)
-    # hermes_config_mod  — print statements in the post-migration summary that
+    # vigil_config_mod  — print statements in the post-migration summary that
     #                      tell the user to *review* ~/.vigil/config.yaml;
     #                      the script never writes to that file
     #
     # Accept "caution" or "safe" — just not "dangerous" from a *real* threat.
     assert result.verdict in {"safe", "caution", "dangerous"}, f"Unexpected verdict: {result.verdict}"
-    KNOWN_FALSE_POSITIVES = {"agent_config_mod", "python_os_environ", "hermes_config_mod"}
+    KNOWN_FALSE_POSITIVES = {"agent_config_mod", "python_os_environ", "vigil_config_mod"}
     for f in result.findings:
         assert f.pattern_id in KNOWN_FALSE_POSITIVES, f"Unexpected finding: {f}"
 
@@ -862,19 +862,19 @@ def test_rebrand_text_replaces_openclaw_variants():
     assert mod.rebrand_text("I told Open Claw to use dark mode") == "I told VIGIL to use dark mode"
     assert mod.rebrand_text("Open-Claw config is great") == "VIGIL config is great"
     assert mod.rebrand_text("OPENCLAW uses tools well") == "VIGIL uses tools well"
-    # All-lowercase matches → lowercase ``hermes``; this preserves the
+    # All-lowercase matches → lowercase ``vigil``; this preserves the
     # real filesystem path ``~/.vigil`` (VIGIL home) when rebranding
     # memory entries that reference ``~/.openclaw`` or ``openclaw`` prose.
-    assert mod.rebrand_text("openclaw should always respond concisely") == "hermes should always respond concisely"
+    assert mod.rebrand_text("openclaw should always respond concisely") == "vigil should always respond concisely"
 
 
 def test_rebrand_text_replaces_legacy_bot_names():
     mod = load_module()
     # Same case-preservation rule as above.
     assert mod.rebrand_text("ClawdBot remembers my timezone") == "VIGIL remembers my timezone"
-    assert mod.rebrand_text("clawdbot prefers tabs") == "hermes prefers tabs"
+    assert mod.rebrand_text("clawdbot prefers tabs") == "vigil prefers tabs"
     assert mod.rebrand_text("MoltBot was configured for Spanish") == "VIGIL was configured for Spanish"
-    assert mod.rebrand_text("moltbot uses Python") == "hermes uses Python"
+    assert mod.rebrand_text("moltbot uses Python") == "vigil uses Python"
 
 
 def test_rebrand_text_preserves_unrelated_content():
@@ -906,7 +906,7 @@ def test_rebrand_text_preserves_filesystem_path_casing():
     assert mod.rebrand_text("Path.home() / '.openclaw'") == "Path.home() / '.vigil'"
     # Sentence with both lowercase path and capitalized prose.
     assert mod.rebrand_text("openclaw config path: ~/.openclaw/") == \
-        "hermes config path: ~/.vigil/"
+        "vigil config path: ~/.vigil/"
 
 
 def test_migrate_memory_rebrands_entries(tmp_path):

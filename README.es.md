@@ -7,7 +7,7 @@
   <a href="https://vigil-agent.nousresearch.com/">VIGIL Agent</a> | <a href="https://vigil-agent.nousresearch.com/">VIGIL Desktop</a>
 </p>
 <p align="center">
-  <a href="https://vigil-agent.nousresearch.com/docs/"><img src="https://img.shields.io/badge/Docs-hermes--agent.nousresearch.com-FFD700?style=for-the-badge" alt="Documentación"></a>
+  <a href="https://vigil-agent.nousresearch.com/docs/"><img src="https://img.shields.io/badge/Docs-vigil--agent.nousresearch.com-FFD700?style=for-the-badge" alt="Documentación"></a>
   <a href="https://discord.gg/NousResearch"><img src="https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord"></a>
   <a href="https://github.com/NousResearch/vigil-agent/blob/main/LICENSE"><img src="https://img.shields.io/badge/Licencia-MIT-green?style=for-the-badge" alt="Licencia: MIT"></a>
   <a href="https://nousresearch.com"><img src="https://img.shields.io/badge/Creado%20por-Nous%20Research-blueviolet?style=for-the-badge" alt="Creado por Nous Research"></a>
@@ -18,7 +18,7 @@
 
 **El agente de IA con mejora continua creado por [Nous Research](https://nousresearch.com).** Es el único agente con un bucle de aprendizaje integrado: crea habilidades a partir de la experiencia, las mejora durante el uso, se impulsa a sí mismo a persistir el conocimiento, busca en sus propias conversaciones pasadas y construye un modelo cada vez más profundo de quién eres a lo largo de las sesiones. Ejecútalo en un VPS de $5, un clúster de GPUs o infraestructura sin servidor que cuesta casi nada cuando está inactivo. No está atado a tu laptop — habla con él desde Telegram mientras trabaja en una VM en la nube.
 
-Usa cualquier modelo que quieras — [Nous Portal](https://portal.nousresearch.com), [OpenRouter](https://openrouter.ai) (más de 200 modelos), [NovitaAI](https://novita.ai), [NVIDIA NIM](https://build.nvidia.com) (Nemotron), [Xiaomi MiMo](https://platform.xiaomimimo.com), [z.ai/GLM](https://z.ai), [Kimi/Moonshot](https://platform.moonshot.ai), [MiniMax](https://www.minimax.io), [Hugging Face](https://huggingface.co), OpenAI, o tu propio endpoint. Cambia con `hermes model` — sin cambios de código, sin dependencias.
+Usa cualquier modelo que quieras — [VIGIL Portal](https://portal.nousresearch.com), [OpenRouter](https://openrouter.ai) (más de 200 modelos), [NovitaAI](https://novita.ai), [NVIDIA NIM](https://build.nvidia.com) (Nemotron), [Xiaomi MiMo](https://platform.xiaomimimo.com), [z.ai/GLM](https://z.ai), [Kimi/Moonshot](https://platform.moonshot.ai), [MiniMax](https://www.minimax.io), [Hugging Face](https://huggingface.co), OpenAI, o tu propio endpoint. Cambia con `vigil model` — sin cambios de código, sin dependencias.
 
 <table>
 <tr><td><b>Una interfaz de terminal real</b></td><td>TUI completa con edición multilínea, autocompletado de comandos, historial de conversaciones, interrupción y redirección, y salida de herramientas en streaming.</td></tr>
@@ -62,7 +62,7 @@ Después de la instalación:
 
 ```bash
 source ~/.bashrc    # recargar shell (o: source ~/.zshrc)
-hermes              # ¡empieza a chatear!
+vigil              # ¡empieza a chatear!
 ```
 
 ---
@@ -70,24 +70,24 @@ hermes              # ¡empieza a chatear!
 ## Primeros pasos
 
 ```bash
-hermes              # CLI interactiva — inicia una conversación
-hermes model        # Elige tu proveedor y modelo LLM
-hermes tools        # Configura qué herramientas están habilitadas
-hermes config set   # Establece valores de configuración individuales
-hermes gateway      # Inicia el gateway de mensajería (Telegram, Discord, etc.)
-hermes setup        # Ejecuta el asistente de configuración completo
-hermes claw migrate # Migra desde OpenClaw (si vienes de OpenClaw)
-hermes update       # Actualiza a la última versión
-hermes doctor       # Diagnostica cualquier problema
+vigil              # CLI interactiva — inicia una conversación
+vigil model        # Elige tu proveedor y modelo LLM
+vigil tools        # Configura qué herramientas están habilitadas
+vigil config set   # Establece valores de configuración individuales
+vigil gateway      # Inicia el gateway de mensajería (Telegram, Discord, etc.)
+vigil setup        # Ejecuta el asistente de configuración completo
+vigil claw migrate # Migra desde OpenClaw (si vienes de OpenClaw)
+vigil update       # Actualiza a la última versión
+vigil doctor       # Diagnostica cualquier problema
 ```
 
 📖 **[Documentación completa →](https://vigil-agent.nousresearch.com/docs/)**
 
 ---
 
-## Evita la colección de claves API — Nous Portal
+## Evita la colección de claves API — VIGIL Portal
 
-VIGIL funciona con cualquier proveedor que quieras — eso no cambiará. Pero si prefieres no recopilar cinco claves API separadas para el modelo, búsqueda web, generación de imágenes, TTS y un navegador en la nube, **[Nous Portal](https://portal.nousresearch.com)** las cubre todas bajo una sola suscripción:
+VIGIL funciona con cualquier proveedor que quieras — eso no cambiará. Pero si prefieres no recopilar cinco claves API separadas para el modelo, búsqueda web, generación de imágenes, TTS y un navegador en la nube, **[VIGIL Portal](https://portal.nousresearch.com)** las cubre todas bajo una sola suscripción:
 
 - **Más de 300 modelos** — elige cualquiera con `/model <nombre>`
 - **Tool Gateway** — búsqueda web (Firecrawl), generación de imágenes (FAL), texto a voz (OpenAI), navegador en la nube (Browser Use), todo enrutado a través de tu suscripción. Sin cuentas adicionales.
@@ -95,10 +95,10 @@ VIGIL funciona con cualquier proveedor que quieras — eso no cambiará. Pero si
 Un comando desde una instalación nueva:
 
 ```bash
-hermes setup --portal
+vigil setup --portal
 ```
 
-Esto te autentica vía OAuth, establece Nous como tu proveedor y activa el Tool Gateway. Comprueba qué está conectado en cualquier momento con `hermes portal info`. Detalles completos en la [página de documentación del Tool Gateway](https://vigil-agent.nousresearch.com/docs/user-guide/features/tool-gateway).
+Esto te autentica vía OAuth, establece Nous como tu proveedor y activa el Tool Gateway. Comprueba qué está conectado en cualquier momento con `vigil portal info`. Detalles completos en la [página de documentación del Tool Gateway](https://vigil-agent.nousresearch.com/docs/user-guide/features/tool-gateway).
 
 Puedes seguir usando tus propias claves por herramienta cuando quieras — el gateway es por backend, no todo o nada.
 
@@ -106,11 +106,11 @@ Puedes seguir usando tus propias claves por herramienta cuando quieras — el ga
 
 ## Referencia rápida: CLI vs Mensajería
 
-VIGIL tiene dos puntos de entrada: inicia la interfaz de terminal con `hermes`, o ejecuta el gateway y habla con él desde Telegram, Discord, Slack, WhatsApp, Signal o Email. Una vez en una conversación, muchos comandos de barra son compartidos entre ambas interfaces.
+VIGIL tiene dos puntos de entrada: inicia la interfaz de terminal con `vigil`, o ejecuta el gateway y habla con él desde Telegram, Discord, Slack, WhatsApp, Signal o Email. Una vez en una conversación, muchos comandos de barra son compartidos entre ambas interfaces.
 
 | Acción                              | CLI                                           | Plataformas de mensajería                                                         |
 | ----------------------------------- | --------------------------------------------- | --------------------------------------------------------------------------------- |
-| Empezar a chatear                   | `hermes`                                      | Ejecuta `hermes gateway setup` + `hermes gateway start`, luego envía un mensaje al bot |
+| Empezar a chatear                   | `vigil`                                      | Ejecuta `vigil gateway setup` + `vigil gateway start`, luego envía un mensaje al bot |
 | Nueva conversación                  | `/new` o `/reset`                             | `/new` o `/reset`                                                                 |
 | Cambiar modelo                      | `/model [proveedor:modelo]`                   | `/model [proveedor:modelo]`                                                       |
 | Establecer personalidad             | `/personality [nombre]`                       | `/personality [nombre]`                                                           |
@@ -152,15 +152,15 @@ Toda la documentación está en **[vigil-agent.nousresearch.com/docs](https://vi
 
 Si vienes de OpenClaw, VIGIL puede importar automáticamente tu configuración, memorias, habilidades y claves API.
 
-**Durante la configuración inicial:** El asistente de configuración (`hermes setup`) detecta automáticamente `~/.openclaw` y ofrece migrar antes de que comience la configuración.
+**Durante la configuración inicial:** El asistente de configuración (`vigil setup`) detecta automáticamente `~/.openclaw` y ofrece migrar antes de que comience la configuración.
 
 **En cualquier momento después de instalar:**
 
 ```bash
-hermes claw migrate              # Migración interactiva (preset completo)
-hermes claw migrate --dry-run    # Vista previa de qué se migraría
-hermes claw migrate --preset user-data   # Migrar sin secretos
-hermes claw migrate --overwrite  # Sobreescribir conflictos existentes
+vigil claw migrate              # Migración interactiva (preset completo)
+vigil claw migrate --dry-run    # Vista previa de qué se migraría
+vigil claw migrate --preset user-data   # Migrar sin secretos
+vigil claw migrate --overwrite  # Sobreescribir conflictos existentes
 ```
 
 Qué se importa:
@@ -174,7 +174,7 @@ Qué se importa:
 - **Assets de TTS** — archivos de audio del espacio de trabajo
 - **Instrucciones del espacio de trabajo** — AGENTS.md (con `--workspace-target`)
 
-Consulta `hermes claw migrate --help` para todas las opciones, o usa la habilidad `openclaw-migration` para una migración guiada interactiva por el agente con vistas previas de dry-run.
+Consulta `vigil claw migrate --help` para todas las opciones, o usa la habilidad `openclaw-migration` para una migración guiada interactiva por el agente con vistas previas de dry-run.
 
 ---
 
@@ -182,13 +182,13 @@ Consulta `hermes claw migrate --help` para todas las opciones, o usa la habilida
 
 ¡Las contribuciones son bienvenidas! Consulta la [Guía de Contribución](CONTRIBUTING.es.md) para la configuración del desarrollo, el estilo de código y el proceso de PR.
 
-Inicio rápido para colaboradores — clona y comienza con `setup-hermes.sh`:
+Inicio rápido para colaboradores — clona y comienza con `setup-vigil.sh`:
 
 ```bash
 git clone https://github.com/NousResearch/vigil-agent.git
 cd vigil-agent
-./setup-hermes.sh     # instala uv, crea venv, instala .[all], enlaza ~/.local/bin/hermes
-./hermes              # detecta automáticamente el venv, no necesitas hacer `source` primero
+./setup-vigil.sh     # instala uv, crea venv, instala .[all], enlaza ~/.local/bin/vigil
+./vigil              # detecta automáticamente el venv, no necesitas hacer `source` primero
 ```
 
 Ruta manual (equivalente a lo anterior):

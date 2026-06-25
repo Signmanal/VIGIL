@@ -8,7 +8,7 @@ $VIGIL_HOME (/opt/data) is a DATA volume that users commonly bind-mount from
 the host (``~/.vigil:/opt/data``) and sometimes share with a host-side
 Desktop/CLI install. Older images wrote ``printf 'docker' > $VIGIL_HOME/.install_method``
 at boot, which clobbered the host install's own marker — so the host's in-app
-updater read 'docker' and refused to run ``hermes update`` ("doesn't apply
+updater read 'docker' and refused to run ``vigil update`` ("doesn't apply
 inside the Docker container").
 
 The fix scopes the stamp to the install tree (baked at

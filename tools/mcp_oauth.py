@@ -48,7 +48,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qs, urlparse
-from hermes_constants import secure_parent_dir
+from vigil_constants import secure_parent_dir
 
 logger = logging.getLogger(__name__)
 
@@ -101,7 +101,7 @@ _SKIP_TOKENS = frozenset({"skip", "cancel", "s", "n", "no", "q", "quit"})
 # _wait_for_callback maps this to OAuthNonInteractiveError ("user_skipped")
 # so the MCP setup path treats it as a non-fatal "continue without this
 # server" rather than a hard failure.
-_USER_SKIPPED_SENTINEL = "__hermes_user_skipped__"
+_USER_SKIPPED_SENTINEL = "__vigil_user_skipped__"
 
 
 # ---------------------------------------------------------------------------
@@ -116,8 +116,8 @@ def _get_token_dir() -> Path:
     Layout: ``VIGIL_HOME/mcp-tokens/``
     """
     try:
-        from hermes_constants import get_hermes_home
-        base = Path(get_hermes_home())
+        from vigil_constants import get_vigil_home
+        base = Path(get_vigil_home())
     except ImportError:
         base = Path(os.environ.get("VIGIL_HOME", str(Path.home() / ".vigil")))
     return base / "mcp-tokens"
@@ -573,7 +573,7 @@ def _paste_callback_reader(result: dict) -> None:
             return
         result["error"] = _USER_SKIPPED_SENTINEL
         print(
-            "  OAuth skipped. Run `hermes mcp login <server>` later to "
+            "  OAuth skipped. Run `vigil mcp login <server>` later to "
             "authenticate, or set ``enabled: false`` on that server in "
             "config.yaml to disable persistently.",
             file=sys.stderr,
@@ -758,7 +758,7 @@ def build_oauth_auth(
             "MCP OAuth for "
             f"'{server_name}': non-interactive environment and no cached tokens "
             "found. The OAuth flow requires browser authorization. Run "
-            f"`hermes mcp login {server_name}` interactively first to complete "
+            f"`vigil mcp login {server_name}` interactively first to complete "
             "initial authorization, then cached tokens will be reused."
         )
 

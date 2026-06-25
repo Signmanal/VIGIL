@@ -9,7 +9,7 @@ from types import SimpleNamespace
 from unittest.mock import patch as mock_patch
 
 import tools.approval as approval_module
-from hermes_constants import get_hermes_home
+from vigil_constants import get_vigil_home
 from tools.approval import (
     _get_approval_mode,
     _smart_approve,
@@ -23,11 +23,11 @@ from tools.approval import (
 
 class TestApprovalModeParsing:
     def test_unquoted_yaml_off_boolean_false_maps_to_off(self):
-        with mock_patch("hermes_cli.config.load_config", return_value={"approvals": {"mode": False}}):
+        with mock_patch("vigil_cli.config.load_config", return_value={"approvals": {"mode": False}}):
             assert _get_approval_mode() == "off"
 
     def test_string_off_still_maps_to_off(self):
-        with mock_patch("hermes_cli.config.load_config", return_value={"approvals": {"mode": "off"}}):
+        with mock_patch("vigil_cli.config.load_config", return_value={"approvals": {"mode": "off"}}):
             assert _get_approval_mode() == "off"
 
 
@@ -364,7 +364,7 @@ class TestTeePattern:
         assert dangerous is True
         assert key is not None
 
-    def test_tee_hermes_env(self):
+    def test_tee_vigil_env(self):
         dangerous, key, desc = detect_dangerous_command("echo x | tee ~/.vigil/.env")
         assert dangerous is True
         assert key is not None
@@ -375,12 +375,12 @@ class TestTeePattern:
         assert dangerous is True
         assert key is not None
 
-    def test_tee_custom_hermes_home_env(self):
+    def test_tee_custom_vigil_home_env(self):
         dangerous, key, desc = detect_dangerous_command("echo x | tee $VIGIL_HOME/.env")
         assert dangerous is True
         assert key is not None
 
-    def test_tee_quoted_custom_hermes_home_env(self):
+    def test_tee_quoted_custom_vigil_home_env(self):
         dangerous, key, desc = detect_dangerous_command('echo x | tee "$VIGIL_HOME/.env"')
         assert dangerous is True
         assert key is not None
@@ -425,29 +425,29 @@ class TestVIGILConfigWriteProtection:
         # bypassing the redirection/tee patterns.
         dangerous, key, desc = detect_dangerous_command("sed -i 's/manual/off/' ~/.vigil/config.yaml")
         assert dangerous is True
-        assert "hermes config" in desc.lower() or "in-place" in desc.lower()
+        assert "vigil config" in desc.lower() or "in-place" in desc.lower()
 
     def test_sed_in_place_long_flag(self):
         dangerous, key, desc = detect_dangerous_command("sed --in-place 's/manual/off/' ~/.vigil/config.yaml")
         assert dangerous is True
 
-    def test_sed_in_place_absolute_hermes_home_config(self):
-        config_path = get_hermes_home() / "config.yaml"
+    def test_sed_in_place_absolute_vigil_home_config(self):
+        config_path = get_vigil_home() / "config.yaml"
         dangerous, key, desc = detect_dangerous_command(
             f"sed -i 's/manual/off/' {config_path}"
         )
         assert dangerous is True
-        assert "hermes config" in desc.lower() or "in-place" in desc.lower()
+        assert "vigil config" in desc.lower() or "in-place" in desc.lower()
 
-    def test_sed_in_place_absolute_hermes_home_env(self):
-        env_path = get_hermes_home() / ".env"
+    def test_sed_in_place_absolute_vigil_home_env(self):
+        env_path = get_vigil_home() / ".env"
         dangerous, key, desc = detect_dangerous_command(
             f"sed -i 's/API_KEY=.*/API_KEY=x/' {env_path}"
         )
         assert dangerous is True
-        assert "hermes config" in desc.lower() or "in-place" in desc.lower()
+        assert "vigil config" in desc.lower() or "in-place" in desc.lower()
 
-    def test_custom_hermes_home(self):
+    def test_custom_vigil_home(self):
         dangerous, key, desc = detect_dangerous_command("echo x | tee $VIGIL_HOME/config.yaml")
         assert dangerous is True
 
@@ -460,8 +460,8 @@ class TestVIGILConfigWriteProtection:
         assert dangerous is True
         assert "in-place" in desc.lower() or "perl" in desc.lower()
 
-    def test_perl_in_place_absolute_hermes_home_config(self):
-        config_path = get_hermes_home() / "config.yaml"
+    def test_perl_in_place_absolute_vigil_home_config(self):
+        config_path = get_vigil_home() / "config.yaml"
         dangerous, key, desc = detect_dangerous_command(
             f"perl -i -pe 's/approvals.mode: on/approvals.mode: off/' {config_path}"
         )
@@ -474,8 +474,8 @@ class TestVIGILConfigWriteProtection:
         )
         assert dangerous is True
 
-    def test_ruby_in_place_absolute_hermes_home_env(self):
-        env_path = get_hermes_home() / ".env"
+    def test_ruby_in_place_absolute_vigil_home_env(self):
+        env_path = get_vigil_home() / ".env"
         dangerous, key, desc = detect_dangerous_command(
             f"ruby -i -pe 'gsub(/API_KEY=.*/, \"API_KEY=x\")' {env_path}"
         )
@@ -556,7 +556,7 @@ class TestFindExecFullPathRm:
 class TestSensitiveRedirectPattern:
     """Detect shell redirection writes to sensitive user-managed paths."""
 
-    def test_redirect_to_custom_hermes_home_env(self):
+    def test_redirect_to_custom_vigil_home_env(self):
         dangerous, key, desc = detect_dangerous_command("echo x > $VIGIL_HOME/.env")
         assert dangerous is True
         assert key is not None
@@ -689,7 +689,7 @@ class TestSensitiveCopyMovePattern:
         dangerous, key, desc = detect_dangerous_command("cp /tmp/e ~/.bashrc")
         assert dangerous is True
 
-    def test_cp_to_hermes_config(self):
+    def test_cp_to_vigil_config(self):
         dangerous, key, desc = detect_dangerous_command("cp /tmp/evil.yaml ~/.vigil/config.yaml")
         assert dangerous is True
 
@@ -852,48 +852,48 @@ class TestGatewayProtection:
     """Prevent agents from starting the gateway outside systemd management."""
 
     def test_gateway_run_with_disown_detected(self):
-        cmd = "kill 1605 && cd ~/.vigil/vigil-agent && source venv/bin/activate && python -m hermes_cli.main gateway run --replace &disown; echo done"
+        cmd = "kill 1605 && cd ~/.vigil/vigil-agent && source venv/bin/activate && python -m vigil_cli.main gateway run --replace &disown; echo done"
         dangerous, key, desc = detect_dangerous_command(cmd)
         assert dangerous is True
         assert "systemctl" in desc
 
     def test_gateway_run_with_ampersand_detected(self):
-        cmd = "python -m hermes_cli.main gateway run --replace &"
+        cmd = "python -m vigil_cli.main gateway run --replace &"
         dangerous, key, desc = detect_dangerous_command(cmd)
         assert dangerous is True
 
     def test_gateway_run_with_nohup_detected(self):
-        cmd = "nohup python -m hermes_cli.main gateway run --replace"
+        cmd = "nohup python -m vigil_cli.main gateway run --replace"
         dangerous, key, desc = detect_dangerous_command(cmd)
         assert dangerous is True
 
     def test_gateway_run_with_setsid_detected(self):
-        cmd = "hermes_cli.main gateway run --replace &disown"
+        cmd = "vigil_cli.main gateway run --replace &disown"
         dangerous, key, desc = detect_dangerous_command(cmd)
         assert dangerous is True
 
     def test_gateway_run_foreground_not_flagged(self):
         """Normal foreground gateway run (as in systemd ExecStart) is fine."""
-        cmd = "python -m hermes_cli.main gateway run --replace"
+        cmd = "python -m vigil_cli.main gateway run --replace"
         dangerous, key, desc = detect_dangerous_command(cmd)
         assert dangerous is False
 
     def test_systemctl_restart_flagged(self):
         """systemctl restart kills running agents and should require approval."""
-        cmd = "systemctl --user restart hermes-gateway"
+        cmd = "systemctl --user restart vigil-gateway"
         dangerous, key, desc = detect_dangerous_command(cmd)
         assert dangerous is True
         assert "stop/restart" in desc
 
-    def test_pkill_hermes_detected(self):
-        """pkill targeting hermes/gateway processes must be caught."""
+    def test_pkill_vigil_detected(self):
+        """pkill targeting vigil/gateway processes must be caught."""
         cmd = 'pkill -f "cli.py --gateway"'
         dangerous, key, desc = detect_dangerous_command(cmd)
         assert dangerous is True
         assert "self-termination" in desc
 
-    def test_killall_hermes_detected(self):
-        cmd = "killall hermes"
+    def test_killall_vigil_detected(self):
+        cmd = "killall vigil"
         dangerous, key, desc = detect_dangerous_command(cmd)
         assert dangerous is True
         assert "self-termination" in desc
@@ -1029,20 +1029,20 @@ class TestHeredocScriptExecution:
 
 
 class TestPgrepKillExpansion:
-    """kill -9 $(pgrep hermes) bypasses the pkill/killall name-matching
+    """kill -9 $(pgrep vigil) bypasses the pkill/killall name-matching
     pattern because the command substitution is opaque to regex.
 
     See security audit Test 7.
     """
 
     def test_kill_dollar_pgrep_detected(self):
-        cmd = 'kill -9 $(pgrep -f "hermes.*gateway")'
+        cmd = 'kill -9 $(pgrep -f "vigil.*gateway")'
         dangerous, _, desc = detect_dangerous_command(cmd)
         assert dangerous is True
         assert "pgrep" in desc.lower()
 
     def test_kill_backtick_pgrep_detected(self):
-        cmd = "kill -9 `pgrep hermes`"
+        cmd = "kill -9 `pgrep vigil`"
         dangerous, _, desc = detect_dangerous_command(cmd)
         assert dangerous is True
 
@@ -1051,9 +1051,9 @@ class TestPgrepKillExpansion:
         dangerous, _, _ = detect_dangerous_command(cmd)
         assert dangerous is True
 
-    def test_pkill_hermes_still_detected(self):
+    def test_pkill_vigil_still_detected(self):
         """Existing pkill pattern must not regress."""
-        cmd = "pkill -9 hermes"
+        cmd = "pkill -9 vigil"
         dangerous, _, _ = detect_dangerous_command(cmd)
         assert dangerous is True
 

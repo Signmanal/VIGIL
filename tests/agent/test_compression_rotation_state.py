@@ -21,7 +21,7 @@ import os
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from hermes_state import SessionDB
+from vigil_state import SessionDB
 
 
 def _build_agent_with_db(db: SessionDB, session_id: str, platform: str = "telegram"):
@@ -71,7 +71,7 @@ class TestGoalMigratesOnRotation:
         # Set a persistent goal on the parent via the real persistence path.
         with patch.dict(os.environ, {"VIGIL_HOME": str(tmp_path / ".vigil")}):
             (tmp_path / ".vigil").mkdir(exist_ok=True)
-            import hermes_cli.goals as goals
+            import vigil_cli.goals as goals
             goals._DB_CACHE.clear()
             # Point the goal DB at the same state.db the agent uses.
             with patch.object(goals, "_get_session_db", return_value=db):

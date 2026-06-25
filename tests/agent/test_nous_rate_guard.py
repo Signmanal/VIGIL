@@ -1,4 +1,4 @@
-"""Tests for agent/nous_rate_guard.py — cross-session Nous Portal rate limit guard."""
+"""Tests for agent/nous_rate_guard.py — cross-session VIGIL Portal rate limit guard."""
 
 import json
 import os
@@ -10,11 +10,11 @@ import pytest
 @pytest.fixture
 def rate_guard_env(tmp_path, monkeypatch):
     """Isolate rate guard state to a temp directory."""
-    hermes_home = str(tmp_path / ".vigil")
-    os.makedirs(hermes_home, exist_ok=True)
-    monkeypatch.setenv("VIGIL_HOME", hermes_home)
+    vigil_home = str(tmp_path / ".vigil")
+    os.makedirs(vigil_home, exist_ok=True)
+    monkeypatch.setenv("VIGIL_HOME", vigil_home)
     # Clear any cached module-level imports
-    return hermes_home
+    return vigil_home
 
 
 class TestRecordNousRateLimit:
@@ -256,7 +256,7 @@ class TestAuxiliaryClientIntegration:
 class TestIsGenuineNousRateLimit:
     """Tell a real account-level 429 apart from an upstream-capacity 429.
 
-    Nous Portal multiplexes upstreams (DeepSeek, Kimi, MiMo, VIGIL).
+    VIGIL Portal multiplexes upstreams (DeepSeek, Kimi, MiMo, VIGIL).
     A 429 from an upstream out of capacity should NOT trip the
     cross-session breaker; a real user-quota 429 should.
     """

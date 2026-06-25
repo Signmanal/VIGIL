@@ -14,30 +14,30 @@ description: "VIGIL 核心、复合、平台及动态工具集参考"
 
 - **核心（Core）** — 一组相关工具的逻辑分组（例如，`file` 包含 `read_file`、`write_file`、`patch`、`search_files`）
 - **复合（Composite）** — 将多个核心工具集组合用于常见场景（例如，`debugging` 包含 file、terminal 和 web 工具）
-- **平台（Platform）** — 针对特定部署环境的完整工具配置（例如，`hermes-cli` 是交互式 CLI 会话的默认配置）
+- **平台（Platform）** — 针对特定部署环境的完整工具配置（例如，`vigil-cli` 是交互式 CLI 会话的默认配置）
 
 ## 配置工具集
 
 ### 按会话（CLI）
 
 ```bash
-hermes chat --toolsets web,file,terminal
-hermes chat --toolsets debugging        # composite — expands to file + terminal + web
-hermes chat --toolsets all              # everything
+vigil chat --toolsets web,file,terminal
+vigil chat --toolsets debugging        # composite — expands to file + terminal + web
+vigil chat --toolsets all              # everything
 ```
 
 ### 按平台（config.yaml）
 
 ```yaml
 toolsets:
-  - hermes-cli          # default for CLI
-  # - hermes-telegram   # override for Telegram gateway
+  - vigil-cli          # default for CLI
+  # - vigil-telegram   # override for Telegram gateway
 ```
 
 ### 交互式管理
 
 ```bash
-hermes tools                            # curses UI to enable/disable per platform
+vigil tools                            # curses UI to enable/disable per platform
 ```
 
 或在会话中：
@@ -58,10 +58,10 @@ hermes tools                            # curses UI to enable/disable per platfo
 | `cronjob` | `cronjob` | 调度和管理周期性任务。 |
 | `debugging` | 复合（`file` + `terminal` + `web`） | 调试套件——文件、进程/终端、网页提取/搜索。 |
 | `delegation` | `delegate_task` | 生成隔离的子 agent 实例以并行执行工作。 |
-| `discord` | `discord` | 核心 Discord 文本/嵌入/私信操作（仅限 gateway）。在 `hermes-discord` 工具集上激活。 |
-| `discord_admin` | `discord_admin` | Discord 管理操作（封禁、角色变更、频道管理）。在 `hermes-discord` 工具集上激活；需要 bot 持有相关 Discord 权限。 |
+| `discord` | `discord` | 核心 Discord 文本/嵌入/私信操作（仅限 gateway）。在 `vigil-discord` 工具集上激活。 |
+| `discord_admin` | `discord_admin` | Discord 管理操作（封禁、角色变更、频道管理）。在 `vigil-discord` 工具集上激活；需要 bot 持有相关 Discord 权限。 |
 | `feishu_doc` | `feishu_doc_read` | 读取飞书/Lark 文档内容。由飞书文档评论智能回复处理器使用。 |
-| `feishu_drive` | `feishu_drive_add_comment`, `feishu_drive_list_comments`, `feishu_drive_list_comment_replies`, `feishu_drive_reply_comment` | 飞书/Lark 云盘评论操作。仅限评论 agent 使用；不在 `hermes-cli` 或其他消息工具集上暴露。 |
+| `feishu_drive` | `feishu_drive_add_comment`, `feishu_drive_list_comments`, `feishu_drive_list_comment_replies`, `feishu_drive_reply_comment` | 飞书/Lark 云盘评论操作。仅限评论 agent 使用；不在 `vigil-cli` 或其他消息工具集上暴露。 |
 | `file` | `patch`, `read_file`, `search_files`, `write_file` | 文件读取、写入、搜索和编辑。 |
 | `homeassistant` | `ha_call_service`, `ha_get_state`, `ha_list_entities`, `ha_list_services` | 通过 Home Assistant 进行智能家居控制。仅在设置 `HASS_TOKEN` 时可用。 |
 | `computer_use` | `computer_use` | 通过 cua-driver 进行后台 macOS 桌面控制——不抢占光标/焦点。适用于任何支持工具调用的模型。仅限 macOS；需要 `cua-driver` 在 `$PATH` 中。 |
@@ -82,39 +82,39 @@ hermes tools                            # curses UI to enable/disable per platfo
 | `vision` | `vision_analyze` | 通过视觉能力模型进行图像分析。 |
 | `video` | `video_analyze` | 视频分析与理解工具（需手动启用，不在默认工具集中——通过 `--toolsets` 显式添加）。 |
 | `web` | `web_extract`, `web_search` | 网页搜索和页面内容提取。 |
-| `x_search` | `x_search` | 通过 xAI 内置的 `x_search` Responses 工具搜索 X（Twitter）帖子和话题。默认关闭；通过 `hermes tools` 启用。仅在配置了 xAI 凭据（SuperGrok OAuth 或 `XAI_API_KEY`）时注册 schema。 |
-| `yuanbao` | `yb_query_group_info`, `yb_query_group_members`, `yb_search_sticker`, `yb_send_dm`, `yb_send_sticker` | 元宝私信/群组操作和表情包搜索。仅在 `hermes-yuanbao` 上注册。 |
+| `x_search` | `x_search` | 通过 xAI 内置的 `x_search` Responses 工具搜索 X（Twitter）帖子和话题。默认关闭；通过 `vigil tools` 启用。仅在配置了 xAI 凭据（SuperGrok OAuth 或 `XAI_API_KEY`）时注册 schema。 |
+| `yuanbao` | `yb_query_group_info`, `yb_query_group_members`, `yb_search_sticker`, `yb_send_dm`, `yb_send_sticker` | 元宝私信/群组操作和表情包搜索。仅在 `vigil-yuanbao` 上注册。 |
 
 ## 平台工具集
 
-平台工具集定义了部署目标的完整工具配置。大多数消息平台使用与 `hermes-cli` 相同的配置：
+平台工具集定义了部署目标的完整工具配置。大多数消息平台使用与 `vigil-cli` 相同的配置：
 
-| 工具集 | 与 `hermes-cli` 的差异 |
+| 工具集 | 与 `vigil-cli` 的差异 |
 |--------|------------------------|
-| `hermes-cli` | 完整工具集——交互式 CLI 会话的默认配置。包含 file、terminal、web、browser、memory、skills、vision、image_gen、todo、tts、delegation、code_execution、cronjob、session_search、clarify 和 `safe`（只读）套件，以及标准消息工具。 |
-| `hermes-acp` | 移除了 `clarify`、`cronjob`、`image_generate`、`send_message`、`text_to_speech` 以及全部四个 Home Assistant 工具。专注于 IDE 环境中的编码任务。 |
-| `hermes-api-server` | 移除了 `clarify`、`send_message` 和 `text_to_speech`。保留其他所有工具——适用于无法进行用户交互的程序化访问场景。 |
-| `hermes-cron` | 与 `hermes-cli` 相同。 |
-| `hermes-telegram` | 与 `hermes-cli` 相同。 |
-| `hermes-discord` | 在 `hermes-cli` 基础上添加了 `discord` 和 `discord_admin`。 |
-| `hermes-slack` | 与 `hermes-cli` 相同。 |
-| `hermes-whatsapp` | 与 `hermes-cli` 相同。 |
-| `hermes-signal` | 与 `hermes-cli` 相同。 |
-| `hermes-matrix` | 与 `hermes-cli` 相同。 |
-| `hermes-mattermost` | 与 `hermes-cli` 相同。 |
-| `hermes-email` | 与 `hermes-cli` 相同。 |
-| `hermes-sms` | 与 `hermes-cli` 相同。 |
-| `hermes-bluebubbles` | 与 `hermes-cli` 相同。 |
-| `hermes-dingtalk` | 与 `hermes-cli` 相同。 |
-| `hermes-feishu` | 添加了五个 `feishu_doc_*` / `feishu_drive_*` 工具（仅由文档评论处理器使用，不用于常规聊天适配器）。 |
-| `hermes-qqbot` | 与 `hermes-cli` 相同。 |
-| `hermes-wecom` | 与 `hermes-cli` 相同。 |
-| `hermes-wecom-callback` | 与 `hermes-cli` 相同。 |
-| `hermes-weixin` | 与 `hermes-cli` 相同。 |
-| `hermes-yuanbao` | 在 `hermes-cli` 基础上添加了五个 `yb_*` 工具（私信/群组/表情包）。 |
-| `hermes-homeassistant` | 与 `hermes-cli` 相同（Home Assistant 工具默认已存在，在设置 `HASS_TOKEN` 时激活）。 |
-| `hermes-webhook` | 与 `hermes-cli` 相同。 |
-| `hermes-gateway` | 内部 gateway 编排器工具集——所有 `hermes-<platform>` 工具集的并集；当 gateway 需要接受任意消息来源时使用。 |
+| `vigil-cli` | 完整工具集——交互式 CLI 会话的默认配置。包含 file、terminal、web、browser、memory、skills、vision、image_gen、todo、tts、delegation、code_execution、cronjob、session_search、clarify 和 `safe`（只读）套件，以及标准消息工具。 |
+| `vigil-acp` | 移除了 `clarify`、`cronjob`、`image_generate`、`send_message`、`text_to_speech` 以及全部四个 Home Assistant 工具。专注于 IDE 环境中的编码任务。 |
+| `vigil-api-server` | 移除了 `clarify`、`send_message` 和 `text_to_speech`。保留其他所有工具——适用于无法进行用户交互的程序化访问场景。 |
+| `vigil-cron` | 与 `vigil-cli` 相同。 |
+| `vigil-telegram` | 与 `vigil-cli` 相同。 |
+| `vigil-discord` | 在 `vigil-cli` 基础上添加了 `discord` 和 `discord_admin`。 |
+| `vigil-slack` | 与 `vigil-cli` 相同。 |
+| `vigil-whatsapp` | 与 `vigil-cli` 相同。 |
+| `vigil-signal` | 与 `vigil-cli` 相同。 |
+| `vigil-matrix` | 与 `vigil-cli` 相同。 |
+| `vigil-mattermost` | 与 `vigil-cli` 相同。 |
+| `vigil-email` | 与 `vigil-cli` 相同。 |
+| `vigil-sms` | 与 `vigil-cli` 相同。 |
+| `vigil-bluebubbles` | 与 `vigil-cli` 相同。 |
+| `vigil-dingtalk` | 与 `vigil-cli` 相同。 |
+| `vigil-feishu` | 添加了五个 `feishu_doc_*` / `feishu_drive_*` 工具（仅由文档评论处理器使用，不用于常规聊天适配器）。 |
+| `vigil-qqbot` | 与 `vigil-cli` 相同。 |
+| `vigil-wecom` | 与 `vigil-cli` 相同。 |
+| `vigil-wecom-callback` | 与 `vigil-cli` 相同。 |
+| `vigil-weixin` | 与 `vigil-cli` 相同。 |
+| `vigil-yuanbao` | 在 `vigil-cli` 基础上添加了五个 `yb_*` 工具（私信/群组/表情包）。 |
+| `vigil-homeassistant` | 与 `vigil-cli` 相同（Home Assistant 工具默认已存在，在设置 `HASS_TOKEN` 时激活）。 |
+| `vigil-webhook` | 与 `vigil-cli` 相同。 |
+| `vigil-gateway` | 内部 gateway 编排器工具集——所有 `vigil-<platform>` 工具集的并集；当 gateway 需要接受任意消息来源时使用。 |
 
 ## 动态工具集
 
@@ -142,7 +142,7 @@ mcp_servers:
 
 ```yaml
 toolsets:
-  - hermes-cli
+  - vigil-cli
 custom_toolsets:
   data-science:
     - file
@@ -156,8 +156,8 @@ custom_toolsets:
 
 - `all` 或 `*` — 展开为所有已注册的工具集（内置 + 动态 + 插件）
 
-## 与 `hermes tools` 的关系
+## 与 `vigil tools` 的关系
 
-`hermes tools` 命令提供基于 curses 的 UI，用于按平台切换单个工具的启用/禁用状态。该操作在工具级别进行（比工具集更细粒度），并持久化到 `config.yaml`。即使工具集已启用，被禁用的工具也会被过滤掉。
+`vigil tools` 命令提供基于 curses 的 UI，用于按平台切换单个工具的启用/禁用状态。该操作在工具级别进行（比工具集更细粒度），并持久化到 `config.yaml`。即使工具集已启用，被禁用的工具也会被过滤掉。
 
 另请参阅：[工具参考](./tools-reference.md)，获取所有单个工具及其参数的完整列表。

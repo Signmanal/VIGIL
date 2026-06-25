@@ -6,7 +6,7 @@ author: Tim Koepsel (xzessmedia), VIGIL Agent
 license: MIT
 platforms: [linux, macos]
 metadata:
-  hermes:
+  vigil:
     tags: [Coding-Agent, OpenHands, Model-Agnostic, LiteLLM]
     related_skills: [claude-code, codex, opencode, vigil-agent]
 ---

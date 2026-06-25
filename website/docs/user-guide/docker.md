@@ -40,7 +40,7 @@ docker run -it --rm \
 This drops you into the setup wizard, which will prompt you for your API keys and write them to `~/.vigil/.env`. You only need to do this once. It is highly recommended to set up a chat system for the gateway to work with at this point.
 
 :::tip
-Inside the container, run `hermes setup --portal` once — the refresh token persists in the mounted `~/.vigil` volume. See [Nous Portal](/integrations/nous-portal).
+Inside the container, run `vigil setup --portal` once — the refresh token persists in the mounted `~/.vigil` volume. See [VIGIL Portal](/integrations/nous-portal).
 :::
 
 ## Running in gateway mode
@@ -49,7 +49,7 @@ Once configured, run the container in the background as a persistent gateway (Te
 
 ```sh
 docker run -d \
-  --name hermes \
+  --name vigil \
   --restart unless-stopped \
   -v ~/.vigil:/opt/data \
   -p 8642:8642 \
@@ -86,7 +86,7 @@ Note: the API server is gated on `API_SERVER_ENABLED=true`. To expose it beyond 
 
 ```sh
 docker run -d \
-  --name hermes \
+  --name vigil \
   --restart unless-stopped \
   -v ~/.vigil:/opt/data \
   -p 8642:8642 \
@@ -105,7 +105,7 @@ The built-in web dashboard runs as a supervised s6-rc service alongside the gate
 
 ```sh
 docker run -d \
-  --name hermes \
+  --name vigil \
   --restart unless-stopped \
   -v ~/.vigil:/opt/data \
   -p 8642:8642 \
@@ -133,7 +133,7 @@ The dashboard's auth gate engages automatically when both of the following are t
 There are three bundled ways to satisfy the second condition:
 
 - **Username/password** — the simplest for a self-hosted / on-prem / homelab container on a trusted network or behind a VPN: set `VIGIL_DASHBOARD_BASIC_AUTH_USERNAME` + `VIGIL_DASHBOARD_BASIC_AUTH_PASSWORD` (and `VIGIL_DASHBOARD_BASIC_AUTH_SECRET` for restart-stable sessions). Not suitable for direct public-internet exposure.
-- **OAuth (Nous Portal)** — for hosted/public deploys: the `dashboard_auth/nous` provider activates whenever `VIGIL_DASHBOARD_OAUTH_CLIENT_ID` is set.
+- **OAuth (VIGIL Portal)** — for hosted/public deploys: the `dashboard_auth/nous` provider activates whenever `VIGIL_DASHBOARD_OAUTH_CLIENT_ID` is set.
 - **Self-hosted OIDC** — to authenticate against your own identity provider via standard OpenID Connect: the `dashboard_auth/self_hosted` provider activates when `VIGIL_DASHBOARD_OIDC_ISSUER` + `VIGIL_DASHBOARD_OIDC_CLIENT_ID` are set.
 
 Whichever you choose, the gate redirects callers to a login page before they can reach any protected route. See [Web Dashboard → Authentication](features/web-dashboard.md#authentication-gated-mode) for all three providers.
@@ -159,7 +159,7 @@ docker run -it --rm \
 Or if you have already opened a terminal in your running container (via Docker Desktop for instance), just run:
 
 ```sh
-/opt/vigil/.venv/bin/hermes
+/opt/vigil/.venv/bin/vigil
 ```
 
 ## Persistent volumes
@@ -182,13 +182,13 @@ The `/opt/data` volume is the single source of truth for all VIGIL state. It map
 
 ### Immutable install tree
 
-In hosted and published Docker images, `/opt/hermes` is the installed application tree. It is root-owned and read-only to the runtime `hermes` user, so agent turns, gateway sessions, dashboard actions, and normal `docker exec hermes hermes ...` commands cannot edit the core source, bundled `.venv`, `node_modules`, or TUI bundle in place.
+In hosted and published Docker images, `/opt/vigil` is the installed application tree. It is root-owned and read-only to the runtime `vigil` user, so agent turns, gateway sessions, dashboard actions, and normal `docker exec vigil vigil ...` commands cannot edit the core source, bundled `.venv`, `node_modules`, or TUI bundle in place.
 
-All mutable VIGIL state belongs under `/opt/data`: config, `.env`, profiles, skills, memories, sessions, logs, dashboard uploads, plugins, and other user-managed files. The image also disables runtime `.pyc` writes and VIGIL lazy dependency installs into `/opt/hermes`; optional platform dependencies needed by the published image should be baked into the image or installed through a new image build.
+All mutable VIGIL state belongs under `/opt/data`: config, `.env`, profiles, skills, memories, sessions, logs, dashboard uploads, plugins, and other user-managed files. The image also disables runtime `.pyc` writes and VIGIL lazy dependency installs into `/opt/vigil`; optional platform dependencies needed by the published image should be baked into the image or installed through a new image build.
 
-On hosted/published images, agent self-improvement is scoped to skills, memory, plugins, and config under `/opt/data`. The installed core source under `/opt/hermes` is immutable; core changes are made via PRs to the repo and shipped by updating the image, not by live-editing the running install.
+On hosted/published images, agent self-improvement is scoped to skills, memory, plugins, and config under `/opt/data`. The installed core source under `/opt/vigil` is immutable; core changes are made via PRs to the repo and shipped by updating the image, not by live-editing the running install.
 
-If an operator needs to repair or inspect files outside `/opt/data`, use a root shell intentionally. The `hermes` shim normally drops `docker exec hermes hermes ...` back to the runtime user; set `VIGIL_DOCKER_EXEC_AS_ROOT=1` for a one-off root invocation when you explicitly need root semantics.
+If an operator needs to repair or inspect files outside `/opt/data`, use a root shell intentionally. The `vigil` shim normally drops `docker exec vigil vigil ...` back to the runtime user; set `VIGIL_DOCKER_EXEC_AS_ROOT=1` for a one-off root invocation when you explicitly need root semantics.
 
 Skill CLIs that store credentials under `~` must be initialized against the subprocess HOME, not just the data-volume root. For example, the [xurl skill](./skills/bundled/social-media/social-media-xurl.md) stores OAuth state in `~/.xurl`; in the official Docker layout, VIGIL tool calls read that as `/opt/data/home/.xurl`, so run manual xurl auth with `HOME=/opt/data/home` and verify with `HOME=/opt/data/home xurl auth status`.
 
@@ -200,44 +200,44 @@ Never run two VIGIL **gateway** containers against the same data directory simul
 
 VIGIL supports [multiple profiles](../reference/profile-commands.md) — separate `~/.vigil/` subdirectories that let you run independent agents (different SOUL, skills, memory, sessions, credentials) from a single installation. **Inside the official Docker image, the s6 supervision tree treats each profile as a first-class supervised service**, so the recommended deployment is **one container hosting all profiles**.
 
-Each profile created with `hermes profile create <name>` gets:
+Each profile created with `vigil profile create <name>` gets:
 
 - A dedicated s6 service slot at `/run/service/gateway-<name>/`, registered dynamically by the runtime — no container rebuild required.
 - Auto-restart on crash, backoff-managed by `s6-supervise`.
 - Per-profile rotated logs at `${VIGIL_HOME}/logs/gateways/<name>/current` (10 archives × 1 MB each).
-- State persistence across container restarts: the boot-time reconciler reads `gateway_state.json` from each profile directory and brings the slot back up only for profiles whose last recorded state was `running`. Only a gateway you explicitly stopped (`hermes gateway stop`) stays down across a restart — a container restart, image upgrade, or unexpected exit leaves the recorded state as `running`, so the gateway auto-starts on the next boot.
+- State persistence across container restarts: the boot-time reconciler reads `gateway_state.json` from each profile directory and brings the slot back up only for profiles whose last recorded state was `running`. Only a gateway you explicitly stopped (`vigil gateway stop`) stays down across a restart — a container restart, image upgrade, or unexpected exit leaves the recorded state as `running`, so the gateway auto-starts on the next boot.
 
 The lifecycle commands you'd run on the host work the same way from inside the container:
 
 ```sh
 # Create a profile — registers the gateway-<name> s6 slot.
-docker exec hermes hermes profile create coder
+docker exec vigil vigil profile create coder
 
 # Start / stop / restart — dispatches s6-svc; the gateway lifecycle survives docker restart.
-docker exec hermes hermes -p coder gateway start
-docker exec hermes hermes -p coder gateway stop
-docker exec hermes hermes -p coder gateway restart
+docker exec vigil vigil -p coder gateway start
+docker exec vigil vigil -p coder gateway stop
+docker exec vigil vigil -p coder gateway restart
 
 # Status — reports `Manager: s6 (container supervisor)` inside the container.
-docker exec hermes hermes -p coder gateway status
+docker exec vigil vigil -p coder gateway status
 
 # Remove a profile — tears down the s6 slot too.
-docker exec hermes hermes profile delete coder
+docker exec vigil vigil profile delete coder
 ```
 
-Under the hood, `hermes gateway start/stop/restart` inside the container is intercepted and routed to `s6-svc` against the right service directory; you don't need to learn the s6 commands directly. For raw supervisor state, use `/command/s6-svstat /run/service/gateway-<name>` (note `/command/` is on PATH only for processes spawned by the supervision tree — when calling from `docker exec`, pass the absolute path).
+Under the hood, `vigil gateway start/stop/restart` inside the container is intercepted and routed to `s6-svc` against the right service directory; you don't need to learn the s6 commands directly. For raw supervisor state, use `/command/s6-svstat /run/service/gateway-<name>` (note `/command/` is on PATH only for processes spawned by the supervision tree — when calling from `docker exec`, pass the absolute path).
 
 ### Reaching more than one profile from outside the container
 
 Two different surfaces reach a profile's gateway from outside, and they behave differently — don't conflate them:
 
-**VIGIL Desktop (and the web dashboard).** The Desktop app's **Remote Gateway** connection talks to a `hermes dashboard` backend (default **port 9119**, enabled by `VIGIL_DASHBOARD=1`) — *not* the OpenAI API server. One dashboard backend serves **every** co-located profile: the app's profile switcher sends the target profile with each request and the backend opens that profile's `VIGIL_HOME` on disk. So you do **not** need a second port — or a second connection — per profile for Desktop; one `:9119` connection covers them all through the switcher.
+**VIGIL Desktop (and the web dashboard).** The Desktop app's **Remote Gateway** connection talks to a `vigil dashboard` backend (default **port 9119**, enabled by `VIGIL_DASHBOARD=1`) — *not* the OpenAI API server. One dashboard backend serves **every** co-located profile: the app's profile switcher sends the target profile with each request and the backend opens that profile's `VIGIL_HOME` on disk. So you do **not** need a second port — or a second connection — per profile for Desktop; one `:9119` connection covers them all through the switcher.
 
 **OpenAI-compatible API clients (Open WebUI, LobeChat, `/v1/...`).** These talk to each profile's **API server**, which binds **port 8642 for every profile** (resolved from `API_SERVER_PORT` / `platforms.api_server.extra.port` — there is no auto-allocation and no `config.yaml`/`gateway.port` key). If you want a client to reach a *specific* second profile, give that profile a distinct `API_SERVER_PORT` in **its own** `.env`, otherwise its gateway tries to bind 8642 too and conflicts with the default profile:
 
 ```sh
 # Create the profile (registers its gateway-<name> s6 slot)
-docker exec hermes hermes profile create work
+docker exec vigil vigil profile create work
 
 # Point its API server at a free port (write to the profile's own .env)
 cat >> /opt/data/profiles/work/.env <<'EOF'
@@ -245,7 +245,7 @@ API_SERVER_ENABLED=true
 API_SERVER_PORT=8643
 EOF
 
-docker exec hermes hermes -p work gateway restart
+docker exec vigil vigil -p work gateway restart
 ```
 
 Keep `API_SERVER_PORT` in each profile's **own** `.env`, never in the container-wide `environment:` block — a global value would force every profile onto the same port and they would collide. With bridge networking, publish the extra port in `docker-compose.yml` (`- "8643:8643"`); with `network_mode: host` it is already reachable on the host. The default profile's 8642 connection is untouched.
@@ -258,7 +258,7 @@ Before the s6 migration, "one container per profile" was the recommended pattern
 |---|---|---|
 | Disk overhead | One image, one bundled venv, one Playwright cache | N images / N caches |
 | Memory overhead | Shared Python interpreter cache, shared node_modules | Duplicated per container |
-| Profile creation | `docker exec ... hermes profile create <name>` (seconds) | New `docker run` invocation + port allocation + bind-mount config |
+| Profile creation | `docker exec ... vigil profile create <name>` (seconds) | New `docker run` invocation + port allocation + bind-mount config |
 | Per-profile crash recovery | `s6-supervise` auto-restart | Docker's `--restart unless-stopped` (slower, kills sibling work) |
 | Logs | Per-profile rotated file via `s6-log`, plus container-boot audit log | `docker logs <name>` per container — no built-in rotation |
 | Backup | One `~/.vigil` directory | N directories to coordinate |
@@ -278,9 +278,9 @@ In those cases, declare one service per profile with distinct `container_name`, 
 
 ```yaml
 services:
-  hermes-work:
+  vigil-work:
     image: nousresearch/vigil-agent:latest
-    container_name: hermes-work
+    container_name: vigil-work
     restart: unless-stopped
     command: gateway run
     ports:
@@ -288,9 +288,9 @@ services:
     volumes:
       - ~/.vigil-work:/opt/data
 
-  hermes-personal:
+  vigil-personal:
     image: nousresearch/vigil-agent:latest
-    container_name: hermes-personal
+    container_name: vigil-personal
     restart: unless-stopped
     command: gateway run
     ports:
@@ -307,10 +307,10 @@ The s6 container has four distinct log surfaces, and "why isn't my gateway showi
 
 | Source | Where it lands | How to read it |
 |---|---|---|
-| **Per-profile gateway** (`hermes gateway run` and per-profile gateways under s6) | Tee'd to two places: `docker logs <container>` (real time, no extra prefix) **and** `${VIGIL_HOME}/logs/gateways/<profile>/current` (rotated, ISO-8601 timestamped, 10 archives × 1 MB each) | `docker logs -f hermes` or `tail -F ~/.vigil/logs/gateways/default/current` on the host |
-| **Dashboard** (when `VIGIL_DASHBOARD=1`) | `docker logs <container>` (no prefix) | `docker logs -f hermes` — interleaved with gateway lines |
+| **Per-profile gateway** (`vigil gateway run` and per-profile gateways under s6) | Tee'd to two places: `docker logs <container>` (real time, no extra prefix) **and** `${VIGIL_HOME}/logs/gateways/<profile>/current` (rotated, ISO-8601 timestamped, 10 archives × 1 MB each) | `docker logs -f vigil` or `tail -F ~/.vigil/logs/gateways/default/current` on the host |
+| **Dashboard** (when `VIGIL_DASHBOARD=1`) | `docker logs <container>` (no prefix) | `docker logs -f vigil` — interleaved with gateway lines |
 | **Boot reconciler** (records which profile gateways were restored on each container start) | `${VIGIL_HOME}/logs/container-boot.log` (append-only audit log) | `tail -F ~/.vigil/logs/container-boot.log` |
-| **Generic VIGIL logs** (`agent.log`, `errors.log`) | `${VIGIL_HOME}/logs/` (profile-aware) | `docker exec hermes hermes logs --follow [--level WARNING] [--session <id>]` |
+| **Generic VIGIL logs** (`agent.log`, `errors.log`) | `${VIGIL_HOME}/logs/` (profile-aware) | `docker exec vigil vigil logs --follow [--level WARNING] [--session <id>]` |
 
 Two practical consequences worth knowing:
 
@@ -341,9 +341,9 @@ For persistent deployment with both the gateway and dashboard, a `docker-compose
 
 ```yaml
 services:
-  hermes:
+  vigil:
     image: nousresearch/vigil-agent:latest
-    container_name: hermes
+    container_name: vigil
     restart: unless-stopped
     command: gateway run
     ports:
@@ -409,12 +409,12 @@ Use that image in Compose and pass through the host user's PulseAudio socket and
 
 ```yaml
 services:
-  hermes:
+  vigil:
     build:
       context: .
       dockerfile: Dockerfile.audio
     image: vigil-agent-audio
-    container_name: hermes
+    container_name: vigil
     restart: unless-stopped
     command: gateway run
     volumes:
@@ -441,7 +441,7 @@ docker compose up -d --build
 To verify what PortAudio sees inside the container:
 
 ```sh
-docker exec hermes /opt/vigil/.venv/bin/python -c "import sounddevice as sd; print(sd.query_devices())"
+docker exec vigil /opt/vigil/.venv/bin/python -c "import sounddevice as sd; print(sd.query_devices())"
 ```
 
 ## Resource limits
@@ -460,7 +460,7 @@ Set limits in Docker:
 
 ```sh
 docker run -d \
-  --name hermes \
+  --name vigil \
   --restart unless-stopped \
   --memory=4g --cpus=2 \
   -v ~/.vigil:/opt/data \
@@ -480,16 +480,16 @@ The official image is based on `debian:13.4` and includes:
 - The WhatsApp bridge (`scripts/whatsapp-bridge/`)
 - **[`s6-overlay`](https://github.com/just-containers/s6-overlay) v3** as PID 1 (replaces the older `tini`) — supervises the dashboard and per-profile gateways with auto-restart on crash, reaps zombie subprocesses, and forwards signals.
 
-The image treats `/opt/hermes` as an immutable install tree at runtime. Optional Python extras, Node workspaces, and TUI assets that must be available inside Docker need to be baked during the image build; runtime lazy installs are disabled so supervised gateways and `docker exec hermes …` commands do not try to write dependency artifacts back into the read-only source tree.
+The image treats `/opt/vigil` as an immutable install tree at runtime. Optional Python extras, Node workspaces, and TUI assets that must be available inside Docker need to be baked during the image build; runtime lazy installs are disabled so supervised gateways and `docker exec vigil …` commands do not try to write dependency artifacts back into the read-only source tree.
 
 The container's `ENTRYPOINT` is s6-overlay's `/init`. On boot it:
-1. Runs `/etc/cont-init.d/01-hermes-setup` (= `docker/stage2-hook.sh`) as root: optional UID/GID remap, fixes volume ownership, seeds `.env` / `config.yaml` / `SOUL.md` on first boot, runs non-interactive config-schema migrations unless `VIGIL_SKIP_CONFIG_MIGRATION=1`, syncs bundled skills.
-2. Runs `/etc/cont-init.d/02-reconcile-profiles` (= `hermes_cli.container_boot`): walks `$VIGIL_HOME/profiles/<name>/`, recreates the per-profile gateway s6 service slot under `/run/service/gateway-<profile>/`, and auto-starts only those whose last recorded state was `running` (see [Per-profile gateway supervision](#per-profile-gateway-supervision)).
-3. Starts the static `main-hermes` and `dashboard` s6-rc services.
+1. Runs `/etc/cont-init.d/01-vigil-setup` (= `docker/stage2-hook.sh`) as root: optional UID/GID remap, fixes volume ownership, seeds `.env` / `config.yaml` / `SOUL.md` on first boot, runs non-interactive config-schema migrations unless `VIGIL_SKIP_CONFIG_MIGRATION=1`, syncs bundled skills.
+2. Runs `/etc/cont-init.d/02-reconcile-profiles` (= `vigil_cli.container_boot`): walks `$VIGIL_HOME/profiles/<name>/`, recreates the per-profile gateway s6 service slot under `/run/service/gateway-<profile>/`, and auto-starts only those whose last recorded state was `running` (see [Per-profile gateway supervision](#per-profile-gateway-supervision)).
+3. Starts the static `main-vigil` and `dashboard` s6-rc services.
 4. Exec's the container's CMD as the main program (`/opt/vigil/docker/main-wrapper.sh`), which routes the arguments the user passed to `docker run`:
-   - no args → `hermes` (the default)
+   - no args → `vigil` (the default)
    - first arg is an executable on PATH (e.g. `sleep`, `bash`) → exec it directly
-   - anything else → `hermes <args>` (subcommand passthrough)
+   - anything else → `vigil <args>` (subcommand passthrough)
    The container exits when this main program exits, with its exit code.
 
 :::warning Breaking change vs. pre-s6 images
@@ -497,33 +497,33 @@ The container ENTRYPOINT is now `/init` (s6-overlay), not `/usr/bin/tini`. All f
 :::
 
 :::warning Privilege model
-Do not override the image entrypoint unless you keep `/init` (or, equivalently, the legacy `docker/entrypoint.sh` shim that forwards to the stage2 hook) in the command chain. s6-overlay's `/init` runs as root so it can chown the volume on first boot, then drops to the `hermes` user via `s6-setuidgid` for every supervised service AND for the main program. Starting `hermes gateway run` as root inside the official image is refused by default because it can leave root-owned files in `/opt/data` and break later dashboard or gateway starts. Set `VIGIL_ALLOW_ROOT_GATEWAY=1` only when you intentionally accept that risk.
+Do not override the image entrypoint unless you keep `/init` (or, equivalently, the legacy `docker/entrypoint.sh` shim that forwards to the stage2 hook) in the command chain. s6-overlay's `/init` runs as root so it can chown the volume on first boot, then drops to the `vigil` user via `s6-setuidgid` for every supervised service AND for the main program. Starting `vigil gateway run` as root inside the official image is refused by default because it can leave root-owned files in `/opt/data` and break later dashboard or gateway starts. Set `VIGIL_ALLOW_ROOT_GATEWAY=1` only when you intentionally accept that risk.
 :::
 
-### `docker exec` automatically drops to the `hermes` user
+### `docker exec` automatically drops to the `vigil` user
 
-`docker exec hermes <cmd>` defaults to running as root inside the container, but the image ships a thin shim at `/opt/vigil/bin/hermes` (earliest on PATH) that detects root callers and transparently re-execs through `s6-setuidgid hermes`. So `docker exec hermes login`, `docker exec hermes profile create …`, `docker exec hermes setup`, etc. all write files owned by UID 10000 — i.e. readable by the supervised gateway — with no extra `--user` flag needed. Non-root callers (the supervised processes themselves, `docker exec --user hermes`, kanban subagents inside the container) hit a short-circuit that exec's the venv binary directly, so there's no overhead on the hot paths.
+`docker exec vigil <cmd>` defaults to running as root inside the container, but the image ships a thin shim at `/opt/vigil/bin/vigil` (earliest on PATH) that detects root callers and transparently re-execs through `s6-setuidgid vigil`. So `docker exec vigil login`, `docker exec vigil profile create …`, `docker exec vigil setup`, etc. all write files owned by UID 10000 — i.e. readable by the supervised gateway — with no extra `--user` flag needed. Non-root callers (the supervised processes themselves, `docker exec --user vigil`, kanban subagents inside the container) hit a short-circuit that exec's the venv binary directly, so there's no overhead on the hot paths.
 
 If you specifically need a `docker exec` that retains root semantics (diagnostic sessions, inspecting root-only state, files outside `/opt/data` that root happens to own), opt out per invocation:
 
 ```sh
-docker exec -e VIGIL_DOCKER_EXEC_AS_ROOT=1 hermes <cmd>
+docker exec -e VIGIL_DOCKER_EXEC_AS_ROOT=1 vigil <cmd>
 ```
 
-The shim accepts `1` / `true` / `yes` (case-insensitive). Anything else — including typos like `=0` — falls through to the drop, so silent opt-outs aren't possible. If `s6-setuidgid` isn't available (custom builds that stripped s6-overlay), the shim refuses to run as root and exits 126 instead, surfacing the broken privilege model loudly rather than regressing to the historical footgun where `docker exec hermes login` would write `auth.json` as `root:root` and break the supervised gateway's auth on every chat platform message.
+The shim accepts `1` / `true` / `yes` (case-insensitive). Anything else — including typos like `=0` — falls through to the drop, so silent opt-outs aren't possible. If `s6-setuidgid` isn't available (custom builds that stripped s6-overlay), the shim refuses to run as root and exits 126 instead, surfacing the broken privilege model loudly rather than regressing to the historical footgun where `docker exec vigil login` would write `auth.json` as `root:root` and break the supervised gateway's auth on every chat platform message.
 
 ### Per-profile gateway supervision
 
-Each profile created with `hermes profile create <name>` automatically gets an s6-supervised gateway service registered at `/run/service/gateway-<name>/`, with state-persistent auto-restart across container restarts. See [Multi-profile support](#multi-profile-support) above for the user-facing workflow and the lifecycle commands.
+Each profile created with `vigil profile create <name>` automatically gets an s6-supervised gateway service registered at `/run/service/gateway-<name>/`, with state-persistent auto-restart across container restarts. See [Multi-profile support](#multi-profile-support) above for the user-facing workflow and the lifecycle commands.
 
 **Supervision benefits over the pre-s6 image:**
 
 - Gateway crashes are auto-restarted by `s6-supervise` after a ~1s backoff.
 - Dashboard, when enabled with `VIGIL_DASHBOARD=1`, is supervised on the same supervision tree and gets the same auto-restart treatment.
-- `docker restart`, image upgrades (`docker compose up -d --force-recreate`), and unexpected exits preserve running gateways: the cont-init reconciler reads `$VIGIL_HOME/profiles/<name>/gateway_state.json` and brings the slot back up if the last recorded state was `running`. Only an explicit `hermes gateway stop` records `stopped` and keeps the gateway down across the restart; the container/s6 SIGTERM sent on a restart or upgrade is treated as "still running" and auto-starts.
+- `docker restart`, image upgrades (`docker compose up -d --force-recreate`), and unexpected exits preserve running gateways: the cont-init reconciler reads `$VIGIL_HOME/profiles/<name>/gateway_state.json` and brings the slot back up if the last recorded state was `running`. Only an explicit `vigil gateway stop` records `stopped` and keeps the gateway down across the restart; the container/s6 SIGTERM sent on a restart or upgrade is treated as "still running" and auto-starts.
 - Per-profile gateway logs persist under `$VIGIL_HOME/logs/gateways/<profile>/current` (rotated by `s6-log`), and the reconciler's actions are appended to `$VIGIL_HOME/logs/container-boot.log` per boot. See [Where the logs go](#where-the-logs-go) for the full routing map.
 
-`hermes status` inside the container reports `Manager: s6 (container supervisor)`. Use `/command/s6-svstat /run/service/gateway-<name>` for the raw supervisor view (note `/command/` is on PATH for supervision-tree processes only; pass the absolute path when calling from `docker exec`).
+`vigil status` inside the container reports `Manager: s6 (container supervisor)`. Use `/command/s6-svstat /run/service/gateway-<name>` for the raw supervisor view (note `/command/` is on PATH for supervision-tree processes only; pass the absolute path when calling from `docker exec`).
 
 ## Upgrading
 
@@ -535,9 +535,9 @@ When a migration is needed, VIGIL writes timestamped backups next to
 
 ```sh
 docker pull nousresearch/vigil-agent:latest
-docker rm -f hermes
+docker rm -f vigil
 docker run -d \
-  --name hermes \
+  --name vigil \
   --restart unless-stopped \
   -v ~/.vigil:/opt/data \
   nousresearch/vigil-agent gateway run
@@ -586,19 +586,19 @@ USER root
 RUN apt-get update \
     && apt-get install -y --no-install-recommends <your-package> \
     && rm -rf /var/lib/apt/lists/*
-USER hermes
+USER vigil
 ```
 
 Build it and use it in place of the official image:
 
 ```sh
-docker build -t my-hermes:latest .
+docker build -t my-vigil:latest .
 docker run -d \
-  --name hermes \
+  --name vigil \
   --restart unless-stopped \
   -v ~/.vigil:/opt/data \
   -p 8642:8642 \
-  my-hermes:latest gateway run
+  my-vigil:latest gateway run
 ```
 
 The entrypoint script and `/opt/data` semantics are inherited unchanged, so the rest of this page still applies. Remember to rebuild the image when pulling a newer upstream `nousresearch/vigil-agent`.
@@ -609,9 +609,9 @@ For tools that bring their own service (a database, a web server, a queue, a hea
 
 ```yaml
 services:
-  hermes:
+  vigil:
     image: nousresearch/vigil-agent:latest
-    container_name: hermes
+    container_name: vigil
     restart: unless-stopped
     command: gateway run
     ports:
@@ -619,17 +619,17 @@ services:
     volumes:
       - ~/.vigil:/opt/data
     networks:
-      - hermes-net
+      - vigil-net
 
   my-tool:
     image: example/my-tool:latest
     container_name: my-tool
     restart: unless-stopped
     networks:
-      - hermes-net
+      - vigil-net
 
 networks:
-  hermes-net:
+  vigil-net:
     driver: bridge
 ```
 
@@ -660,16 +660,16 @@ services:
     ports:
       - "8000:8000"
     networks:
-      - hermes-net
+      - vigil-net
     deploy:
       resources:
         reservations:
           devices:
             - capabilities: [gpu]
 
-  hermes:
+  vigil:
     image: nousresearch/vigil-agent:latest
-    container_name: hermes
+    container_name: vigil
     restart: unless-stopped
     command: gateway run
     ports:
@@ -677,10 +677,10 @@ services:
     volumes:
       - ~/.vigil:/opt/data
     networks:
-      - hermes-net
+      - vigil-net
 
 networks:
-  hermes-net:
+  vigil-net:
     driver: bridge
 ```
 
@@ -709,7 +709,7 @@ If your inference server runs directly on the host (not in Docker), use `host.do
 
 ```sh
 docker run -d \
-  --name hermes \
+  --name vigil \
   -v ~/.vigil:/opt/data \
   -p 8642:8642 \
   nousresearch/vigil-agent gateway run
@@ -728,7 +728,7 @@ model:
 
 ```sh
 docker run -d \
-  --name hermes \
+  --name vigil \
   --network host \
   -v ~/.vigil:/opt/data \
   nousresearch/vigil-agent gateway run
@@ -751,12 +751,12 @@ model:
 From inside the VIGIL container, confirm the inference server is reachable:
 
 ```sh
-docker exec hermes curl -s http://vllm:8000/v1/models
+docker exec vigil curl -s http://vllm:8000/v1/models
 ```
 
 You should see a JSON response listing your served model. If this fails, check:
 
-1. Both containers are on the same Docker network (`docker network inspect hermes-net`)
+1. Both containers are on the same Docker network (`docker network inspect vigil-net`)
 2. The inference server is listening on `0.0.0.0`, not `127.0.0.1`
 3. The port number matches
 
@@ -776,13 +776,13 @@ model:
 
 ### Container exits immediately
 
-Check logs: `docker logs hermes`. Common causes:
+Check logs: `docker logs vigil`. Common causes:
 - Missing or invalid `.env` file — run interactively first to complete setup
 - Port conflicts if running with exposed ports
 
 ### "Permission denied" errors
 
-The container's stage2 hook drops privileges to the non-root `hermes` user (UID 10000) via `s6-setuidgid` inside each supervised service. If your host `~/.vigil/` is owned by a different UID, set `VIGIL_UID`/`VIGIL_GID` — or their `PUID`/`PGID` aliases, for parity with LinuxServer.io and NAS images — to match your host user, or ensure the data directory is writable:
+The container's stage2 hook drops privileges to the non-root `vigil` user (UID 10000) via `s6-setuidgid` inside each supervised service. If your host `~/.vigil/` is owned by a different UID, set `VIGIL_UID`/`VIGIL_GID` — or their `PUID`/`PGID` aliases, for parity with LinuxServer.io and NAS images — to match your host user, or ensure the data directory is writable:
 
 ```sh
 chmod -R 755 ~/.vigil
@@ -792,13 +792,13 @@ On a NAS (UGOS, Synology, unRAID) the data directory is typically a **bind mount
 
 ```sh
 docker run -d \
-  --name hermes \
+  --name vigil \
   -e PUID=1000 -e PGID=10 \
-  -v /volume1/docker/hermes:/opt/data \
+  -v /volume1/docker/vigil:/opt/data \
   nousresearch/vigil-agent gateway run
 ```
 
-`docker exec hermes <cmd>` automatically drops to UID 10000 too — see [`docker exec` automatically drops to the `hermes` user](#docker-exec-automatically-drops-to-the-hermes-user) for details and the per-invocation opt-out.
+`docker exec vigil <cmd>` automatically drops to UID 10000 too — see [`docker exec` automatically drops to the `vigil` user](#docker-exec-automatically-drops-to-the-vigil-user) for details and the per-invocation opt-out.
 
 ### Browser tools not working
 
@@ -806,7 +806,7 @@ Playwright needs shared memory. Add `--shm-size=1g` to your Docker run command:
 
 ```sh
 docker run -d \
-  --name hermes \
+  --name vigil \
   --shm-size=1g \
   -v ~/.vigil:/opt/data \
   nousresearch/vigil-agent gateway run
@@ -817,13 +817,13 @@ docker run -d \
 The `--restart unless-stopped` flag handles most transient failures. If the gateway is stuck, restart the container:
 
 ```sh
-docker restart hermes
+docker restart vigil
 ```
 
 ### Checking container health
 
 ```sh
-docker logs --tail 50 hermes          # Recent logs
+docker logs --tail 50 vigil          # Recent logs
 docker run -it --rm nousresearch/vigil-agent:latest version     # Verify version
-docker stats hermes                    # Resource usage
+docker stats vigil                    # Resource usage
 ```

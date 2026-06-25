@@ -38,7 +38,7 @@ Mode — all at once.
 
 1. Generate the manifest:
    ```bash
-   hermes slack manifest --write
+   vigil slack manifest --write
    ```
    This writes `~/.vigil/slack-manifest.json` and prints paste-in
    instructions.
@@ -101,7 +101,7 @@ Socket Mode lets the bot connect via WebSocket instead of requiring a public URL
 1. In the sidebar, go to **Settings → Socket Mode**
 2. Toggle **Enable Socket Mode** to ON
 3. You'll be prompted to create an **App-Level Token**:
-   - Name it something like `hermes-socket` (the name doesn't matter)
+   - Name it something like `vigil-socket` (the name doesn't matter)
    - Add the **`connections:write`** scope
    - Click **Generate**
 4. **Copy the token** — it starts with `xapp-`. This is your `SLACK_APP_TOKEN`
@@ -202,15 +202,15 @@ SLACK_HOME_CHANNEL_NAME=general              # Human-readable name for the home 
 Or run the interactive setup:
 
 ```bash
-hermes gateway setup    # Select Slack when prompted
+vigil gateway setup    # Select Slack when prompted
 ```
 
 Then start the gateway:
 
 ```bash
-hermes gateway              # Foreground
-hermes gateway install      # Install as a user service
-sudo hermes gateway install --system   # Linux only: boot-time system service
+vigil gateway              # Foreground
+vigil gateway install      # Install as a user service
+sudo vigil gateway install --system   # Linux only: boot-time system service
 ```
 
 ---
@@ -236,17 +236,17 @@ VIGIL command with its description.
 
 Under the hood: VIGIL ships with a generated Slack app manifest (see
 Step 1, Option A) that declares every command in
-[`COMMAND_REGISTRY`](https://github.com/NousResearch/vigil-agent/blob/main/hermes_cli/commands.py)
+[`COMMAND_REGISTRY`](https://github.com/NousResearch/vigil-agent/blob/main/vigil_cli/commands.py)
 as a slash command. In Socket Mode, Slack routes the command event
 through the WebSocket regardless of the manifest's `url` field.
 
 ### Refreshing slash commands after updates
 
-When VIGIL adds new commands (e.g. after `hermes update`), regenerate
+When VIGIL adds new commands (e.g. after `vigil update`), regenerate
 the manifest and update your Slack app:
 
 ```bash
-hermes slack manifest --write
+vigil slack manifest --write
 ```
 
 Then in Slack:
@@ -257,11 +257,11 @@ Then in Slack:
 4. **Save**. Slack will prompt to reinstall the app if scopes or slash
    commands changed.
 
-### Legacy `/hermes <subcommand>` still works
+### Legacy `/vigil <subcommand>` still works
 
 For backward compatibility with older manifests, you can still type
-`/hermes btw run the tests` — VIGIL routes it the same way as `/btw
-run the tests`. Free-form questions also work: `/hermes what's the
+`/vigil btw run the tests` — VIGIL routes it the same way as `/btw
+run the tests`. Free-form questions also work: `/vigil what's the
 weather?` is treated as a regular message.
 
 ### Using commands inside threads (the `!cmd` prefix)
@@ -291,7 +291,7 @@ If you maintain your Slack manifest by hand and just want the slash
 command list:
 
 ```bash
-hermes slack manifest --slashes-only > /tmp/slashes.json
+vigil slack manifest --slashes-only > /tmp/slashes.json
 ```
 
 Paste that array into the `features.slash_commands` key of your
@@ -379,8 +379,8 @@ slack:
   # Custom mention patterns that trigger the bot
   # (in addition to the default @mention detection)
   mention_patterns:
-    - "hey hermes"
-    - "hermes,"
+    - "hey vigil"
+    - "vigil,"
 
   # Text prepended to every outgoing message
   reply_prefix: ""

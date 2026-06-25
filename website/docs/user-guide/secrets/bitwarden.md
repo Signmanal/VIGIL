@@ -6,7 +6,7 @@ Pull API keys from [Bitwarden Secrets Manager](https://bitwarden.com/products/se
 
 1. You create a **machine account** in Bitwarden Secrets Manager, give it read access to a project, and generate an **access token**.
 2. VIGIL stores that single token in `~/.vigil/.env` as `BWS_ACCESS_TOKEN`.
-3. Every time `hermes` (or the gateway, or a cron job) starts, after `~/.vigil/.env` has loaded, VIGIL calls `bws secret list <project_id>` and sets the returned keys into `os.environ`.
+3. Every time `vigil` (or the gateway, or a cron job) starts, after `~/.vigil/.env` has loaded, VIGIL calls `bws secret list <project_id>` and sets the returned keys into `os.environ`.
 4. By default VIGIL **overrides** values already in your environment, so Bitwarden is the source of truth — rotate a key once in the web app and every VIGIL process picks it up on next start. Flip `override_existing: false` in config if you want `.env` to win instead.
 
 The `bws` binary is auto-downloaded into `~/.vigil/bin/` on first use — no `apt`, no `brew`, no `sudo`.
@@ -34,7 +34,7 @@ Secrets Manager is included on the Bitwarden free tier with limits; no paid plan
 ### 2. Run the wizard
 
 ```bash
-hermes secrets bitwarden setup
+vigil secrets bitwarden setup
 ```
 
 It will:
@@ -49,7 +49,7 @@ It will:
 Non-interactive setup is also supported via flags:
 
 ```bash
-hermes secrets bitwarden setup \
+vigil secrets bitwarden setup \
   --access-token "$BWS_ACCESS_TOKEN" \
   --server-url https://vault.bitwarden.eu \
   --project-id <project-uuid>
@@ -58,21 +58,21 @@ hermes secrets bitwarden setup \
 ### 3. Confirm
 
 ```bash
-hermes secrets bitwarden status
+vigil secrets bitwarden status
 ```
 
-From now on, every `hermes` invocation pulls fresh secrets at startup. You'll see a one-line summary in stderr the first time secrets are applied in a process.
+From now on, every `vigil` invocation pulls fresh secrets at startup. You'll see a one-line summary in stderr the first time secrets are applied in a process.
 
 ## CLI
 
 | Command | What it does |
 |---|---|
-| `hermes secrets bitwarden setup` | Interactive wizard (install binary, prompt for token, pick project, test fetch) |
-| `hermes secrets bitwarden status` | Show config + binary version + token presence |
-| `hermes secrets bitwarden sync` | Dry-run: pull secrets now and show what would be applied |
-| `hermes secrets bitwarden sync --apply` | Pull and export into the current shell's environment |
-| `hermes secrets bitwarden install` | Just download the pinned `bws` binary (no auth required) |
-| `hermes secrets bitwarden disable` | Flip `enabled: false`; leaves token + project id in place |
+| `vigil secrets bitwarden setup` | Interactive wizard (install binary, prompt for token, pick project, test fetch) |
+| `vigil secrets bitwarden status` | Show config + binary version + token presence |
+| `vigil secrets bitwarden sync` | Dry-run: pull secrets now and show what would be applied |
+| `vigil secrets bitwarden sync --apply` | Pull and export into the current shell's environment |
+| `vigil secrets bitwarden install` | Just download the pinned `bws` binary (no auth required) |
+| `vigil secrets bitwarden disable` | Flip `enabled: false`; leaves token + project id in place |
 
 ## Configuration
 
@@ -96,7 +96,7 @@ secrets:
 | `access_token_env` | `BWS_ACCESS_TOKEN` | Env var name that holds the bootstrap token. Change this if you already use `BWS_ACCESS_TOKEN` for something else. |
 | `project_id` | `""` | UUID of the project to sync from. |
 | `server_url` | `""` | Bitwarden region or self-hosted endpoint. Empty = `bws` default (US Cloud, `https://vault.bitwarden.com`). Set to `https://vault.bitwarden.eu` for EU Cloud, or your own URL for self-hosted. Plumbed into the `bws` subprocess as `BWS_SERVER_URL`. |
-| `cache_ttl_seconds` | `300` | How long an in-process fetch result is reused. Set to `0` to disable caching. Cache is per-process; new `hermes` invocations start fresh. |
+| `cache_ttl_seconds` | `300` | How long an in-process fetch result is reused. Set to `0` to disable caching. Cache is per-process; new `vigil` invocations start fresh. |
 | `override_existing` | `true` | When true, Bitwarden values overwrite anything already in env (so rotation in the web app actually takes effect). Flip to `false` if you want `.env` / shell exports to win locally. |
 | `auto_install` | `true` | When true, `bws` is auto-downloaded into `~/.vigil/bin/` on first use. |
 
@@ -106,7 +106,7 @@ Bitwarden never blocks VIGIL startup. If anything goes wrong, you'll see a one-l
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| `BWS_ACCESS_TOKEN is not set` | Enabled in config but token cleared from `.env` | Re-run `hermes secrets bitwarden setup` |
+| `BWS_ACCESS_TOKEN is not set` | Enabled in config but token cleared from `.env` | Re-run `vigil secrets bitwarden setup` |
 | `bws exited 1: invalid access token` | Token revoked or wrong | Generate a new token, re-run setup |
 | `[400 Bad Request] {"error":"invalid_client"}` | Token is for a Bitwarden region other than the one `bws` is calling (e.g. EU token hitting the US identity endpoint) | Re-run setup and pick the right region, or set `secrets.bitwarden.server_url` to `https://vault.bitwarden.eu` (or your self-hosted URL) |
 | `bws timed out` | Network blocked or Bitwarden API slow | Check connectivity to `api.bitwarden.com` (or your `server_url`) |

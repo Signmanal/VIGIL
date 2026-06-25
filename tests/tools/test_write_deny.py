@@ -30,16 +30,16 @@ class TestWriteDenyExactPaths:
         assert _is_write_denied(path) is True
 
 
-    def test_hermes_env(self):
+    def test_vigil_env(self):
         # ``.env`` under the active VIGIL_HOME (profile-aware, not just
         # ``~/.vigil``) must be write-denied. The hermetic test conftest
-        # points VIGIL_HOME at a tempdir — resolve via get_hermes_home()
+        # points VIGIL_HOME at a tempdir — resolve via get_vigil_home()
         # to match the denylist.
-        from hermes_constants import get_hermes_home
-        path = str(get_hermes_home() / ".env")
+        from vigil_constants import get_vigil_home
+        path = str(get_vigil_home() / ".env")
         assert _is_write_denied(path) is True
 
-    def test_hermes_root_env_when_running_under_profile(self, tmp_path, monkeypatch):
+    def test_vigil_root_env_when_running_under_profile(self, tmp_path, monkeypatch):
         """Top-level ``<root>/.env`` stays write-denied even when running under
         a profile (#15981).
 
@@ -49,7 +49,7 @@ class TestWriteDenyExactPaths:
         could be silently overwritten by ``write_file`` while a profile was
         active.
         """
-        root = tmp_path / "hermes_root"
+        root = tmp_path / "vigil_root"
         profile_home = root / "profiles" / "coder"
         profile_home.mkdir(parents=True)
         global_env = root / ".env"
@@ -58,9 +58,9 @@ class TestWriteDenyExactPaths:
         monkeypatch.setenv("VIGIL_HOME", str(profile_home))
 
         # Sanity check: VIGIL_HOME does point to the profile dir, not the root.
-        from hermes_constants import get_hermes_home, get_default_hermes_root
-        assert get_hermes_home() == profile_home
-        assert get_default_hermes_root() == root
+        from vigil_constants import get_vigil_home, get_default_vigil_root
+        assert get_vigil_home() == profile_home
+        assert get_default_vigil_root() == root
 
         assert _is_write_denied(str(global_env)) is True
 
@@ -120,9 +120,9 @@ class TestWriteAllowed:
     def test_project_file(self):
         assert _is_write_denied("/home/user/project/main.py") is False
 
-    def test_hermes_control_files_requested_writable(self):
-        from hermes_constants import get_hermes_home
+    def test_vigil_control_files_requested_writable(self):
+        from vigil_constants import get_vigil_home
 
-        home = get_hermes_home()
+        home = get_vigil_home()
         for name in ["auth.json", "config.yaml", "webhook_subscriptions.json"]:
             assert _is_write_denied(str(home / name)) is False, f"{name} should be writable"

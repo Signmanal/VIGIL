@@ -14,7 +14,7 @@ Configure and use Honcho memory with VIGIL -- cross-session user modeling, multi
 
 | | |
 |---|---|
-| Source | Optional — install with `hermes skills install official/autonomous-ai-agents/honcho` |
+| Source | Optional — install with `vigil skills install official/autonomous-ai-agents/honcho` |
 | Path | `optional-skills/autonomous-ai-agents/honcho` |
 | Version | `2.0.0` |
 | Author | VIGIL Agent |
@@ -47,23 +47,23 @@ Honcho provides AI-native cross-session user modeling. It learns who the user is
 ### Cloud (app.honcho.dev)
 
 ```bash
-hermes memory setup honcho
+vigil memory setup honcho
 # select "cloud", paste API key from https://app.honcho.dev
 ```
 
 ### Self-hosted
 
 ```bash
-hermes memory setup honcho
+vigil memory setup honcho
 # select "local", enter base URL (e.g. http://localhost:8000)
 ```
 
-See: https://docs.honcho.dev/v3/guides/integrations/hermes#running-honcho-locally-with-hermes
+See: https://docs.honcho.dev/v3/guides/integrations/vigil#running-honcho-locally-with-vigil
 
 ### Verify
 
 ```bash
-hermes honcho status    # shows resolved config, connection test, peer info
+vigil honcho status    # shows resolved config, connection test, peer info
 ```
 
 ## Architecture
@@ -138,7 +138,7 @@ Honcho sessions scope where messages and observations land. Strategy options:
 | `per-session` | New Honcho session each VIGIL run |
 | `global` | Single session across all directories |
 
-Manual override: `hermes honcho map my-project-name`
+Manual override: `vigil honcho map my-project-name`
 
 ### Recall Modes
 
@@ -220,12 +220,12 @@ Each VIGIL profile gets its own Honcho AI peer while sharing the same workspace 
 ### Create a profile with Honcho peer
 
 ```bash
-hermes profile create coder --clone
-# creates host block hermes.coder, AI peer "coder", inherits config from default
+vigil profile create coder --clone
+# creates host block vigil.coder, AI peer "coder", inherits config from default
 ```
 
 What `--clone` does for Honcho:
-1. Creates a `hermes.coder` host block in `honcho.json`
+1. Creates a `vigil.coder` host block in `honcho.json`
 2. Sets `aiPeer: "coder"` (the profile name)
 3. Inherits `workspace`, `peerName`, `writeFrequency`, `recallMode`, etc. from default
 4. Eagerly creates the peer in Honcho so it exists before first message
@@ -233,7 +233,7 @@ What `--clone` does for Honcho:
 ### Backfill existing profiles
 
 ```bash
-hermes honcho sync    # creates host blocks for all profiles that don't have one yet
+vigil honcho sync    # creates host blocks for all profiles that don't have one yet
 ```
 
 ### Per-profile config
@@ -243,7 +243,7 @@ Override any setting in the host block:
 ```json
 {
   "hosts": {
-    "hermes.coder": {
+    "vigil.coder": {
       "aiPeer": "coder",
       "recallMode": "tools",
       "dialecticDepth": 2,
@@ -404,13 +404,13 @@ This fix addresses edge cases where raw user conclusions containing markup or sp
 ## Troubleshooting
 
 ### "Honcho not configured"
-Run `hermes honcho setup`. Ensure `memory.provider: honcho` is in `~/.vigil/config.yaml`.
+Run `vigil honcho setup`. Ensure `memory.provider: honcho` is in `~/.vigil/config.yaml`.
 
 ### Memory not persisting across sessions
-Check `hermes honcho status` -- verify `saveMessages: true` and `writeFrequency` isn't `session` (which only writes on exit).
+Check `vigil honcho status` -- verify `saveMessages: true` and `writeFrequency` isn't `session` (which only writes on exit).
 
 ### Profile not getting its own peer
-Use `--clone` when creating: `hermes profile create <name> --clone`. For existing profiles: `hermes honcho sync`.
+Use `--clone` when creating: `vigil profile create <name> --clone`. For existing profiles: `vigil honcho sync`.
 
 ### Observation changes in dashboard not reflected
 Observation config is synced from the server on each session init. Start a new session after changing settings in the Honcho UI.
@@ -428,19 +428,19 @@ Session summary requires at least one prior turn in the current Honcho session. 
 
 | Command | Description |
 |---------|-------------|
-| `hermes honcho setup` | Interactive setup wizard (cloud/local, identity, observation, recall, sessions) |
-| `hermes honcho status` | Show resolved config, connection test, peer info for active profile |
-| `hermes honcho enable` | Enable Honcho for the active profile (creates host block if needed) |
-| `hermes honcho disable` | Disable Honcho for the active profile |
-| `hermes honcho peer` | Show or update peer names (`--user <name>`, `--ai <name>`, `--reasoning <level>`) |
-| `hermes honcho peers` | Show peer identities across all profiles |
-| `hermes honcho mode` | Show or set recall mode (`hybrid`, `context`, `tools`) |
-| `hermes honcho tokens` | Show or set token budgets (`--context <N>`, `--dialectic <N>`) |
-| `hermes honcho sessions` | List known directory-to-session-name mappings |
-| `hermes honcho map <name>` | Map current working directory to a Honcho session name |
-| `hermes honcho identity` | Seed AI peer identity or show both peer representations |
-| `hermes honcho sync` | Create host blocks for all VIGIL profiles that don't have one yet |
-| `hermes honcho migrate` | Step-by-step migration guide from OpenClaw native memory to VIGIL + Honcho |
-| `hermes memory setup` | Generic memory provider picker (selecting "honcho" runs the same wizard) |
-| `hermes memory status` | Show active memory provider and config |
-| `hermes memory off` | Disable external memory provider |
+| `vigil honcho setup` | Interactive setup wizard (cloud/local, identity, observation, recall, sessions) |
+| `vigil honcho status` | Show resolved config, connection test, peer info for active profile |
+| `vigil honcho enable` | Enable Honcho for the active profile (creates host block if needed) |
+| `vigil honcho disable` | Disable Honcho for the active profile |
+| `vigil honcho peer` | Show or update peer names (`--user <name>`, `--ai <name>`, `--reasoning <level>`) |
+| `vigil honcho peers` | Show peer identities across all profiles |
+| `vigil honcho mode` | Show or set recall mode (`hybrid`, `context`, `tools`) |
+| `vigil honcho tokens` | Show or set token budgets (`--context <N>`, `--dialectic <N>`) |
+| `vigil honcho sessions` | List known directory-to-session-name mappings |
+| `vigil honcho map <name>` | Map current working directory to a Honcho session name |
+| `vigil honcho identity` | Seed AI peer identity or show both peer representations |
+| `vigil honcho sync` | Create host blocks for all VIGIL profiles that don't have one yet |
+| `vigil honcho migrate` | Step-by-step migration guide from OpenClaw native memory to VIGIL + Honcho |
+| `vigil memory setup` | Generic memory provider picker (selecting "honcho" runs the same wizard) |
+| `vigil memory status` | Show active memory provider and config |
+| `vigil memory off` | Disable external memory provider |

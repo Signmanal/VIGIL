@@ -214,9 +214,9 @@ tool_prefix: "▏"
 
 ## VIGIL Mod — 可视化皮肤编辑器
 
-[VIGIL Mod](https://github.com/cocktailpeanut/hermes-mod) 是一个社区构建的 Web UI，用于可视化创建和管理皮肤。无需手写 YAML，提供带实时预览的点击式编辑器。
+[VIGIL Mod](https://github.com/cocktailpeanut/vigil-mod) 是一个社区构建的 Web UI，用于可视化创建和管理皮肤。无需手写 YAML，提供带实时预览的点击式编辑器。
 
-![VIGIL Mod skin editor](https://raw.githubusercontent.com/cocktailpeanut/hermes-mod/master/nous.png)
+![VIGIL Mod skin editor](https://raw.githubusercontent.com/cocktailpeanut/vigil-mod/master/nous.png)
 
 **功能说明：**
 
@@ -237,14 +237,14 @@ tool_prefix: "▏"
 **方式二 — npx（终端最快方式）：**
 
 ```bash
-npx -y hermes-mod
+npx -y vigil-mod
 ```
 
 **方式三 — 手动安装：**
 
 ```bash
-git clone https://github.com/cocktailpeanut/hermes-mod.git
-cd hermes-mod/app
+git clone https://github.com/cocktailpeanut/vigil-mod.git
+cd vigil-mod/app
 npm install
 npm start
 ```
@@ -263,7 +263,7 @@ VIGIL Mod 遵循 `VIGIL_HOME` 环境变量，因此也适用于[配置文件](/u
 
 ## 操作说明
 
-- 内置皮肤从 `hermes_cli/skin_engine.py` 加载。
+- 内置皮肤从 `vigil_cli/skin_engine.py` 加载。
 - 未知皮肤自动回退到 `default`。
 - `/skin` 立即更新当前会话的活动 CLI 主题。
 - `~/.vigil/skins/` 中的用户皮肤优先于同名内置皮肤。

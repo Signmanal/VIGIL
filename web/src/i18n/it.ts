@@ -320,7 +320,7 @@ export const it: Translations = {
     enableRuntime: "Abilita",
     forceReinstall: "Forza reinstallazione (elimina prima la cartella esistente)",
     headline:
-      "Scopri, installa, abilita e aggiorna i plugin VIGIL (parità con `hermes plugins`).",
+      "Scopri, installa, abilita e aggiorna i plugin VIGIL (parità con `vigil plugins`).",
     identifierLabel: "URL Git o owner/repo",
     inactive: "inattivo",
     installBtn: "Installa",

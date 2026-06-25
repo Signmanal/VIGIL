@@ -18,7 +18,7 @@ something different on each:
 The universal signal on every platform is ``cua-driver doctor --json`` (binary
 integrity + platform support). ``computer_use_status`` folds that together with
 the macOS permission detail into one payload for the desktop card, the
-``hermes computer-use permissions`` CLI, and ``/api/tools/computer-use/status``.
+``vigil computer-use permissions`` CLI, and ``/api/tools/computer-use/status``.
 """
 
 from __future__ import annotations
@@ -39,7 +39,7 @@ def _driver_cmd(override: Optional[str]) -> str:
     if override:
         return override
     try:
-        from hermes_cli.tools_config import _cua_driver_cmd
+        from vigil_cli.tools_config import _cua_driver_cmd
 
         return _cua_driver_cmd()
     except Exception:
@@ -166,7 +166,7 @@ def request_permissions_grant(driver_cmd: Optional[str] = None) -> int:
 
     binary = shutil.which(_driver_cmd(driver_cmd))
     if not binary:
-        print("cua-driver: not installed. Run: hermes computer-use install")
+        print("cua-driver: not installed. Run: vigil computer-use install")
         return 2
 
     print(

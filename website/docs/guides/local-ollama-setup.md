@@ -96,7 +96,7 @@ You should see a JSON response with the model's reply.
 Run the VIGIL setup wizard:
 
 ```bash
-hermes setup
+vigil setup
 ```
 
 When prompted for a provider, select **Custom Endpoint** and enter:
@@ -117,7 +117,7 @@ model:
 ## Step 4: Start Using VIGIL
 
 ```bash
-hermes
+vigil
 ```
 
 That's it. You're now running a fully local agent. Try it out:
@@ -222,7 +222,7 @@ platforms:
 3. Start the gateway:
 
 ```bash
-hermes gateway
+vigil gateway
 ```
 
 Now message your bot on Telegram — it responds using your local model.
@@ -239,7 +239,7 @@ platforms:
     token: "YOUR_DISCORD_BOT_TOKEN"
 ```
 
-3. Start: `hermes gateway`
+3. Start: `vigil gateway`
 
 ## Step 8: Set Up Fallbacks (Optional)
 

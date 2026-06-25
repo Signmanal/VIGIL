@@ -23,6 +23,8 @@ def _patch_bootstrap(monkeypatch):
         "function": {"name": "t", "description": "t", "parameters": {"type": "object", "properties": {}}},
     }])
     monkeypatch.setattr(run_agent, "check_toolset_requirements", lambda: {})
+    monkeypatch.setattr("agent.context_compressor.get_model_context_length", lambda *a, **k: 256000)
+    monkeypatch.setattr("agent.agent_init.query_ollama_num_ctx", lambda *a, **k: None)
 
 
 class _FakeAnthropicClient:

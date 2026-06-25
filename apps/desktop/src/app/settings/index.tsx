@@ -2,7 +2,7 @@ import { IconDownload, IconRefresh, IconUpload } from '@tabler/icons-react'
 import { useRef } from 'react'
 
 import { Tip } from '@/components/ui/tooltip'
-import { getVIGILConfigDefaults, getVIGILConfigRecord, saveVIGILConfig } from '@/hermes'
+import { getVIGILConfigDefaults, getVIGILConfigRecord, saveVIGILConfig } from '@/vigil'
 import { useI18n } from '@/i18n'
 import { triggerHaptic } from '@/lib/haptics'
 import { Archive, Bell, Globe, Info, KeyRound, Settings2, Sparkles, Wrench, Zap } from '@/lib/icons'
@@ -63,7 +63,7 @@ export function SettingsView({ gateway, onClose, onConfigSaved, onMainModelChang
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = 'hermes-config.json'
+      a.download = 'vigil-config.json'
       a.click()
       URL.revokeObjectURL(url)
       triggerHaptic('success')

@@ -35,7 +35,7 @@ test('desktop background child processes opt into hidden Windows consoles', () =
   requireHiddenChildOptions(source, "spawn('curl'")
   requireHiddenChildOptions(source, 'spawn(\n    backend.command,\n    backend.args')
   requireHiddenChildOptions(source, 'hermesProcess = spawn(\n      backend.command,\n      backend.args')
-  requireHiddenChildOptions(source, "spawn(\n        py,\n        ['-m', 'hermes_cli.main', 'uninstall', '--gui-summary']")
+  requireHiddenChildOptions(source, "spawn(\n        py,\n        ['-m', 'vigil_cli.main', 'uninstall', '--gui-summary']")
 })
 
 test('intentional or interactive desktop child processes stay documented', () => {

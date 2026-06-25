@@ -15,7 +15,7 @@ import pytest
 
 import agent.account_usage as account_usage
 from agent.account_usage import CreditsView, build_credits_view
-from hermes_cli.nous_account import NousPortalAccountInfo, NousPaidServiceAccessInfo
+from vigil_cli.nous_account import NousPortalAccountInfo, NousPaidServiceAccessInfo
 
 
 def _account(**kwargs) -> NousPortalAccountInfo:
@@ -30,13 +30,13 @@ def _account(**kwargs) -> NousPortalAccountInfo:
 def _logged_in_account(monkeypatch):
     """Stub the auth token + account fetch so build_credits_view runs offline."""
     monkeypatch.setattr(
-        "hermes_cli.auth.get_provider_auth_state",
+        "vigil_cli.auth.get_provider_auth_state",
         lambda provider: {"access_token": "tok", "portal_base_url": "https://portal.example.test"},
     )
 
     def _install(account):
         monkeypatch.setattr(
-            "hermes_cli.nous_account.get_nous_portal_account_info",
+            "vigil_cli.nous_account.get_nous_portal_account_info",
             lambda *a, **kw: account,
         )
 
@@ -47,7 +47,7 @@ def _logged_in_account(monkeypatch):
 
 
 def test_view_logged_out_when_no_token(monkeypatch):
-    monkeypatch.setattr("hermes_cli.auth.get_provider_auth_state", lambda provider: {})
+    monkeypatch.setattr("vigil_cli.auth.get_provider_auth_state", lambda provider: {})
     view = build_credits_view()
     assert view == CreditsView(logged_in=False)
 
@@ -118,14 +118,14 @@ def test_view_falls_back_to_legacy_url_when_slug_null(_logged_in_account):
 
 def test_view_fetch_failure_is_logged_out(monkeypatch):
     monkeypatch.setattr(
-        "hermes_cli.auth.get_provider_auth_state",
+        "vigil_cli.auth.get_provider_auth_state",
         lambda provider: {"access_token": "tok"},
     )
 
     def _boom(*a, **kw):
         raise RuntimeError("portal down")
 
-    monkeypatch.setattr("hermes_cli.nous_account.get_nous_portal_account_info", _boom)
+    monkeypatch.setattr("vigil_cli.nous_account.get_nous_portal_account_info", _boom)
 
     view = build_credits_view()
     assert view.logged_in is False
@@ -177,7 +177,7 @@ def test_gateway_credits_not_logged_in(monkeypatch):
     )
     stub = _make_gateway_stub()
     out = asyncio.run(stub._handle_credits_command(_FakeEvent()))
-    assert "Not logged into Nous Portal" in out
+    assert "Not logged into VIGIL Portal" in out
 
 
 def test_gateway_credits_fetch_exception_is_not_logged_in(monkeypatch):
@@ -187,14 +187,14 @@ def test_gateway_credits_fetch_exception_is_not_logged_in(monkeypatch):
     monkeypatch.setattr(account_usage, "build_credits_view", _boom)
     stub = _make_gateway_stub()
     out = asyncio.run(stub._handle_credits_command(_FakeEvent()))
-    assert "Not logged into Nous Portal" in out
+    assert "Not logged into VIGIL Portal" in out
 
 
 # ── command registry ────────────────────────────────────────────────────────
 
 
 def test_credits_command_registered():
-    from hermes_cli.commands import resolve_command, COMMAND_REGISTRY
+    from vigil_cli.commands import resolve_command, COMMAND_REGISTRY
 
     cmd = resolve_command("credits")
     assert cmd is not None and cmd.name == "credits"
@@ -257,4 +257,4 @@ def test_cli_show_credits_logged_out(monkeypatch, capsys):
     cli = VIGILCLI.__new__(VIGILCLI)
     cli._app = None
     cli._show_credits()
-    assert "Not logged into Nous Portal" in capsys.readouterr().out
+    assert "Not logged into VIGIL Portal" in capsys.readouterr().out

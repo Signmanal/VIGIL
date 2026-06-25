@@ -38,7 +38,7 @@ pip install websockets httpx aiofiles
 配置元宝最简便的方式是通过交互式向导：
 
 ```bash
-hermes gateway setup
+vigil gateway setup
 ```
 
 在提示时选择 **Yuanbao**。向导将：
@@ -79,7 +79,7 @@ YUANBAO_ALLOWED_USERS=user_account_1,user_account_2
 ### 4. 启动 Gateway
 
 ```bash
-hermes gateway
+vigil gateway
 ```
 
 适配器将连接到元宝 WebSocket gateway，使用 HMAC 签名进行认证，并开始处理消息。
@@ -302,7 +302,7 @@ platforms:
 启用 debug 日志以排查连接问题：
 
 ```bash
-VIGIL_LOG_LEVEL=debug hermes gateway
+VIGIL_LOG_LEVEL=debug vigil gateway
 ```
 
 ## 与其他功能集成
@@ -330,7 +330,7 @@ VIGIL_LOG_LEVEL=debug hermes gateway
 从 CLI 向元宝发送消息：
 
 ```bash
-hermes chat -q "Send 'Hello from CLI' to yuanbao:group:group_code"
+vigil chat -q "Send 'Hello from CLI' to yuanbao:group:group_code"
 ```
 
 ## 相关文档

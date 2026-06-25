@@ -6,7 +6,7 @@ description: "Build themes and plugins for the VIGIL web dashboard — palettes,
 
 # Extending the Dashboard
 
-The VIGIL web dashboard (`hermes dashboard`) is built to be reskinned and extended without forking the codebase. Three layers are exposed:
+The VIGIL web dashboard (`vigil dashboard`) is built to be reskinned and extended without forking the codebase. Three layers are exposed:
 
 1. **Themes** — YAML files that repaint the dashboard's palette, typography, layout, and per-component chrome. Drop a file in `~/.vigil/dashboard-themes/`; it appears in the theme switcher.
 2. **UI plugins** — a directory with `manifest.json` + a JavaScript bundle that registers a tab, replaces a built-in page, augments one via page-scoped slots, or injects components into named shell slots.
@@ -17,7 +17,7 @@ All three are **drop-in at runtime**: no repo clone, no `npm run build`, no patc
 If you just want to use the dashboard, see [Web Dashboard](./web-dashboard). If you want to reskin the terminal CLI (not the web dashboard), see [Skins & Themes](./skins) — the CLI skin system is unrelated to dashboard themes.
 
 :::note How the pieces compose
-Themes and plugins are independent but synergistic. A theme can stand alone (just a YAML file). A plugin can stand alone (just a tab). Together they let you build a complete visual reskin with custom HUDs — the example `strike-freedom-cockpit` demo (lives in the `hermes-example-plugins` companion repo — see [Combined theme + plugin demo](#combined-theme--plugin-demo) for install steps) does exactly that.
+Themes and plugins are independent but synergistic. A theme can stand alone (just a YAML file). A plugin can stand alone (just a tab). Together they let you build a complete visual reskin with custom HUDs — the example `strike-freedom-cockpit` demo (lives in the `vigil-example-plugins` companion repo — see [Combined theme + plugin demo](#combined-theme--plugin-demo) for install steps) does exactly that.
 :::
 
 ---
@@ -272,7 +272,7 @@ customCSS: |
   }
 ```
 
-The CSS is injected as a single scoped `<style data-hermes-theme-css>` tag on theme apply and cleaned up on theme switch. **Capped at 32 KiB per theme.**
+The CSS is injected as a single scoped `<style data-vigil-theme-css>` tag on theme apply and cleaned up on theme switch. **Capped at 32 KiB per theme.**
 
 ### Built-in themes
 
@@ -697,7 +697,7 @@ Key points:
 - Multiple plugins can claim the same page-scoped slot. They render stacked in registration order.
 - Zero footprint when no plugin registers: the built-in page renders exactly as before.
 
-A reference plugin (`example-dashboard` in [`hermes-example-plugins`](https://github.com/NousResearch/hermes-example-plugins/tree/main/example-dashboard)) ships a live demo that injects a banner into `sessions:top` — install it to see the pattern end-to-end.
+A reference plugin (`example-dashboard` in [`vigil-example-plugins`](https://github.com/NousResearch/vigil-example-plugins/tree/main/example-dashboard)) ships a live demo that injects a banner into `sessions:top` — install it to see the pattern end-to-end.
 
 ### Slot-only plugins (`tab.hidden`)
 
@@ -751,8 +751,8 @@ Backend routes run inside the dashboard process, so they can import from the vig
 
 ```python
 from fastapi import APIRouter
-from hermes_state import SessionDB
-from hermes_cli.config import load_config
+from vigil_state import SessionDB
+from vigil_cli.config import load_config
 
 router = APIRouter()
 
@@ -816,7 +816,7 @@ Discovery results are cached per dashboard process. After adding a new plugin, e
 curl http://127.0.0.1:9119/api/dashboard/plugins/rescan
 ```
 
-…or restart `hermes dashboard`.
+…or restart `vigil dashboard`.
 
 #### Plugin load lifecycle
 
@@ -834,7 +834,7 @@ If a plugin's script fails to load (404, syntax error, exception during IIFE), t
 
 ## Combined theme + plugin demo
 
-The [`strike-freedom-cockpit`](https://github.com/NousResearch/hermes-example-plugins/tree/main/strike-freedom-cockpit) plugin (companion repo `hermes-example-plugins`) is a complete reskin demo. It pairs a theme YAML with a slot-only plugin to produce a cockpit-style HUD without forking the dashboard.
+The [`strike-freedom-cockpit`](https://github.com/NousResearch/vigil-example-plugins/tree/main/strike-freedom-cockpit) plugin (companion repo `vigil-example-plugins`) is a complete reskin demo. It pairs a theme YAML with a slot-only plugin to produce a cockpit-style HUD without forking the dashboard.
 
 **What it demonstrates:**
 
@@ -848,14 +848,14 @@ The [`strike-freedom-cockpit`](https://github.com/NousResearch/hermes-example-pl
 **Install:**
 
 ```bash
-git clone https://github.com/NousResearch/hermes-example-plugins.git
+git clone https://github.com/NousResearch/vigil-example-plugins.git
 
 # Theme
-cp hermes-example-plugins/strike-freedom-cockpit/theme/strike-freedom.yaml \
+cp vigil-example-plugins/strike-freedom-cockpit/theme/strike-freedom.yaml \
    ~/.vigil/dashboard-themes/
 
 # Plugin
-cp -r hermes-example-plugins/strike-freedom-cockpit ~/.vigil/plugins/
+cp -r vigil-example-plugins/strike-freedom-cockpit ~/.vigil/plugins/
 ```
 
 Open the dashboard, pick **Strike Freedom** from the theme switcher. The cockpit sidebar appears, the crest shows in the header, the tagline replaces the footer. Switch back to **VIGIL Signal** and the plugin remains installed but invisible (the `sidebar` slot only renders under the `cockpit` layout variant).
@@ -909,7 +909,7 @@ The `sidebar` slot only renders when the active theme has `layoutVariant: cockpi
 
 **Plugin backend routes return 404.**
 1. Confirm the manifest has `"api": "plugin_api.py"` pointing to an existing file inside `dashboard/`.
-2. Restart `hermes dashboard` — plugin API routes are mounted once at startup, **not** on rescan.
+2. Restart `vigil dashboard` — plugin API routes are mounted once at startup, **not** on rescan.
 3. Check that `plugin_api.py` exports a module-level `router = APIRouter()`. Other export names are not picked up.
 4. Tail `~/.vigil/logs/errors.log` for `Failed to load plugin <name> API routes` — import errors are logged there.
 

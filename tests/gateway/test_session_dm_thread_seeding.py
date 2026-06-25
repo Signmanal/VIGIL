@@ -26,11 +26,11 @@ def store(tmp_path, monkeypatch):
 
     Pin DEFAULT_DB_PATH to tmp_path so SessionDB() can't write to the real
     ~/.vigil/state.db. (DEFAULT_DB_PATH is a module-level constant computed
-    at hermes_state import time, before pytest's VIGIL_HOME monkeypatch
+    at vigil_state import time, before pytest's VIGIL_HOME monkeypatch
     fires — the autouse fixture's VIGIL_HOME override doesn't help here.)
     """
-    import hermes_state
-    monkeypatch.setattr(hermes_state, "DEFAULT_DB_PATH", tmp_path / "state.db")
+    import vigil_state
+    monkeypatch.setattr(vigil_state, "DEFAULT_DB_PATH", tmp_path / "state.db")
     config = GatewayConfig()
     s = SessionStore(sessions_dir=tmp_path, config=config)
     return s

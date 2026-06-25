@@ -14,7 +14,7 @@ import pytest
 def temp_home(tmp_path, monkeypatch):
     """Isolated VIGIL_HOME so jobs.json doesn't touch the real store."""
     monkeypatch.setenv("VIGIL_HOME", str(tmp_path))
-    # cron.jobs caches no home at import; get_hermes_home() reads the env live.
+    # cron.jobs caches no home at import; get_vigil_home() reads the env live.
     yield tmp_path
 
 

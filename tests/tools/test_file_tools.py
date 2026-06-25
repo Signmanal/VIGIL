@@ -6,6 +6,7 @@ handling without requiring a running terminal environment.
 
 import json
 import logging
+import os
 from unittest.mock import MagicMock, patch
 
 from tools.file_tools import (
@@ -77,7 +78,9 @@ class TestWriteFileHandler:
         from tools.file_tools import write_file_tool
         result = json.loads(write_file_tool("/tmp/out.txt", "hello world!\n"))
         assert result["status"] == "ok"
-        mock_ops.write_file.assert_called_once_with("/tmp/out.txt", "hello world!\n")
+        path_arg, content_arg = mock_ops.write_file.call_args.args
+        assert os.path.realpath(path_arg) == os.path.realpath("/tmp/out.txt")
+        assert content_arg == "hello world!\n"
 
     @patch("tools.file_tools._get_file_ops")
     def test_permission_error_returns_error_json_without_error_log(self, mock_get, caplog):
@@ -182,7 +185,9 @@ class TestPatchHandler:
             old_string="foo", new_string="bar"
         ))
         assert result["status"] == "ok"
-        mock_ops.patch_replace.assert_called_once_with("/tmp/f.py", "foo", "bar", False)
+        path_arg, old_arg, new_arg, replace_all_arg = mock_ops.patch_replace.call_args.args
+        assert os.path.realpath(path_arg) == os.path.realpath("/tmp/f.py")
+        assert (old_arg, new_arg, replace_all_arg) == ("foo", "bar", False)
 
     @patch("tools.file_tools._get_file_ops")
     def test_replace_mode_replace_all_flag(self, mock_get):
@@ -195,7 +200,9 @@ class TestPatchHandler:
         from tools.file_tools import patch_tool
         patch_tool(mode="replace", path="/tmp/f.py",
                    old_string="x", new_string="y", replace_all=True)
-        mock_ops.patch_replace.assert_called_once_with("/tmp/f.py", "x", "y", True)
+        path_arg, old_arg, new_arg, replace_all_arg = mock_ops.patch_replace.call_args.args
+        assert os.path.realpath(path_arg) == os.path.realpath("/tmp/f.py")
+        assert (old_arg, new_arg, replace_all_arg) == ("x", "y", True)
 
     @patch("tools.file_tools._get_file_ops")
     def test_replace_mode_missing_path_errors(self, mock_get):
@@ -432,31 +439,34 @@ class TestSearchHints:
 class TestSensitivePathCheck:
     """Verify that _check_sensitive_path blocks writes to protected locations."""
 
-    def test_hermes_config_blocked_for_write_file(self, tmp_path, monkeypatch):
+    def test_vigil_config_blocked_for_write_file(self, tmp_path, monkeypatch):
         fake_config = tmp_path / "config.yaml"
-        monkeypatch.setattr("tools.file_tools._hermes_config_resolved", str(fake_config))
-        monkeypatch.setattr("tools.file_tools._hermes_config_resolved_loaded", True)
+        monkeypatch.setattr("tools.file_tools._SENSITIVE_PATH_PREFIXES", ())
+        monkeypatch.setattr("tools.file_tools._vigil_config_resolved", str(fake_config))
+        monkeypatch.setattr("tools.file_tools._vigil_config_resolved_loaded", True)
 
         from tools.file_tools import write_file_tool
         result = json.loads(write_file_tool(str(fake_config), "approvals:\n  mode: off\n"))
         assert "error" in result
         assert "VIGIL config" in result["error"]
 
-    def test_hermes_config_blocked_via_tilde_path(self, tmp_path, monkeypatch):
+    def test_vigil_config_blocked_via_tilde_path(self, tmp_path, monkeypatch):
         fake_config = tmp_path / "config.yaml"
-        monkeypatch.setattr("tools.file_tools._hermes_config_resolved", str(fake_config))
-        monkeypatch.setattr("tools.file_tools._hermes_config_resolved_loaded", True)
+        monkeypatch.setattr("tools.file_tools._SENSITIVE_PATH_PREFIXES", ())
+        monkeypatch.setattr("tools.file_tools._vigil_config_resolved", str(fake_config))
+        monkeypatch.setattr("tools.file_tools._vigil_config_resolved_loaded", True)
 
         from tools.file_tools import write_file_tool
         result = json.loads(write_file_tool(str(fake_config), "approvals:\n  mode: off\n"))
         assert "error" in result
         assert "VIGIL config" in result["error"]
 
-    def test_hermes_config_blocked_for_patch(self, tmp_path, monkeypatch):
+    def test_vigil_config_blocked_for_patch(self, tmp_path, monkeypatch):
         fake_config = tmp_path / "config.yaml"
         fake_config.write_text("approvals:\n  mode: manual\n")
-        monkeypatch.setattr("tools.file_tools._hermes_config_resolved", str(fake_config))
-        monkeypatch.setattr("tools.file_tools._hermes_config_resolved_loaded", True)
+        monkeypatch.setattr("tools.file_tools._SENSITIVE_PATH_PREFIXES", ())
+        monkeypatch.setattr("tools.file_tools._vigil_config_resolved", str(fake_config))
+        monkeypatch.setattr("tools.file_tools._vigil_config_resolved_loaded", True)
 
         from tools.file_tools import patch_tool
         result = json.loads(patch_tool(
@@ -469,8 +479,8 @@ class TestSensitivePathCheck:
         assert "VIGIL config" in result["error"]
 
     def test_system_path_still_blocked(self, monkeypatch):
-        monkeypatch.setattr("tools.file_tools._hermes_config_resolved", "/some/other/path")
-        monkeypatch.setattr("tools.file_tools._hermes_config_resolved_loaded", True)
+        monkeypatch.setattr("tools.file_tools._vigil_config_resolved", "/some/other/path")
+        monkeypatch.setattr("tools.file_tools._vigil_config_resolved_loaded", True)
 
         from tools.file_tools import write_file_tool
         result = json.loads(write_file_tool("/etc/passwd", "evil"))
@@ -479,8 +489,8 @@ class TestSensitivePathCheck:
 
     @patch("tools.file_tools._get_file_ops")
     def test_normal_file_not_blocked(self, mock_get, monkeypatch):
-        monkeypatch.setattr("tools.file_tools._hermes_config_resolved", "/home/user/.vigil/config.yaml")
-        monkeypatch.setattr("tools.file_tools._hermes_config_resolved_loaded", True)
+        monkeypatch.setattr("tools.file_tools._vigil_config_resolved", "/home/user/.vigil/config.yaml")
+        monkeypatch.setattr("tools.file_tools._vigil_config_resolved_loaded", True)
         mock_ops = MagicMock()
         result_obj = MagicMock()
         result_obj.to_dict.return_value = {"status": "ok", "path": "/tmp/other.txt", "bytes": 5}

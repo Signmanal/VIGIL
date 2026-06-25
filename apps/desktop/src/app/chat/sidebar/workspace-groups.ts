@@ -1,5 +1,5 @@
 import type { VIGILWorktreeInfo } from '@/global'
-import type { SessionInfo } from '@/hermes'
+import type { SessionInfo } from '@/vigil'
 
 export interface SidebarSessionGroup {
   id: string

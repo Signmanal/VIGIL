@@ -1,7 +1,7 @@
 import type { Unstable_TriggerAdapter, Unstable_TriggerItem } from '@assistant-ui/core'
 import { useCallback } from 'react'
 
-import type { VIGILGateway } from '@/hermes'
+import type { VIGILGateway } from '@/vigil'
 import { sessionTitle } from '@/lib/chat-runtime'
 import {
   type CommandsCatalogLike,
@@ -214,7 +214,7 @@ export function useSlashCompletions(options: {
       meta,
       group: textValue(entry.group),
       action: textValue(entry.action),
-      // Provide rawText so hermesDirectiveFormatter.serialize uses the
+      // Provide rawText so vigilDirectiveFormatter.serialize uses the
       // direct-insertion path instead of the legacy @type:id fallback.
       // Without this, the item.id (which includes a "|index" suffix for
       // trigger-adapter uniqueness) leaks into the serialized chip text

@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import type { VIGILConfigRecord } from '@/hermes'
+import type { VIGILConfigRecord } from '@/vigil'
 import { type I18nConfigClient, I18nProvider } from '@/i18n'
 
 import { LanguageSwitcher } from './language-switcher'

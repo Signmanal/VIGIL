@@ -6,7 +6,7 @@ author: Matt Maximo (MattMaximo), VIGIL Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  hermes:
+  vigil:
     tags: [Coding-Agent, Grok, xAI, Code-Review, Refactoring, Automation]
     related_skills: [codex, claude-code, vigil-agent]
 ---

@@ -118,10 +118,10 @@ SECTIONS: list[tuple[str, list[tuple[str, str, str | None]]]] = [
         ("guides/daily-briefing-bot", "Daily Briefing Bot", None),
         ("guides/team-telegram-assistant", "Team Telegram Assistant", None),
         ("guides/python-library", "Use VIGIL as a Python Library", None),
-        ("guides/use-mcp-with-hermes", "Use MCP with VIGIL", None),
-        ("guides/use-voice-mode-with-hermes", "Use Voice Mode with VIGIL", None),
-        ("guides/use-soul-with-hermes", "Use SOUL.md with VIGIL", None),
-        ("guides/build-a-hermes-plugin", "Build a VIGIL Plugin", None),
+        ("guides/use-mcp-with-vigil", "Use MCP with VIGIL", None),
+        ("guides/use-voice-mode-with-vigil", "Use Voice Mode with VIGIL", None),
+        ("guides/use-soul-with-vigil", "Use SOUL.md with VIGIL", None),
+        ("guides/build-a-vigil-plugin", "Build a VIGIL Plugin", None),
         ("guides/automate-with-cron", "Automate with Cron", None),
         ("guides/work-with-skills", "Work with Skills", None),
         ("guides/delegation-patterns", "Delegation Patterns", None),
@@ -205,7 +205,7 @@ def emit_llms_index() -> str:
         "and a messaging gateway that lives on 21+ messaging platforms — 19 native to "
         "the gateway plus IRC and Microsoft Teams via plugins (Telegram, Discord, Slack, "
         "SMS, Matrix, ...). Runs on local, Docker, SSH, Daytona, Modal, or Singularity "
-        "backends. Works with Nous Portal, OpenRouter, OpenAI, Anthropic, Google, or any "
+        "backends. Works with VIGIL Portal, OpenRouter, OpenAI, Anthropic, Google, or any "
         "OpenAI-compatible endpoint."
     )
     lines.append("")

@@ -33,7 +33,7 @@ Honcho is integrated into the [Memory Providers](./memory-providers.md) system. 
 ## Setup
 
 ```bash
-hermes memory setup    # select "honcho" from the provider list
+vigil memory setup    # select "honcho" from the provider list
 ```
 
 Or configure manually:
@@ -108,7 +108,7 @@ Honcho is configured in `~/.honcho/config.json` (global) or `$VIGIL_HOME/honcho.
 
 ### Self-Hosted Honcho with Authentication
 
-When pointing VIGIL at a self-hosted Honcho server, `hermes honcho setup` (and `hermes memory setup`) ask for a **local JWT / bearer token** after the base URL. Paste a JWT signed with the server's `AUTH_JWT_SECRET` (the Honcho compose env var) to enable authenticated access; leave it blank for servers running with `AUTH_USE_AUTH=false`. The local token is stored under the host block (`hosts.<host>.apiKey` in `honcho.json`), separate from any cloud `apiKey`, so you can flip the `Cloud or local?` prompt back to `cloud` later without losing either credential.
+When pointing VIGIL at a self-hosted Honcho server, `vigil honcho setup` (and `vigil memory setup`) ask for a **local JWT / bearer token** after the base URL. Paste a JWT signed with the server's `AUTH_JWT_SECRET` (the Honcho compose env var) to enable authenticated access; leave it blank for servers running with `AUTH_USE_AUTH=false`. The local token is stored under the host block (`hosts.<host>.apiKey` in `honcho.json`), separate from any cloud `apiKey`, so you can flip the `Cloud or local?` prompt back to `cloud` later without losing either credential.
 
 ### Full Config Reference
 
@@ -134,7 +134,7 @@ When pointing VIGIL at a self-hosted Honcho server, `hermes honcho setup` (and `
 | `runtimePeerPrefix` | `""` | Gateway only. Namespaces unknown runtime IDs (`telegram_7654321`) when no alias matches |
 
 **Session strategy** controls how Honcho sessions map to your work:
-- `per-session` — each `hermes` run gets a fresh session. Clean starts, memory via tools. Recommended for new users.
+- `per-session` — each `vigil` run gets a fresh session. Clean starts, memory via tools. Recommended for new users.
 - `per-directory` — one Honcho session per working directory. Context accumulates across runs.
 - `per-repo` — one session per git repository.
 - `global` — single session across all directories.
@@ -230,35 +230,35 @@ When Honcho is active as the memory provider, five tools become available:
 
 ## CLI Commands
 
-The `hermes honcho` subcommand is **only registered when Honcho is the active memory provider** (`memory.provider: honcho` in `config.yaml`). On a fresh install, configure Honcho directly with `hermes memory setup honcho` (or run `hermes memory setup` and pick it from the list); the `hermes honcho` subcommand then appears on the next invocation.
+The `vigil honcho` subcommand is **only registered when Honcho is the active memory provider** (`memory.provider: honcho` in `config.yaml`). On a fresh install, configure Honcho directly with `vigil memory setup honcho` (or run `vigil memory setup` and pick it from the list); the `vigil honcho` subcommand then appears on the next invocation.
 
 ```bash
-hermes memory setup honcho    # Configure Honcho directly (works before activation)
-hermes honcho status          # Connection status, config, and key settings
-hermes honcho setup           # Redirects to `hermes memory setup` (post-activation alias)
-hermes honcho strategy        # Show or set session strategy (per-session/per-directory/per-repo/global)
-hermes honcho peer            # Show or update peer names + dialectic reasoning level
-hermes honcho mode            # Show or set recall mode (hybrid/context/tools)
-hermes honcho tokens          # Show or set token budget for context and dialectic
-hermes honcho identity        # Seed or show the AI peer's Honcho identity
-hermes honcho sync            # Sync Honcho config to all existing profiles
-hermes honcho peers           # Show peer identities across all profiles
-hermes honcho sessions        # List known Honcho session mappings
-hermes honcho map             # Map current directory to a Honcho session name
-hermes honcho enable          # Enable Honcho for the active profile
-hermes honcho disable         # Disable Honcho for the active profile
-hermes honcho migrate         # Step-by-step migration guide from openclaw-honcho
+vigil memory setup honcho    # Configure Honcho directly (works before activation)
+vigil honcho status          # Connection status, config, and key settings
+vigil honcho setup           # Redirects to `vigil memory setup` (post-activation alias)
+vigil honcho strategy        # Show or set session strategy (per-session/per-directory/per-repo/global)
+vigil honcho peer            # Show or update peer names + dialectic reasoning level
+vigil honcho mode            # Show or set recall mode (hybrid/context/tools)
+vigil honcho tokens          # Show or set token budget for context and dialectic
+vigil honcho identity        # Seed or show the AI peer's Honcho identity
+vigil honcho sync            # Sync Honcho config to all existing profiles
+vigil honcho peers           # Show peer identities across all profiles
+vigil honcho sessions        # List known Honcho session mappings
+vigil honcho map             # Map current directory to a Honcho session name
+vigil honcho enable          # Enable Honcho for the active profile
+vigil honcho disable         # Disable Honcho for the active profile
+vigil honcho migrate         # Step-by-step migration guide from openclaw-honcho
 ```
 
-## Migrating from `hermes honcho`
+## Migrating from `vigil honcho`
 
-If you previously used the standalone `hermes honcho setup`:
+If you previously used the standalone `vigil honcho setup`:
 
 1. Your existing configuration (`honcho.json` or `~/.honcho/config.json`) is preserved
 2. Your server-side data (memories, conclusions, user profiles) is intact
 3. Set `memory.provider: honcho` in config.yaml to reactivate
 
-No re-login or re-setup needed. Run `hermes memory setup` and select "honcho" — the wizard detects your existing config.
+No re-login or re-setup needed. Run `vigil memory setup` and select "honcho" — the wizard detects your existing config.
 
 ## Full Documentation
 

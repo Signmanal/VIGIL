@@ -14,8 +14,8 @@ Configuration in config.yaml::
           extra:
             server: irc.libera.chat
             port: 6697
-            nickname: hermes-bot
-            channel: "#hermes"
+            nickname: vigil-bot
+            channel: "#vigil"
             use_tls: true
             server_password: ""       # optional server password
             nickserv_password: ""     # optional NickServ identification
@@ -111,7 +111,7 @@ class IRCAdapter(BasePlatformAdapter):
             self.port = int(os.getenv("IRC_PORT") or extra.get("port", 6697))
         except (ValueError, TypeError):
             self.port = 6697
-        self.nickname = os.getenv("IRC_NICKNAME") or extra.get("nickname", "hermes-bot")
+        self.nickname = os.getenv("IRC_NICKNAME") or extra.get("nickname", "vigil-bot")
         self.channel = os.getenv("IRC_CHANNEL") or extra.get("channel", "")
         self.use_tls = (
             os.getenv("IRC_USE_TLS", "").lower() in {"1", "true", "yes"}
@@ -413,7 +413,7 @@ class IRCAdapter(BasePlatformAdapter):
 
         # ERR_NICKNAMEINUSE (433) — nick collision during registration
         if command == "433":
-            # Retry with incrementing suffix: hermes_, hermes_1, hermes_2...
+            # Retry with incrementing suffix: vigil_, vigil_1, vigil_2...
             base = self.nickname.rstrip("_0123456789")
             suffix_match = re.search(r"_(\d+)$", self._current_nick)
             if suffix_match:
@@ -523,7 +523,7 @@ def check_requirements() -> bool:
     channel = os.getenv("IRC_CHANNEL", "")
     # Also accept config.yaml-only configuration (no env vars).
     # The gateway passes PlatformConfig; we just check env for the
-    # hermes setup / requirements check path.
+    # vigil setup / requirements check path.
     return bool(server and channel)
 
 
@@ -536,12 +536,12 @@ def validate_config(config) -> bool:
 
 
 def interactive_setup() -> None:
-    """Interactive `hermes gateway setup` flow for the IRC platform.
+    """Interactive `vigil gateway setup` flow for the IRC platform.
 
-    Lazy-imports ``hermes_cli.setup`` helpers so the plugin stays importable
+    Lazy-imports ``vigil_cli.setup`` helpers so the plugin stays importable
     in non-CLI contexts (gateway runtime, tests).
     """
-    from hermes_cli.setup import (
+    from vigil_cli.setup import (
         prompt,
         prompt_yes_no,
         save_env_value,
@@ -584,7 +584,7 @@ def interactive_setup() -> None:
         save_env_value("IRC_PORT", "")
 
     nickname = prompt(
-        "Bot nickname (e.g. hermes-bot)",
+        "Bot nickname (e.g. vigil-bot)",
         default=get_env_value("IRC_NICKNAME") or "",
     )
     if not nickname:
@@ -593,7 +593,7 @@ def interactive_setup() -> None:
     save_env_value("IRC_NICKNAME", nickname.strip())
 
     channel = prompt(
-        "Channel to join (e.g. #hermes — comma-separate for multiple)",
+        "Channel to join (e.g. #vigil — comma-separate for multiple)",
         default=get_env_value("IRC_CHANNEL") or "",
     )
     if not channel:
@@ -639,7 +639,7 @@ def interactive_setup() -> None:
 
     print()
     print_success("IRC configuration saved to ~/.vigil/.env")
-    print_info("Restart the gateway for changes to take effect: hermes gateway restart")
+    print_info("Restart the gateway for changes to take effect: vigil gateway restart")
 
 
 def is_connected(config) -> bool:
@@ -728,8 +728,8 @@ async def _standalone_send(
     """Open an ephemeral IRC connection, send a PRIVMSG, and quit.
 
     Used by ``tools/send_message_tool._send_via_adapter`` when the gateway
-    runner is not in this process (e.g. ``hermes cron`` running as a
-    separate process from ``hermes gateway``).  Without this hook,
+    runner is not in this process (e.g. ``vigil cron`` running as a
+    separate process from ``vigil gateway``).  Without this hook,
     ``deliver=irc`` cron jobs fail with ``No live adapter for platform``.
 
     The standalone client uses a distinct nick suffix (``-cron``) so it
@@ -755,7 +755,7 @@ async def _standalone_send(
     except (TypeError, ValueError):
         return {"error": f"IRC standalone send: invalid port {port_value!r}"}
 
-    nickname = os.getenv("IRC_NICKNAME") or extra.get("nickname", "hermes-bot")
+    nickname = os.getenv("IRC_NICKNAME") or extra.get("nickname", "vigil-bot")
     use_tls_env = os.getenv("IRC_USE_TLS")
     if use_tls_env is not None:
         use_tls = use_tls_env.lower() in {"1", "true", "yes"}
@@ -775,7 +775,7 @@ async def _standalone_send(
     # that may already be holding the configured nickname.  Cap to 24 chars
     # so subsequent collision retries do not overflow the 30-char NICKLEN
     # most networks enforce.
-    nick_base = nickname.rstrip("_0123456789-")[:24] or "hermes-bot"
+    nick_base = nickname.rstrip("_0123456789-")[:24] or "vigil-bot"
     standalone_nick = f"{nick_base}-cron"[:30]
     plain = IRCAdapter._strip_markdown(message)
 

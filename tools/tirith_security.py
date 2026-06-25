@@ -34,7 +34,7 @@ import threading
 import time
 import urllib.request
 
-from hermes_constants import get_hermes_home
+from vigil_constants import get_vigil_home
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +74,7 @@ def _load_security_config() -> dict:
         "tirith_fail_open": True,
     }
     try:
-        from hermes_cli.config import load_config
+        from vigil_cli.config import load_config
         cfg = load_config().get("security", {}) or {}
     except Exception:
         cfg = {}
@@ -133,14 +133,14 @@ def _reset_spawn_warning_state() -> None:
 _MARKER_TTL = 86400  # 24 hours
 
 
-def _get_hermes_home() -> str:
+def _get_vigil_home() -> str:
     """Return the VIGIL home directory, respecting VIGIL_HOME env var."""
-    return str(get_hermes_home())
+    return str(get_vigil_home())
 
 
 def _failure_marker_path() -> str:
     """Return the path to the install-failure marker file."""
-    return os.path.join(_get_hermes_home(), ".tirith-install-failed")
+    return os.path.join(_get_vigil_home(), ".tirith-install-failed")
 
 
 def _read_failure_reason() -> str | None:
@@ -206,9 +206,9 @@ def _clear_install_failed():
         pass
 
 
-def _hermes_bin_dir() -> str:
+def _vigil_bin_dir() -> str:
     """Return $VIGIL_HOME/bin, creating it if needed."""
-    d = os.path.join(_get_hermes_home(), "bin")
+    d = os.path.join(_get_vigil_home(), "bin")
     os.makedirs(d, exist_ok=True)
     return d
 
@@ -429,7 +429,7 @@ def _install_tirith(*, log_failures: bool = True) -> tuple[str | None, str]:
             if src is None:
                 return None, reason
 
-        dest = os.path.join(_hermes_bin_dir(), "tirith")
+        dest = os.path.join(_vigil_bin_dir(), "tirith")
         try:
             shutil.move(src, dest)
         except OSError:
@@ -519,12 +519,12 @@ def _resolve_tirith_path(configured_path: str) -> str:
         _clear_install_failed()
         return found
 
-    hermes_bin = os.path.join(_hermes_bin_dir(), "tirith")
-    if os.path.isfile(hermes_bin) and os.access(hermes_bin, os.X_OK):
-        _resolved_path = hermes_bin
+    vigil_bin = os.path.join(_vigil_bin_dir(), "tirith")
+    if os.path.isfile(vigil_bin) and os.access(vigil_bin, os.X_OK):
+        _resolved_path = vigil_bin
         _install_failure_reason = ""
         _clear_install_failed()
-        return hermes_bin
+        return vigil_bin
 
     # Local checks failed.  If a previous install attempt already failed,
     # skip the network retry — UNLESS the failure was "cosign_missing" and
@@ -583,9 +583,9 @@ def _background_install(*, log_failures: bool = True):
             _install_failure_reason = ""
             return
 
-        hermes_bin = os.path.join(_hermes_bin_dir(), "tirith")
-        if os.path.isfile(hermes_bin) and os.access(hermes_bin, os.X_OK):
-            _resolved_path = hermes_bin
+        vigil_bin = os.path.join(_vigil_bin_dir(), "tirith")
+        if os.path.isfile(vigil_bin) and os.access(vigil_bin, os.X_OK):
+            _resolved_path = vigil_bin
             _install_failure_reason = ""
             return
 
@@ -653,12 +653,12 @@ def ensure_installed(*, log_failures: bool = True):
         _clear_install_failed()
         return found
 
-    hermes_bin = os.path.join(_hermes_bin_dir(), "tirith")
-    if os.path.isfile(hermes_bin) and os.access(hermes_bin, os.X_OK):
-        _resolved_path = hermes_bin
+    vigil_bin = os.path.join(_vigil_bin_dir(), "tirith")
+    if os.path.isfile(vigil_bin) and os.access(vigil_bin, os.X_OK):
+        _resolved_path = vigil_bin
         _install_failure_reason = ""
         _clear_install_failed()
-        return hermes_bin
+        return vigil_bin
 
     # If previously failed in-memory, check if the cause is now resolved
     if _resolved_path is _INSTALL_FAILED:

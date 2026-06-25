@@ -22,26 +22,26 @@ _MAX_WALK = 100
 def build_session_provenance(
     db: Any,
     acp_session_id: str,
-    current_hermes_session_id: str,
+    current_vigil_session_id: str,
     *,
-    previous_hermes_session_id: Optional[str] = None,
+    previous_vigil_session_id: Optional[str] = None,
 ) -> Optional[Dict[str, Any]]:
     """Build ``_meta.vigil.sessionProvenance`` for an ACP session.
 
     Args:
         db: A ``SessionDB`` (must expose ``get_session``).
         acp_session_id: The stable ACP/editor-facing session handle.
-        current_hermes_session_id: The live internal VIGIL DB session id
+        current_vigil_session_id: The live internal VIGIL DB session id
             (``state.agent.session_id``).
-        previous_hermes_session_id: The internal id from before the most recent
+        previous_vigil_session_id: The internal id from before the most recent
             turn, when known. Supplied by ``prompt()`` to flag a rotation.
 
     Returns:
-        A dict suitable for ``{"hermes": {"sessionProvenance": <dict>}}`` under
+        A dict suitable for ``{"vigil": {"sessionProvenance": <dict>}}`` under
         ACP ``_meta``, or ``None`` if the session can't be read.
     """
     try:
-        row = db.get_session(current_hermes_session_id)
+        row = db.get_session(current_vigil_session_id)
     except Exception:
         return None
     if not row:
@@ -54,10 +54,10 @@ def build_session_provenance(
     # compression-split parents (parent.end_reason == 'compression') count
     # toward depth — delegate/branch children share the parent_session_id
     # column but are not compaction boundaries.
-    root_id = current_hermes_session_id
+    root_id = current_vigil_session_id
     compression_depth = 0
     cursor_parent = parent_id
-    seen = {current_hermes_session_id}
+    seen = {current_vigil_session_id}
     for _ in range(_MAX_WALK):
         if not cursor_parent or cursor_parent in seen:
             break
@@ -85,20 +85,20 @@ def build_session_provenance(
             is_continuation = True
 
     rotated = bool(
-        previous_hermes_session_id
-        and previous_hermes_session_id != current_hermes_session_id
+        previous_vigil_session_id
+        and previous_vigil_session_id != current_vigil_session_id
     )
 
     provenance: Dict[str, Any] = {
         "acpSessionId": acp_session_id,
-        "currentVIGILSessionId": current_hermes_session_id,
+        "currentVIGILSessionId": current_vigil_session_id,
         "rootVIGILSessionId": root_id,
         "parentVIGILSessionId": parent_id,
         "sessionKind": "continuation" if is_continuation else "root",
         "compressionDepth": compression_depth,
     }
-    if previous_hermes_session_id:
-        provenance["previousVIGILSessionId"] = previous_hermes_session_id
+    if previous_vigil_session_id:
+        provenance["previousVIGILSessionId"] = previous_vigil_session_id
     if rotated:
         # The head moved during the last turn. The only mechanism that rotates
         # the internal id mid-turn is compression-driven session splitting.
@@ -111,17 +111,17 @@ def build_session_provenance(
 def session_provenance_meta(
     db: Any,
     acp_session_id: str,
-    current_hermes_session_id: str,
+    current_vigil_session_id: str,
     *,
-    previous_hermes_session_id: Optional[str] = None,
+    previous_vigil_session_id: Optional[str] = None,
 ) -> Optional[Dict[str, Any]]:
-    """Return a ready ``_meta`` payload: ``{"hermes": {"sessionProvenance": ...}}``."""
+    """Return a ready ``_meta`` payload: ``{"vigil": {"sessionProvenance": ...}}``."""
     prov = build_session_provenance(
         db,
         acp_session_id,
-        current_hermes_session_id,
-        previous_hermes_session_id=previous_hermes_session_id,
+        current_vigil_session_id,
+        previous_vigil_session_id=previous_vigil_session_id,
     )
     if prov is None:
         return None
-    return {"hermes": {"sessionProvenance": prov}}
+    return {"vigil": {"sessionProvenance": prov}}

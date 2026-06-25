@@ -10,7 +10,7 @@ Run VIGIL Agent as a [LINE](https://line.me/) bot via the official LINE Messagin
 
 LINE is the dominant messaging app in Japan, Taiwan, and Thailand. If your users live there, this is how they reach you.
 
-> Run `hermes gateway setup` and pick **LINE** for a guided walk-through.
+> Run `vigil gateway setup` and pick **LINE** for a guided walk-through.
 
 ## How the bot responds
 
@@ -46,9 +46,9 @@ cloudflared tunnel --url http://localhost:8646
 ngrok http 8646
 
 # devtunnel
-devtunnel create hermes-line --allow-anonymous
-devtunnel port create hermes-line -p 8646 --protocol https
-devtunnel host hermes-line
+devtunnel create vigil-line --allow-anonymous
+devtunnel port create vigil-line -p 8646 --protocol https
+devtunnel host vigil-line
 ```
 
 Copy the `https://...` URL — you'll set it as the webhook URL below. **Leave the tunnel running** while testing. For production, set up a fixed Cloudflare named tunnel so the webhook URL doesn't change on restart.
@@ -100,7 +100,7 @@ Back in the LINE console:
 ## Step 5: Run the gateway
 
 ```bash
-hermes gateway
+vigil gateway
 ```
 
 The agent log shows:

@@ -1,13 +1,14 @@
 import { AssistantRuntimeProvider, type ThreadMessage, useExternalStoreRuntime } from '@assistant-ui/react'
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { useEffect, useState } from 'react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { Thread } from './thread'
 
 const createdAt = new Date('2026-05-01T00:00:00.000Z')
 
 const resizeObservers = new Set<TestResizeObserver>()
+const animationFrameTimers = new Set<ReturnType<typeof setTimeout>>()
 
 class TestResizeObserver {
   private target: Element | null = null
@@ -44,10 +45,19 @@ class TestResizeObserver {
 }
 
 vi.stubGlobal('ResizeObserver', TestResizeObserver)
-vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) =>
-  window.setTimeout(() => callback(performance.now()), 0)
-)
-vi.stubGlobal('cancelAnimationFrame', (id: number) => window.clearTimeout(id))
+vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+  const id = globalThis.setTimeout(() => {
+    animationFrameTimers.delete(id)
+    callback(globalThis.performance?.now?.() ?? Date.now())
+  }, 0)
+  animationFrameTimers.add(id)
+  return id as unknown as number
+})
+vi.stubGlobal('cancelAnimationFrame', (id: number) => {
+  const timeout = id as unknown as ReturnType<typeof setTimeout>
+  globalThis.clearTimeout(timeout)
+  animationFrameTimers.delete(timeout)
+})
 
 Element.prototype.scrollTo = function scrollTo() {}
 
@@ -394,6 +404,15 @@ function DismissibleErrorHarness({ onDismissError }: { onDismissError: (messageI
 
 describe('assistant-ui streaming renderer', () => {
   beforeEach(() => {
+    resizeObservers.clear()
+  })
+
+  afterEach(() => {
+    cleanup()
+    for (const id of animationFrameTimers) {
+      globalThis.clearTimeout(id)
+    }
+    animationFrameTimers.clear()
     resizeObservers.clear()
   })
 

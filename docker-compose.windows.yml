@@ -12,7 +12,7 @@
 services:
   gateway:
     image: nousresearch/vigil-agent:latest
-    container_name: hermes
+    container_name: vigil
     restart: unless-stopped
     volumes:
       - ${USERPROFILE}/.vigil:/opt/data
@@ -23,7 +23,7 @@ services:
 
   dashboard:
     image: nousresearch/vigil-agent:latest
-    container_name: hermes-dashboard
+    container_name: vigil-dashboard
     restart: unless-stopped
     depends_on:
       - gateway

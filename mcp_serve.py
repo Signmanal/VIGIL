@@ -13,14 +13,14 @@ Matches OpenClaw's 9-tool MCP channel bridge surface:
 Plus: channels_list (VIGIL-specific extra)
 
 Usage:
-    hermes mcp serve
-    hermes mcp serve --verbose
+    vigil mcp serve
+    vigil mcp serve --verbose
 
 MCP client config (e.g. claude_desktop_config.json):
     {
         "mcpServers": {
-            "hermes": {
-                "command": "hermes",
+            "vigil": {
+                "command": "vigil",
                 "args": ["mcp", "serve"]
             }
         }
@@ -40,7 +40,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional
 
-logger = logging.getLogger("hermes.mcp_serve")
+logger = logging.getLogger("vigil.mcp_serve")
 
 # ---------------------------------------------------------------------------
 # Lazy MCP SDK import
@@ -62,8 +62,8 @@ except ImportError:
 def _get_sessions_dir() -> Path:
     """Return the sessions directory using VIGIL_HOME."""
     try:
-        from hermes_constants import get_hermes_home
-        return get_hermes_home() / "sessions"
+        from vigil_constants import get_vigil_home
+        return get_vigil_home() / "sessions"
     except ImportError:
         return Path(os.environ.get("VIGIL_HOME", Path.home() / ".vigil")) / "sessions"
 
@@ -71,7 +71,7 @@ def _get_sessions_dir() -> Path:
 def _get_session_db():
     """Get a SessionDB instance for reading message transcripts."""
     try:
-        from hermes_state import SessionDB
+        from vigil_state import SessionDB
         return SessionDB()
     except Exception as e:
         logger.debug("SessionDB unavailable: %s", e)
@@ -105,8 +105,8 @@ def _load_sessions_index() -> dict:
 def _load_channel_directory() -> dict:
     """Load the cached channel directory for available targets."""
     try:
-        from hermes_constants import get_hermes_home
-        directory_file = get_hermes_home() / "channel_directory.json"
+        from vigil_constants import get_vigil_home
+        directory_file = get_vigil_home() / "channel_directory.json"
     except ImportError:
         directory_file = Path(
             os.environ.get("VIGIL_HOME", Path.home() / ".vigil")
@@ -369,8 +369,8 @@ class EventBridge:
 
         # Check if state.db has changed
         try:
-            from hermes_constants import get_hermes_home
-            db_file = get_hermes_home() / "state.db"
+            from vigil_constants import get_vigil_home
+            db_file = get_vigil_home() / "state.db"
         except ImportError:
             db_file = Path(os.environ.get("VIGIL_HOME", Path.home() / ".vigil")) / "state.db"
 
@@ -463,7 +463,7 @@ def create_mcp_server(event_bridge: Optional[EventBridge] = None) -> "FastMCP":
         )
 
     mcp = FastMCP(
-        "hermes",
+        "vigil",
         instructions=(
             "VIGIL Agent messaging bridge. Use these tools to interact with "
             "conversations across Telegram, Discord, Slack, WhatsApp, Signal, "

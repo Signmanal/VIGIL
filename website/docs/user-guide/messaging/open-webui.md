@@ -44,7 +44,7 @@ What the script does:
 - ensures `~/.vigil/.env` contains `API_SERVER_ENABLED`, `API_SERVER_HOST`, `API_SERVER_KEY`, `API_SERVER_PORT`, and `API_SERVER_MODEL_NAME`
 - restarts the VIGIL gateway so the API server comes up
 - installs Open WebUI into `~/.local/open-webui-venv`
-- writes a launcher at `~/.local/bin/start-open-webui-hermes.sh`
+- writes a launcher at `~/.local/bin/start-open-webui-vigil.sh`
 - on macOS, installs a `launchd` user service; on Linux with `systemd --user`, installs a user service there
 
 Defaults:
@@ -71,20 +71,20 @@ OPEN_WEBUI_ENABLE_SERVICE=false bash scripts/setup_open_webui.sh
 ### 1. Enable the API server
 
 ```bash
-hermes config set API_SERVER_ENABLED true
-hermes config set API_SERVER_KEY your-secret-key
+vigil config set API_SERVER_ENABLED true
+vigil config set API_SERVER_KEY your-secret-key
 ```
 
-`hermes config set` auto-routes the flag to `config.yaml` and the secret to `~/.vigil/.env`. If the gateway is already running, restart it so the change takes effect:
+`vigil config set` auto-routes the flag to `config.yaml` and the secret to `~/.vigil/.env`. If the gateway is already running, restart it so the change takes effect:
 
 ```bash
-hermes gateway stop && hermes gateway
+vigil gateway stop && vigil gateway
 ```
 
 ### 2. Start VIGIL Agent gateway
 
 ```bash
-hermes gateway
+vigil gateway
 ```
 
 You should see:
@@ -278,14 +278,14 @@ To run separate VIGIL instances per user — each with their own config, memory,
 `API_SERVER_*` are env vars, not YAML config keys, so write them to each profile's `.env`. Pick ports outside the default-platform range (`8644` is the webhook adapter, `8645` is wecom-callback, `8646` is msgraph-webhook), e.g. `8650+`:
 
 ```bash
-hermes profile create alice
+vigil profile create alice
 cat >> ~/.vigil/profiles/alice/.env <<EOF
 API_SERVER_ENABLED=true
 API_SERVER_PORT=8650
 API_SERVER_KEY=alice-secret
 EOF
 
-hermes profile create bob
+vigil profile create bob
 cat >> ~/.vigil/profiles/bob/.env <<EOF
 API_SERVER_ENABLED=true
 API_SERVER_PORT=8651
@@ -296,8 +296,8 @@ EOF
 ### 2. Start each gateway
 
 ```bash
-hermes -p alice gateway &
-hermes -p bob gateway &
+vigil -p alice gateway &
+vigil -p bob gateway &
 ```
 
 ### 3. Add connections in Open WebUI
@@ -314,7 +314,7 @@ The model dropdown will show `alice` and `bob` as distinct models. You can assig
 :::tip Custom Model Names
 The model name defaults to the profile name. To override it, set `API_SERVER_MODEL_NAME` in the profile's `.env`:
 ```bash
-hermes -p alice config set API_SERVER_MODEL_NAME "Alice's Agent"
+vigil -p alice config set API_SERVER_MODEL_NAME "Alice's Agent"
 ```
 :::
 

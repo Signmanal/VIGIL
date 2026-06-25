@@ -134,12 +134,12 @@ def _send_imap_id(imap: "imaplib.IMAP4") -> None:
     """
     try:
         try:
-            from hermes_cli import __version__ as _hermes_version
+            from vigil_cli import __version__ as _vigil_version
         except Exception:  # noqa: BLE001 — keep ID best-effort if import fails
-            _hermes_version = "0"
+            _vigil_version = "0"
         imap.xatom(
             "ID",
-            f'("name" "vigil-agent" "version" "{_hermes_version}" '
+            f'("name" "vigil-agent" "version" "{_vigil_version}" '
             '"vendor" "NousResearch" '
             '"support-email" "noreply@nousresearch.com")',
         )
@@ -312,7 +312,7 @@ class EmailAdapter(BasePlatformAdapter):
         # Resolve connection settings from the env vars first, then fall back to
         # PlatformConfig.extra (address/imap_host/smtp_host) — the canonical dict
         # gateway.config populates and that the "connected" check, the
-        # send-helper, and `hermes config show` already read. Without the
+        # send-helper, and `vigil config show` already read. Without the
         # fallback a config.yaml-only setup left these empty. Host/address values
         # are stripped: a stray space or newline made IMAP4_SSL raise the
         # misleading ``[Errno 8] nodename nor servname`` (an unresolvable name)
@@ -423,7 +423,7 @@ class EmailAdapter(BasePlatformAdapter):
             message = (
                 "Not configured — missing "
                 + ", ".join(missing)
-                + ". Set it via `hermes gateway setup` (env) or platforms.email "
+                + ". Set it via `vigil gateway setup` (env) or platforms.email "
                 "in config.yaml."
             )
             logger.error("[Email] %s", message)
@@ -692,7 +692,7 @@ class EmailAdapter(BasePlatformAdapter):
             msg["References"] = original_msg_id
 
         msg["Date"] = formatdate(localtime=True)
-        msg_id = f"<hermes-{uuid.uuid4().hex[:12]}@{self._address.split('@')[1]}>"
+        msg_id = f"<vigil-{uuid.uuid4().hex[:12]}@{self._address.split('@')[1]}>"
         msg["Message-ID"] = msg_id
 
         msg.attach(MIMEText(body, "plain", "utf-8"))
@@ -805,7 +805,7 @@ class EmailAdapter(BasePlatformAdapter):
             msg["References"] = original_msg_id
 
         msg["Date"] = formatdate(localtime=True)
-        msg_id = f"<hermes-{uuid.uuid4().hex[:12]}@{self._address.split('@')[1]}>"
+        msg_id = f"<vigil-{uuid.uuid4().hex[:12]}@{self._address.split('@')[1]}>"
         msg["Message-ID"] = msg_id
 
         if body:
@@ -885,7 +885,7 @@ class EmailAdapter(BasePlatformAdapter):
             msg["References"] = original_msg_id
 
         msg["Date"] = formatdate(localtime=True)
-        msg_id = f"<hermes-{uuid.uuid4().hex[:12]}@{self._address.split('@')[1]}>"
+        msg_id = f"<vigil-{uuid.uuid4().hex[:12]}@{self._address.split('@')[1]}>"
         msg["Message-ID"] = msg_id
 
         if body:
@@ -931,7 +931,7 @@ class EmailAdapter(BasePlatformAdapter):
 # bundled plugin. register() exposes the platform via the registry, replacing
 # the Platform.EMAIL elif in gateway/run.py, the _PLATFORM_CONNECTED_CHECKERS
 # entry in gateway/config.py, the _PLATFORMS["email"] static dict in
-# hermes_cli/gateway.py, and the _send_email dispatch in
+# vigil_cli/gateway.py, and the _send_email dispatch in
 # tools/send_message_tool.py. EMAIL_* env→PlatformConfig seeding stays in core.
 # ──────────────────────────────────────────────────────────────────────────
 
@@ -992,7 +992,7 @@ def _is_connected(config) -> bool:
     extra = getattr(config, "extra", {}) or {}
     if extra.get("address"):
         return True
-    import hermes_cli.gateway as gateway_mod
+    import vigil_cli.gateway as gateway_mod
     return bool((gateway_mod.get_env_value("EMAIL_ADDRESS") or "").strip())
 
 

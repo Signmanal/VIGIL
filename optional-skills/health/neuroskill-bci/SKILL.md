@@ -11,7 +11,7 @@ version: 1.0.0
 author: VIGIL Agent + Nous Research
 license: MIT
 metadata:
-  hermes:
+  vigil:
     tags: [BCI, neurofeedback, health, focus, EEG, cognitive-state, biometrics, neuroskill]
     category: health
     related_skills: []

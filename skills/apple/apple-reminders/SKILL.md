@@ -6,7 +6,7 @@ author: VIGIL Agent
 license: MIT
 platforms: [macos]
 metadata:
-  hermes:
+  vigil:
     tags: [Reminders, tasks, todo, macOS, Apple]
 prerequisites:
   commands: [remindctl]

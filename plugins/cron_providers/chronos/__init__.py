@@ -38,7 +38,7 @@ logger = logging.getLogger("cron.chronos")
 def _cfg(*keys: str, default: Any = "") -> Any:
     """Read a cron.chronos.* config value (no network)."""
     try:
-        from hermes_cli.config import cfg_get, load_config
+        from vigil_cli.config import cfg_get, load_config
         return cfg_get(load_config(), *keys, default=default)
     except Exception:
         return default
@@ -74,14 +74,14 @@ class ChronosCronScheduler(CronScheduler):
         return self._have_nous_token()
 
     def _have_nous_token(self) -> bool:
-        """True if the agent has a Nous Portal login (no network call).
+        """True if the agent has a VIGIL Portal login (no network call).
 
         Checks the stored auth state for a Nous access token — does NOT refresh
         or hit the network (is_available must stay offline). The actual
         refresh-aware token is resolved lazily at provision time.
         """
         try:
-            from hermes_cli.auth import get_provider_auth_state
+            from vigil_cli.auth import get_provider_auth_state
             state = get_provider_auth_state("nous") or {}
             return bool(state.get("access_token"))
         except Exception:

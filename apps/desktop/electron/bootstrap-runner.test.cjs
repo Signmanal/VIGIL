@@ -14,7 +14,7 @@ const {
 const SCRIPT_NAME = process.platform === 'win32' ? 'install.ps1' : 'install.sh'
 
 function mkTmpHome() {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'hermes-bootstrap-test-'))
+  return fs.mkdtempSync(path.join(os.tmpdir(), 'vigil-bootstrap-test-'))
 }
 
 test('runBootstrap bails immediately when the signal is already aborted', async () => {
@@ -24,10 +24,10 @@ test('runBootstrap bails immediately when the signal is already aborted', async 
   const events = []
   const result = await runBootstrap({
     installStamp: null,
-    activeRoot: '/tmp/hermes-runner-test',
+    activeRoot: '/tmp/vigil-runner-test',
     sourceRepoRoot: null,
-    hermesHome: '/tmp/hermes-runner-test',
-    logRoot: '/tmp/hermes-runner-test',
+    hermesHome: '/tmp/vigil-runner-test',
+    logRoot: '/tmp/vigil-runner-test',
     onEvent: ev => events.push(ev),
     abortSignal: controller.signal
   })

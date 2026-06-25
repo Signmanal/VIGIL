@@ -374,7 +374,7 @@ class WhatsAppBehaviorMixin:
 def resolve_whatsapp_bridge_dir() -> Path:
     """Resolve the WhatsApp bridge directory, mirroring to VIGIL_HOME if needed.
 
-    When the install tree is read-only (e.g., Docker /opt/hermes), this function
+    When the install tree is read-only (e.g., Docker /opt/vigil), this function
     mirrors the bridge source to a writable VIGIL_HOME location and returns that
     path. This ensures npm install works in Docker environments.
 
@@ -384,12 +384,12 @@ def resolve_whatsapp_bridge_dir() -> Path:
     from pathlib import Path as _Path
 
     # Default location in install tree (may be read-only)
-    from hermes_constants import get_hermes_home
+    from vigil_constants import get_vigil_home
     install_bridge = _Path(__file__).resolve().parents[2] / "scripts" / "whatsapp-bridge"
 
     # Try VIGIL_HOME location first
-    hermes_home = get_hermes_home()
-    hermes_home_bridge = hermes_home / "scripts" / "whatsapp-bridge"
+    vigil_home = get_vigil_home()
+    vigil_home_bridge = vigil_home / "scripts" / "whatsapp-bridge"
 
     # Check if install dir is writable
     try:
@@ -404,17 +404,17 @@ def resolve_whatsapp_bridge_dir() -> Path:
         return install_bridge
 
     # Install dir is read-only, mirror to VIGIL_HOME if needed
-    if hermes_home_bridge.exists():
-        return hermes_home_bridge
+    if vigil_home_bridge.exists():
+        return vigil_home_bridge
 
     # Mirror the bridge source to VIGIL_HOME
     try:
-        hermes_home_bridge.parent.mkdir(parents=True, exist_ok=True)
+        vigil_home_bridge.parent.mkdir(parents=True, exist_ok=True)
         shutil.copytree(
             install_bridge,
-            hermes_home_bridge,
+            vigil_home_bridge,
             dirs_exist_ok=False,
         )
-        return hermes_home_bridge
+        return vigil_home_bridge
     except Exception:
         return install_bridge

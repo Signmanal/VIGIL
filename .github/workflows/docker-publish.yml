@@ -10,7 +10,7 @@ on:
       - 'Dockerfile'
       - 'docker/**'
       - '.github/workflows/docker-publish.yml'
-      - '.github/actions/hermes-smoke-test/**'
+      - '.github/actions/vigil-smoke-test/**'
 
   # No paths filter — the job must always run so the required check
   # reports a status (path-gated workflows leave checks "pending" forever
@@ -85,7 +85,7 @@ jobs:
 
       - name: Smoke test image
         if: github.event_name != 'pull_request'
-        uses: ./.github/actions/hermes-smoke-test
+        uses: ./.github/actions/vigil-smoke-test
         with:
           image: ${{ env.IMAGE_NAME }}:test
 
@@ -126,7 +126,7 @@ jobs:
           # ``dev`` extra pulls in pytest, pytest-asyncio —
           # everything tests/docker/ needs.  We deliberately avoid ``all``
           # here because the docker tests only drive the container via
-          # subprocess and don't import hermes_agent's optional deps.
+          # subprocess and don't import vigil_agent's optional deps.
           uv pip install -e ".[dev]"
 
       - name: Run docker integration tests
@@ -247,7 +247,7 @@ jobs:
 
       - name: Smoke test image
         if: github.event_name != 'pull_request'
-        uses: ./.github/actions/hermes-smoke-test
+        uses: ./.github/actions/vigil-smoke-test
         with:
           image: ${{ env.IMAGE_NAME }}:test
 

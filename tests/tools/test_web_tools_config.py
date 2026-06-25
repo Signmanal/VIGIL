@@ -137,14 +137,14 @@ class TestFirecrawlClientConfig:
                     api_url="https://firecrawl-gateway.nousresearch.com",
                 )
 
-    def test_nous_auth_token_respects_hermes_home_override(self, tmp_path):
+    def test_nous_auth_token_respects_vigil_home_override(self, tmp_path):
         """Auth lookup should read from VIGIL_HOME/auth.json, not ~/.vigil/auth.json."""
         real_home = tmp_path / "real-home"
         (real_home / ".vigil").mkdir(parents=True)
 
-        hermes_home = tmp_path / "hermes-home"
-        hermes_home.mkdir()
-        (hermes_home / "auth.json").write_text(json.dumps({
+        vigil_home = tmp_path / "vigil-home"
+        vigil_home.mkdir()
+        (vigil_home / "auth.json").write_text(json.dumps({
             "providers": {
                 "nous": {
                     "access_token": "nous-token",
@@ -154,7 +154,7 @@ class TestFirecrawlClientConfig:
 
         with patch.dict(os.environ, {
             "HOME": str(real_home),
-            "VIGIL_HOME": str(hermes_home),
+            "VIGIL_HOME": str(vigil_home),
         }, clear=False):
             import tools.web_tools
             importlib.reload(tools.web_tools)
@@ -245,7 +245,7 @@ class TestBackendSelection:
     """Test suite for _get_backend() backend selection logic.
 
     The backend is configured via config.yaml (web.backend), set by
-    ``hermes tools``.  Falls back to key-based detection for legacy/manual
+    ``vigil tools``.  Falls back to key-based detection for legacy/manual
     setups.
     """
 
@@ -675,7 +675,7 @@ class TestCheckWebApiKey:
             return "fresh-token"
 
         monkeypatch.setattr(
-            "hermes_cli.auth.resolve_nous_access_token",
+            "vigil_cli.auth.resolve_nous_access_token",
             _record_refresh,
         )
 

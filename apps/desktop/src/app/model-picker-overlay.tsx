@@ -2,7 +2,7 @@ import { useStore } from '@nanostores/react'
 import type * as React from 'react'
 
 import { ModelPickerDialog } from '@/components/model-picker'
-import type { VIGILGateway } from '@/hermes'
+import type { VIGILGateway } from '@/vigil'
 import {
   $activeSessionId,
   $currentModel,

@@ -102,7 +102,7 @@ gateway:
     upload_failed:         "✗ Theip ar uaslódáil tuairisce dífhabhtaithe: {error}"
     header:                "**Tuairisc dhífhabhtaithe uaslódáilte:**"
     auto_delete:           "⏱ Scriosfar na pastes go huathoibríoch i 6 huaire."
-    full_logs_hint:        "Le haghaidh uaslódálacha logála iomlána, úsáid `hermes debug share` ón CLI."
+    full_logs_hint:        "Le haghaidh uaslódálacha logála iomlána, úsáid `vigil debug share` ón CLI."
     share_hint:            "Roinn na naisc seo le foireann VIGIL le haghaidh tacaíochta."
 
   deny:
@@ -151,7 +151,7 @@ gateway:
   kanban:
     error_prefix:          "⚠ earráid kanban: {error}"
     subscribed_suffix:     "(síntiúsaithe — cuirfear in iúl duit nuair a chríochnóidh nó a stopfaidh {task_id})"
-    truncated_suffix:      "… (giorraithe; úsáid `hermes kanban …` i do theirminéal le haghaidh aschur iomláin)"
+    truncated_suffix:      "… (giorraithe; úsáid `vigil kanban …` i do theirminéal le haghaidh aschur iomláin)"
     no_output:             "(gan aschur)"
 
   personality:
@@ -219,7 +219,7 @@ gateway:
 
   restart:
     in_progress:           "⏳ Tá atosú gateway ar siúl cheana féin..."
-    restarting:            "♻ Ag atosú gateway. Mura gcuirfear in iúl duit laistigh de 60 soicind, atosaigh ón gconsól le `hermes gateway restart`."
+    restarting:            "♻ Ag atosú gateway. Mura gcuirfear in iúl duit laistigh de 60 soicind, atosaigh ón gconsól le `vigil gateway restart`."
 
   resume:
     db_unavailable:        "Níl bunachar sonraí na seisiún ar fáil."
@@ -316,9 +316,9 @@ Future messages in this room will use that transcript until `/reset` or another 
     invalid_count:         "Líon neamhbhailí \"{arg}\" — úsáid /undo nó /undo N."
 
   update:
-    platform_not_messaging:  "✗ Tá /update ar fáil amháin ó ardáin teachtaireachtaí. Rith `hermes update` ón teirminéal."
+    platform_not_messaging:  "✗ Tá /update ar fáil amháin ó ardáin teachtaireachtaí. Rith `vigil update` ón teirminéal."
     not_git_repo:            "✗ Ní stór git é seo — ní féidir nuashonrú."
-    hermes_cmd_not_found:    "✗ Níorbh fhéidir an t-ordú `hermes` a aimsiú. Tá VIGIL ag rith, ach níorbh fhéidir leis an ordú nuashonraithe an inrite a aimsiú ar PATH ná tríd an léirmhínitheoir Python reatha. Bain triail as `hermes update` a rith de láimh i do theirminéal."
+    vigil_cmd_not_found:    "✗ Níorbh fhéidir an t-ordú `vigil` a aimsiú. Tá VIGIL ag rith, ach níorbh fhéidir leis an ordú nuashonraithe an inrite a aimsiú ar PATH ná tríd an léirmhínitheoir Python reatha. Bain triail as `vigil update` a rith de láimh i do theirminéal."
     start_failed:            "✗ Theip ar nuashonrú a thosú: {error}"
     starting:                "⚕ Ag tosú nuashonrú VIGIL… Cuirfidh mé an dul chun cinn ar shruth anseo."
 
@@ -343,7 +343,7 @@ Future messages in this room will use that transcript until `/reset` or another 
     no_data:                  "Níl aon sonraí úsáide ar fáil don seisiún seo."
 
   credits:
-    not_logged_in:            "Níl tú logáilte isteach i Nous Portal. Logáil isteach chun d'iarmhéid creidmheasa a fheiceáil agus breis a chur leis."
+    not_logged_in:            "Níl tú logáilte isteach i VIGIL Portal. Logáil isteach chun d'iarmhéid creidmheasa a fheiceáil agus breis a chur leis."
 
   verbose:
     not_enabled:           "Níl an t-ordú `/verbose` cumasaithe d'ardáin teachtaireachtaí.\n\nCumasaigh in `config.yaml`:\n```yaml\ndisplay:\n  tool_progress_command: true\n```"

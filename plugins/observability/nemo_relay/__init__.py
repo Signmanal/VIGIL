@@ -48,11 +48,11 @@ class _Settings:
     adaptive_mode: str = "observe_only"
     atof_enabled: bool = False
     atof_output_directory: str = ""
-    atof_filename: str = "hermes-atof.jsonl"
+    atof_filename: str = "vigil-atof.jsonl"
     atof_mode: str = "append"
     atif_enabled: bool = False
     atif_output_directory: str = ""
-    atif_filename_template: str = "hermes-atif-{session_id}.json"
+    atif_filename_template: str = "vigil-atif-{session_id}.json"
     atif_subagent_export_mode: str = "embedded"
     atif_agent_name: str = "VIGIL Agent"
     atif_agent_version: str = "unknown"
@@ -66,7 +66,7 @@ class _Runtime:
         self.sessions: dict[str, _SessionState] = {}
         self.subagent_parents: dict[str, _SubagentParent] = {}
         self.atof_exporter: Any = None
-        self._atof_subscriber_name = "hermes.nemo_relay.atof"
+        self._atof_subscriber_name = "vigil.nemo_relay.atof"
         self._plugin_config_initialized = self._configure_plugins_toml()
         self._plugin_config_needs_reinit = False
         if not self._plugin_config_initialized:
@@ -181,7 +181,7 @@ class _Runtime:
                 model_name=str(kwargs.get("model") or self.settings.atif_model_name),
                 extra={"source": "vigil-agent", "plugin": "observability/nemo_relay"},
             )
-            state.atif_subscriber_name = f"hermes.nemo_relay.atif.{session_id}"
+            state.atif_subscriber_name = f"vigil.nemo_relay.atif.{session_id}"
             state.atif_exporter.register(state.atif_subscriber_name)
 
         subagent_parent = self.subagent_parents.get(session_id)
@@ -194,7 +194,7 @@ class _Runtime:
             state.parent_session_id = subagent_parent.parent_session_id
 
         state.handle = self.nemo_relay.scope.push(
-            f"hermes-session-{session_id}",
+            f"vigil-session-{session_id}",
             self.nemo_relay.ScopeType.Agent,
             handle=parent_handle,
             data={"session_id": session_id},
@@ -260,7 +260,7 @@ class _Runtime:
                 metadata=_subagent_child_metadata(kwargs, metadata),
             )
         self.nemo_relay.scope.event(
-            "hermes.subagent.start",
+            "vigil.subagent.start",
             handle=parent_state.handle,
             data=_jsonable(kwargs),
             metadata=metadata,
@@ -270,7 +270,7 @@ class _Runtime:
         child_session_id = _child_session_id(kwargs)
         if child_session_id:
             self.subagent_parents.pop(child_session_id, None)
-        self.mark("hermes.subagent.stop", kwargs)
+        self.mark("vigil.subagent.stop", kwargs)
 
     def managed_llm_enabled(self) -> bool:
         return (
@@ -430,7 +430,7 @@ def on_session_start(**kwargs: Any) -> None:
 def on_session_end(**kwargs: Any) -> None:
     runtime = _get_runtime()
     if runtime is not None:
-        _safe(lambda: (runtime.mark("hermes.session.end", kwargs), runtime.export_atif(runtime.ensure_session(kwargs))))
+        _safe(lambda: (runtime.mark("vigil.session.end", kwargs), runtime.export_atif(runtime.ensure_session(kwargs))))
 
 
 def on_session_finalize(**kwargs: Any) -> None:
@@ -448,13 +448,13 @@ def on_session_reset(**kwargs: Any) -> None:
 def on_pre_llm_call(**kwargs: Any) -> None:
     runtime = _get_runtime()
     if runtime is not None:
-        _safe(lambda: runtime.mark("hermes.turn.start", kwargs))
+        _safe(lambda: runtime.mark("vigil.turn.start", kwargs))
 
 
 def on_post_llm_call(**kwargs: Any) -> None:
     runtime = _get_runtime()
     if runtime is not None:
-        _safe(lambda: runtime.mark("hermes.turn.end", kwargs))
+        _safe(lambda: runtime.mark("vigil.turn.end", kwargs))
 
 
 def on_pre_api_request(**kwargs: Any) -> None:
@@ -493,7 +493,7 @@ def on_post_api_request(**kwargs: Any) -> None:
         state = runtime.ensure_session(kwargs)
         span = state.llm_spans.pop(_api_key(kwargs), None)
         if span is None:
-            runtime.mark("hermes.api.response.unmatched", kwargs)
+            runtime.mark("vigil.api.response.unmatched", kwargs)
             return
         runtime.nemo_relay.llm.call_end(
             span,
@@ -516,7 +516,7 @@ def on_api_request_error(**kwargs: Any) -> None:
         state = runtime.ensure_session(kwargs)
         span = state.llm_spans.pop(_api_key(kwargs), None)
         if span is None:
-            runtime.mark("hermes.api.error", kwargs)
+            runtime.mark("vigil.api.error", kwargs)
             return
         runtime.nemo_relay.llm.call_end(
             span,
@@ -561,7 +561,7 @@ def on_post_tool_call(**kwargs: Any) -> None:
         state = runtime.ensure_session(kwargs)
         span = state.tool_spans.pop(_tool_key(kwargs), None)
         if span is None:
-            runtime.mark("hermes.tool.response.unmatched", kwargs)
+            runtime.mark("vigil.tool.response.unmatched", kwargs)
             return
         runtime.nemo_relay.tools.call_end(
             span,
@@ -576,13 +576,13 @@ def on_post_tool_call(**kwargs: Any) -> None:
 def on_pre_approval_request(**kwargs: Any) -> None:
     runtime = _get_runtime()
     if runtime is not None:
-        _safe(lambda: runtime.mark("hermes.approval.request", kwargs))
+        _safe(lambda: runtime.mark("vigil.approval.request", kwargs))
 
 
 def on_post_approval_response(**kwargs: Any) -> None:
     runtime = _get_runtime()
     if runtime is not None:
-        _safe(lambda: runtime.mark("hermes.approval.response", kwargs))
+        _safe(lambda: runtime.mark("vigil.approval.response", kwargs))
 
 
 def on_subagent_start(**kwargs: Any) -> None:
@@ -652,11 +652,11 @@ def _load_settings() -> _Settings:
         adaptive_mode=_adaptive_mode(adaptive_config),
         atof_enabled=_env_bool("VIGIL_NEMO_RELAY_ATOF_ENABLED"),
         atof_output_directory=_env("VIGIL_NEMO_RELAY_ATOF_OUTPUT_DIRECTORY"),
-        atof_filename=_env("VIGIL_NEMO_RELAY_ATOF_FILENAME") or "hermes-atof.jsonl",
+        atof_filename=_env("VIGIL_NEMO_RELAY_ATOF_FILENAME") or "vigil-atof.jsonl",
         atof_mode=_env("VIGIL_NEMO_RELAY_ATOF_MODE") or "append",
         atif_enabled=_env_bool("VIGIL_NEMO_RELAY_ATIF_ENABLED"),
         atif_output_directory=_env("VIGIL_NEMO_RELAY_ATIF_OUTPUT_DIRECTORY"),
-        atif_filename_template=_env("VIGIL_NEMO_RELAY_ATIF_FILENAME_TEMPLATE") or "hermes-atif-{session_id}.json",
+        atif_filename_template=_env("VIGIL_NEMO_RELAY_ATIF_FILENAME_TEMPLATE") or "vigil-atif-{session_id}.json",
         atif_subagent_export_mode=_atif_subagent_export_mode(),
         atif_agent_name=_env("VIGIL_NEMO_RELAY_ATIF_AGENT_NAME") or "VIGIL Agent",
         atif_agent_version=_env("VIGIL_NEMO_RELAY_ATIF_AGENT_VERSION") or "unknown",
@@ -946,7 +946,7 @@ def _resolve_awaitable(value: Any) -> Any:
 
     thread = threading.Thread(
         target=_runner,
-        name="hermes-nemo-relay-awaitable",
+        name="vigil-nemo-relay-awaitable",
         daemon=True,
     )
     thread.start()

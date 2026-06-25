@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import type { VIGILConfigRecord } from '@/types/hermes'
+import type { VIGILConfigRecord } from '@/types/vigil'
 
 import { defineFieldCopy, fieldCopyForSchemaKey, schemaKeyToFieldCopyKey } from './field-copy'
 import { enumOptionsFor, getNested, providerGroup, setNested, stripToolsetLabel, toolsetDisplayLabel } from './helpers'
@@ -121,7 +121,7 @@ describe('settings helpers', () => {
   describe('providerGroup', () => {
     it('maps a provider env var to its labeled group', () => {
       expect(providerGroup('XAI_API_KEY')).toBe('xAI')
-      expect(providerGroup('NOUS_API_KEY')).toBe('Nous Portal')
+      expect(providerGroup('NOUS_API_KEY')).toBe('VIGIL Portal')
       expect(providerGroup('OPENROUTER_API_KEY')).toBe('OpenRouter')
     })
 

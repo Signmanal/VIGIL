@@ -101,7 +101,7 @@ class TestVIGILTokenStorage:
 
         mock_client = MagicMock()
         mock_client.model_dump.return_value = {
-            "client_id": "hermes-123",
+            "client_id": "vigil-123",
             "client_secret": "secret",
         }
         asyncio.run(storage.set_client_info(mock_client))
@@ -775,7 +775,7 @@ class TestPasteCallbackSkipToken:
         _paste_callback_reader(result)
         err = capsys.readouterr().err
         assert "OAuth skipped" in err
-        assert "hermes mcp login" in err
+        assert "vigil mcp login" in err
 
     def test_skip_does_not_overwrite_http_winner(self, monkeypatch):
         """If HTTP listener already wrote a code, `skip` must not stomp it."""

@@ -195,7 +195,7 @@ class TestSnapshotEndToEnd:
         try:
             first = env.execute(
                 'export VIGIL_SESSION_ENV_PROBE="sticky"; '
-                'export PATH="/tmp/hermes-session-bin:$PATH"; '
+                'export PATH="/tmp/vigil-session-bin:$PATH"; '
                 'echo "first=$VIGIL_SESSION_ENV_PROBE"'
             )
             second = env.execute(
@@ -209,7 +209,7 @@ class TestSnapshotEndToEnd:
         assert "first=sticky" in first.get("output", "")
         output = second.get("output", "")
         assert "second=sticky" in output
-        assert "/tmp/hermes-session-bin" in output
+        assert "/tmp/vigil-session-bin" in output
 
     def test_venv_style_activation_persists_between_commands(self, tmp_path):
         venv_bin = tmp_path / ".venv" / "bin"

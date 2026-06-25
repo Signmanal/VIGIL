@@ -1,7 +1,7 @@
 import type { ConnectionState, GatewayEvent } from '@vigil/shared'
 import { atom } from 'nanostores'
 
-import { VIGILGateway } from '@/hermes'
+import { VIGILGateway } from '@/vigil'
 import { resolveGatewayWsUrl } from '@/lib/gateway-ws-url'
 import { setGatewayState } from '@/store/session'
 

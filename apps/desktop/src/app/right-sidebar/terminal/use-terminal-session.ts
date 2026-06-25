@@ -34,7 +34,7 @@ function previewSelectionLabel(): string {
   return source.split(/[\\/]/).filter(Boolean).pop() || target?.label?.trim() || ''
 }
 
-const VIGIL_PATHS_MIME = 'application/x-hermes-paths'
+const VIGIL_PATHS_MIME = 'application/x-vigil-paths'
 
 function readEscapeSequence(data: string, index: number) {
   if (data.charCodeAt(index) !== 0x1b || index + 1 >= data.length) {
@@ -345,7 +345,7 @@ export function useTerminalSession({ cwd, onAddSelectionToChat }: UseTerminalSes
       fontWeightBold: 'bold',
       letterSpacing: 0,
       lineHeight: 1.12,
-      // Full-screen TUIs (hermes --tui, vim) grab the mouse, so a plain drag
+      // Full-screen TUIs (vigil --tui, vim) grab the mouse, so a plain drag
       // can't select — ⌥-drag (macOS) / Shift-drag (else) forces a native
       // selection over mouse-mode apps, which ⌘/Ctrl+L then sends to chat.
       macOptionClickForcesSelection: true,
@@ -618,7 +618,7 @@ export function useTerminalSession({ cwd, onAddSelectionToChat }: UseTerminalSes
         term.loadAddon(webgl)
         webglRef.current = webgl
       } catch (err) {
-        console.warn('[hermes-terminal] WebGL unavailable; falling back to DOM', err)
+        console.warn('[vigil-terminal] WebGL unavailable; falling back to DOM', err)
       }
 
       fitAndResize()

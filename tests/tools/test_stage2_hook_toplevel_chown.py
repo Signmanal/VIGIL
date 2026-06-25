@@ -1,12 +1,12 @@
-"""Contract test: the s6-overlay stage2 hook resets ownership of hermes-owned
+"""Contract test: the s6-overlay stage2 hook resets ownership of vigil-owned
 top-level state files in $VIGIL_HOME — but only those, never arbitrary
 host-owned files.
 
 Regression guard for the gateway restart loop reported in #35098: files such
 as gateway.lock / state.db / auth.json live directly under $VIGIL_HOME (not in
 a subdir), so the targeted subdir chown misses them. When created or rewritten
-by `docker exec <container> hermes …` (root unless `-u` is passed) they land
-root-owned and the unprivileged hermes runtime then hits PermissionError on next
+by `docker exec <container> vigil …` (root unless `-u` is passed) they land
+root-owned and the unprivileged vigil runtime then hits PermissionError on next
 startup.
 
 The fix uses an explicit allowlist rather than a blanket `find -user root`
@@ -15,7 +15,7 @@ bind-mounted $VIGIL_HOME may contain host-owned files VIGIL does not manage,
 and those must never be chowned.
 
 The s6-overlay rework moved bootstrap from docker/entrypoint.sh (now a shim) to
-docker/stage2-hook.sh, installed as /etc/cont-init.d/01-hermes-setup. This test
+docker/stage2-hook.sh, installed as /etc/cont-init.d/01-vigil-setup. This test
 targets that location.
 """
 from __future__ import annotations
@@ -40,7 +40,7 @@ def stage2_text() -> str:
 
 
 def _toplevel_chown_loop(text: str) -> str:
-    """Extract the `for f in … chown hermes:hermes "$VIGIL_HOME/$f" … done`
+    """Extract the `for f in … chown vigil:vigil "$VIGIL_HOME/$f" … done`
     block that repairs top-level state-file ownership."""
     m = re.search(
         r"(for f in \\\n(?:.*\\\n)*?.*; do\n(?:.*\n)*?done)",
@@ -48,8 +48,8 @@ def _toplevel_chown_loop(text: str) -> str:
     )
     assert m, "stage2-hook.sh must contain the top-level-file chown for-loop (#35098)"
     block = m.group(1)
-    assert 'chown hermes:hermes "$VIGIL_HOME/$f"' in block, (
-        "the top-level-file loop must chown each allowlisted file to hermes"
+    assert 'chown vigil:vigil "$VIGIL_HOME/$f"' in block, (
+        "the top-level-file loop must chown each allowlisted file to vigil"
     )
     return block
 

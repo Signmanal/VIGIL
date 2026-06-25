@@ -6,7 +6,7 @@ author: Teknium (teknium1), VIGIL Agent
 license: MIT
 platforms: [linux, macos]
 metadata:
-  hermes:
+  vigil:
     tags: [Payments, Stripe, Projects, Provisioning, Infrastructure]
     related_skills: [stripe-link-cli, mpp-agent]
 ---

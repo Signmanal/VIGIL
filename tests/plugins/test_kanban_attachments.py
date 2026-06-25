@@ -1,7 +1,7 @@
 """Tests for Kanban task file attachments (#35338).
 
 Covers three layers:
-  * ``hermes_cli.kanban_db`` accessors (add/list/get/delete + path helpers)
+  * ``vigil_cli.kanban_db`` accessors (add/list/get/delete + path helpers)
   * the dashboard REST surface (upload / list / download / delete)
   * worker-context surfacing so a kanban worker sees the absolute paths
 
@@ -20,7 +20,7 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from hermes_cli import kanban_db as kb
+from vigil_cli import kanban_db as kb
 
 
 # ---------------------------------------------------------------------------
@@ -33,7 +33,7 @@ def _load_plugin_router():
     plugin_file = repo_root / "plugins" / "kanban" / "dashboard" / "plugin_api.py"
     assert plugin_file.exists(), f"plugin file missing: {plugin_file}"
     spec = importlib.util.spec_from_file_location(
-        "hermes_dashboard_plugin_kanban_attach_test", plugin_file,
+        "vigil_dashboard_plugin_kanban_attach_test", plugin_file,
     )
     assert spec is not None and spec.loader is not None
     mod = importlib.util.module_from_spec(spec)

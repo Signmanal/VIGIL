@@ -20,7 +20,7 @@ top of their first-import path. If the deps are missing, ``ensure`` checks
 the ``security.allow_lazy_installs`` config flag (default true) and runs
 a venv-scoped pip install. If the user has explicitly disabled lazy
 installs, ``ensure`` raises :class:`FeatureUnavailable` with a clear
-remediation hint pointing at ``hermes tools`` or the manual pip command.
+remediation hint pointing at ``vigil tools`` or the manual pip command.
 
 Security model:
 
@@ -28,7 +28,7 @@ Security model:
   active venv. We never touch the system Python.
 * **Durable-target mode (immutable images).** When the deployment seals the
   agent's own venv (the Docker image sets ``VIGIL_DISABLE_LAZY_INSTALLS=1``
-  and makes ``/opt/hermes`` read-only), setting
+  and makes ``/opt/vigil`` read-only), setting
   ``VIGIL_LAZY_INSTALL_TARGET`` redirects lazy installs to a writable
   directory on the durable data volume (e.g. ``/opt/data/lazy-packages``).
   That directory is **appended to the end of ``sys.path``** — never
@@ -191,7 +191,7 @@ LAZY_DEPS: dict[str, tuple[str, ...]] = {
     # ─── Tools ─────────────────────────────────────────────────────────────
     # ACP adapter (VS Code / Zed / JetBrains integration)
     "tool.acp": ("agent-client-protocol==0.9.0",),
-    # Dashboard (`hermes dashboard`)
+    # Dashboard (`vigil dashboard`)
     "tool.dashboard": (
         "fastapi==0.133.1",
         "uvicorn[standard]==0.41.0",
@@ -410,7 +410,7 @@ def _allow_lazy_installs() -> bool:
     """
     # (1) Config kill switch wins in every mode.
     try:
-        from hermes_cli.config import load_config
+        from vigil_cli.config import load_config
         cfg = load_config()
     except Exception:
         cfg = None
@@ -469,7 +469,7 @@ def _is_satisfied(spec: str) -> bool:
     Checks both presence AND version. If the package is installed at a
     version outside the spec's range, returns False so the caller will
     upgrade/downgrade to the pinned version. This is what makes
-    ``hermes update`` propagate pin bumps in :data:`LAZY_DEPS` to already-
+    ``vigil update`` propagate pin bumps in :data:`LAZY_DEPS` to already-
     installed backends instead of silently leaving stale versions in place.
 
     If ``packaging`` is unavailable for any reason (it's a transitive of
@@ -566,7 +566,7 @@ def _core_constraints_file() -> Optional[Path]:
             lines.append(f"{name}=={ver}")
         if not lines:
             return None
-        fd, path = tempfile.mkstemp(prefix="hermes-core-constraints-", suffix=".txt")
+        fd, path = tempfile.mkstemp(prefix="vigil-core-constraints-", suffix=".txt")
         with os.fdopen(fd, "w", encoding="utf-8") as f:
             f.write("\n".join(sorted(lines)) + "\n")
         return Path(path)
@@ -588,7 +588,7 @@ def _venv_pip_install(specs: tuple[str, ...], *, timeout: int = 300) -> _Install
       is append-only on ``sys.path`` so it can never shadow core. Used by
       the immutable Docker image to keep lazy installs off the sealed venv.
 
-    Mirrors the strategy in ``hermes_cli.tools_config._pip_install`` but
+    Mirrors the strategy in ``vigil_cli.tools_config._pip_install`` but
     kept independent here so this module has no CLI dependency.
     """
     if not specs:
@@ -813,7 +813,7 @@ def active_features() -> list[str]:
     is currently installed in the venv (presence check, ignoring version).
     Features the user has never enabled stay quiet.
 
-    Used by ``hermes update`` to figure out which lazy backends need a
+    Used by ``vigil update`` to figure out which lazy backends need a
     refresh pass when pins move in :data:`LAZY_DEPS`.
     """
     active = []
@@ -833,7 +833,7 @@ def refresh_active_features(*, prompt: bool = False) -> dict[str, str]:
                                   whether to surface it (we don't raise)
         ``"skipped: <reason>"`` — gated off (config flag, user decline)
 
-    Intended for ``hermes update``. Never raises; lazy-install failures
+    Intended for ``vigil update``. Never raises; lazy-install failures
     here must not block the rest of the update flow.
     """
     results: dict[str, str] = {}

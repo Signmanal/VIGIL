@@ -14,7 +14,7 @@ description: "通过 AgentMail 为 Agent 提供专属电子邮件收件箱"
 
 | | |
 |---|---|
-| 来源 | 可选 — 使用 `hermes skills install official/email/agentmail` 安装 |
+| 来源 | 可选 — 使用 `vigil skills install official/email/agentmail` 安装 |
 | 路径 | `optional-skills/email/agentmail` |
 | 版本 | `1.0.0` |
 | 平台 | linux, macos, windows |
@@ -64,7 +64,7 @@ mcp_servers:
 
 ### 3. 重启 VIGIL
 ```bash
-hermes
+vigil
 ```
 所有 11 个 AgentMail 工具现已自动可用。
 
@@ -117,7 +117,7 @@ hermes
 
 **Agent 对人类的外发联系：**
 ```
-1. create_inbox (username: "hermes-outreach")
+1. create_inbox (username: "vigil-outreach")
 2. send_message (to: user@example.com, subject: "Hello", text: "...")
 3. list_threads 检查回复
 ```
@@ -132,7 +132,7 @@ hermes
 ## 验证
 配置完成后，使用以下命令测试：
 ```
-hermes --toolsets mcp -q "Create an AgentMail inbox called test-agent and tell me its email address"
+vigil --toolsets mcp -q "Create an AgentMail inbox called test-agent and tell me its email address"
 ```
 应返回新收件箱的地址。
 

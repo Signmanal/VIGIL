@@ -9,7 +9,7 @@ const ensureGatewayForProfile = vi.fn(async () => undefined)
 const $gateway = atom<unknown>({ id: 'live-socket' })
 
 vi.mock('@/store/gateway', () => ({ $gateway, ensureGatewayForProfile }))
-vi.mock('@/hermes', () => ({
+vi.mock('@/vigil', () => ({
   getProfiles: vi.fn(async () => ({ profiles: [] })),
   setApiRequestProfile: vi.fn()
 }))
@@ -19,7 +19,7 @@ const { $activeGatewayProfile, ensureGatewayProfile } = await import('./profile'
 const { $connection } = await import('./session')
 
 const remoteConn = (over: Partial<VIGILConnection> = {}): VIGILConnection =>
-  ({ baseUrl: 'https://hermes-roy.tail.ts.net', mode: 'remote', profile: 'vps-remote', ...over }) as VIGILConnection
+  ({ baseUrl: 'https://vigil-roy.tail.ts.net', mode: 'remote', profile: 'vps-remote', ...over }) as VIGILConnection
 
 const localConn = (over: Partial<VIGILConnection> = {}): VIGILConnection =>
   ({ baseUrl: '', mode: 'local', profile: 'default', ...over }) as VIGILConnection

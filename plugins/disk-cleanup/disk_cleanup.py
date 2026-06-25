@@ -15,7 +15,7 @@ Rules:
   - chrome-profile→ prompt after 14 days (deep only)
   - >500 MB files → prompt always (deep only)
 
-Scope: strictly VIGIL_HOME and /tmp/hermes-*
+Scope: strictly VIGIL_HOME and /tmp/vigil-*
 Never touches: ~/.vigil/logs/ or any system directory.
 """
 
@@ -29,11 +29,11 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 try:
-    from hermes_constants import get_hermes_home
+    from vigil_constants import get_vigil_home
 except Exception:  # pragma: no cover — plugin may load before constants resolves
     import os
 
-    def get_hermes_home() -> Path:  # type: ignore[no-redef]
+    def get_vigil_home() -> Path:  # type: ignore[no-redef]
         val = (os.environ.get("VIGIL_HOME") or "").strip()
         return Path(val).resolve() if val else (Path.home() / ".vigil").resolve()
 
@@ -47,7 +47,7 @@ logger = logging.getLogger(__name__)
 
 def get_state_dir() -> Path:
     """State dir — separate from ``$VIGIL_HOME/logs/``."""
-    return get_hermes_home() / "disk-cleanup"
+    return get_vigil_home() / "disk-cleanup"
 
 
 def get_tracked_file() -> Path:
@@ -64,19 +64,19 @@ def get_log_file() -> Path:
 # ---------------------------------------------------------------------------
 
 def is_safe_path(path: Path) -> bool:
-    """Accept only paths under VIGIL_HOME or ``/tmp/hermes-*``.
+    """Accept only paths under VIGIL_HOME or ``/tmp/vigil-*``.
 
     Rejects Windows mounts (``/mnt/c`` etc.) and any system directory.
     """
-    hermes_home = get_hermes_home()
+    vigil_home = get_vigil_home()
     try:
-        path.resolve().relative_to(hermes_home)
+        path.resolve().relative_to(vigil_home)
         return True
     except (ValueError, OSError):
         pass
-    # Allow /tmp/hermes-* explicitly
+    # Allow /tmp/vigil-* explicitly
     parts = path.parts
-    if len(parts) >= 3 and parts[1] == "tmp" and parts[2].startswith("hermes-"):
+    if len(parts) >= 3 and parts[1] == "tmp" and parts[2].startswith("vigil-"):
         return True
     return False
 
@@ -173,9 +173,9 @@ def _is_protected_cron_path(p: Path) -> bool:
     # Lazily build the set once per process so VIGIL_HOME is resolved
     # exactly once.
     if not _PROTECTED_CRON_PATHS:
-        hermes_home = get_hermes_home()
+        vigil_home = get_vigil_home()
         for parent in ("cron", "cronjobs"):
-            base = hermes_home / parent
+            base = vigil_home / parent
             _PROTECTED_CRON_PATHS.add(str(base))
             _PROTECTED_CRON_PATHS.add(str(base / "jobs.json"))
             _PROTECTED_CRON_PATHS.add(str(base / ".tick.lock"))
@@ -363,11 +363,11 @@ def quick() -> Dict[str, Any]:
     # durable state trees.  Some installs place the VIGIL checkout, venv,
     # and desktop build under VIGIL_HOME; a full rglob over that tree can
     # stall the gateway event loop for minutes.
-    hermes_home = get_hermes_home()
+    vigil_home = get_vigil_home()
     empty_removed = 0
     sweep_stack: List[Tuple[Path, bool]] = []
     try:
-        for top in hermes_home.iterdir():
+        for top in vigil_home.iterdir():
             if (
                 top.is_dir()
                 and not top.is_symlink()
@@ -550,9 +550,9 @@ def guess_category(path: Path) -> Optional[str]:
         return None
 
     # Skip the state dir itself, logs, memory files, sessions, config.
-    hermes_home = get_hermes_home()
+    vigil_home = get_vigil_home()
     try:
-        rel = path.resolve().relative_to(hermes_home)
+        rel = path.resolve().relative_to(vigil_home)
         top = rel.parts[0] if rel.parts else ""
         if top in {
             "disk-cleanup", "logs", "memories", "sessions", "config.yaml",
@@ -572,7 +572,7 @@ def guess_category(path: Path) -> Optional[str]:
         if top == "cache":
             return "temp"
     except ValueError:
-        # Path isn't under VIGIL_HOME (e.g. /tmp/hermes-*) — fall through.
+        # Path isn't under VIGIL_HOME (e.g. /tmp/vigil-*) — fall through.
         pass
 
     name = path.name

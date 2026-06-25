@@ -25,10 +25,10 @@ import pytest
 
 @pytest.fixture(autouse=True)
 def _isolate_home(tmp_path, monkeypatch):
-    hermes_home = tmp_path / ".vigil"
-    hermes_home.mkdir()
-    monkeypatch.setenv("VIGIL_HOME", str(hermes_home))
-    yield hermes_home
+    vigil_home = tmp_path / ".vigil"
+    vigil_home.mkdir()
+    monkeypatch.setenv("VIGIL_HOME", str(vigil_home))
+    yield vigil_home
 
 
 # ---------------------------------------------------------------------------
@@ -571,11 +571,11 @@ def test_meet_join_auto_node_ambiguous_returns_error():
 
 
 def test_cli_register_includes_node_subcommand():
-    """`hermes meet` argparse tree includes the node subtree."""
+    """`vigil meet` argparse tree includes the node subtree."""
     import argparse
     from plugins.google_meet.cli import register_cli
 
-    parser = argparse.ArgumentParser(prog="hermes meet")
+    parser = argparse.ArgumentParser(prog="vigil meet")
     register_cli(parser)
 
     # Parse a known-good node invocation to prove the subtree is wired.
@@ -588,7 +588,7 @@ def test_cli_join_accepts_mode_and_node_flags():
     import argparse
     from plugins.google_meet.cli import register_cli
 
-    parser = argparse.ArgumentParser(prog="hermes meet")
+    parser = argparse.ArgumentParser(prog="vigil meet")
     register_cli(parser)
 
     ns = parser.parse_args([
@@ -603,7 +603,7 @@ def test_cli_say_subcommand_exists():
     import argparse
     from plugins.google_meet.cli import register_cli
 
-    parser = argparse.ArgumentParser(prog="hermes meet")
+    parser = argparse.ArgumentParser(prog="vigil meet")
     register_cli(parser)
 
     ns = parser.parse_args(["say", "hello team", "--node", "my-mac"])
@@ -650,7 +650,7 @@ def test_looks_like_human_speaker():
     from plugins.google_meet.meet_bot import _looks_like_human_speaker
 
     # Blank, "unknown", "you", and the bot's own name → not human (no barge-in)
-    for s in ("", "   ", "Unknown", "unknown", "You", "you", "VIGIL Agent", "hermes agent"):
+    for s in ("", "   ", "Unknown", "unknown", "You", "you", "VIGIL Agent", "vigil agent"):
         assert not _looks_like_human_speaker(s, "VIGIL Agent"), f"{s!r} should NOT be human"
     # Real names → human (barge-in)
     for s in ("Alice", "Bob Lee", "@teknium"):
@@ -722,14 +722,14 @@ def test_realtime_session_counters_initialized():
 
 
 # ---------------------------------------------------------------------------
-# hermes meet install CLI
+# vigil meet install CLI
 # ---------------------------------------------------------------------------
 
 def test_cli_install_subcommand_is_registered():
     import argparse
     from plugins.google_meet.cli import register_cli
 
-    parser = argparse.ArgumentParser(prog="hermes meet")
+    parser = argparse.ArgumentParser(prog="vigil meet")
     register_cli(parser)
 
     ns = parser.parse_args(["install"])
@@ -742,7 +742,7 @@ def test_cli_install_flags_parse():
     import argparse
     from plugins.google_meet.cli import register_cli
 
-    parser = argparse.ArgumentParser(prog="hermes meet")
+    parser = argparse.ArgumentParser(prog="vigil meet")
     register_cli(parser)
 
     ns = parser.parse_args(["install", "--realtime", "--yes"])

@@ -8,14 +8,15 @@ import { ExportedMessageRepository } from '@assistant-ui/core/internal'
 // bubbles) is not reproducible in jsdom — see USER_BUBBLE_BASE_CLASS's no-drag
 // carve-out in thread.tsx.
 import { AssistantRuntimeProvider, type ThreadMessage, useExternalStoreRuntime } from '@assistant-ui/react'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { useIncrementalExternalStoreRuntime } from '@/lib/incremental-external-store-runtime'
 
 import { Thread } from './thread'
 
 const createdAt = new Date('2026-05-01T00:00:00.000Z')
+const animationFrameTimers = new Set<ReturnType<typeof setTimeout>>()
 
 class TestResizeObserver {
   observe() {}
@@ -24,10 +25,19 @@ class TestResizeObserver {
 }
 
 vi.stubGlobal('ResizeObserver', TestResizeObserver)
-vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) =>
-  window.setTimeout(() => callback(performance.now()), 0)
-)
-vi.stubGlobal('cancelAnimationFrame', (id: number) => window.clearTimeout(id))
+vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+  const id = globalThis.setTimeout(() => {
+    animationFrameTimers.delete(id)
+    callback(globalThis.performance?.now?.() ?? Date.now())
+  }, 0)
+  animationFrameTimers.add(id)
+  return id as unknown as number
+})
+vi.stubGlobal('cancelAnimationFrame', (id: number) => {
+  const timeout = id as unknown as ReturnType<typeof setTimeout>
+  globalThis.clearTimeout(timeout)
+  animationFrameTimers.delete(timeout)
+})
 
 Element.prototype.scrollTo = function scrollTo() {}
 
@@ -115,6 +125,14 @@ function StockHarness({ onEdit }: { onEdit: () => Promise<void> }) {
 }
 
 describe('click-to-edit user message', () => {
+  afterEach(() => {
+    cleanup()
+    for (const id of animationFrameTimers) {
+      globalThis.clearTimeout(id)
+    }
+    animationFrameTimers.clear()
+  })
+
   it('opens the edit composer with the incremental runtime', async () => {
     const { container } = render(<IncrementalHarness onEdit={async () => {}} />)
 

@@ -20,7 +20,7 @@ This page shows how to combine worktrees with VIGIL so each session has a clean,
 
 VIGIL treats the **current working directory** as the project root:
 
-- CLI: the directory where you run `hermes` or `hermes chat`
+- CLI: the directory where you run `vigil` or `vigil chat`
 - Messaging gateways: the directory set by `terminal.cwd` in `~/.vigil/config.yaml`
 
 If you run multiple agents in the **same checkout**, their changes can interfere with each other:
@@ -44,13 +44,13 @@ From your main repository (containing `.git/`), create a new worktree for a feat
 cd /path/to/your/repo
 
 # Create a new branch and worktree in ../repo-feature
-git worktree add ../repo-feature feature/hermes-experiment
+git worktree add ../repo-feature feature/vigil-experiment
 ```
 
 This creates:
 
 - A new directory: `../repo-feature`
-- A new branch: `feature/hermes-experiment` checked out in that directory
+- A new branch: `feature/vigil-experiment` checked out in that directory
 
 Now you can `cd` into the new worktree and run VIGIL there:
 
@@ -58,7 +58,7 @@ Now you can `cd` into the new worktree and run VIGIL there:
 cd ../repo-feature
 
 # Start VIGIL in the worktree
-hermes
+vigil
 ```
 
 VIGIL will:
@@ -74,8 +74,8 @@ You can create multiple worktrees, each with its own branch:
 ```bash
 cd /path/to/your/repo
 
-git worktree add ../repo-experiment-a feature/hermes-a
-git worktree add ../repo-experiment-b feature/hermes-b
+git worktree add ../repo-experiment-a feature/vigil-a
+git worktree add ../repo-experiment-b feature/vigil-b
 ```
 
 In separate terminals:
@@ -83,16 +83,16 @@ In separate terminals:
 ```bash
 # Terminal 1
 cd ../repo-experiment-a
-hermes
+vigil
 
 # Terminal 2
 cd ../repo-experiment-b
-hermes
+vigil
 ```
 
 Each VIGIL process:
 
-- Works on its own branch (`feature/hermes-a` vs `feature/hermes-b`).
+- Works on its own branch (`feature/vigil-a` vs `feature/vigil-b`).
 - Writes checkpoints under a different shadow repo hash (derived from the worktree path).
 - Can use `/rollback` independently without affecting the other.
 
@@ -130,35 +130,35 @@ Notes:
   - Create a dedicated branch/worktree for each substantial change.
   - This keeps diffs focused and PRs small and reviewable.
 - **Name branches after the experiment**
-  - e.g. `feature/hermes-checkpoints-docs`, `feature/hermes-refactor-tests`.
+  - e.g. `feature/vigil-checkpoints-docs`, `feature/vigil-refactor-tests`.
 - **Commit frequently**
   - Use git commits for high‑level milestones.
   - Use [checkpoints and /rollback](./checkpoints-and-rollback.md) as a safety net for tool‑driven edits in between.
 - **Avoid running VIGIL from the bare repo root when using worktrees**
   - Prefer the worktree directories instead, so each agent has a clear scope.
 
-## Using `hermes -w` (Automatic Worktree Mode)
+## Using `vigil -w` (Automatic Worktree Mode)
 
 VIGIL has a built‑in `-w` flag that **automatically creates a disposable git worktree** with its own branch. You don't need to set up worktrees manually — just `cd` into your repo and run:
 
 ```bash
 cd /path/to/your/repo
-hermes -w
+vigil -w
 ```
 
 VIGIL will:
 
 - Create a temporary worktree under `.worktrees/` inside your repo.
-- Check out an isolated branch (e.g. `hermes/hermes-<hash>`).
+- Check out an isolated branch (e.g. `vigil/vigil-<hash>`).
 - Run the full CLI session inside that worktree.
 
 This is the easiest way to get worktree isolation. You can also combine it with a single query:
 
 ```bash
-hermes -w -z "Fix issue #123"
+vigil -w -z "Fix issue #123"
 ```
 
-For parallel agents, open multiple terminals and run `hermes -w` in each — every invocation gets its own worktree and branch automatically.
+For parallel agents, open multiple terminals and run `vigil -w` in each — every invocation gets its own worktree and branch automatically.
 
 ## Putting It All Together
 

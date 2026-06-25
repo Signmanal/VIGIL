@@ -9,7 +9,7 @@ description: "Plugins shipped with VIGIL Agent that run automatically via lifecy
 
 VIGIL ships a small set of plugins bundled with the repository. They live under `<repo>/plugins/<name>/` and load automatically alongside user-installed plugins in `~/.vigil/plugins/`. They use the same plugin surface as third-party plugins — hooks, tools, slash commands — just maintained in-tree.
 
-See the [Plugins](/user-guide/features/plugins) page for the general plugin system, and [Build a VIGIL Plugin](/guides/build-a-hermes-plugin) to write your own.
+See the [Plugins](/user-guide/features/plugins) page for the general plugin system, and [Build a VIGIL Plugin](/guides/build-a-vigil-plugin) to write your own.
 
 ## How discovery works
 
@@ -18,18 +18,18 @@ The `PluginManager` scans four sources, in order:
 1. **Bundled** — `<repo>/plugins/<name>/` (what this page documents)
 2. **User** — `~/.vigil/plugins/<name>/`
 3. **Project** — `./.vigil/plugins/<name>/` (requires `VIGIL_ENABLE_PROJECT_PLUGINS=1`)
-4. **Pip entry points** — `hermes_agent.plugins`
+4. **Pip entry points** — `vigil_agent.plugins`
 
 On name collision, later sources win — a user plugin named `disk-cleanup` would replace the bundled one.
 
-`plugins/memory/` and `plugins/context_engine/` are deliberately excluded from bundled scanning. Those directories use their own discovery paths because memory providers and context engines are single-select providers configured through `hermes memory setup` / `context.engine` in config.
+`plugins/memory/` and `plugins/context_engine/` are deliberately excluded from bundled scanning. Those directories use their own discovery paths because memory providers and context engines are single-select providers configured through `vigil memory setup` / `context.engine` in config.
 
 ## Bundled plugins are opt-in
 
-Bundled plugins ship disabled. Discovery finds them (they appear in `hermes plugins list` and the interactive `hermes plugins` UI), but none load until you explicitly enable them:
+Bundled plugins ship disabled. Discovery finds them (they appear in `vigil plugins list` and the interactive `vigil plugins` UI), but none load until you explicitly enable them:
 
 ```bash
-hermes plugins enable disk-cleanup
+vigil plugins enable disk-cleanup
 ```
 
 Or via `~/.vigil/config.yaml`:
@@ -45,13 +45,13 @@ This is the same mechanism user-installed plugins use. Bundled plugins are never
 To turn a bundled plugin off again:
 
 ```bash
-hermes plugins disable disk-cleanup
+vigil plugins disable disk-cleanup
 # or: remove it from plugins.enabled in config.yaml
 ```
 
 ## Currently shipped
 
-The repo ships these bundled plugins under `plugins/`. All are opt-in — enable them via `hermes plugins enable <name>`.
+The repo ships these bundled plugins under `plugins/`. All are opt-in — enable them via `vigil plugins enable <name>`.
 
 | Plugin | Kind | Purpose |
 |---|---|---|
@@ -65,10 +65,10 @@ The repo ships these bundled plugins under `plugins/`. All are opt-in — enable
 | `image_gen/openai` | image backend | OpenAI `gpt-image-2` image generation backend (alternative to FAL) |
 | `image_gen/openai-codex` | image backend | OpenAI image generation via Codex OAuth |
 | `image_gen/xai` | image backend | xAI `grok-2-image` backend |
-| `hermes-achievements` | dashboard tab | Steam-style collectible badges generated from your real VIGIL session history |
+| `vigil-achievements` | dashboard tab | Steam-style collectible badges generated from your real VIGIL session history |
 | `kanban/dashboard` | dashboard tab | Kanban board UI for the multi-agent dispatcher — tasks, comments, fan-out, board switching. See [Kanban Multi-Agent](./kanban.md). |
 
-Memory providers (`plugins/memory/*`) and context engines (`plugins/context_engine/*`) are listed separately on [Memory Providers](./memory-providers.md) — they're managed through `hermes memory` and `hermes plugins` respectively. The full per-plugin detail for the two long-running hooks-based plugins follows.
+Memory providers (`plugins/memory/*`) and context engines (`plugins/context_engine/*`) are listed separately on [Memory Providers](./memory-providers.md) — they're managed through `vigil memory` and `vigil plugins` respectively. The full per-plugin detail for the two long-running hooks-based plugins follows.
 
 ### disk-cleanup
 
@@ -78,7 +78,7 @@ Auto-tracks and removes ephemeral files created during sessions — test scripts
 
 | Hook | Behaviour |
 |---|---|
-| `post_tool_call` | When `write_file` / `terminal` / `patch` creates a file matching `test_*`, `tmp_*`, or `*.test.*` inside `VIGIL_HOME` or `/tmp/hermes-*`, track it silently as `test` / `temp` / `cron-output`. |
+| `post_tool_call` | When `write_file` / `terminal` / `patch` creates a file matching `test_*`, `tmp_*`, or `*.test.*` inside `VIGIL_HOME` or `/tmp/vigil-*`, track it silently as `test` / `temp` / `cron-output`. |
 | `on_session_end` | If any test files were auto-tracked during the turn, run the safe `quick` cleanup and log a one-line summary. Stays silent otherwise. |
 
 **Deletion rules:**
@@ -112,11 +112,11 @@ Auto-tracks and removes ephemeral files created during sessions — test scripts
 | `tracked.json.bak` | Atomic-write backup of the above |
 | `cleanup.log` | Append-only audit trail of every track / skip / reject / delete |
 
-**Safety** — cleanup only ever touches paths under `VIGIL_HOME` or `/tmp/hermes-*`. Windows mounts (`/mnt/c/...`) are rejected. Well-known top-level state dirs (`logs/`, `memories/`, `sessions/`, `cron/`, `cache/`, `skills/`, `plugins/`, `disk-cleanup/` itself) are never removed even when empty — a fresh install does not get gutted on first session end.
+**Safety** — cleanup only ever touches paths under `VIGIL_HOME` or `/tmp/vigil-*`. Windows mounts (`/mnt/c/...`) are rejected. Well-known top-level state dirs (`logs/`, `memories/`, `sessions/`, `cron/`, `cache/`, `skills/`, `plugins/`, `disk-cleanup/` itself) are never removed even when empty — a fresh install does not get gutted on first session end.
 
-**Enabling:** `hermes plugins enable disk-cleanup` (or check the box in `hermes plugins`).
+**Enabling:** `vigil plugins enable disk-cleanup` (or check the box in `vigil plugins`).
 
-**Disabling again:** `hermes plugins disable disk-cleanup`.
+**Disabling again:** `vigil plugins disable disk-cleanup`.
 
 ### security-guidance
 
@@ -134,22 +134,22 @@ The file is still written. The model reads the warning in the next turn's tool m
 | `SECURITY_GUIDANCE_BLOCK=1` | **block mode** — write refused, warning returned as the block reason |
 | `SECURITY_GUIDANCE_DISABLE=1` | kill switch — plugin loads but does nothing |
 
-**Enabling:** `hermes plugins enable security-guidance` (or check the box in `hermes plugins`).
+**Enabling:** `vigil plugins enable security-guidance` (or check the box in `vigil plugins`).
 
-**Disabling again:** `hermes plugins disable security-guidance`.
+**Disabling again:** `vigil plugins disable security-guidance`.
 
 **What it does not do (yet):** the upstream Anthropic plugin has two more layers — an LLM diff review on each agent turn that touched files, and an agentic commit-time review that traces data flow across files. Neither is ported. The agent can already run those reviews on demand via `delegate_task`.
 
 ### observability/langfuse
 
-Traces VIGIL turns, LLM calls, and tool invocations to [Langfuse](https://langfuse.com) — an open-source LLM observability platform. One span per turn, one generation per API call, one tool observation per tool call. Usage totals, per-type token counts, and cost estimates come out of VIGIL' canonical `agent.usage_pricing` numbers, so the Langfuse dashboard sees the same breakdown (input / output / `cache_read_input_tokens` / `cache_creation_input_tokens` / `reasoning_tokens`) that appears in `hermes logs`.
+Traces VIGIL turns, LLM calls, and tool invocations to [Langfuse](https://langfuse.com) — an open-source LLM observability platform. One span per turn, one generation per API call, one tool observation per tool call. Usage totals, per-type token counts, and cost estimates come out of VIGIL' canonical `agent.usage_pricing` numbers, so the Langfuse dashboard sees the same breakdown (input / output / `cache_read_input_tokens` / `cache_creation_input_tokens` / `reasoning_tokens`) that appears in `vigil logs`.
 
 The plugin is fail-open: no SDK installed, no credentials, or a transient Langfuse error — all turn into a silent no-op in the hook. The agent loop is never impacted.
 
 **Setup (interactive — recommended):**
 
 ```bash
-hermes tools          # → Langfuse Observability → Cloud or Self-Hosted
+vigil tools          # → Langfuse Observability → Cloud or Self-Hosted
 ```
 
 The wizard collects your keys, `pip install`s the `langfuse` SDK, and adds `observability/langfuse` to `plugins.enabled` for you. Restart VIGIL and the next turn ships a trace.
@@ -158,7 +158,7 @@ The wizard collects your keys, `pip install`s the `langfuse` SDK, and adds `obse
 
 ```bash
 pip install langfuse
-hermes plugins enable observability/langfuse
+vigil plugins enable observability/langfuse
 ```
 
 Then put the credentials in `~/.vigil/.env`:
@@ -178,13 +178,13 @@ VIGIL_LANGFUSE_BASE_URL=https://cloud.langfuse.com   # or your self-hosted URL
 | `pre_tool_call` | Start a `tool` child observation with sanitized `args`. |
 | `post_tool_call` | Close the tool observation with sanitized `result`. `read_file` payloads get summarized (head + tail + omitted-line count) so a huge file read stays under `VIGIL_LANGFUSE_MAX_CHARS`. |
 
-Session grouping keys off the VIGIL session ID (or task ID for sub-agents) via `langfuse.propagate_attributes`, so everything in a single `hermes chat` session lives under one Langfuse session.
+Session grouping keys off the VIGIL session ID (or task ID for sub-agents) via `langfuse.propagate_attributes`, so everything in a single `vigil chat` session lives under one Langfuse session.
 
 **Verify:**
 
 ```bash
-hermes plugins list                 # observability/langfuse should show "enabled"
-hermes chat -q "hello"              # check the Langfuse UI for a "VIGIL turn" trace
+vigil plugins list                 # observability/langfuse should show "enabled"
+vigil chat -q "hello"              # check the Langfuse UI for a "VIGIL turn" trace
 ```
 
 **Optional tuning** (in `.env`):
@@ -201,7 +201,7 @@ VIGIL-prefixed and standard SDK env vars (`LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRE
 
 **Performance:** the Langfuse client is cached after the first hook call. If credentials or SDK are missing, that decision is also cached — subsequent hooks fast-return without re-checking env vars or reloading config.
 
-**Disabling:** `hermes plugins disable observability/langfuse`. The plugin module is still discovered, but no module code runs until you re-enable.
+**Disabling:** `vigil plugins disable observability/langfuse`. The plugin module is still discovered, but no module code runs until you re-enable.
 
 ### google_meet
 
@@ -217,7 +217,7 @@ Lets the agent **join, transcribe, and participate in Google Meet calls** — ta
 **Setup:**
 
 ```bash
-hermes plugins enable google_meet
+vigil plugins enable google_meet
 # Prompts you to sign in via the plugin's OAuth flow on first use —
 # needs a Google account with Meet access. Host approval may be required
 # if the meeting enforces "only invited participants can join".
@@ -231,9 +231,9 @@ The agent kicks off the meeting join, streams the transcription back into its co
 
 **When to use it:** recurring standups where you want a bot to transcribe + summarize for async attendees; deposition-style interviews where you want structured notes; any case where you'd otherwise need Fireflies / Otter / Grain. When you'd rather not have an AI listening in — don't enable it.
 
-**Disabling:** `hermes plugins disable google_meet`. Any cached transcripts and recordings stay in `~/.vigil/cache/google_meet/` until you remove them.
+**Disabling:** `vigil plugins disable google_meet`. Any cached transcripts and recordings stay in `~/.vigil/cache/google_meet/` until you remove them.
 
-### hermes-achievements
+### vigil-achievements
 
 Adds a **Steam-style achievements tab to the dashboard** — 60+ collectible, tiered badges generated from your real VIGIL session history. Tool-chain feats, debugging patterns, vibe-coding streaks, skill/memory usage, model/provider variety, lifestyle quirks (weekend and night sessions). Originally authored by [@PCinkusz](https://github.com/PCinkusz) as an external plugin; brought in-tree so it stays in lockstep with VIGIL feature changes.
 
@@ -242,7 +242,7 @@ Adds a **Steam-style achievements tab to the dashboard** — 60+ collectible, ti
 - Scans your entire `~/.vigil/state.db` session history on the dashboard backend
 - Per-session stats are cached by `(started_at, last_active)` fingerprint, so only new or changed sessions re-analyze on subsequent scans
 - First-ever scan runs in a background thread — the dashboard never blocks waiting for it, even on databases with thousands of sessions
-- Unlock state is persisted to `$VIGIL_HOME/plugins/hermes-achievements/state.json`
+- Unlock state is persisted to `$VIGIL_HOME/plugins/vigil-achievements/state.json`
 
 **Tier progression:** Copper → Silver → Gold → Diamond → Olympian. Each card exposes a "What counts" section listing the exact metric being tracked.
 
@@ -254,7 +254,7 @@ Adds a **Steam-style achievements tab to the dashboard** — 60+ collectible, ti
 | Discovered | Known achievement, progress visible, not yet earned |
 | Secret | Hidden until VIGIL detects the first related signal in your history |
 
-**API** — routes mount under `/api/plugins/hermes-achievements/`:
+**API** — routes mount under `/api/plugins/vigil-achievements/`:
 
 | Endpoint | Purpose |
 |---|---|
@@ -265,7 +265,7 @@ Adds a **Steam-style achievements tab to the dashboard** — 60+ collectible, ti
 | `POST /rescan` | Manual synchronous rescan (blocks; use when the user clicks the rescan button) |
 | `POST /reset-state` | Clear unlock history and cached snapshot |
 
-**State files** — live under `$VIGIL_HOME/plugins/hermes-achievements/`:
+**State files** — live under `$VIGIL_HOME/plugins/vigil-achievements/`:
 
 | File | Contents |
 |---|---|
@@ -280,16 +280,16 @@ Adds a **Steam-style achievements tab to the dashboard** — 60+ collectible, ti
 - Warm rescan reuses per-session stats for every session whose `started_at` + `last_active` fingerprint matches the checkpoint — completes in seconds even on large histories.
 - The in-memory snapshot TTL is 120s; stale requests serve the old snapshot immediately and kick a background refresh. You never wait on a spinner just because TTL expired.
 
-**Enabling:** Nothing to enable — `hermes-achievements` is a dashboard-only plugin (no lifecycle hooks, no model-visible tools). It auto-registers as a tab in `hermes dashboard` on first launch. The `plugins.enabled` config only gates lifecycle/tool plugins; dashboard plugins are discovered purely via their `dashboard/manifest.json`.
+**Enabling:** Nothing to enable — `vigil-achievements` is a dashboard-only plugin (no lifecycle hooks, no model-visible tools). It auto-registers as a tab in `vigil dashboard` on first launch. The `plugins.enabled` config only gates lifecycle/tool plugins; dashboard plugins are discovered purely via their `dashboard/manifest.json`.
 
-**Opting out:** Delete or rename `plugins/hermes-achievements/dashboard/manifest.json`, or override it with a user plugin of the same name in `~/.vigil/plugins/hermes-achievements/` that ships no dashboard. The plugin's state files under `$VIGIL_HOME/plugins/hermes-achievements/` survive — reinstalling preserves your unlock history.
+**Opting out:** Delete or rename `plugins/vigil-achievements/dashboard/manifest.json`, or override it with a user plugin of the same name in `~/.vigil/plugins/vigil-achievements/` that ships no dashboard. The plugin's state files under `$VIGIL_HOME/plugins/vigil-achievements/` survive — reinstalling preserves your unlock history.
 
 ## Adding a bundled plugin
 
-Bundled plugins are written exactly like any other VIGIL plugin — see [Build a VIGIL Plugin](/guides/build-a-hermes-plugin). The only differences are:
+Bundled plugins are written exactly like any other VIGIL plugin — see [Build a VIGIL Plugin](/guides/build-a-vigil-plugin). The only differences are:
 
 - Directory lives at `<repo>/plugins/<name>/` instead of `~/.vigil/plugins/<name>/`
-- Manifest source is reported as `bundled` in `hermes plugins list`
+- Manifest source is reported as `bundled` in `vigil plugins list`
 - User plugins with the same name override the bundled version
 
 A plugin is a good candidate for bundling when:

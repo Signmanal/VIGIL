@@ -1,4 +1,4 @@
-"""Nous Portal provider profile."""
+"""VIGIL Portal provider profile."""
 
 from typing import Any
 
@@ -8,7 +8,7 @@ from providers.base import ProviderProfile
 
 
 class NousProfile(ProviderProfile):
-    """Nous Portal — product tags, reasoning with Nous-specific omission."""
+    """VIGIL Portal — product tags, reasoning with Nous-specific omission."""
 
     def build_extra_body(
         self, *, session_id: str | None = None, **context
@@ -44,8 +44,8 @@ nous = NousProfile(
     description="Nous Research — VIGIL model family",
     signup_url="https://nousresearch.com/",
     fallback_models=(
-        "hermes-3-405b",
-        "hermes-3-70b",
+        "vigil-3-405b",
+        "vigil-3-70b",
     ),
     base_url="https://inference.nousresearch.com/v1",
     auth_type="oauth_device_code",

@@ -6,10 +6,10 @@ These skills ship with the vigil-agent repository but are not copied to
 `~/.vigil/skills/` during setup. They are discoverable via the Skills Hub:
 
 ```bash
-hermes skills browse               # browse all skills, official shown first
-hermes skills browse --source official  # browse only official optional skills
-hermes skills search <query>       # finds optional skills labeled "official"
-hermes skills install <identifier> # copies to ~/.vigil/skills/ and activates
+vigil skills browse               # browse all skills, official shown first
+vigil skills browse --source official  # browse only official optional skills
+vigil skills search <query>       # finds optional skills labeled "official"
+vigil skills install <identifier> # copies to ~/.vigil/skills/ and activates
 ```
 
 ## Why optional?

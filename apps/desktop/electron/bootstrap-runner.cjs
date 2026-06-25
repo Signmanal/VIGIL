@@ -456,7 +456,7 @@ function buildPinArgs(installStamp) {
 }
 
 function buildPosixPinArgs({ installStamp, activeRoot, hermesHome }) {
-  const args = ['--dir', activeRoot, '--hermes-home', hermesHome]
+  const args = ['--dir', activeRoot, '--vigil-home', hermesHome]
   if (installStamp && installStamp.branch) {
     args.push('--branch', installStamp.branch)
   }

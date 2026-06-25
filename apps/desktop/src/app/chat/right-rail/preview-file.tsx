@@ -191,7 +191,7 @@ async function readTextPreview(filePath: string): Promise<VIGILReadFileTextResul
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
 
-    if (!message.includes("No handler registered for 'hermes:readFileText'")) {
+    if (!message.includes("No handler registered for 'vigil:readFileText'")) {
       throw error
     }
   }

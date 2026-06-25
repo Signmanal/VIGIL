@@ -1,5 +1,5 @@
 """
-``hermes photon ...`` CLI subcommands — registered by the plugin via
+``vigil photon ...`` CLI subcommands — registered by the plugin via
 ``ctx.register_cli_command()``.
 
 Subcommands:
@@ -26,7 +26,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from hermes_cli.colors import Colors, color
+from vigil_cli.colors import Colors, color
 
 from . import auth as photon_auth
 
@@ -37,7 +37,7 @@ _SIDECAR_DIR = Path(__file__).parent / "sidecar"
 # argparse wiring
 
 def register_cli(parser: argparse.ArgumentParser) -> None:
-    """Wire up `hermes photon ...` subcommands."""
+    """Wire up `vigil photon ...` subcommands."""
     subs = parser.add_subparsers(dest="photon_command", required=False)
 
     p_setup = subs.add_parser(
@@ -98,7 +98,7 @@ def _run_device_login(args: argparse.Namespace) -> int:
     """Run the RFC 8628 device-code login flow and persist the token.
 
     Internal helper — invoked as the first step of ``setup``. There is
-    no standalone ``hermes photon login`` command; Photon onboards
+    no standalone ``vigil photon login`` command; Photon onboards
     through the single ``setup`` surface like every other channel.
     """
     def _print_code(code):
@@ -272,7 +272,7 @@ def _cmd_setup(args: argparse.Namespace) -> int:
 
     print()
     print("✓ Photon setup complete.")
-    print("  Start the gateway:  hermes gateway start")
+    print("  Start the gateway:  vigil gateway start")
     return 0
 
 
@@ -286,7 +286,7 @@ def _autoconfigure_access(phone: str) -> None:
     never clobbered on a re-run.
     """
     try:
-        from hermes_cli.config import get_env_value, save_env_value
+        from vigil_cli.config import get_env_value, save_env_value
     except ImportError:
         return
     for key, label in (
@@ -312,8 +312,8 @@ def _cmd_status(_args: argparse.Namespace) -> int:
     node_bin = os.getenv("PHOTON_NODE_BIN") or shutil.which("node")
     sidecar_installed = (_SIDECAR_DIR / "node_modules").exists()
     print(f"  node binary         : {node_bin or '✗ missing (install Node 18+)'}")
-    print(f"  sidecar deps        : {'✓ installed' if sidecar_installed else '✗ run `hermes photon install-sidecar`'}")
-    print(f"  telemetry           : {'on' if _telemetry_enabled() else 'off'} (`hermes photon telemetry on|off`)")
+    print(f"  sidecar deps        : {'✓ installed' if sidecar_installed else '✗ run `vigil photon install-sidecar`'}")
+    print(f"  telemetry           : {'on' if _telemetry_enabled() else 'off'} (`vigil photon telemetry on|off`)")
     return 0
 
 
@@ -341,7 +341,7 @@ def _telemetry_enabled() -> bool:
     always matches what the sidecar will actually do.
     """
     try:
-        from hermes_cli.config import get_env_value
+        from vigil_cli.config import get_env_value
         raw = get_env_value("PHOTON_TELEMETRY")
     except ImportError:
         raw = os.getenv("PHOTON_TELEMETRY")
@@ -352,16 +352,16 @@ def _cmd_telemetry(args: argparse.Namespace) -> int:
     state = getattr(args, "state", None)
     if state is None:
         print(f"Photon telemetry: {'on' if _telemetry_enabled() else 'off'}")
-        print("  Toggle with `hermes photon telemetry on` / `hermes photon telemetry off`.")
+        print("  Toggle with `vigil photon telemetry on` / `vigil photon telemetry off`.")
         return 0
     try:
-        from hermes_cli.config import save_env_value
+        from vigil_cli.config import save_env_value
         save_env_value("PHOTON_TELEMETRY", "true" if state == "on" else "false")
     except Exception as e:
         print(f"could not save PHOTON_TELEMETRY: {e}", file=sys.stderr)
         return 1
     print(f"✓ Spectrum telemetry turned {state} (PHOTON_TELEMETRY in ~/.vigil/.env)")
-    print("  Restart the gateway for the sidecar to pick it up:  hermes gateway restart")
+    print("  Restart the gateway for the sidecar to pick it up:  vigil gateway restart")
     return 0
 
 
@@ -402,15 +402,15 @@ def _install_sidecar() -> int:
 # ---------------------------------------------------------------------------
 # Gateway-setup entry point
 #
-# `hermes gateway setup` discovers platforms via the registry and calls each
+# `vigil gateway setup` discovers platforms via the registry and calls each
 # entry's zero-arg ``setup_fn``. Photon registers this function so it appears
 # in the unified setup wizard alongside every other channel — same onboarding
 # surface, no Photon-specific detour. It runs the identical device-login +
-# project + user + sidecar flow as ``hermes photon setup`` with interactive
+# project + user + sidecar flow as ``vigil photon setup`` with interactive
 # defaults (phone is prompted when stdin is a TTY).
 
 def gateway_setup() -> None:
-    """Run Photon first-time setup from the `hermes gateway setup` wizard."""
+    """Run Photon first-time setup from the `vigil gateway setup` wizard."""
     args = argparse.Namespace(
         photon_command="setup",
         project_name=None,

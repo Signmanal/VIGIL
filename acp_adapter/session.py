@@ -8,7 +8,7 @@ history.
 """
 from __future__ import annotations
 
-from hermes_constants import get_hermes_home
+from vigil_constants import get_vigil_home
 
 import copy
 import json
@@ -39,13 +39,13 @@ def _win_path_to_wsl(path: str) -> str | None:
 def _translate_acp_cwd(cwd: str) -> str:
     """Translate Windows ACP cwd values when VIGIL itself is running in WSL.
 
-    Windows ACP clients can launch ``hermes acp`` inside WSL while still sending
+    Windows ACP clients can launch ``vigil acp`` inside WSL while still sending
     editor workspaces as Windows drive paths such as ``E:\\Projects``. Store
     and execute against the WSL mount path so agents, tools, and persisted ACP
     sessions all agree on the usable workspace. Native Linux/macOS keeps the
     original cwd unchanged.
     """
-    from hermes_constants import is_wsl
+    from vigil_constants import is_wsl
 
     if not is_wsl():
         return cwd
@@ -143,7 +143,7 @@ def _expand_acp_enabled_toolsets(
 ) -> List[str]:
     """Return ACP toolsets plus explicit MCP server toolsets for this session."""
     expanded: List[str] = []
-    for name in list(toolsets or ["hermes-acp"]):
+    for name in list(toolsets or ["vigil-acp"]):
         if name and name not in expanded:
             expanded.append(name)
 
@@ -407,14 +407,14 @@ class SessionManager:
         Note: we resolve ``VIGIL_HOME`` dynamically rather than relying on
         the module-level ``DEFAULT_DB_PATH`` constant, because that constant
         is evaluated at import time and won't reflect env-var changes made
-        later (e.g. by the test fixture ``_isolate_hermes_home``).
+        later (e.g. by the test fixture ``_isolate_vigil_home``).
         """
         if self._db_instance is not None:
             return self._db_instance
         try:
-            from hermes_state import SessionDB
-            hermes_home = get_hermes_home()
-            self._db_instance = SessionDB(db_path=hermes_home / "state.db")
+            from vigil_state import SessionDB
+            vigil_home = get_vigil_home()
+            self._db_instance = SessionDB(db_path=vigil_home / "state.db")
             return self._db_instance
         except Exception:
             logger.debug("SessionDB unavailable for ACP persistence", exc_info=True)
@@ -569,8 +569,8 @@ class SessionManager:
             return self._agent_factory()
 
         from run_agent import AIAgent
-        from hermes_cli.config import load_config
-        from hermes_cli.runtime_provider import resolve_runtime_provider
+        from vigil_cli.config import load_config
+        from vigil_cli.runtime_provider import resolve_runtime_provider
 
         config = load_config()
         model_cfg = config.get("model")
@@ -591,7 +591,7 @@ class SessionManager:
         kwargs = {
             "platform": "acp",
             "enabled_toolsets": _expand_acp_enabled_toolsets(
-                ["hermes-acp"],
+                ["vigil-acp"],
                 mcp_server_names=configured_mcp_servers,
             ),
             "quiet_mode": True,

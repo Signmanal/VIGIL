@@ -1,6 +1,6 @@
 """GMI Cloud provider profile."""
 
-from hermes_cli import __version__ as _VIGIL_VERSION
+from vigil_cli import __version__ as _VIGIL_VERSION
 from providers import register_provider
 from providers.base import ProviderProfile
 

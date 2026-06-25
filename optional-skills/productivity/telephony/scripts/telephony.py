@@ -68,20 +68,20 @@ class OwnedTwilioNumber:
     capabilities: dict[str, Any]
 
 
-def _hermes_home() -> Path:
+def _vigil_home() -> Path:
     return Path(os.environ.get("VIGIL_HOME", "~/.vigil")).expanduser()
 
 
 def _env_path() -> Path:
-    return _hermes_home() / ".env"
+    return _vigil_home() / ".env"
 
 
 def _config_path() -> Path:
-    return _hermes_home() / "config.yaml"
+    return _vigil_home() / "config.yaml"
 
 
 def _state_path() -> Path:
-    return _hermes_home() / "telephony_state.json"
+    return _vigil_home() / "telephony_state.json"
 
 
 def _load_root_config() -> dict[str, Any]:

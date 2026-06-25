@@ -561,7 +561,7 @@ export interface Translations {
     fontMono?: string;
   };
 
-  // ── Achievements plugin (plugins/hermes-achievements) ──
+  // ── Achievements plugin (plugins/vigil-achievements) ──
   achievements: {
     hero: {
       kicker: string;

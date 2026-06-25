@@ -13,7 +13,7 @@ or a linked OpenViking CLI config:
   OPENVIKING_API_KEY   — API key (required for authenticated servers)
   OPENVIKING_ACCOUNT   — Tenant account for local/trusted mode (default: default)
   OPENVIKING_USER      — Tenant user for local/trusted mode (default: default)
-  OPENVIKING_AGENT     — VIGIL peer ID in OpenViking (default: hermes)
+  OPENVIKING_AGENT     — VIGIL peer ID in OpenViking (default: vigil)
 
 Capabilities:
   - Automatic memory extraction on session commit (6 categories)
@@ -55,7 +55,7 @@ logger = logging.getLogger(__name__)
 
 _DEFAULT_ENDPOINT = "http://127.0.0.1:1933"
 _OPENVIKING_SERVICE_ENDPOINT = "https://api.vikingdb.cn-beijing.volces.com/openviking"
-_DEFAULT_AGENT = "hermes"
+_DEFAULT_AGENT = "vigil"
 _AGENT_PROMPT_LABEL = "VIGIL peer ID in OpenViking"
 _OVCLI_CONFIG_ENV = "OPENVIKING_CLI_CONFIG_FILE"
 _OVCLI_DEFAULT_RELATIVE_PATH = ".openviking/ovcli.conf"
@@ -845,9 +845,9 @@ def _is_local_openviking_url(value: str) -> bool:
     return scheme == "http" and (parsed.hostname or "").lower() in _LOCAL_OPENVIKING_HOSTS
 
 
-def _load_hermes_openviking_config() -> dict:
+def _load_vigil_openviking_config() -> dict:
     try:
-        from hermes_cli.config import load_config
+        from vigil_cli.config import load_config
 
         config = load_config()
         memory_config = config.get("memory", {}) if isinstance(config, dict) else {}
@@ -1141,8 +1141,8 @@ def _local_openviking_bind(endpoint: str) -> tuple[str, int]:
 
 def _openviking_server_log_path() -> Path:
     try:
-        from hermes_constants import get_hermes_home
-        home = get_hermes_home()
+        from vigil_constants import get_vigil_home
+        home = get_vigil_home()
     except Exception:
         home = Path(os.environ.get("VIGIL_HOME", "")).expanduser() if os.environ.get("VIGIL_HOME") else Path.home() / ".vigil"
     return home / _OPENVIKING_SERVER_LOG_RELATIVE_PATH
@@ -1569,7 +1569,7 @@ def _link_ovcli_profile(
         os.environ.pop(key, None)
 
 
-def _save_hermes_only_config(
+def _save_vigil_only_config(
     *,
     config: dict,
     provider_config: dict,
@@ -1754,7 +1754,7 @@ def _run_create_profile_setup(
         _print_openviking_ready("Created and linked OpenViking profile.", ovcli_path)
         return True
 
-    _save_hermes_only_config(
+    _save_vigil_only_config(
         config=config,
         provider_config=provider_config,
         env_path=env_path,
@@ -1826,7 +1826,7 @@ class OpenVikingMemoryProvider(MemoryProvider):
         """Check if OpenViking endpoint is configured. No network calls."""
         if os.environ.get("OPENVIKING_ENDPOINT"):
             return True
-        provider_config = _load_hermes_openviking_config()
+        provider_config = _load_vigil_openviking_config()
         if not provider_config.get("use_ovcli_config"):
             return False
         try:
@@ -1866,7 +1866,7 @@ class OpenVikingMemoryProvider(MemoryProvider):
                     "VIGIL peer ID in OpenViking, sent as the actor peer and "
                     "used for peer-scoped memories"
                 ),
-                "default": "hermes",
+                "default": "vigil",
                 "env_var": "OPENVIKING_AGENT",
             },
             {
@@ -1953,13 +1953,13 @@ class OpenVikingMemoryProvider(MemoryProvider):
                 display[key] = "(set)"
         return display
 
-    def post_setup(self, hermes_home: str, config: dict) -> None:
+    def post_setup(self, vigil_home: str, config: dict) -> None:
         """Custom setup that can reuse OpenViking's shared CLI config."""
-        from hermes_cli.config import save_config
-        from hermes_cli.memory_setup import _CANCELLED, _curses_select, _print_cancelled_setup, _prompt
+        from vigil_cli.config import save_config
+        from vigil_cli.memory_setup import _CANCELLED, _curses_select, _print_cancelled_setup, _prompt
 
-        hermes_home_path = Path(hermes_home)
-        env_path = hermes_home_path / ".env"
+        vigil_home_path = Path(vigil_home)
+        env_path = vigil_home_path / ".env"
         if not isinstance(config.get("memory"), dict):
             config["memory"] = {}
         provider_config = config["memory"].get("openviking", {})
@@ -2124,7 +2124,7 @@ class OpenVikingMemoryProvider(MemoryProvider):
         )
 
     def initialize(self, session_id: str, **kwargs) -> None:
-        settings = _resolve_connection_settings(_load_hermes_openviking_config())
+        settings = _resolve_connection_settings(_load_vigil_openviking_config())
         self._endpoint = settings["endpoint"]
         self._api_key = settings["api_key"]
         self._account = settings["account"]

@@ -9,7 +9,7 @@ Defaults: picks the session with the most messages, holds PageUp for 8s at
 
 The --tui build must exist (run `npm run build` in ui-tui first). This script
 launches `node dist/entry.js` directly with VIGIL_TUI_RESUME set so it
-bypasses the hermes_cli wrapper — we want repeatable timing, not the CLI's
+bypasses the vigil_cli wrapper — we want repeatable timing, not the CLI's
 session-picker flow.
 
 Environment overrides:
@@ -38,9 +38,9 @@ from typing import Any
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_PROJECT_ROOT))
 try:
-    from hermes_constants import get_hermes_home
+    from vigil_constants import get_vigil_home
 except ImportError:
-    def get_hermes_home() -> Path:  # type: ignore[misc]
+    def get_vigil_home() -> Path:  # type: ignore[misc]
         val = (os.environ.get("VIGIL_HOME") or "").strip()
         return Path(val) if val else Path.home() / ".vigil"
 
@@ -48,8 +48,8 @@ DEFAULT_TUI_DIR = Path(
     os.environ.get("VIGIL_TUI_DIR")
     or str(Path(__file__).resolve().parent.parent / "ui-tui")
 )
-DEFAULT_LOG = Path(os.environ.get("VIGIL_PERF_LOG", str(get_hermes_home() / "perf.log")))
-DEFAULT_STATE_DB = get_hermes_home() / "state.db"
+DEFAULT_LOG = Path(os.environ.get("VIGIL_PERF_LOG", str(get_vigil_home() / "perf.log")))
+DEFAULT_STATE_DB = get_vigil_home() / "state.db"
 
 # Keystroke escape sequences.  Matches what xterm/VT220 send when the
 # terminal has bracketed-paste disabled and the key-repeat handler fires.
@@ -536,7 +536,7 @@ def loop_mode(args: argparse.Namespace) -> int:
 
     tui_dir = Path(args.tui_dir).resolve()
     src_root = tui_dir / "src"
-    pkg_root = tui_dir / "packages" / "hermes-ink" / "src"
+    pkg_root = tui_dir / "packages" / "vigil-ink" / "src"
 
     def collect_mtimes() -> dict[str, float]:
         mtimes: dict[str, float] = {}

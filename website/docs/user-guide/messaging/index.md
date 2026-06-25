@@ -8,10 +8,10 @@ description: "Chat with VIGIL from Telegram, Discord, Slack, WhatsApp, Signal, S
 
 Chat with VIGIL from Telegram, Discord, Slack, WhatsApp, Signal, SMS, Email, Home Assistant, Mattermost, Matrix, DingTalk, Feishu/Lark, WeCom, Weixin, BlueBubbles (iMessage), QQ, Yuanbao, Microsoft Teams, LINE, ntfy, or your browser. The gateway is a single background process that connects to all your configured platforms, handles sessions, runs cron jobs, and delivers voice messages.
 
-For the full voice feature set — including CLI microphone mode, spoken replies in messaging, and Discord voice-channel conversations — see [Voice Mode](/user-guide/features/voice-mode) and [Use Voice Mode with VIGIL](/guides/use-voice-mode-with-hermes).
+For the full voice feature set — including CLI microphone mode, spoken replies in messaging, and Discord voice-channel conversations — see [Voice Mode](/user-guide/features/voice-mode) and [Use Voice Mode with VIGIL](/guides/use-voice-mode-with-vigil).
 
 :::tip
-Bots need both a model provider and tool providers (TTS, web). A [Nous Portal](/integrations/nous-portal) subscription bundles all of them.
+Bots need both a model provider and tool providers (TTS, web). A [VIGIL Portal](/integrations/nous-portal) subscription bundles all of them.
 :::
 
 ## Platform Comparison
@@ -135,7 +135,7 @@ Failed turns still surface as errors; VIGIL does not hide failures just because 
 The easiest way to configure messaging platforms is the interactive wizard:
 
 ```bash
-hermes gateway setup        # Interactive setup for all messaging platforms
+vigil gateway setup        # Interactive setup for all messaging platforms
 ```
 
 This walks you through configuring each platform with arrow-key selection, shows which platforms are already configured, and offers to start/restart the gateway when done.
@@ -143,14 +143,14 @@ This walks you through configuring each platform with arrow-key selection, shows
 ## Gateway Commands
 
 ```bash
-hermes gateway              # Run in foreground
-hermes gateway setup        # Configure messaging platforms interactively
-hermes gateway install      # Install as a user service (Linux) / launchd service (macOS)
-sudo hermes gateway install --system   # Linux only: install a boot-time system service
-hermes gateway start        # Start the default service
-hermes gateway stop         # Stop the default service
-hermes gateway status       # Check default service status
-hermes gateway status --system         # Linux only: inspect the system service explicitly
+vigil gateway              # Run in foreground
+vigil gateway setup        # Configure messaging platforms interactively
+vigil gateway install      # Install as a user service (Linux) / launchd service (macOS)
+sudo vigil gateway install --system   # Linux only: install a boot-time system service
+vigil gateway start        # Start the default service
+vigil gateway stop         # Stop the default service
+vigil gateway status       # Check default service status
+vigil gateway status --system         # Linux only: inspect the system service explicitly
 ```
 
 ## Chat Commands (Inside Messaging)
@@ -242,11 +242,11 @@ Instead of manually configuring user IDs, unknown users receive a one-time pairi
 ```bash
 # The user sees: "Pairing code: XKGH5N7P"
 # You approve them with:
-hermes pairing approve telegram XKGH5N7P
+vigil pairing approve telegram XKGH5N7P
 
 # Other pairing commands:
-hermes pairing list          # View pending + approved users
-hermes pairing revoke telegram 123456789  # Remove access
+vigil pairing list          # View pending + approved users
+vigil pairing revoke telegram 123456789  # Remove access
 ```
 
 Pairing codes expire after 1 hour, are rate-limited, and use cryptographic randomness.
@@ -417,54 +417,54 @@ Background tasks on messaging platforms are fire-and-forget — you don't need t
 ### Linux (systemd)
 
 ```bash
-hermes gateway install               # Install as user service
-hermes gateway start                 # Start the service
-hermes gateway stop                  # Stop the service
-hermes gateway status                # Check status
-journalctl --user -u hermes-gateway -f  # View logs
+vigil gateway install               # Install as user service
+vigil gateway start                 # Start the service
+vigil gateway stop                  # Stop the service
+vigil gateway status                # Check status
+journalctl --user -u vigil-gateway -f  # View logs
 
 # Enable lingering (keeps running after logout)
 sudo loginctl enable-linger $USER
 
 # Or install a boot-time system service that still runs as your user
-sudo hermes gateway install --system
-sudo hermes gateway start --system
-sudo hermes gateway status --system
-journalctl -u hermes-gateway -f
+sudo vigil gateway install --system
+sudo vigil gateway start --system
+sudo vigil gateway status --system
+journalctl -u vigil-gateway -f
 ```
 
 Use the user service on laptops and dev boxes. Use the system service on VPS or headless hosts that should come back at boot without relying on systemd linger.
 
 :::tip Headless VMs: user service + linger avoids root prompts
-A system service needs root for every restart — including the automatic gateway restart at the end of `hermes update`. When `hermes update` runs as a non-root user, it tries passwordless `sudo systemctl`; if that's unavailable, it skips the restart and prints the manual `sudo systemctl restart hermes-gateway` command (it never blocks on an interactive password prompt).
+A system service needs root for every restart — including the automatic gateway restart at the end of `vigil update`. When `vigil update` runs as a non-root user, it tries passwordless `sudo systemctl`; if that's unavailable, it skips the restart and prints the manual `sudo systemctl restart vigil-gateway` command (it never blocks on an interactive password prompt).
 
 For a headless VM you never log into, a **user** service with lingering enabled gives you the same start-at-boot behavior with zero root involvement:
 
 ```bash
-hermes gateway install          # user service
+vigil gateway install          # user service
 sudo loginctl enable-linger $USER   # one-time: start at boot, survive logout
 ```
 
-After that, `hermes update` can restart the gateway without any privileges. If you prefer to keep the system service, either run updates with `sudo hermes update`, or grant the service account passwordless sudo for systemctl, e.g. in `sudo visudo -f /etc/sudoers.d/hermes-gateway`:
+After that, `vigil update` can restart the gateway without any privileges. If you prefer to keep the system service, either run updates with `sudo vigil update`, or grant the service account passwordless sudo for systemctl, e.g. in `sudo visudo -f /etc/sudoers.d/vigil-gateway`:
 
 ```
-hermes ALL=(root) NOPASSWD: /usr/bin/systemctl --no-ask-password reset-failed hermes-gateway*, /usr/bin/systemctl --no-ask-password start hermes-gateway*, /usr/bin/systemctl --no-ask-password restart hermes-gateway*
+vigil ALL=(root) NOPASSWD: /usr/bin/systemctl --no-ask-password reset-failed vigil-gateway*, /usr/bin/systemctl --no-ask-password start vigil-gateway*, /usr/bin/systemctl --no-ask-password restart vigil-gateway*
 ```
 :::
 
 Avoid keeping both the user and system gateway units installed at once unless you really mean to. VIGIL will warn if it detects both because start/stop/status behavior gets ambiguous.
 
 :::info Multiple installations
-If you run multiple VIGIL installations on the same machine (with different `VIGIL_HOME` directories), each gets its own systemd service name. The default `~/.vigil` uses `hermes-gateway`; other installations use `hermes-gateway-<hash>`. The `hermes gateway` commands automatically target the correct service for your current `VIGIL_HOME`.
+If you run multiple VIGIL installations on the same machine (with different `VIGIL_HOME` directories), each gets its own systemd service name. The default `~/.vigil` uses `vigil-gateway`; other installations use `vigil-gateway-<hash>`. The `vigil gateway` commands automatically target the correct service for your current `VIGIL_HOME`.
 :::
 
 ### macOS (launchd)
 
 ```bash
-hermes gateway install               # Install as launchd agent
-hermes gateway start                 # Start the service
-hermes gateway stop                  # Stop the service
-hermes gateway status                # Check status
+vigil gateway install               # Install as launchd agent
+vigil gateway start                 # Start the service
+vigil gateway stop                  # Stop the service
+vigil gateway status                # Check status
 tail -f ~/.vigil/logs/gateway.log   # View logs
 ```
 
@@ -475,7 +475,7 @@ The generated plist lives at `~/Library/LaunchAgents/ai.vigil.gateway.plist`. It
 - **VIGIL_HOME** — scopes the gateway to your VIGIL installation.
 
 :::tip PATH changes after install
-launchd plists are static — if you install new tools (e.g. a new Node.js version via nvm, or ffmpeg via Homebrew) after setting up the gateway, run `hermes gateway install` again to capture the updated PATH. The gateway will detect the stale plist and reload automatically.
+launchd plists are static — if you install new tools (e.g. a new Node.js version via nvm, or ffmpeg via Homebrew) after setting up the gateway, run `vigil gateway install` again to capture the updated PATH. The gateway will detect the stale plist and reload automatically.
 :::
 
 :::info Multiple installations
@@ -488,31 +488,31 @@ Each platform has its own toolset:
 
 | Platform | Toolset | Capabilities |
 |----------|---------|--------------|
-| CLI | `hermes-cli` | Full access |
-| Telegram | `hermes-telegram` | Full tools including terminal |
-| Discord | `hermes-discord` | Full tools including terminal |
-| WhatsApp | `hermes-whatsapp` | Full tools including terminal |
-| WhatsApp Cloud API | `hermes-whatsapp` | Full tools including terminal (shares toolset with the Baileys bridge) |
-| Slack | `hermes-slack` | Full tools including terminal |
-| Google Chat | `hermes-google_chat` | Full tools including terminal |
-| Signal | `hermes-signal` | Full tools including terminal |
-| SMS | `hermes-sms` | Full tools including terminal |
-| Email | `hermes-email` | Full tools including terminal |
-| Home Assistant | `hermes-homeassistant` | Full tools + HA device control (ha_list_entities, ha_get_state, ha_call_service, ha_list_services) |
-| Mattermost | `hermes-mattermost` | Full tools including terminal |
-| Matrix | `hermes-matrix` | Full tools including terminal |
-| DingTalk | `hermes-dingtalk` | Full tools including terminal |
-| Feishu/Lark | `hermes-feishu` | Full tools including terminal |
-| WeCom | `hermes-wecom` | Full tools including terminal |
-| WeCom Callback | `hermes-wecom-callback` | Full tools including terminal |
-| Weixin | `hermes-weixin` | Full tools including terminal |
-| BlueBubbles | `hermes-bluebubbles` | Full tools including terminal |
-| QQBot | `hermes-qqbot` | Full tools including terminal |
-| Yuanbao | `hermes-yuanbao` | Full tools including terminal |
-| Microsoft Teams | `hermes-teams` | Full tools including terminal |
-| API Server | `hermes-api-server` | Full tools (drops `clarify`, `send_message`, `text_to_speech` — programmatic access doesn't have an interactive user) |
-| Webhooks | `hermes-webhook` | Full tools including terminal |
-| Raft | `hermes-raft` | Wake-only channel; agent uses Raft CLI for message I/O |
+| CLI | `vigil-cli` | Full access |
+| Telegram | `vigil-telegram` | Full tools including terminal |
+| Discord | `vigil-discord` | Full tools including terminal |
+| WhatsApp | `vigil-whatsapp` | Full tools including terminal |
+| WhatsApp Cloud API | `vigil-whatsapp` | Full tools including terminal (shares toolset with the Baileys bridge) |
+| Slack | `vigil-slack` | Full tools including terminal |
+| Google Chat | `vigil-google_chat` | Full tools including terminal |
+| Signal | `vigil-signal` | Full tools including terminal |
+| SMS | `vigil-sms` | Full tools including terminal |
+| Email | `vigil-email` | Full tools including terminal |
+| Home Assistant | `vigil-homeassistant` | Full tools + HA device control (ha_list_entities, ha_get_state, ha_call_service, ha_list_services) |
+| Mattermost | `vigil-mattermost` | Full tools including terminal |
+| Matrix | `vigil-matrix` | Full tools including terminal |
+| DingTalk | `vigil-dingtalk` | Full tools including terminal |
+| Feishu/Lark | `vigil-feishu` | Full tools including terminal |
+| WeCom | `vigil-wecom` | Full tools including terminal |
+| WeCom Callback | `vigil-wecom-callback` | Full tools including terminal |
+| Weixin | `vigil-weixin` | Full tools including terminal |
+| BlueBubbles | `vigil-bluebubbles` | Full tools including terminal |
+| QQBot | `vigil-qqbot` | Full tools including terminal |
+| Yuanbao | `vigil-yuanbao` | Full tools including terminal |
+| Microsoft Teams | `vigil-teams` | Full tools including terminal |
+| API Server | `vigil-api-server` | Full tools (drops `clarify`, `send_message`, `text_to_speech` — programmatic access doesn't have an interactive user) |
+| Webhooks | `vigil-webhook` | Full tools including terminal |
+| Raft | `vigil-raft` | Wake-only channel; agent uses Raft CLI for message I/O |
 
 ## Operating a multi-platform gateway
 

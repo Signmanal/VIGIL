@@ -292,7 +292,7 @@ class TestRunJobTerminalCwd:
         monkeypatch.setitem(sys.modules, "run_agent", fake_mod)
 
         # Bypass the real provider resolver — it reads ~/.vigil and credentials.
-        from hermes_cli import runtime_provider as _rtp
+        from vigil_cli import runtime_provider as _rtp
         monkeypatch.setattr(
             _rtp,
             "resolve_runtime_provider",

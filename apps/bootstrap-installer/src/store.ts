@@ -137,7 +137,7 @@ export async function initialize(): Promise<void> {
   try {
     const [logPath, hermesHome, mode] = await Promise.all([
       invoke<string>('get_log_path'),
-      invoke<string>('get_hermes_home'),
+      invoke<string>('get_vigil_home'),
       invoke<AppMode>('get_mode')
     ])
     $logPath.set(logPath)
@@ -249,7 +249,7 @@ export async function startInstall(opts?: { branch?: string }): Promise<void> {
       commit: null,
       branch: opts?.branch ?? null,
       include_desktop: true,
-      hermes_home: null
+      vigil_home: null
     }
   })
 }
@@ -270,7 +270,7 @@ export async function cancelInstall(): Promise<void> {
 export async function launchVIGILDesktop(): Promise<void> {
   const installRoot = $bootstrap.get().installRoot
   if (!installRoot) throw new Error('no install root')
-  await invoke('launch_hermes_desktop', { installRoot })
+  await invoke('launch_vigil_desktop', { installRoot })
 }
 
 export async function openLogDir(): Promise<void> {

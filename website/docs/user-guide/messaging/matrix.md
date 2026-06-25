@@ -174,12 +174,12 @@ If you run your own homeserver (Synapse, Conduit, Dendrite):
 register_new_matrix_user -c /etc/synapse/homeserver.yaml http://localhost:8008
 ```
 
-2. Choose a username like `hermes` — the full user ID will be `@hermes:your-server.org`.
+2. Choose a username like `vigil` — the full user ID will be `@vigil:your-server.org`.
 
 ### Option B: Use matrix.org or Another Public Homeserver
 
 1. Go to [Element Web](https://app.element.io) and create a new account.
-2. Pick a username for your bot (e.g., `hermes-bot`).
+2. Pick a username for your bot (e.g., `vigil-bot`).
 
 ### Option C: Use Your Own Account
 
@@ -206,7 +206,7 @@ curl -X POST https://your-server/_matrix/client/v3/login \
   -H "Content-Type: application/json" \
   -d '{
     "type": "m.login.password",
-    "user": "@hermes:your-server.org",
+    "user": "@vigil:your-server.org",
     "password": "your-password"
   }'
 ```
@@ -222,7 +222,7 @@ The access token gives full access to the bot's Matrix account. Never share it p
 Instead of providing an access token, you can give VIGIL the bot's user ID and password. VIGIL will log in automatically on startup. This is simpler but means the password is stored in your `.env` file.
 
 ```bash
-MATRIX_USER_ID=@hermes:your-server.org
+MATRIX_USER_ID=@vigil:your-server.org
 MATRIX_PASSWORD=your-password
 ```
 
@@ -247,7 +247,7 @@ Matrix User IDs always start with `@` and contain a `:` followed by the server n
 Run the guided setup command:
 
 ```bash
-hermes gateway setup
+vigil gateway setup
 ```
 
 Select **Matrix** when prompted, then provide your homeserver URL, access token (or user ID + password), and allowed user IDs when asked.
@@ -264,7 +264,7 @@ MATRIX_HOMESERVER=https://matrix.example.org
 MATRIX_ACCESS_TOKEN=***
 
 # Optional: user ID (auto-detected from token if omitted)
-# MATRIX_USER_ID=@hermes:matrix.example.org
+# MATRIX_USER_ID=@vigil:matrix.example.org
 
 # Security: restrict who can interact with the bot
 MATRIX_ALLOWED_USERS=@alice:matrix.example.org
@@ -281,7 +281,7 @@ MATRIX_ALLOWED_ROOMS=!abc123:matrix.example.org
 ```bash
 # Required
 MATRIX_HOMESERVER=https://matrix.example.org
-MATRIX_USER_ID=@hermes:matrix.example.org
+MATRIX_USER_ID=@vigil:matrix.example.org
 MATRIX_PASSWORD=***
 
 # Security
@@ -340,13 +340,13 @@ group_sessions_per_user: true
 Once configured, start the Matrix gateway:
 
 ```bash
-hermes gateway
+vigil gateway
 ```
 
 The bot should connect to your homeserver and start syncing within a few seconds. Send it a message — either a DM or in a room it has joined — to test.
 
 :::tip
-You can run `hermes gateway` in the background or as a systemd service for persistent operation. See the deployment docs for details.
+You can run `vigil gateway` in the background or as a systemd service for persistent operation. See the deployment docs for details.
 :::
 
 ## End-to-End Encryption (E2EE)
@@ -361,7 +361,7 @@ E2EE requires the `mautrix` library with encryption extras and the `libolm` C li
 # Install mautrix with E2EE support
 pip install 'mautrix[encryption]'
 
-# Or install with hermes extras
+# Or install with vigil extras
 cd ~/.vigil/vigil-agent && uv pip install -e ".[matrix]"
 ```
 
@@ -494,10 +494,10 @@ VIGIL detects this condition on startup and refuses to enable E2EE, logging: `de
    ```bash
    sudo systemctl stop matrix-synapse
    sudo sqlite3 /var/lib/matrix-synapse/homeserver.db "
-     DELETE FROM e2e_device_keys_json WHERE device_id = 'DEVICE_ID' AND user_id = '@hermes:your-server';
-     DELETE FROM e2e_one_time_keys_json WHERE device_id = 'DEVICE_ID' AND user_id = '@hermes:your-server';
-     DELETE FROM e2e_fallback_keys_json WHERE device_id = 'DEVICE_ID' AND user_id = '@hermes:your-server';
-     DELETE FROM devices WHERE device_id = 'DEVICE_ID' AND user_id = '@hermes:your-server';
+     DELETE FROM e2e_device_keys_json WHERE device_id = 'DEVICE_ID' AND user_id = '@vigil:your-server';
+     DELETE FROM e2e_one_time_keys_json WHERE device_id = 'DEVICE_ID' AND user_id = '@vigil:your-server';
+     DELETE FROM e2e_fallback_keys_json WHERE device_id = 'DEVICE_ID' AND user_id = '@vigil:your-server';
+     DELETE FROM devices WHERE device_id = 'DEVICE_ID' AND user_id = '@vigil:your-server';
    "
    sudo systemctl start matrix-synapse
    ```
@@ -511,7 +511,7 @@ VIGIL detects this condition on startup and refuses to enable E2EE, logging: `de
 2. Delete the local crypto store and restart VIGIL:
    ```bash
    rm -f ~/.vigil/platforms/matrix/store/crypto.db*
-   # restart hermes
+   # restart vigil
    ```
 
 Other Matrix clients (Element, matrix-commander) may cache the old device keys. After recovery, type `/discardsession` in Element to force a new encryption session with the bot.
@@ -687,7 +687,7 @@ changed identity keys for the same device as suspicious.
      -H "Content-Type: application/json" \
      -d '{
        "type": "m.login.password",
-       "identifier": {"type": "m.id.user", "user": "@hermes:your-server.org"},
+       "identifier": {"type": "m.id.user", "user": "@vigil:your-server.org"},
        "password": "***",
        "initial_device_display_name": "VIGIL Agent"
      }'
@@ -717,7 +717,7 @@ changed identity keys for the same device as suspicious.
 5. **Restart the gateway**:
 
    ```bash
-   hermes gateway run
+   vigil gateway run
    ```
 
    If `MATRIX_RECOVERY_KEY` is set, you should see `Matrix: cross-signing verified via recovery key` in the logs.
@@ -749,14 +749,14 @@ Matrix E2EE requires `libolm`, which doesn't compile on macOS ARM64 (Apple Silic
 
 ```
 macOS (Host):
-  └─ hermes gateway
+  └─ vigil gateway
        ├─ api_server adapter ← listens on 0.0.0.0:8642
        ├─ AIAgent ← single source of truth
        ├─ Sessions, memory, skills
        └─ Local file access (Obsidian, projects, etc.)
 
 Linux VM (Docker):
-  └─ hermes gateway (proxy mode)
+  └─ vigil gateway (proxy mode)
        ├─ Matrix adapter ← E2EE decryption/encryption
        └─ HTTP forward → macOS:8642/v1/chat/completions
            (no LLM API keys, no agent, no inference)
@@ -783,7 +783,7 @@ API_SERVER_HOST=0.0.0.0
 Start the gateway:
 
 ```bash
-hermes gateway
+vigil gateway
 ```
 
 You should see the API server start alongside any other platforms you have configured. Verify it's reachable from the VM:
@@ -801,7 +801,7 @@ The container needs Matrix credentials and the proxy URL. It does NOT need LLM A
 
 ```yaml
 services:
-  hermes-matrix:
+  vigil-matrix:
     build: .
     environment:
       # Matrix credentials
@@ -835,7 +835,7 @@ That's the entire container. No API keys for OpenRouter, Anthropic, or any infer
 
 1. Start the host gateway first:
    ```bash
-   hermes gateway
+   vigil gateway
    ```
 
 2. Start the Docker container:
@@ -901,7 +901,7 @@ the first sync and check logs for `sync event dispatch error`.
 
 **Cause**: The VIGIL gateway isn't running, or it failed to connect.
 
-**Fix**: Check that `hermes gateway` is running. Look at the terminal output for error messages. Common issues: wrong homeserver URL, expired access token, homeserver unreachable.
+**Fix**: Check that `vigil gateway` is running. Look at the terminal output for error messages. Common issues: wrong homeserver URL, expired access token, homeserver unreachable.
 
 ### "User not allowed" / Bot ignores you
 

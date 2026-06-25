@@ -43,14 +43,14 @@ xAI's backend enforces its own allowlist on the OAuth API surface and has been s
 
 ```bash
 # Launch the provider and model picker
-hermes model
+vigil model
 # → Select "xAI Grok OAuth (SuperGrok / X Premium+)" from the provider list
 # → VIGIL opens your browser to accounts.x.ai
 # → Approve access in the browser
 # → Pick a model (grok-build-0.1 is at the top)
 # → Start chatting
 
-hermes
+vigil
 ```
 
 After the first login, credentials are stored under `~/.vigil/auth.json` and refreshed automatically before they expire.
@@ -60,7 +60,7 @@ After the first login, credentials are stored under `~/.vigil/auth.json` and ref
 You can trigger a login without going through the model picker:
 
 ```bash
-hermes auth add xai-oauth
+vigil auth add xai-oauth
 ```
 
 ### Remote / headless sessions
@@ -74,7 +74,7 @@ On servers, containers, or SSH sessions where no browser is available, VIGIL det
 ssh -N -L 56121:127.0.0.1:56121 user@remote-host
 
 # Then in your SSH session on the remote machine:
-hermes auth add xai-oauth --no-browser
+vigil auth add xai-oauth --no-browser
 # Open the printed authorize URL in your local browser.
 ```
 
@@ -87,9 +87,9 @@ See [OAuth over SSH / Remote Hosts](./oauth-over-ssh.md) for the full step-by-st
 If you don't have a regular SSH client (e.g. you're running VIGIL inside GCP Cloud Shell, GitHub Codespaces, AWS EC2 Instance Connect, Gitpod, or another browser-based console), the `ssh -L` recipe above isn't available. Use `--manual-paste` instead — VIGIL skips the loopback listener and lets you paste the failed callback URL straight from your browser:
 
 ```bash
-hermes auth add xai-oauth --manual-paste
+vigil auth add xai-oauth --manual-paste
 # Or via the model picker:
-hermes model --manual-paste
+vigil model --manual-paste
 ```
 
 See [OAuth over SSH / Remote Hosts](./oauth-over-ssh.md#browser-only-remote-cloud-shell--codespaces--ec2-instance-connect) for the full walkthrough. Regression fix for [#26923](https://github.com/NousResearch/vigil-agent/issues/26923).
@@ -101,12 +101,12 @@ If the consent page renders the authorization code directly on the page (xAI's c
 1. VIGIL opens your browser to `accounts.x.ai`.
 2. You sign in (or confirm your existing session) and approve access.
 3. xAI redirects back to VIGIL and the tokens are saved to `~/.vigil/auth.json`.
-4. From then on, VIGIL refreshes the access token in the background — you stay signed in until you `hermes auth logout xai-oauth` or revoke access from your xAI account settings.
+4. From then on, VIGIL refreshes the access token in the background — you stay signed in until you `vigil auth logout xai-oauth` or revoke access from your xAI account settings.
 
 ## Checking Login Status
 
 ```bash
-hermes doctor
+vigil doctor
 ```
 
 The `◆ Auth Providers` section will show the current state of every provider, including `xai-oauth`.
@@ -114,7 +114,7 @@ The `◆ Auth Providers` section will show the current state of every provider, 
 ## Switching Models
 
 ```bash
-hermes model
+vigil model
 # → Select "xAI Grok OAuth (SuperGrok / X Premium+)"
 # → Pick from the model list (grok-build-0.1 is pinned to the top)
 ```
@@ -122,8 +122,8 @@ hermes model
 Or set the model directly:
 
 ```bash
-hermes config set model.default grok-build-0.1
-hermes config set model.provider xai-oauth
+vigil config set model.default grok-build-0.1
+vigil config set model.provider xai-oauth
 ```
 
 ## Configuration Reference
@@ -142,10 +142,10 @@ model:
 All of the following resolve to `xai-oauth`:
 
 ```bash
-hermes --provider xai-oauth        # canonical
-hermes --provider grok-oauth       # alias
-hermes --provider x-ai-oauth       # alias
-hermes --provider xai-grok-oauth   # alias
+vigil --provider xai-oauth        # canonical
+vigil --provider grok-oauth       # alias
+vigil --provider x-ai-oauth       # alias
+vigil --provider xai-grok-oauth   # alias
 ```
 
 ## Direct-to-xAI Tools (TTS / Image / Video / Transcription / X Search)
@@ -155,7 +155,7 @@ Once you're logged in via OAuth, every direct-to-xAI tool reuses the same bearer
 To pick a backend for each tool:
 
 ```bash
-hermes tools
+vigil tools
 # → Text-to-Speech       → "xAI TTS"
 # → Image Generation     → "xAI Grok Imagine (image)"
 # → Video Generation     → "xAI Grok Imagine"
@@ -165,11 +165,11 @@ hermes tools
 If OAuth tokens are already stored, the picker confirms it and skips the credential prompt. If neither OAuth nor `XAI_API_KEY` is set, the picker offers a 3-choice menu: OAuth login, paste API key, or skip.
 
 :::note Video generation is off by default
-The `video_gen` toolset is disabled by default. Enable it in `hermes tools` → `🎬 Video Generation` (press space) before the agent can call `video_generate`. Otherwise the agent may fall back to the bundled ComfyUI skill, which is also tagged for video generation.
+The `video_gen` toolset is disabled by default. Enable it in `vigil tools` → `🎬 Video Generation` (press space) before the agent can call `video_generate`. Otherwise the agent may fall back to the bundled ComfyUI skill, which is also tagged for video generation.
 :::
 
 :::note X search auto-enables when xAI credentials are present
-The `x_search` toolset auto-enables whenever xAI credentials (a SuperGrok / X Premium+ OAuth token or `XAI_API_KEY`) are configured. Disable explicitly via `hermes tools` → `🐦 X (Twitter) Search` (press space) if you don't want this. The tool routes through xAI's built-in `x_search` Responses API — it works with **either** your SuperGrok / X Premium+ OAuth login or a paid `XAI_API_KEY`, and prefers OAuth when both are configured (uses your subscription quota instead of API spend). The tool schema is hidden from the model when no xAI credentials are configured, regardless of whether the toolset is enabled.
+The `x_search` toolset auto-enables whenever xAI credentials (a SuperGrok / X Premium+ OAuth token or `XAI_API_KEY`) are configured. Disable explicitly via `vigil tools` → `🐦 X (Twitter) Search` (press space) if you don't want this. The tool routes through xAI's built-in `x_search` Responses API — it works with **either** your SuperGrok / X Premium+ OAuth login or a paid `XAI_API_KEY`, and prefers OAuth when both are configured (uses your subscription quota instead of API spend). The tool schema is hidden from the model when no xAI credentials are configured, regardless of whether the toolset is enabled.
 :::
 
 ### Models
@@ -195,7 +195,7 @@ The chat catalog is derived live from the on-disk `models.dev` cache; new xAI re
 |----------|--------|
 | `XAI_BASE_URL` | Override the default `https://api.x.ai/v1` endpoint (rarely needed). |
 
-To select xAI as the active provider, set `model.provider: xai-oauth` in `config.yaml` (use `hermes setup` for the guided flow) or pass `--provider xai-oauth` for a single invocation.
+To select xAI as the active provider, set `model.provider: xai-oauth` in `config.yaml` (use `vigil setup` for the guided flow) or pass `--provider xai-oauth` for a single invocation.
 
 ## Troubleshooting
 
@@ -205,13 +205,13 @@ VIGIL refreshes the token before each session and again reactively on a 401. If 
 
 When the refresh failure is terminal (HTTP 4xx, `invalid_grant`, revoked grant, etc.), VIGIL marks the refresh token as dead and quarantines it locally — subsequent calls skip the doomed refresh attempt instead of replaying the same 401 over and over. The agent surfaces a single "re-authentication required" message and stays out of the way until you log in again.
 
-**Fix:** run `hermes auth add xai-oauth` again to start a fresh login. The quarantine clears on the next successful exchange.
+**Fix:** run `vigil auth add xai-oauth` again to start a fresh login. The quarantine clears on the next successful exchange.
 
 ### Authorization timed out
 
 The loopback listener has a finite expiry window (default 180 s). If you don't approve the login in time, VIGIL raises a timeout error.
 
-**Fix:** re-run `hermes auth add xai-oauth` (or `hermes model`). The flow starts fresh.
+**Fix:** re-run `vigil auth add xai-oauth` (or `vigil model`). The flow starts fresh.
 
 ### State mismatch (possible CSRF)
 
@@ -228,7 +228,7 @@ On SSH or container sessions VIGIL prints the authorization URL instead of openi
 ssh -N -L 56121:127.0.0.1:56121 user@remote-host
 
 # Remote machine:
-hermes auth add xai-oauth --no-browser
+vigil auth add xai-oauth --no-browser
 ```
 
 Full walkthrough (jump boxes, mosh/tmux, port conflicts): [OAuth over SSH / Remote Hosts](./oauth-over-ssh.md).
@@ -237,13 +237,13 @@ Full walkthrough (jump boxes, mosh/tmux, port conflicts): [OAuth over SSH / Remo
 
 OAuth completed in the browser, tokens are saved, but inference or token refresh returns `HTTP 403` with a message similar to *"The caller does not have permission to execute the specified operation"*.
 
-This is **not** a stale-token problem — re-running `hermes model` won't change it. xAI's backend has been seen to restrict OAuth API access to specific SuperGrok tiers despite the in-app subscription being active (issue [#26847](https://github.com/NousResearch/vigil-agent/issues/26847)).
+This is **not** a stale-token problem — re-running `vigil model` won't change it. xAI's backend has been seen to restrict OAuth API access to specific SuperGrok tiers despite the in-app subscription being active (issue [#26847](https://github.com/NousResearch/vigil-agent/issues/26847)).
 
 **Fix:** set `XAI_API_KEY` and switch to the API-key path:
 
 ```bash
 export XAI_API_KEY=xai-...
-hermes config set model.provider xai
+vigil config set model.provider xai
 ```
 
 Or upgrade your subscription at [x.ai/grok](https://x.ai/grok) if the OAuth route is required.
@@ -252,17 +252,17 @@ Or upgrade your subscription at [x.ai/grok](https://x.ai/grok) if the OAuth rout
 
 The auth store has no `xai-oauth` entry and no `XAI_API_KEY` is set. You haven't logged in yet, or the credential file was deleted.
 
-**Fix:** run `hermes model` and pick the xAI Grok OAuth provider, or run `hermes auth add xai-oauth`.
+**Fix:** run `vigil model` and pick the xAI Grok OAuth provider, or run `vigil auth add xai-oauth`.
 
 ## Logging Out
 
 To remove all stored xAI Grok OAuth credentials:
 
 ```bash
-hermes auth logout xai-oauth
+vigil auth logout xai-oauth
 ```
 
-This clears both the singleton OAuth entry in `auth.json` and any credential-pool rows for `xai-oauth`. Use `hermes auth remove xai-oauth <index|id|label>` if you only want to drop a single pool entry (run `hermes auth list xai-oauth` to see them).
+This clears both the singleton OAuth entry in `auth.json` and any credential-pool rows for `xai-oauth`. Use `vigil auth remove xai-oauth <index|id|label>` if you only want to drop a single pool entry (run `vigil auth list xai-oauth` to see them).
 
 ## See Also
 

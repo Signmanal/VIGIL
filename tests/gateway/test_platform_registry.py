@@ -352,13 +352,13 @@ class TestPlatformsMerge:
     """Test get_all_platforms() merges with registry."""
 
     def test_get_all_platforms_includes_builtins(self):
-        from hermes_cli.platforms import get_all_platforms, PLATFORMS
+        from vigil_cli.platforms import get_all_platforms, PLATFORMS
         merged = get_all_platforms()
         for key in PLATFORMS:
             assert key in merged
 
     def test_get_all_platforms_includes_plugin(self):
-        from hermes_cli.platforms import get_all_platforms
+        from vigil_cli.platforms import get_all_platforms
         from gateway.platform_registry import platform_registry as _reg
 
         _reg.register(PlatformEntry(
@@ -377,7 +377,7 @@ class TestPlatformsMerge:
             _reg.unregister("testmerge")
 
     def test_platform_label_plugin_fallback(self):
-        from hermes_cli.platforms import platform_label
+        from vigil_cli.platforms import platform_label
         from gateway.platform_registry import platform_registry as _reg
 
         _reg.register(PlatformEntry(
@@ -435,10 +435,10 @@ class TestApplyYamlConfigFnDispatch:
     """
 
     def _write_config(self, tmp_path, content: str):
-        hermes_home = tmp_path / ".vigil"
-        hermes_home.mkdir()
-        (hermes_home / "config.yaml").write_text(content, encoding="utf-8")
-        return hermes_home
+        vigil_home = tmp_path / ".vigil"
+        vigil_home.mkdir()
+        (vigil_home / "config.yaml").write_text(content, encoding="utf-8")
+        return vigil_home
 
     def _register_hook(self, name, hook_fn):
         from gateway.platform_registry import platform_registry as _reg
@@ -667,10 +667,10 @@ class TestPluginPlatformSharedKeyBridge:
     """
 
     def _write_config(self, tmp_path, content: str):
-        hermes_home = tmp_path / ".vigil"
-        hermes_home.mkdir()
-        (hermes_home / "config.yaml").write_text(content, encoding="utf-8")
-        return hermes_home
+        vigil_home = tmp_path / ".vigil"
+        vigil_home.mkdir()
+        (vigil_home / "config.yaml").write_text(content, encoding="utf-8")
+        return vigil_home
 
     def test_shared_keys_bridged_for_plugin_platform(self, tmp_path, monkeypatch):
         """A plugin platform's ``require_mention``/``dm_policy``/etc. flow into
@@ -722,10 +722,10 @@ class TestPluginEnablementGate:
     """
 
     def _write_config(self, tmp_path, content: str = ""):
-        hermes_home = tmp_path / ".vigil"
-        hermes_home.mkdir()
-        (hermes_home / "config.yaml").write_text(content, encoding="utf-8")
-        return hermes_home
+        vigil_home = tmp_path / ".vigil"
+        vigil_home.mkdir()
+        (vigil_home / "config.yaml").write_text(content, encoding="utf-8")
+        return vigil_home
 
     def test_plugin_with_is_connected_false_is_NOT_enabled(
         self, tmp_path, monkeypatch

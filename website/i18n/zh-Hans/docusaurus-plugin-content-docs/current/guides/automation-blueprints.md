@@ -16,8 +16,8 @@ description: "开箱即用的自动化蓝图——定时任务、GitHub 事件�
 | 触发方式 | 方式 | 工具 |
 |---------|-----|------|
 | **定时** | 按周期运行（每小时、每晚、每周） | `cronjob` 工具或 `/cron` 斜杠命令 |
-| **GitHub 事件** | PR 开启、推送、issue、CI 结果时触发 | Webhook 平台（`hermes webhook subscribe`） |
-| **API 调用** | 外部服务向你的端点 POST JSON | Webhook 平台（config.yaml 路由或 `hermes webhook subscribe`） |
+| **GitHub 事件** | PR 开启、推送、issue、CI 结果时触发 | Webhook 平台（`vigil webhook subscribe`） |
+| **API 调用** | 外部服务向你的端点 POST JSON | Webhook 平台（config.yaml 路由或 `vigil webhook subscribe`） |
 
 三种方式均支持投递到 Telegram、Discord、Slack、SMS、邮件、GitHub 评论或本地文件。
 :::
@@ -33,7 +33,7 @@ description: "开箱即用的自动化蓝图——定时任务、GitHub 事件�
 **触发方式：** 定时（每晚）
 
 ```bash
-hermes cron create "0 2 * * *" \
+vigil cron create "0 2 * * *" \
   "You are a project manager triaging the NousResearch/vigil-agent GitHub repo.
 
 1. Run: gh issue list --repo NousResearch/vigil-agent --state open --json number,title,labels,author,createdAt --limit 30
@@ -58,7 +58,7 @@ PR 开启时自动进行审查，并直接在 PR 上发布审查评论。
 **方式 A——动态订阅（CLI）：**
 
 ```bash
-hermes webhook subscribe github-pr-review \
+vigil webhook subscribe github-pr-review \
   --events "pull_request" \
   --prompt "Review this pull request:
 Repository: {repository.full_name}
@@ -115,15 +115,15 @@ platforms:
 **触发方式：** 定时（每周）
 
 ```bash
-hermes cron create "0 9 * * 1" \
+vigil cron create "0 9 * * 1" \
   "Scan the NousResearch/vigil-agent repo for documentation drift.
 
 1. Run: gh pr list --repo NousResearch/vigil-agent --state merged --json number,title,files,mergedAt --limit 30
 2. Filter to PRs merged in the last 7 days
 3. For each merged PR, check if it modified:
    - Tool schemas (tools/*.py) — may need docs/reference/tools-reference.md update
-   - CLI commands (hermes_cli/commands.py, hermes_cli/main.py) — may need docs/reference/cli-commands.md update
-   - Config options (hermes_cli/config.py) — may need docs/user-guide/configuration.md update
+   - CLI commands (vigil_cli/commands.py, vigil_cli/main.py) — may need docs/reference/cli-commands.md update
+   - Config options (vigil_cli/config.py) — may need docs/user-guide/configuration.md update
    - Environment variables — may need docs/reference/environment-variables.md update
 4. Cross-reference: for each code change, check if the corresponding docs page was also updated in the same PR
 
@@ -139,7 +139,7 @@ Report any gaps where code changed but docs didn't. If everything is in sync, re
 **触发方式：** 定时（每日）
 
 ```bash
-hermes cron create "0 6 * * *" \
+vigil cron create "0 6 * * *" \
   "Run a dependency security audit on the vigil-agent project.
 
 1. cd ~/.vigil/vigil-agent && source .venv/bin/activate
@@ -168,7 +168,7 @@ If no vulnerabilities, respond with [SILENT]." \
 **触发方式：** API 调用（webhook）
 
 ```bash
-hermes webhook subscribe deploy-verify \
+vigil webhook subscribe deploy-verify \
   --events "deployment" \
   --prompt "A deployment just completed:
 Service: {service}
@@ -202,7 +202,7 @@ curl -X POST http://your-server:8644/webhooks/deploy-verify \
 **触发方式：** API 调用（webhook）
 
 ```bash
-hermes webhook subscribe alert-triage \
+vigil webhook subscribe alert-triage \
   --prompt "Monitoring alert received:
 Alert: {alert.name}
 Severity: {alert.severity}
@@ -259,7 +259,7 @@ else:
 ```
 
 ```bash
-hermes cron create "every 30m" \
+vigil cron create "every 30m" \
   "If the script reports OUTAGE DETECTED, summarize which services are down and suggest likely causes. If NO_ISSUES, respond with [SILENT]." \
   --script ~/.vigil/scripts/check-uptime.py \
   --name "Uptime monitor" \
@@ -277,7 +277,7 @@ hermes cron create "every 30m" \
 **触发方式：** 定时（每日）
 
 ```bash
-hermes cron create "0 8 * * *" \
+vigil cron create "0 8 * * *" \
   "Scout these AI agent repositories for notable activity in the last 24 hours:
 
 Repos to check:
@@ -310,7 +310,7 @@ If there are findings, organize by repo with brief analysis of each item." \
 **触发方式：** 定时（每周）
 
 ```bash
-hermes cron create "0 9 * * 1" \
+vigil cron create "0 9 * * 1" \
   "Generate a weekly AI news digest covering the past 7 days:
 
 1. Search the web for major AI announcements, model releases, and research breakthroughs
@@ -335,7 +335,7 @@ Keep each item to 1-2 sentences. Include links. Total under 600 words." \
 **触发方式：** 定时（每日）
 
 ```bash
-hermes cron create "0 8 * * *" \
+vigil cron create "0 8 * * *" \
   "Search arXiv for the 3 most interesting papers on 'language model reasoning' OR 'tool-use agents' from the past day. For each paper, create an Obsidian note with the title, authors, abstract summary, key contribution, and potential relevance to VIGIL Agent development." \
   --skill arxiv --skill obsidian \
   --name "Paper digest" \
@@ -353,7 +353,7 @@ hermes cron create "0 8 * * *" \
 **触发方式：** GitHub webhook
 
 ```bash
-hermes webhook subscribe github-issues \
+vigil webhook subscribe github-issues \
   --events "issues" \
   --prompt "New GitHub issue received:
 Repository: {repository.full_name}
@@ -415,7 +415,7 @@ platforms:
 **触发方式：** GitHub webhook
 
 ```bash
-hermes webhook subscribe auto-port \
+vigil webhook subscribe auto-port \
   --events "pull_request" \
   --prompt "PR merged in the source repository:
 Repository: {repository.full_name}
@@ -447,7 +447,7 @@ If action is not 'closed' or not merged, respond with [SILENT]." \
 **触发方式：** API 调用（webhook）
 
 ```bash
-hermes webhook subscribe stripe-payments \
+vigil webhook subscribe stripe-payments \
   --events "payment_intent.succeeded,payment_intent.payment_failed,charge.dispute.created" \
   --prompt "Stripe event received:
 Event type: {type}
@@ -477,7 +477,7 @@ Keep responses concise for the ops channel." \
 **触发方式：** 定时（每日）
 
 ```bash
-hermes cron create "0 8 * * *" \
+vigil cron create "0 8 * * *" \
   "Generate a morning business metrics summary.
 
 Search the web for:
@@ -502,7 +502,7 @@ Deliver as a clean, scannable message." \
 **触发方式：** 定时（每周）
 
 ```bash
-hermes cron create "0 3 * * 0" \
+vigil cron create "0 3 * * 0" \
   "Run a comprehensive security audit of the vigil-agent codebase.
 
 1. Check for dependency vulnerabilities (pip audit, npm audit)
@@ -528,7 +528,7 @@ If nothing found, report a clean bill of health." \
 **触发方式：** 定时（每周）
 
 ```bash
-hermes cron create "0 10 * * 3" \
+vigil cron create "0 10 * * 3" \
   "Research and draft a technical blog post outline about a trending topic in AI agents.
 
 1. Search the web for the most discussed AI agent topics this week

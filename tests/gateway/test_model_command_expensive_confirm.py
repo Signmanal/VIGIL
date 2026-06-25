@@ -42,7 +42,7 @@ def _make_event(text):
 
 
 def _fake_switch_result():
-    from hermes_cli.model_switch import ModelSwitchResult
+    from vigil_cli.model_switch import ModelSwitchResult
 
     return ModelSwitchResult(
         success=True,
@@ -69,24 +69,24 @@ def _fake_warning():
 def _setup_isolated_home(tmp_path, monkeypatch, *, warn):
     import gateway.run as gateway_run
 
-    hermes_home = tmp_path / ".vigil"
-    hermes_home.mkdir()
-    cfg_path = hermes_home / "config.yaml"
+    vigil_home = tmp_path / ".vigil"
+    vigil_home.mkdir()
+    cfg_path = vigil_home / "config.yaml"
     cfg_path.write_text(
         yaml.safe_dump({"model": {"default": "old-model", "provider": "openrouter"}, "providers": {}}),
         encoding="utf-8",
     )
 
-    monkeypatch.setattr(gateway_run, "_hermes_home", hermes_home)
+    monkeypatch.setattr(gateway_run, "_vigil_home", vigil_home)
     monkeypatch.setattr("agent.models_dev.fetch_models_dev", lambda: {})
     monkeypatch.setattr(
-        "hermes_cli.model_switch.switch_model",
+        "vigil_cli.model_switch.switch_model",
         lambda **kw: _fake_switch_result(),
     )
-    monkeypatch.setattr("hermes_constants.get_hermes_home", lambda: hermes_home)
-    monkeypatch.setattr("hermes_cli.config.get_hermes_home", lambda: hermes_home)
+    monkeypatch.setattr("vigil_constants.get_vigil_home", lambda: vigil_home)
+    monkeypatch.setattr("vigil_cli.config.get_vigil_home", lambda: vigil_home)
     monkeypatch.setattr(
-        "hermes_cli.model_cost_guard.expensive_model_warning",
+        "vigil_cli.model_cost_guard.expensive_model_warning",
         (lambda *a, **kw: _fake_warning()) if warn else (lambda *a, **kw: None),
     )
     return cfg_path

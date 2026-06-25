@@ -5,7 +5,7 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 from cli import VIGILCLI
-from hermes_cli.commands import resolve_command
+from vigil_cli.commands import resolve_command
 
 
 def _make_cli():
@@ -70,7 +70,7 @@ def test_show_session_status_prints_gateway_style_summary():
         "started_at": 1775791440,
     }
 
-    with patch("cli.display_hermes_home", return_value="~/.vigil"):
+    with patch("cli.display_vigil_home", return_value="~/.vigil"):
         cli_obj._show_session_status()
 
     printed = "\n".join(str(call.args[0]) for call in cli_obj.console.print.call_args_list)

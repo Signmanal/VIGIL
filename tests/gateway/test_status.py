@@ -16,7 +16,7 @@ class TestGatewayPidState:
 
         payload = json.loads((tmp_path / "gateway.pid").read_text())
         assert payload["pid"] == os.getpid()
-        assert payload["kind"] == "hermes-gateway"
+        assert payload["kind"] == "vigil-gateway"
         assert isinstance(payload["argv"], list)
         assert payload["argv"]
 
@@ -62,8 +62,8 @@ class TestGatewayPidState:
         dead_pid = 999999  # not our pid, and below we simulate it's dead
         pid_path.write_text(json.dumps({
             "pid": dead_pid,
-            "kind": "hermes-gateway",
-            "argv": ["python", "-m", "hermes_cli.main", "gateway", "run"],
+            "kind": "vigil-gateway",
+            "argv": ["python", "-m", "vigil_cli.main", "gateway", "run"],
             "start_time": 111,
         }))
 
@@ -80,8 +80,8 @@ class TestGatewayPidState:
         pid_path = tmp_path / "gateway.pid"
         pid_path.write_text(json.dumps({
             "pid": os.getpid(),
-            "kind": "hermes-gateway",
-            "argv": ["python", "-m", "hermes_cli.main", "gateway"],
+            "kind": "vigil-gateway",
+            "argv": ["python", "-m", "vigil_cli.main", "gateway"],
             "start_time": 123,
         }))
 
@@ -100,8 +100,8 @@ class TestGatewayPidState:
         pid_path = tmp_path / "gateway.pid"
         pid_path.write_text(json.dumps({
             "pid": os.getpid(),
-            "kind": "hermes-gateway",
-            "argv": ["/venv/bin/python", "/repo/hermes_cli/main.py", "gateway", "run", "--replace"],
+            "kind": "vigil-gateway",
+            "argv": ["/venv/bin/python", "/repo/vigil_cli/main.py", "gateway", "run", "--replace"],
             "start_time": 123,
         }))
 
@@ -110,7 +110,7 @@ class TestGatewayPidState:
         monkeypatch.setattr(
             status,
             "_read_process_cmdline",
-            lambda pid: "/venv/bin/python /repo/hermes_cli/main.py gateway run --replace",
+            lambda pid: "/venv/bin/python /repo/vigil_cli/main.py gateway run --replace",
         )
 
         assert status.acquire_gateway_runtime_lock() is True
@@ -125,8 +125,8 @@ class TestGatewayPidState:
         pid_path = other_home / "gateway.pid"
         pid_path.write_text(json.dumps({
             "pid": os.getpid(),
-            "kind": "hermes-gateway",
-            "argv": ["python", "-m", "hermes_cli.main", "gateway"],
+            "kind": "vigil-gateway",
+            "argv": ["python", "-m", "vigil_cli.main", "gateway"],
             "start_time": 123,
         }))
 
@@ -137,8 +137,8 @@ class TestGatewayPidState:
         lock_path = other_home / "gateway.lock"
         lock_path.write_text(json.dumps({
             "pid": os.getpid(),
-            "kind": "hermes-gateway",
-            "argv": ["python", "-m", "hermes_cli.main", "gateway"],
+            "kind": "vigil-gateway",
+            "argv": ["python", "-m", "vigil_cli.main", "gateway"],
             "start_time": 123,
         }))
         monkeypatch.setattr(status, "is_gateway_runtime_lock_active", lambda lock_path=None: True)
@@ -162,8 +162,8 @@ class TestGatewayPidState:
         pid_path = tmp_path / "gateway.pid"
         pid_path.write_text(json.dumps({
             "pid": os.getpid(),
-            "kind": "hermes-gateway",
-            "argv": ["python", "-m", "hermes_cli.main", "gateway"],
+            "kind": "vigil-gateway",
+            "argv": ["python", "-m", "vigil_cli.main", "gateway"],
             "start_time": 123,
         }))
 
@@ -180,8 +180,8 @@ class TestGatewayPidState:
         pid_path = tmp_path / "gateway.pid"
         record = {
             "pid": os.getpid(),
-            "kind": "hermes-gateway",
-            "argv": ["python", "-m", "hermes_cli.main", "gateway", "restart"],
+            "kind": "vigil-gateway",
+            "argv": ["python", "-m", "vigil_cli.main", "gateway", "restart"],
             "start_time": 123,
         }
         pid_path.write_text(json.dumps(record))
@@ -191,7 +191,7 @@ class TestGatewayPidState:
         monkeypatch.setattr(
             status,
             "_read_process_cmdline",
-            lambda pid: "python -m hermes_cli.main gateway restart",
+            lambda pid: "python -m vigil_cli.main gateway restart",
         )
 
         assert status.acquire_gateway_runtime_lock() is True
@@ -207,8 +207,8 @@ class TestGatewayPidState:
         state_path.write_text(json.dumps({
             "gateway_state": "running",
             "pid": os.getpid(),
-            "kind": "hermes-gateway",
-            "argv": ["python", "-m", "hermes_cli.main", "gateway", "restart"],
+            "kind": "vigil-gateway",
+            "argv": ["python", "-m", "vigil_cli.main", "gateway", "restart"],
             "start_time": 123,
         }))
 
@@ -217,7 +217,7 @@ class TestGatewayPidState:
         monkeypatch.setattr(
             status,
             "_read_process_cmdline",
-            lambda pid: "python -m hermes_cli.main gateway restart",
+            lambda pid: "python -m vigil_cli.main gateway restart",
         )
 
         assert status.get_running_pid() == os.getpid()
@@ -240,14 +240,14 @@ class TestGatewayPidState:
 
         pid_path.write_text(json.dumps({
             "pid": dead_foreign_pid,
-            "kind": "hermes-gateway",
-            "argv": ["python", "-m", "hermes_cli.main", "gateway"],
+            "kind": "vigil-gateway",
+            "argv": ["python", "-m", "vigil_cli.main", "gateway"],
             "start_time": 123,
         }))
         lock_path.write_text(json.dumps({
             "pid": dead_foreign_pid,
-            "kind": "hermes-gateway",
-            "argv": ["python", "-m", "hermes_cli.main", "gateway"],
+            "kind": "vigil-gateway",
+            "argv": ["python", "-m", "vigil_cli.main", "gateway"],
             "start_time": 123,
         }))
 
@@ -261,8 +261,8 @@ class TestGatewayPidState:
         pid_path = tmp_path / "gateway.pid"
         pid_path.write_text(json.dumps({
             "pid": 99999,
-            "kind": "hermes-gateway",
-            "argv": ["python", "-m", "hermes_cli.main", "gateway"],
+            "kind": "vigil-gateway",
+            "argv": ["python", "-m", "vigil_cli.main", "gateway"],
             "start_time": 123,
         }))
 
@@ -273,8 +273,8 @@ class TestGatewayPidState:
             "_build_pid_record",
             lambda: {
                 "pid": os.getpid(),
-                "kind": "hermes-gateway",
-                "argv": ["python", "-m", "hermes_cli.main", "gateway"],
+                "kind": "vigil-gateway",
+                "argv": ["python", "-m", "vigil_cli.main", "gateway"],
                 "start_time": 123,
             },
         )
@@ -324,7 +324,7 @@ class TestGatewayRuntimeStatus:
         state_path.write_text(json.dumps({
             "pid": 99999,
             "start_time": 1000.0,
-            "kind": "hermes-gateway",
+            "kind": "vigil-gateway",
             "platforms": {},
             "updated_at": "2025-01-01T00:00:00Z",
         }))
@@ -343,19 +343,19 @@ class TestGatewayRuntimeStatus:
         state_path.write_text(json.dumps({
             "pid": 99999,
             "start_time": 1000.0,
-            "kind": "hermes-gateway",
-            "argv": ["/old/path/hermes", "gateway", "run"],
+            "kind": "vigil-gateway",
+            "argv": ["/old/path/vigil", "gateway", "run"],
             "platforms": {},
             "updated_at": "2025-01-01T00:00:00Z",
         }))
 
-        monkeypatch.setattr(status.sys, "argv", ["/new/path/hermes", "gateway", "run"])
+        monkeypatch.setattr(status.sys, "argv", ["/new/path/vigil", "gateway", "run"])
         monkeypatch.setattr(status, "_get_process_start_time", lambda pid: 2000)
 
         status.write_runtime_status(gateway_state="running")
 
         payload = status.read_runtime_status()
-        assert payload["argv"] == ["/new/path/hermes", "gateway", "run"]
+        assert payload["argv"] == ["/new/path/vigil", "gateway", "run"]
         assert payload["pid"] == os.getpid()
         assert payload["start_time"] == 2000
 
@@ -371,8 +371,8 @@ class TestGatewayRuntimeStatus:
             "pid": 132,
             "start_time": 123,
             "gateway_state": "running",
-            "kind": "hermes-gateway",
-            "argv": ["/opt/vigil/.venv/bin/hermes", "gateway", "run", "--replace"],
+            "kind": "vigil-gateway",
+            "argv": ["/opt/vigil/.venv/bin/vigil", "gateway", "run", "--replace"],
         }
 
         monkeypatch.setattr(status, "_pid_exists", lambda pid: True)
@@ -387,8 +387,8 @@ class TestGatewayRuntimeStatus:
             "pid": 132,
             "start_time": 123,
             "gateway_state": "running",
-            "kind": "hermes-gateway",
-            "argv": ["/opt/vigil/.venv/bin/hermes", "gateway", "run", "--replace"],
+            "kind": "vigil-gateway",
+            "argv": ["/opt/vigil/.venv/bin/vigil", "gateway", "run", "--replace"],
         }
 
         monkeypatch.setattr(status, "_pid_exists", lambda pid: True)
@@ -403,7 +403,7 @@ class TestGatewayRuntimeStatus:
 
         Per-profile Docker supervision: ``coder``'s gateway died leaving a
         ``gateway_state=running`` record at PID 139.  The OS then recycled 139
-        onto the live *default* gateway (``hermes gateway run``).  The recorded
+        onto the live *default* gateway (``vigil gateway run``).  The recorded
         ``start_time`` is absent (older state file), so the start-time PID-reuse
         guard does not catch it.  Without the profile scope the live command
         line still ``looks_like_gateway`` and ``coder`` is wrongly reported up.
@@ -411,7 +411,7 @@ class TestGatewayRuntimeStatus:
         payload = {
             "pid": 139,
             "gateway_state": "running",
-            "kind": "hermes-gateway",
+            "kind": "vigil-gateway",
             "argv": ["vigil", "gateway", "run"],
         }
         coder_home = Path("/opt/data/profiles/coder")
@@ -420,7 +420,7 @@ class TestGatewayRuntimeStatus:
         monkeypatch.setattr(status, "_get_process_start_time", lambda pid: None)
         # PID 139 is now the live DEFAULT gateway (bare, no -p coder).
         monkeypatch.setattr(
-            status, "_read_process_cmdline", lambda pid: "hermes gateway run --replace"
+            status, "_read_process_cmdline", lambda pid: "vigil gateway run --replace"
         )
 
         assert (
@@ -434,7 +434,7 @@ class TestGatewayRuntimeStatus:
         payload = {
             "pid": 139,
             "gateway_state": "running",
-            "kind": "hermes-gateway",
+            "kind": "vigil-gateway",
             "argv": ["vigil", "gateway", "run"],
             "start_time": 1000,
         }
@@ -443,9 +443,9 @@ class TestGatewayRuntimeStatus:
         monkeypatch.setattr(status, "_pid_exists", lambda pid: True)
         monkeypatch.setattr(status, "_get_process_start_time", lambda pid: 1000)
         for cmdline in (
-            "hermes -p coder gateway run --replace",
-            "/opt/vigil/.venv/bin/hermes --profile coder gateway run --replace",
-            "hermes_home=/opt/data/profiles/coder hermes gateway run --replace",
+            "vigil -p coder gateway run --replace",
+            "/opt/vigil/.venv/bin/vigil --profile coder gateway run --replace",
+            "vigil_home=/opt/data/profiles/coder vigil gateway run --replace",
         ):
             monkeypatch.setattr(status, "_read_process_cmdline", lambda pid, c=cmdline: c)
             assert (
@@ -460,7 +460,7 @@ class TestGatewayRuntimeStatus:
         payload = {
             "pid": 139,
             "gateway_state": "running",
-            "kind": "hermes-gateway",
+            "kind": "vigil-gateway",
             "argv": ["vigil", "gateway", "run"],
         }
         default_home = Path("/opt/data")
@@ -468,7 +468,7 @@ class TestGatewayRuntimeStatus:
         monkeypatch.setattr(status, "_pid_exists", lambda pid: True)
         monkeypatch.setattr(status, "_get_process_start_time", lambda pid: None)
         monkeypatch.setattr(
-            status, "_read_process_cmdline", lambda pid: "hermes -p coder gateway run --replace"
+            status, "_read_process_cmdline", lambda pid: "vigil -p coder gateway run --replace"
         )
 
         assert (
@@ -477,12 +477,12 @@ class TestGatewayRuntimeStatus:
         )
 
     def test_runtime_status_running_pid_default_profile_accepts_bare_cmdline(self, monkeypatch):
-        """The default/root gateway (bare ``hermes gateway run``) is reported
+        """The default/root gateway (bare ``vigil gateway run``) is reported
         running for the default profile."""
         payload = {
             "pid": 139,
             "gateway_state": "running",
-            "kind": "hermes-gateway",
+            "kind": "vigil-gateway",
             "argv": ["vigil", "gateway", "run"],
             "start_time": 1000,
         }
@@ -491,7 +491,7 @@ class TestGatewayRuntimeStatus:
         monkeypatch.setattr(status, "_pid_exists", lambda pid: True)
         monkeypatch.setattr(status, "_get_process_start_time", lambda pid: 1000)
         monkeypatch.setattr(
-            status, "_read_process_cmdline", lambda pid: "hermes gateway run --replace"
+            status, "_read_process_cmdline", lambda pid: "vigil gateway run --replace"
         )
 
         assert (
@@ -506,7 +506,7 @@ class TestGatewayRuntimeStatus:
         payload = {
             "pid": 139,
             "gateway_state": "running",
-            "kind": "hermes-gateway",
+            "kind": "vigil-gateway",
             "argv": ["vigil", "gateway", "run"],
             "start_time": 1000,
         }
@@ -688,7 +688,7 @@ class TestScopedLocks:
         lock_path.write_text(json.dumps({
             "pid": 99999,
             "start_time": 123,
-            "kind": "hermes-gateway",
+            "kind": "vigil-gateway",
         }))
 
         # Post-#21561 the liveness probe routes through
@@ -715,8 +715,8 @@ class TestScopedLocks:
         lock_path.write_text(json.dumps({
             "pid": 873,
             "start_time": None,
-            "kind": "hermes-gateway",
-            "argv": ["/Users/user/.vigil/vigil-agent/hermes_cli/main.py", "gateway", "run", "--replace"],
+            "kind": "vigil-gateway",
+            "argv": ["/Users/user/.vigil/vigil-agent/vigil_cli/main.py", "gateway", "run", "--replace"],
         }))
 
         # Post-#21561 the liveness probe routes through
@@ -751,8 +751,8 @@ class TestScopedLocks:
         lock_path.write_text(json.dumps({
             "pid": 99999,
             "start_time": None,
-            "kind": "hermes-gateway",
-            "argv": ["hermes_cli/main.py", "gateway", "run"],
+            "kind": "vigil-gateway",
+            "argv": ["vigil_cli/main.py", "gateway", "run"],
         }))
 
         monkeypatch.setattr(status, "_pid_exists", lambda pid: True)
@@ -775,8 +775,8 @@ class TestScopedLocks:
         lock_path.write_text(json.dumps({
             "pid": 99999,
             "start_time": None,
-            "kind": "hermes-gateway",
-            "argv": ["/Users/user/.vigil/vigil-agent/hermes_cli/main.py", "gateway", "run", "--replace"],
+            "kind": "vigil-gateway",
+            "argv": ["/Users/user/.vigil/vigil-agent/vigil_cli/main.py", "gateway", "run", "--replace"],
         }))
 
         monkeypatch.setattr(status, "_pid_exists", lambda pid: True)
@@ -795,7 +795,7 @@ class TestScopedLocks:
         lock_path.write_text(json.dumps({
             "pid": 99999,
             "start_time": 123,
-            "kind": "hermes-gateway",
+            "kind": "vigil-gateway",
         }))
 
         # Post-#21561: simulate "PID gone" via _pid_exists returning False.
@@ -856,12 +856,12 @@ class TestScopedLocks:
         target_lock.write_text(json.dumps({
             "pid": 111,
             "start_time": 222,
-            "kind": "hermes-gateway",
+            "kind": "vigil-gateway",
         }))
         other_lock.write_text(json.dumps({
             "pid": 999,
             "start_time": 333,
-            "kind": "hermes-gateway",
+            "kind": "vigil-gateway",
         }))
 
         removed = status.release_all_scoped_locks(
@@ -882,7 +882,7 @@ class TestScopedLocks:
         reused_pid_lock.write_text(json.dumps({
             "pid": 111,
             "start_time": 999,
-            "kind": "hermes-gateway",
+            "kind": "vigil-gateway",
         }))
 
         removed = status.release_all_scoped_locks(
@@ -907,8 +907,8 @@ class TestScopedLocks:
         lock_path.write_text(json.dumps({
             "pid": 840,
             "start_time": 123,
-            "kind": "hermes-gateway",
-            "argv": ["/usr/bin/python", "-m", "hermes_cli.main", "gateway", "run"],
+            "kind": "vigil-gateway",
+            "argv": ["/usr/bin/python", "-m", "vigil_cli.main", "gateway", "run"],
         }))
 
         monkeypatch.setattr(status, "_pid_exists", lambda pid: True)
@@ -1222,7 +1222,7 @@ class TestPlannedStopMarker:
         ``_get_process_start_time`` returns None on macOS / native Windows
         (no ``/proc/<pid>/stat``). The planned-stop watcher only runs there,
         so if the authoritative consume required a non-None start_time match
-        it would always return False — and ``hermes gateway stop`` would be
+        it would always return False — and ``vigil gateway stop`` would be
         misclassified as an unexpected ``UNKNOWN`` exit, exit 1, and revived
         by the service manager (the very crash loop #34597 set out to fix).
         With start_time unavailable on BOTH sides we fall back to PID
@@ -1308,21 +1308,21 @@ class TestReadProcessCmdlinePsFallback:
 
         def fake_read_bytes(self):
             calls.append("proc")
-            return b"python\x00hermes_cli/main.py\x00gateway\x00"
+            return b"python\x00vigil_cli/main.py\x00gateway\x00"
 
         monkeypatch.setattr(status.Path, "read_bytes", fake_read_bytes)
         result = status._read_process_cmdline(12345)
-        assert "hermes_cli/main.py" in result
+        assert "vigil_cli/main.py" in result
         assert calls == ["proc"]
 
     def test_ps_fallback_used_when_proc_returns_empty(self, monkeypatch):
         monkeypatch.setattr(status.Path, "read_bytes", lambda self: b"")
         monkeypatch.setattr(
             status.subprocess, "run",
-            lambda args, **kwargs: SimpleNamespace(returncode=0, stdout="python hermes_cli/main.py gateway run\n"),
+            lambda args, **kwargs: SimpleNamespace(returncode=0, stdout="python vigil_cli/main.py gateway run\n"),
         )
         result = status._read_process_cmdline(12345)
-        assert "hermes_cli/main.py" in result
+        assert "vigil_cli/main.py" in result
 
 
 class TestCorruptStatusFiles:

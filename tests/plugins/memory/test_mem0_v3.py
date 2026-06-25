@@ -46,7 +46,7 @@ class TestMem0V3Tools:
         provider = Mem0MemoryProvider()
         provider.initialize("test-session")
         provider._user_id = "u123"
-        provider._agent_id = "hermes"
+        provider._agent_id = "vigil"
         provider._backend = backend
         return provider
 
@@ -110,7 +110,7 @@ class TestMem0V3Tools:
         call = backend.captured[0]
         assert call[2]["infer"] is False
         assert call[2]["user_id"] == "u123"
-        assert call[2]["agent_id"] == "hermes"
+        assert call[2]["agent_id"] == "vigil"
         assert "event_id" in result
 
     def test_add_returns_event_id(self, monkeypatch):
@@ -140,7 +140,7 @@ class TestMem0UpdateDelete:
         provider = Mem0MemoryProvider()
         provider.initialize("test-session")
         provider._user_id = "u123"
-        provider._agent_id = "hermes"
+        provider._agent_id = "vigil"
         provider._backend = backend
         return provider
 
@@ -189,7 +189,7 @@ class TestMem0ErrorHandling:
         provider = Mem0MemoryProvider()
         provider.initialize("test-session")
         provider._user_id = "u123"
-        provider._agent_id = "hermes"
+        provider._agent_id = "vigil"
         provider._backend = backend
         return provider
 
@@ -256,7 +256,7 @@ class TestMem0V3Internal:
         provider = Mem0MemoryProvider()
         provider.initialize("test-session")
         provider._user_id = "u123"
-        provider._agent_id = "hermes"
+        provider._agent_id = "vigil"
         provider._backend = backend
         return provider
 
@@ -268,7 +268,7 @@ class TestMem0V3Internal:
         assert len(backend.captured) == 1
         call = backend.captured[0]
         assert call[2]["user_id"] == "u123"
-        assert call[2]["agent_id"] == "hermes"
+        assert call[2]["agent_id"] == "vigil"
         assert call[2]["infer"] is True
 
     def test_old_tool_names_return_unknown(self, monkeypatch):
@@ -420,14 +420,14 @@ class TestMem0UserIdResolution:
         monkeypatch.delenv("MEM0_USER_ID", raising=False)
         provider = self._provider(monkeypatch, tmp_path)
         provider.initialize("test")
-        assert provider._user_id == "hermes-user"
+        assert provider._user_id == "vigil-user"
 
     def test_legacy_placeholder_in_config_does_not_override_kwargs(self, monkeypatch, tmp_path):
-        # Setup wizard historically wrote {"user_id": "hermes-user"} as the
+        # Setup wizard historically wrote {"user_id": "vigil-user"} as the
         # suggested default. Treat that placeholder as unset so users on
         # gateways still get gateway-native ids — not silent collisions.
         monkeypatch.delenv("MEM0_USER_ID", raising=False)
-        (tmp_path / "mem0.json").write_text('{"user_id": "hermes-user"}')
+        (tmp_path / "mem0.json").write_text('{"user_id": "vigil-user"}')
         provider = self._provider(monkeypatch, tmp_path)
         provider.initialize("test", user_id="123456789", platform="telegram")
         assert provider._user_id == "123456789"
@@ -441,7 +441,7 @@ class TestMem0WriteMetadata:
     def _make_provider(self, channel: str = "cli"):
         provider = Mem0MemoryProvider()
         provider._user_id = "u123"
-        provider._agent_id = "hermes"
+        provider._agent_id = "vigil"
         provider._channel = channel
         provider._backend = FakeBackend()
         return provider

@@ -3,14 +3,14 @@
 These tools are registered into the model's schema when the agent is
 running under the dispatcher (env var ``VIGIL_KANBAN_TASK`` set) or when
 the active profile explicitly enables the ``kanban`` toolset for
-orchestrator work. A normal ``hermes chat`` session still sees **zero**
+orchestrator work. A normal ``vigil chat`` session still sees **zero**
 kanban tools in its schema unless configured.
 
-Why tools instead of just shelling out to ``hermes kanban``?
+Why tools instead of just shelling out to ``vigil kanban``?
 
 1. **Backend portability.** A worker whose terminal tool points at Docker
-   / Modal / Singularity / SSH would run ``hermes kanban complete …``
-   inside the container, where ``hermes`` isn't installed and the DB
+   / Modal / Singularity / SSH would run ``vigil kanban complete …``
+   inside the container, where ``vigil`` isn't installed and the DB
    isn't mounted. Tools run in the agent's Python process, so they
    always reach ``~/.vigil/kanban.db`` regardless of terminal backend.
 
@@ -20,8 +20,8 @@ Why tools instead of just shelling out to ``hermes kanban``?
 3. **Better errors.** Tool-call failures return structured JSON the
    model can reason about, not stderr strings it has to parse.
 
-Humans continue to use the CLI (``hermes kanban …``), the dashboard
-(``hermes dashboard``), and the slash command (``/kanban …``) — all
+Humans continue to use the CLI (``vigil kanban …``), the dashboard
+(``vigil dashboard``), and the slash command (``/kanban …``) — all
 three bypass the agent entirely. The tools are for dispatcher-spawned
 worker handoffs and for configured orchestrator profiles that route work
 through the board.
@@ -35,7 +35,7 @@ from typing import Any, Optional
 
 from agent.redact import redact_sensitive_text
 from tools.registry import registry, tool_error
-from hermes_cli.config import cfg_get, load_config
+from vigil_cli.config import cfg_get, load_config
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +53,7 @@ def _profile_has_kanban_toolset() -> bool:
     # negligible overhead. The check_fn results are further TTL-cached
     # (~30s) by the tool registry.
     try:
-        from hermes_cli.config import load_config
+        from vigil_cli.config import load_config
         cfg = load_config()
         toolsets = cfg.get("toolsets", [])
         return "kanban" in toolsets
@@ -68,7 +68,7 @@ def _check_kanban_mode() -> bool:
     2. The current profile has ``kanban`` in its toolsets config
        (orchestrator profiles like techlead that route work via Kanban).
 
-    Humans running ``hermes chat`` without the kanban toolset see zero
+    Humans running ``vigil chat`` without the kanban toolset see zero
     kanban tools. Workers spawned by the kanban dispatcher (gateway-
     embedded by default) and orchestrator profiles with the kanban
     toolset enabled see the Kanban lifecycle tool surface.
@@ -174,7 +174,7 @@ def _connect(board: Optional[str] = None):
     → ``default``). Per-tool ``board`` lets a Telegram-side agent override
     the env-pinned active board without restarting VIGIL.
     """
-    from hermes_cli import kanban_db as kb
+    from vigil_cli import kanban_db as kb
     return kb, kb.connect(board=board)
 
 
@@ -715,7 +715,7 @@ def _handle_comment(args: dict, **kw) -> str:
     # into the next worker's system prompt by ``build_worker_context``
     # as ``**{author}** (timestamp): {body}`` — accepting an
     # ``args["author"]`` override let a worker forge a comment from
-    # an authoritative-looking name like ``hermes-system`` and poison
+    # an authoritative-looking name like ``vigil-system`` and poison
     # the future-worker context with what reads as a system directive.
     # Cross-task commenting itself remains unrestricted (see #19713) —
     # comments are the deliberate handoff channel between tasks.
@@ -860,7 +860,7 @@ def _maybe_auto_subscribe(conn: Any, task_id: str) -> bool:
     Gated by ``kanban.auto_subscribe_on_create`` in config.yaml (default
     True). Disable to mirror pre-feature behaviour, e.g. when the
     originating user/chat opted out via the per-platform notification
-    toggle (see ``hermes dashboard``).
+    toggle (see ``vigil dashboard``).
 
     Subscription paths:
 
@@ -928,7 +928,7 @@ def _maybe_auto_subscribe(conn: Any, task_id: str) -> bool:
         notifier_profile = os.environ.get("VIGIL_PROFILE")
 
         # Lazy-import to keep the module-level dependency light
-        from hermes_cli import kanban_db as _kb
+        from vigil_cli import kanban_db as _kb
         _kb.add_notify_sub(
             conn, task_id=task_id,
             platform=platform, chat_id=chat_id,

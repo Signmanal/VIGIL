@@ -2,7 +2,7 @@
 
 <p align="center">
   <a href="https://github.com/NousResearch/vigil-agent/releases"><img src="https://img.shields.io/badge/Download-macOS%20%C2%B7%20Windows%20%C2%B7%20Linux-FFD700?style=for-the-badge" alt="Download"></a>
-  <a href="https://vigil-agent.nousresearch.com/docs/"><img src="https://img.shields.io/badge/Docs-hermes--agent.nousresearch.com-FFD700?style=for-the-badge" alt="Documentation"></a>
+  <a href="https://vigil-agent.nousresearch.com/docs/"><img src="https://img.shields.io/badge/Docs-vigil--agent.nousresearch.com-FFD700?style=for-the-badge" alt="Documentation"></a>
   <a href="https://discord.gg/NousResearch"><img src="https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord"></a>
   <a href="https://github.com/NousResearch/vigil-agent/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License: MIT"></a>
 </p>
@@ -27,7 +27,7 @@
 Already have the VIGIL CLI? Just run:
 
 ```bash
-hermes desktop
+vigil desktop
 ```
 
 It builds and launches the GUI against your existing install — same config, keys, sessions, and skills. On first launch VIGIL walks you through picking a provider and model; nothing else to configure.
@@ -43,7 +43,7 @@ Prebuilt installers are built and distributed via [the VIGIL Desktop website.](h
 The app checks for updates in the background and offers a one-click update when one is ready. You can also update any time from the CLI:
 
 ```bash
-hermes update
+vigil update
 ```
 
 ---
@@ -85,7 +85,7 @@ Installers are built and uploaded to GitHub Releases manually. macOS/Windows sig
 
 ### How it works
 
-The packaged app ships the Electron shell and a native React chat surface. On first launch it can install the VIGIL Agent runtime into `VIGIL_HOME` (`~/.vigil`, or `%LOCALAPPDATA%\vigil` on Windows) — the **same layout a CLI install uses**, so the two are interchangeable. Backend resolution first honours `VIGIL_DESKTOP_VIGIL_ROOT`, then a completed managed install, then a probed `hermes` on `PATH` (unless `VIGIL_DESKTOP_IGNORE_EXISTING=1` is set), and finally an explicit `VIGIL_DESKTOP_HERMES` command override for packagers/troubleshooting. The renderer (React, in `src/`) talks to a `hermes dashboard` backend over the `tui_gateway`/dashboard APIs and reuses the agent runtime rather than embedding `hermes --tui`. The install, backend-resolution, and self-update logic all live in `electron/main.cjs`.
+The packaged app ships the Electron shell and a native React chat surface. On first launch it can install the VIGIL Agent runtime into `VIGIL_HOME` (`~/.vigil`, or `%LOCALAPPDATA%\vigil` on Windows) — the **same layout a CLI install uses**, so the two are interchangeable. Backend resolution first honours `VIGIL_DESKTOP_VIGIL_ROOT`, then a completed managed install, then a probed `vigil` on `PATH` (unless `VIGIL_DESKTOP_IGNORE_EXISTING=1` is set), and finally an explicit `VIGIL_DESKTOP_HERMES` command override for packagers/troubleshooting. The renderer (React, in `src/`) talks to a `vigil dashboard` backend over the `tui_gateway`/dashboard APIs and reuses the agent runtime rather than embedding `vigil --tui`. The install, backend-resolution, and self-update logic all live in `electron/main.cjs`.
 
 ### Verification
 

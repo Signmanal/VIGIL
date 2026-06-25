@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 
 import type { VIGILConnection } from '@/global'
-import { VIGILGateway } from '@/hermes'
+import { VIGILGateway } from '@/vigil'
 import { translateNow } from '@/i18n'
 import { desktopDefaultCwd } from '@/lib/desktop-fs'
 import { isGatewayReauthRequired, resolveGatewayWsUrl } from '@/lib/gateway-ws-url'
@@ -38,7 +38,7 @@ import {
   setCurrentCwd,
   setSessionsLoading
 } from '@/store/session'
-import type { RpcEvent } from '@/types/hermes'
+import type { RpcEvent } from '@/types/vigil'
 
 // After this many consecutive failed reconnects (≈45s with the 1→15s backoff)
 // raise a recoverable boot error. Otherwise a dropped remote gateway loops the

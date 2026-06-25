@@ -15,7 +15,7 @@ import { PetSprite } from './pet-sprite'
 
 // v2: positions are now top/left anchored (v1 stored bottom-anchored values,
 // which dragged inverted). Bumping the key discards stale v1 coordinates.
-const POSITION_KEY = 'hermes.desktop.pet-position.v2'
+const POSITION_KEY = 'vigil.desktop.pet-position.v2'
 
 interface Point {
   x: number

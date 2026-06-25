@@ -11,13 +11,13 @@ import {
   runToolsetPostSetup,
   selectToolsetProvider,
   setEnvVar
-} from '@/hermes'
+} from '@/vigil'
 import { useI18n } from '@/i18n'
 import { Check, Loader2, Save, Terminal } from '@/lib/icons'
 import { cn } from '@/lib/utils'
 import { upsertDesktopActionTask } from '@/store/activity'
 import { notify, notifyError } from '@/store/notifications'
-import type { ActionStatusResponse, ToolEnvVar, ToolProvider, ToolsetConfig } from '@/types/hermes'
+import type { ActionStatusResponse, ToolEnvVar, ToolProvider, ToolsetConfig } from '@/types/vigil'
 
 import { EnvVarActionsMenu, EnvVarActionsTrigger } from './env-var-actions-menu'
 import { Pill } from './primitives'
@@ -178,7 +178,7 @@ interface PostSetupRunnerProps {
 /**
  * Runs a provider's post-setup install hook (npm / pip / binary) via the
  * `/api/tools/toolsets/{name}/post-setup` spawn-action and tails the resulting
- * log inline — the GUI equivalent of the install step `hermes tools` runs
+ * log inline — the GUI equivalent of the install step `vigil tools` runs
  * after you pick a backend that needs extra dependencies.
  */
 function PostSetupRunner({ toolset, postSetupKey, onComplete }: PostSetupRunnerProps) {
@@ -324,7 +324,7 @@ export function ToolsetConfigPanel({ toolset, onConfiguredChange }: ToolsetConfi
   // Default the expanded provider to the one actually active in config
   // (`is_active` / `cfg.active_provider`, mirroring the CLI picker), then the
   // first fully-configured provider, else the first provider. Without this the
-  // panel highlighted the first keyless provider (e.g. Nous Portal) even when
+  // panel highlighted the first keyless provider (e.g. VIGIL Portal) even when
   // the user had already selected another (e.g. DuckDuckGo).
   useEffect(() => {
     if (activeProvider || providers.length === 0) {

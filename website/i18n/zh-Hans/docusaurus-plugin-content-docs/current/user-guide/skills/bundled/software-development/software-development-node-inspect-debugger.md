@@ -21,7 +21,7 @@ description: "调试 Node"
 | 许可证 | MIT |
 | 平台 | linux, macos, windows |
 | 标签 | `debugging`, `nodejs`, `node-inspect`, `cdp`, `breakpoints`, `ui-tui` |
-| 相关 skill | [`systematic-debugging`](/user-guide/skills/bundled/software-development/software-development-systematic-debugging), [`python-debugpy`](/user-guide/skills/bundled/software-development/software-development-python-debugpy), [`debugging-hermes-tui-commands`](/user-guide/skills/bundled/software-development/software-development-debugging-hermes-tui-commands) |
+| 相关 skill | [`systematic-debugging`](/user-guide/skills/bundled/software-development/software-development-systematic-debugging), [`python-debugpy`](/user-guide/skills/bundled/software-development/software-development-python-debugpy), [`debugging-vigil-tui-commands`](/user-guide/skills/bundled/software-development/software-development-debugging-vigil-tui-commands) |
 
 ## 参考：完整 SKILL.md
 
@@ -217,13 +217,13 @@ cont
 
 暂停后，进入 `repl` → 检查 `props`、state 引用、`useInput` 处理器的值等。
 
-### 调试运行中的 `hermes --tui`
+### 调试运行中的 `vigil --tui`
 
 TUI 由 Python CLI 启动 Node。最简路径：
 
 ```bash
 # 1. Launch TUI
-hermes --tui &
+vigil --tui &
 TUI_PID=$(pgrep -f 'ui-tui/dist/entry' | head -1)
 
 # 2. Enable inspector on that Node PID

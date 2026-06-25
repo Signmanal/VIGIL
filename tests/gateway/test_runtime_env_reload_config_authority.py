@@ -16,18 +16,18 @@ from gateway import run as gateway_run
 
 
 def test_reload_runtime_env_preserves_config_max_turns(tmp_path: Path, monkeypatch) -> None:
-    hermes_home = tmp_path / ".vigil"
-    hermes_home.mkdir()
-    (hermes_home / "config.yaml").write_text(
+    vigil_home = tmp_path / ".vigil"
+    vigil_home.mkdir()
+    (vigil_home / "config.yaml").write_text(
         yaml.safe_dump({"agent": {"max_turns": 9000}}),
         encoding="utf-8",
     )
-    (hermes_home / ".env").write_text(
+    (vigil_home / ".env").write_text(
         "VIGIL_MAX_ITERATIONS=90\nOPENROUTER_API_KEY=fresh-key\n",
         encoding="utf-8",
     )
 
-    monkeypatch.setattr(gateway_run, "_hermes_home", hermes_home)
+    monkeypatch.setattr(gateway_run, "_vigil_home", vigil_home)
     monkeypatch.setenv("VIGIL_MAX_ITERATIONS", "9000")
     monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
 
@@ -40,12 +40,12 @@ def test_reload_runtime_env_preserves_config_max_turns(tmp_path: Path, monkeypat
 def test_reload_runtime_env_keeps_env_max_iterations_when_config_omits_key(
     tmp_path: Path, monkeypatch
 ) -> None:
-    hermes_home = tmp_path / ".vigil"
-    hermes_home.mkdir()
-    (hermes_home / "config.yaml").write_text(yaml.safe_dump({"agent": {}}), encoding="utf-8")
-    (hermes_home / ".env").write_text("VIGIL_MAX_ITERATIONS=123\n", encoding="utf-8")
+    vigil_home = tmp_path / ".vigil"
+    vigil_home.mkdir()
+    (vigil_home / "config.yaml").write_text(yaml.safe_dump({"agent": {}}), encoding="utf-8")
+    (vigil_home / ".env").write_text("VIGIL_MAX_ITERATIONS=123\n", encoding="utf-8")
 
-    monkeypatch.setattr(gateway_run, "_hermes_home", hermes_home)
+    monkeypatch.setattr(gateway_run, "_vigil_home", vigil_home)
     monkeypatch.delenv("VIGIL_MAX_ITERATIONS", raising=False)
 
     gateway_run._reload_runtime_env_preserving_config_authority()

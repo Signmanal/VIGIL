@@ -21,7 +21,7 @@ Every VIGIL installation ships with bundled skills. See what's available:
 /skills
 
 # Or from the CLI:
-hermes skills list
+vigil skills list
 ```
 
 This shows a compact list with names and descriptions:
@@ -90,13 +90,13 @@ Official optional skills ship with VIGIL but aren't active by default. Install t
 
 ```bash
 # Install an official optional skill
-hermes skills install official/research/arxiv
+vigil skills install official/research/arxiv
 
 # Install from the hub in a chat session
 /skills install official/creative/songwriting-and-ai-music
 
 # Install a single-file SKILL.md directly from any HTTP(S) URL
-hermes skills install https://sharethis.chat/SKILL.md
+vigil skills install https://sharethis.chat/SKILL.md
 /skills install https://example.com/SKILL.md --name my-skill
 ```
 
@@ -113,7 +113,7 @@ Installed skills take effect in new sessions. If you want it available in the cu
 
 ```bash
 # Check it's there
-hermes skills list | grep arxiv
+vigil skills list | grep arxiv
 
 # Or in chat
 /skills search arxiv
@@ -135,7 +135,7 @@ skill_view("writing-plans")
 
 Plugin skills are **not** listed in the system prompt and don't appear in `skills_list`. They're opt-in — load them explicitly when you know a plugin provides one. When loaded, the agent sees a banner listing sibling skills from the same plugin.
 
-For how to ship skills in your own plugin, see [Build a VIGIL Plugin → Bundle skills](/guides/build-a-hermes-plugin#bundle-skills).
+For how to ship skills in your own plugin, see [Build a VIGIL Plugin → Bundle skills](/guides/build-a-vigil-plugin#bundle-skills).
 
 ---
 
@@ -145,7 +145,7 @@ Some skills declare configuration they need in their frontmatter:
 
 ```yaml
 metadata:
-  hermes:
+  vigil:
     config:
       - key: tenor.api_key
         description: "Tenor API key for GIF search"
@@ -159,10 +159,10 @@ Manage skill config from the CLI:
 
 ```bash
 # Interactive config for a specific skill
-hermes skills config gif-search
+vigil skills config gif-search
 
 # View all skill config
-hermes config show | grep '^skills\.config'
+vigil config show | grep '^skills\.config'
 ```
 
 ---
@@ -185,7 +185,7 @@ name: my-skill
 description: Brief description of what this skill does
 version: 1.0.0
 metadata:
-  hermes:
+  vigil:
     tags: [my-tag, automation]
     category: my-category
 ---
@@ -235,7 +235,7 @@ For API details, load the reference: `skill_view("my-skill", "references/api-doc
 Start a new session and try your skill:
 
 ```bash
-hermes chat -q "/my-skill help me with the thing"
+vigil chat -q "/my-skill help me with the thing"
 ```
 
 The skill appears automatically — no registration needed. Drop it in `~/.vigil/skills/` and it's live.
@@ -251,7 +251,7 @@ The agent can also create and update skills itself using `skill_manage`. After s
 Control which skills are available on which platforms:
 
 ```bash
-hermes skills
+vigil skills
 ```
 
 This opens an interactive TUI where you can enable or disable skills per platform (CLI, Telegram, Discord, etc.). Useful when you want certain skills only available in specific contexts — for example, keeping development skills off Telegram.

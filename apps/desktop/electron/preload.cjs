@@ -1,60 +1,60 @@
 const { contextBridge, ipcRenderer, webUtils } = require('electron')
 
 contextBridge.exposeInMainWorld('vigilDesktop', {
-  getConnection: profile => ipcRenderer.invoke('hermes:connection', profile),
-  revalidateConnection: () => ipcRenderer.invoke('hermes:connection:revalidate'),
-  touchBackend: profile => ipcRenderer.invoke('hermes:backend:touch', profile),
-  getGatewayWsUrl: profile => ipcRenderer.invoke('hermes:gateway:ws-url', profile),
-  openSessionWindow: (sessionId, opts) => ipcRenderer.invoke('hermes:window:openSession', sessionId, opts),
-  openNewSessionWindow: () => ipcRenderer.invoke('hermes:window:openNewSession'),
+  getConnection: profile => ipcRenderer.invoke('vigil:connection', profile),
+  revalidateConnection: () => ipcRenderer.invoke('vigil:connection:revalidate'),
+  touchBackend: profile => ipcRenderer.invoke('vigil:backend:touch', profile),
+  getGatewayWsUrl: profile => ipcRenderer.invoke('vigil:gateway:ws-url', profile),
+  openSessionWindow: (sessionId, opts) => ipcRenderer.invoke('vigil:window:openSession', sessionId, opts),
+  openNewSessionWindow: () => ipcRenderer.invoke('vigil:window:openNewSession'),
   petOverlay: {
     // Main renderer → main process: window lifecycle + drag. `request` is
     // `{ bounds, screen }`; resolves with the screen bounds it actually used.
-    open: request => ipcRenderer.invoke('hermes:pet-overlay:open', request),
-    close: () => ipcRenderer.invoke('hermes:pet-overlay:close'),
-    setBounds: bounds => ipcRenderer.send('hermes:pet-overlay:set-bounds', bounds),
-    setIgnoreMouse: ignore => ipcRenderer.send('hermes:pet-overlay:ignore-mouse', ignore),
+    open: request => ipcRenderer.invoke('vigil:pet-overlay:open', request),
+    close: () => ipcRenderer.invoke('vigil:pet-overlay:close'),
+    setBounds: bounds => ipcRenderer.send('vigil:pet-overlay:set-bounds', bounds),
+    setIgnoreMouse: ignore => ipcRenderer.send('vigil:pet-overlay:ignore-mouse', ignore),
     // Flip the overlay focusable (and focus it) while the composer needs keys.
-    setFocusable: focusable => ipcRenderer.send('hermes:pet-overlay:set-focusable', focusable),
+    setFocusable: focusable => ipcRenderer.send('vigil:pet-overlay:set-focusable', focusable),
     // Main renderer → overlay (forwarded by main): push the latest pet state.
-    pushState: payload => ipcRenderer.send('hermes:pet-overlay:state', payload),
+    pushState: payload => ipcRenderer.send('vigil:pet-overlay:state', payload),
     // Overlay → main renderer (forwarded by main): pop back in / composer submit.
-    control: payload => ipcRenderer.send('hermes:pet-overlay:control', payload),
+    control: payload => ipcRenderer.send('vigil:pet-overlay:control', payload),
     // Overlay subscribes to state pushes.
     onState: callback => {
       const listener = (_event, payload) => callback(payload)
-      ipcRenderer.on('hermes:pet-overlay:state', listener)
-      return () => ipcRenderer.removeListener('hermes:pet-overlay:state', listener)
+      ipcRenderer.on('vigil:pet-overlay:state', listener)
+      return () => ipcRenderer.removeListener('vigil:pet-overlay:state', listener)
     },
     // Main renderer subscribes to overlay control messages.
     onControl: callback => {
       const listener = (_event, payload) => callback(payload)
-      ipcRenderer.on('hermes:pet-overlay:control', listener)
-      return () => ipcRenderer.removeListener('hermes:pet-overlay:control', listener)
+      ipcRenderer.on('vigil:pet-overlay:control', listener)
+      return () => ipcRenderer.removeListener('vigil:pet-overlay:control', listener)
     }
   },
-  getBootProgress: () => ipcRenderer.invoke('hermes:boot-progress:get'),
-  getConnectionConfig: profile => ipcRenderer.invoke('hermes:connection-config:get', profile),
-  saveConnectionConfig: payload => ipcRenderer.invoke('hermes:connection-config:save', payload),
-  applyConnectionConfig: payload => ipcRenderer.invoke('hermes:connection-config:apply', payload),
-  testConnectionConfig: payload => ipcRenderer.invoke('hermes:connection-config:test', payload),
-  probeConnectionConfig: remoteUrl => ipcRenderer.invoke('hermes:connection-config:probe', remoteUrl),
-  oauthLoginConnectionConfig: remoteUrl => ipcRenderer.invoke('hermes:connection-config:oauth-login', remoteUrl),
-  oauthLogoutConnectionConfig: remoteUrl => ipcRenderer.invoke('hermes:connection-config:oauth-logout', remoteUrl),
+  getBootProgress: () => ipcRenderer.invoke('vigil:boot-progress:get'),
+  getConnectionConfig: profile => ipcRenderer.invoke('vigil:connection-config:get', profile),
+  saveConnectionConfig: payload => ipcRenderer.invoke('vigil:connection-config:save', payload),
+  applyConnectionConfig: payload => ipcRenderer.invoke('vigil:connection-config:apply', payload),
+  testConnectionConfig: payload => ipcRenderer.invoke('vigil:connection-config:test', payload),
+  probeConnectionConfig: remoteUrl => ipcRenderer.invoke('vigil:connection-config:probe', remoteUrl),
+  oauthLoginConnectionConfig: remoteUrl => ipcRenderer.invoke('vigil:connection-config:oauth-login', remoteUrl),
+  oauthLogoutConnectionConfig: remoteUrl => ipcRenderer.invoke('vigil:connection-config:oauth-logout', remoteUrl),
   profile: {
-    get: () => ipcRenderer.invoke('hermes:profile:get'),
-    set: name => ipcRenderer.invoke('hermes:profile:set', name)
+    get: () => ipcRenderer.invoke('vigil:profile:get'),
+    set: name => ipcRenderer.invoke('vigil:profile:set', name)
   },
-  api: request => ipcRenderer.invoke('hermes:api', request),
-  notify: payload => ipcRenderer.invoke('hermes:notify', payload),
-  requestMicrophoneAccess: () => ipcRenderer.invoke('hermes:requestMicrophoneAccess'),
-  readFileDataUrl: filePath => ipcRenderer.invoke('hermes:readFileDataUrl', filePath),
-  readFileText: filePath => ipcRenderer.invoke('hermes:readFileText', filePath),
-  selectPaths: options => ipcRenderer.invoke('hermes:selectPaths', options),
-  writeClipboard: text => ipcRenderer.invoke('hermes:writeClipboard', text),
-  saveImageFromUrl: url => ipcRenderer.invoke('hermes:saveImageFromUrl', url),
-  saveImageBuffer: (data, ext) => ipcRenderer.invoke('hermes:saveImageBuffer', { data, ext }),
-  saveClipboardImage: () => ipcRenderer.invoke('hermes:saveClipboardImage'),
+  api: request => ipcRenderer.invoke('vigil:api', request),
+  notify: payload => ipcRenderer.invoke('vigil:notify', payload),
+  requestMicrophoneAccess: () => ipcRenderer.invoke('vigil:requestMicrophoneAccess'),
+  readFileDataUrl: filePath => ipcRenderer.invoke('vigil:readFileDataUrl', filePath),
+  readFileText: filePath => ipcRenderer.invoke('vigil:readFileText', filePath),
+  selectPaths: options => ipcRenderer.invoke('vigil:selectPaths', options),
+  writeClipboard: text => ipcRenderer.invoke('vigil:writeClipboard', text),
+  saveImageFromUrl: url => ipcRenderer.invoke('vigil:saveImageFromUrl', url),
+  saveImageBuffer: (data, ext) => ipcRenderer.invoke('vigil:saveImageBuffer', { data, ext }),
+  saveClipboardImage: () => ipcRenderer.invoke('vigil:saveClipboardImage'),
   getPathForFile: file => {
     try {
       return webUtils.getPathForFile(file) || ''
@@ -62,40 +62,40 @@ contextBridge.exposeInMainWorld('vigilDesktop', {
       return ''
     }
   },
-  normalizePreviewTarget: (target, baseDir) => ipcRenderer.invoke('hermes:normalizePreviewTarget', target, baseDir),
-  watchPreviewFile: url => ipcRenderer.invoke('hermes:watchPreviewFile', url),
-  stopPreviewFileWatch: id => ipcRenderer.invoke('hermes:stopPreviewFileWatch', id),
-  setTitleBarTheme: payload => ipcRenderer.send('hermes:titlebar-theme', payload),
-  setNativeTheme: mode => ipcRenderer.send('hermes:native-theme', mode),
-  setTranslucency: payload => ipcRenderer.send('hermes:translucency', payload),
-  setPreviewShortcutActive: active => ipcRenderer.send('hermes:previewShortcutActive', Boolean(active)),
-  openExternal: url => ipcRenderer.invoke('hermes:openExternal', url),
-  openPreviewInBrowser: url => ipcRenderer.invoke('hermes:openPreviewInBrowser', url),
-  fetchLinkTitle: url => ipcRenderer.invoke('hermes:fetchLinkTitle', url),
-  sanitizeWorkspaceCwd: cwd => ipcRenderer.invoke('hermes:workspace:sanitize', cwd),
+  normalizePreviewTarget: (target, baseDir) => ipcRenderer.invoke('vigil:normalizePreviewTarget', target, baseDir),
+  watchPreviewFile: url => ipcRenderer.invoke('vigil:watchPreviewFile', url),
+  stopPreviewFileWatch: id => ipcRenderer.invoke('vigil:stopPreviewFileWatch', id),
+  setTitleBarTheme: payload => ipcRenderer.send('vigil:titlebar-theme', payload),
+  setNativeTheme: mode => ipcRenderer.send('vigil:native-theme', mode),
+  setTranslucency: payload => ipcRenderer.send('vigil:translucency', payload),
+  setPreviewShortcutActive: active => ipcRenderer.send('vigil:previewShortcutActive', Boolean(active)),
+  openExternal: url => ipcRenderer.invoke('vigil:openExternal', url),
+  openPreviewInBrowser: url => ipcRenderer.invoke('vigil:openPreviewInBrowser', url),
+  fetchLinkTitle: url => ipcRenderer.invoke('vigil:fetchLinkTitle', url),
+  sanitizeWorkspaceCwd: cwd => ipcRenderer.invoke('vigil:workspace:sanitize', cwd),
   settings: {
-    getDefaultProjectDir: () => ipcRenderer.invoke('hermes:setting:defaultProjectDir:get'),
-    setDefaultProjectDir: dir => ipcRenderer.invoke('hermes:setting:defaultProjectDir:set', dir),
-    pickDefaultProjectDir: () => ipcRenderer.invoke('hermes:setting:defaultProjectDir:pick')
+    getDefaultProjectDir: () => ipcRenderer.invoke('vigil:setting:defaultProjectDir:get'),
+    setDefaultProjectDir: dir => ipcRenderer.invoke('vigil:setting:defaultProjectDir:set', dir),
+    pickDefaultProjectDir: () => ipcRenderer.invoke('vigil:setting:defaultProjectDir:pick')
   },
-  revealLogs: () => ipcRenderer.invoke('hermes:logs:reveal'),
-  getRecentLogs: () => ipcRenderer.invoke('hermes:logs:recent'),
-  readDir: dirPath => ipcRenderer.invoke('hermes:fs:readDir', dirPath),
-  gitRoot: startPath => ipcRenderer.invoke('hermes:fs:gitRoot', startPath),
-  worktrees: cwds => ipcRenderer.invoke('hermes:fs:worktrees', cwds),
+  revealLogs: () => ipcRenderer.invoke('vigil:logs:reveal'),
+  getRecentLogs: () => ipcRenderer.invoke('vigil:logs:recent'),
+  readDir: dirPath => ipcRenderer.invoke('vigil:fs:readDir', dirPath),
+  gitRoot: startPath => ipcRenderer.invoke('vigil:fs:gitRoot', startPath),
+  worktrees: cwds => ipcRenderer.invoke('vigil:fs:worktrees', cwds),
   terminal: {
-    dispose: id => ipcRenderer.invoke('hermes:terminal:dispose', id),
-    resize: (id, size) => ipcRenderer.invoke('hermes:terminal:resize', id, size),
-    start: options => ipcRenderer.invoke('hermes:terminal:start', options),
-    write: (id, data) => ipcRenderer.invoke('hermes:terminal:write', id, data),
+    dispose: id => ipcRenderer.invoke('vigil:terminal:dispose', id),
+    resize: (id, size) => ipcRenderer.invoke('vigil:terminal:resize', id, size),
+    start: options => ipcRenderer.invoke('vigil:terminal:start', options),
+    write: (id, data) => ipcRenderer.invoke('vigil:terminal:write', id, data),
     onData: (id, callback) => {
-      const channel = `hermes:terminal:${id}:data`
+      const channel = `vigil:terminal:${id}:data`
       const listener = (_event, payload) => callback(payload)
       ipcRenderer.on(channel, listener)
       return () => ipcRenderer.removeListener(channel, listener)
     },
     onExit: (id, callback) => {
-      const channel = `hermes:terminal:${id}:exit`
+      const channel = `vigil:terminal:${id}:exit`
       const listener = (_event, payload) => callback(payload)
       ipcRenderer.on(channel, listener)
       return () => ipcRenderer.removeListener(channel, listener)
@@ -103,88 +103,88 @@ contextBridge.exposeInMainWorld('vigilDesktop', {
   },
   onClosePreviewRequested: callback => {
     const listener = () => callback()
-    ipcRenderer.on('hermes:close-preview-requested', listener)
-    return () => ipcRenderer.removeListener('hermes:close-preview-requested', listener)
+    ipcRenderer.on('vigil:close-preview-requested', listener)
+    return () => ipcRenderer.removeListener('vigil:close-preview-requested', listener)
   },
   onOpenUpdatesRequested: callback => {
     const listener = () => callback()
-    ipcRenderer.on('hermes:open-updates', listener)
-    return () => ipcRenderer.removeListener('hermes:open-updates', listener)
+    ipcRenderer.on('vigil:open-updates', listener)
+    return () => ipcRenderer.removeListener('vigil:open-updates', listener)
   },
   onDeepLink: callback => {
     const listener = (_event, payload) => callback(payload)
-    ipcRenderer.on('hermes:deep-link', listener)
-    return () => ipcRenderer.removeListener('hermes:deep-link', listener)
+    ipcRenderer.on('vigil:deep-link', listener)
+    return () => ipcRenderer.removeListener('vigil:deep-link', listener)
   },
-  signalDeepLinkReady: () => ipcRenderer.invoke('hermes:deep-link-ready'),
+  signalDeepLinkReady: () => ipcRenderer.invoke('vigil:deep-link-ready'),
   onWindowStateChanged: callback => {
     const listener = (_event, payload) => callback(payload)
-    ipcRenderer.on('hermes:window-state-changed', listener)
-    return () => ipcRenderer.removeListener('hermes:window-state-changed', listener)
+    ipcRenderer.on('vigil:window-state-changed', listener)
+    return () => ipcRenderer.removeListener('vigil:window-state-changed', listener)
   },
   onFocusSession: callback => {
     const listener = (_event, sessionId) => callback(sessionId)
-    ipcRenderer.on('hermes:focus-session', listener)
-    return () => ipcRenderer.removeListener('hermes:focus-session', listener)
+    ipcRenderer.on('vigil:focus-session', listener)
+    return () => ipcRenderer.removeListener('vigil:focus-session', listener)
   },
   onNotificationAction: callback => {
     const listener = (_event, payload) => callback(payload)
-    ipcRenderer.on('hermes:notification-action', listener)
-    return () => ipcRenderer.removeListener('hermes:notification-action', listener)
+    ipcRenderer.on('vigil:notification-action', listener)
+    return () => ipcRenderer.removeListener('vigil:notification-action', listener)
   },
   onPreviewFileChanged: callback => {
     const listener = (_event, payload) => callback(payload)
-    ipcRenderer.on('hermes:preview-file-changed', listener)
-    return () => ipcRenderer.removeListener('hermes:preview-file-changed', listener)
+    ipcRenderer.on('vigil:preview-file-changed', listener)
+    return () => ipcRenderer.removeListener('vigil:preview-file-changed', listener)
   },
   onBackendExit: callback => {
     const listener = (_event, payload) => callback(payload)
-    ipcRenderer.on('hermes:backend-exit', listener)
-    return () => ipcRenderer.removeListener('hermes:backend-exit', listener)
+    ipcRenderer.on('vigil:backend-exit', listener)
+    return () => ipcRenderer.removeListener('vigil:backend-exit', listener)
   },
   onPowerResume: callback => {
     const listener = () => callback()
-    ipcRenderer.on('hermes:power-resume', listener)
-    return () => ipcRenderer.removeListener('hermes:power-resume', listener)
+    ipcRenderer.on('vigil:power-resume', listener)
+    return () => ipcRenderer.removeListener('vigil:power-resume', listener)
   },
   onBootProgress: callback => {
     const listener = (_event, payload) => callback(payload)
-    ipcRenderer.on('hermes:boot-progress', listener)
-    return () => ipcRenderer.removeListener('hermes:boot-progress', listener)
+    ipcRenderer.on('vigil:boot-progress', listener)
+    return () => ipcRenderer.removeListener('vigil:boot-progress', listener)
   },
   // First-launch bootstrap progress -- emitted by the install.ps1 stage
   // runner in main.cjs (apps/desktop/electron/bootstrap-runner.cjs).
   // Renderer's install overlay subscribes to live events and queries the
   // current snapshot via getBootstrapState() to recover after a devtools
   // reload mid-bootstrap.
-  getBootstrapState: () => ipcRenderer.invoke('hermes:bootstrap:get'),
-  resetBootstrap: () => ipcRenderer.invoke('hermes:bootstrap:reset'),
-  repairBootstrap: () => ipcRenderer.invoke('hermes:bootstrap:repair'),
-  cancelBootstrap: () => ipcRenderer.invoke('hermes:bootstrap:cancel'),
+  getBootstrapState: () => ipcRenderer.invoke('vigil:bootstrap:get'),
+  resetBootstrap: () => ipcRenderer.invoke('vigil:bootstrap:reset'),
+  repairBootstrap: () => ipcRenderer.invoke('vigil:bootstrap:repair'),
+  cancelBootstrap: () => ipcRenderer.invoke('vigil:bootstrap:cancel'),
   onBootstrapEvent: callback => {
     const listener = (_event, payload) => callback(payload)
-    ipcRenderer.on('hermes:bootstrap:event', listener)
-    return () => ipcRenderer.removeListener('hermes:bootstrap:event', listener)
+    ipcRenderer.on('vigil:bootstrap:event', listener)
+    return () => ipcRenderer.removeListener('vigil:bootstrap:event', listener)
   },
-  getVersion: () => ipcRenderer.invoke('hermes:version'),
-  getRemoteDisplayReason: () => ipcRenderer.invoke('hermes:get-remote-display-reason'),
+  getVersion: () => ipcRenderer.invoke('vigil:version'),
+  getRemoteDisplayReason: () => ipcRenderer.invoke('vigil:get-remote-display-reason'),
   uninstall: {
-    summary: () => ipcRenderer.invoke('hermes:uninstall:summary'),
-    run: mode => ipcRenderer.invoke('hermes:uninstall:run', { mode })
+    summary: () => ipcRenderer.invoke('vigil:uninstall:summary'),
+    run: mode => ipcRenderer.invoke('vigil:uninstall:run', { mode })
   },
   updates: {
-    check: () => ipcRenderer.invoke('hermes:updates:check'),
-    apply: opts => ipcRenderer.invoke('hermes:updates:apply', opts),
-    getBranch: () => ipcRenderer.invoke('hermes:updates:branch:get'),
-    setBranch: name => ipcRenderer.invoke('hermes:updates:branch:set', name),
+    check: () => ipcRenderer.invoke('vigil:updates:check'),
+    apply: opts => ipcRenderer.invoke('vigil:updates:apply', opts),
+    getBranch: () => ipcRenderer.invoke('vigil:updates:branch:get'),
+    setBranch: name => ipcRenderer.invoke('vigil:updates:branch:set', name),
     onProgress: callback => {
       const listener = (_event, payload) => callback(payload)
-      ipcRenderer.on('hermes:updates:progress', listener)
-      return () => ipcRenderer.removeListener('hermes:updates:progress', listener)
+      ipcRenderer.on('vigil:updates:progress', listener)
+      return () => ipcRenderer.removeListener('vigil:updates:progress', listener)
     }
   },
   themes: {
-    fetchMarketplace: id => ipcRenderer.invoke('hermes:vscode-theme:fetch', id),
-    searchMarketplace: query => ipcRenderer.invoke('hermes:vscode-theme:search', query)
+    fetchMarketplace: id => ipcRenderer.invoke('vigil:vscode-theme:fetch', id),
+    searchMarketplace: query => ipcRenderer.invoke('vigil:vscode-theme:search', query)
   }
 })

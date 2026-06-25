@@ -1,34 +1,34 @@
-"""Tests for agent.portal_tags — Nous Portal request tag contract."""
+"""Tests for agent.portal_tags — VIGIL Portal request tag contract."""
 
 from __future__ import annotations
 
 
-def test_hermes_client_tag_includes_current_version():
-    """The client tag must reflect hermes_cli.__version__ verbatim."""
-    from hermes_cli import __version__
-    from agent.portal_tags import hermes_client_tag
+def test_vigil_client_tag_includes_current_version():
+    """The client tag must reflect vigil_cli.__version__ verbatim."""
+    from vigil_cli import __version__
+    from agent.portal_tags import vigil_client_tag
 
-    assert hermes_client_tag() == f"client=hermes-client-v{__version__}"
+    assert vigil_client_tag() == f"client=vigil-client-v{__version__}"
 
 
-def test_hermes_client_tag_format():
-    """The client tag has the exact shape Nous Portal expects."""
-    from agent.portal_tags import hermes_client_tag
+def test_vigil_client_tag_format():
+    """The client tag has the exact shape VIGIL Portal expects."""
+    from agent.portal_tags import vigil_client_tag
 
-    tag = hermes_client_tag()
-    assert tag.startswith("client=hermes-client-v")
+    tag = vigil_client_tag()
+    assert tag.startswith("client=vigil-client-v")
     # No spaces, no commas — single tag value
     assert " " not in tag
     assert "," not in tag
 
 
 def test_nous_portal_tags_contains_product_and_client():
-    """Every Nous Portal request gets BOTH the product tag and the version tag."""
-    from agent.portal_tags import hermes_client_tag, nous_portal_tags
+    """Every VIGIL Portal request gets BOTH the product tag and the version tag."""
+    from agent.portal_tags import vigil_client_tag, nous_portal_tags
 
     tags = nous_portal_tags()
     assert "product=vigil-agent" in tags
-    assert hermes_client_tag() in tags
+    assert vigil_client_tag() in tags
     assert len(tags) == 2
 
 

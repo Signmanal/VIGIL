@@ -12,19 +12,19 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 @pytest.fixture
 def cron_env(tmp_path, monkeypatch):
     """Isolated cron environment with temp VIGIL_HOME."""
-    hermes_home = tmp_path / ".vigil"
-    hermes_home.mkdir()
-    (hermes_home / "cron").mkdir()
-    (hermes_home / "cron" / "output").mkdir()
-    monkeypatch.setenv("VIGIL_HOME", str(hermes_home))
+    vigil_home = tmp_path / ".vigil"
+    vigil_home.mkdir()
+    (vigil_home / "cron").mkdir()
+    (vigil_home / "cron" / "output").mkdir()
+    monkeypatch.setenv("VIGIL_HOME", str(vigil_home))
 
     import cron.jobs as jobs_mod
-    monkeypatch.setattr(jobs_mod, "VIGIL_DIR", hermes_home)
-    monkeypatch.setattr(jobs_mod, "CRON_DIR", hermes_home / "cron")
-    monkeypatch.setattr(jobs_mod, "JOBS_FILE", hermes_home / "cron" / "jobs.json")
-    monkeypatch.setattr(jobs_mod, "OUTPUT_DIR", hermes_home / "cron" / "output")
+    monkeypatch.setattr(jobs_mod, "VIGIL_DIR", vigil_home)
+    monkeypatch.setattr(jobs_mod, "CRON_DIR", vigil_home / "cron")
+    monkeypatch.setattr(jobs_mod, "JOBS_FILE", vigil_home / "cron" / "jobs.json")
+    monkeypatch.setattr(jobs_mod, "OUTPUT_DIR", vigil_home / "cron" / "output")
 
-    return hermes_home
+    return vigil_home
 
 
 class TestJobContextFromField:

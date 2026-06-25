@@ -89,7 +89,7 @@ const HOVER_REVEAL_EDGE_GUTTER = 'calc(0.5rem + 2px)'
 
 // Fired (window CustomEvent<{ id }>) to toggle a force-collapsed pane's reveal
 // from the keyboard, since its store-open toggle is a no-op while collapsed.
-export const PANE_TOGGLE_REVEAL_EVENT = 'hermes:pane-toggle-reveal'
+export const PANE_TOGGLE_REVEAL_EVENT = 'vigil:pane-toggle-reveal'
 
 const widthToCss = (value: WidthValue | undefined, fallback: string) =>
   value === undefined ? fallback : typeof value === 'number' ? `${value}px` : value
@@ -176,7 +176,7 @@ function trackForPane(pane: CollectedPane, states: Record<string, { open: boolea
     return { open: false, track: '0px' }
   }
 
-  const override = pane.resizable ? states[pane.id]?.widthOverride : undefined
+  const override = states[pane.id]?.widthOverride
 
   return { open: true, track: override !== undefined ? `${override}px` : pane.width }
 }
@@ -262,7 +262,7 @@ export function Pane({
   // Collapsed + hoverReveal: float the pane contents over the main column on
   // hover/focus instead of hiding them. Honors any persisted resize width.
   const overlayActive = !open && hoverReveal && !disabled
-  const override = resizable ? paneStates[id]?.widthOverride : undefined
+  const override = paneStates[id]?.widthOverride
   const overlayWidth = override !== undefined ? `${override}px` : widthToCss(width, DEFAULT_WIDTH)
 
   useEffect(() => {

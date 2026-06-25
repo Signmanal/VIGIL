@@ -28,7 +28,7 @@ export function GenerateUnavailable({ onSetup }: GenerateUnavailableProps) {
       <p className="flex flex-wrap items-center justify-center gap-x-1.5 text-[0.6875rem] text-(--ui-text-tertiary)">
         <span>Grab a key from</span>
         <ExternalLink href="https://github.com/Signmanal/VIGIL" showExternalIcon={false}>
-          Nous Portal
+          VIGIL Portal
         </ExternalLink>
         <span>·</span>
         <ExternalLink

@@ -4,7 +4,7 @@ description: Give the agent its own dedicated email inbox via AgentMail. Send, r
 version: 1.0.0
 platforms: [linux, macos, windows]
 metadata:
-  hermes:
+  vigil:
     tags: [email, communication, agentmail, mcp]
     category: email
 ---
@@ -47,7 +47,7 @@ mcp_servers:
 
 ### 3. Restart VIGIL
 ```bash
-hermes
+vigil
 ```
 All 11 AgentMail tools are now available automatically.
 
@@ -100,7 +100,7 @@ All 11 AgentMail tools are now available automatically.
 
 **Agent-to-human outreach:**
 ```
-1. create_inbox (username: "hermes-outreach")
+1. create_inbox (username: "vigil-outreach")
 2. send_message (to: user@example.com, subject: "Hello", text: "...")
 3. list_threads to check for replies
 ```
@@ -115,7 +115,7 @@ All 11 AgentMail tools are now available automatically.
 ## Verification
 After setup, test with:
 ```
-hermes --toolsets mcp -q "Create an AgentMail inbox called test-agent and tell me its email address"
+vigil --toolsets mcp -q "Create an AgentMail inbox called test-agent and tell me its email address"
 ```
 You should see the new inbox address returned.
 

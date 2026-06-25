@@ -31,14 +31,14 @@ from datetime import datetime, timedelta, timezone
 from email.mime.text import MIMEText
 from pathlib import Path
 
-# Ensure sibling modules (_hermes_home) are importable when run standalone.
+# Ensure sibling modules (_vigil_home) are importable when run standalone.
 _SCRIPTS_DIR = str(Path(__file__).resolve().parent)
 if _SCRIPTS_DIR not in sys.path:
     sys.path.insert(0, _SCRIPTS_DIR)
 
-from _hermes_home import get_hermes_home
+from _vigil_home import get_vigil_home
 
-VIGIL_HOME = get_hermes_home()
+VIGIL_HOME = get_vigil_home()
 TOKEN_PATH = VIGIL_HOME / "google_token.json"
 CLIENT_SECRET_PATH = VIGIL_HOME / "google_client_secret.json"
 

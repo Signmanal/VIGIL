@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-import type { VIGILGateway } from '@/hermes'
+import type { VIGILGateway } from '@/vigil'
 import type { ComposerAttachment } from '@/store/composer'
 
 import type { DroppedFile } from '../hooks/use-composer-actions'

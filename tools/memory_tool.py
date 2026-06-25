@@ -30,7 +30,7 @@ import tempfile
 import time
 from contextlib import contextmanager
 from pathlib import Path
-from hermes_constants import get_hermes_home
+from vigil_constants import get_vigil_home
 from typing import Dict, Any, List, Optional
 
 from utils import atomic_replace
@@ -54,7 +54,7 @@ logger = logging.getLogger(__name__)
 # happened after the first import.
 def get_memory_dir() -> Path:
     """Return the profile-scoped memories directory."""
-    return get_hermes_home() / "memories"
+    return get_vigil_home() / "memories"
 
 ENTRY_DELIMITER = "\n§\n"
 
@@ -751,7 +751,7 @@ def load_on_disk_store() -> "MemoryStore":
     memory_char_limit = 2200
     user_char_limit = 1375
     try:
-        from hermes_cli.config import load_config
+        from vigil_cli.config import load_config
 
         mem_cfg = (load_config() or {}).get("memory", {}) or {}
         memory_char_limit = int(mem_cfg.get("memory_char_limit", memory_char_limit))

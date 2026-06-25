@@ -5,7 +5,7 @@ export interface LaunchResult {
   error?: string
 }
 
-const resolveVIGILBin = () => process.env.VIGIL_BIN?.trim() || 'hermes'
+const resolveVIGILBin = () => process.env.VIGIL_BIN?.trim() || 'vigil'
 
 export const launchVIGILCommand = (args: string[]): Promise<LaunchResult> =>
   new Promise(resolve => {

@@ -1,5 +1,5 @@
 """
-`hermes computer-use doctor` — thin client for cua-driver's `health_report` MCP tool.
+`vigil computer-use doctor` — thin client for cua-driver's `health_report` MCP tool.
 
 cua-driver owns the health model (#1908 / be761fac on `main`). This module
 just drives the stdio JSON-RPC handshake, calls `health_report`, and
@@ -240,7 +240,7 @@ def run_doctor(
             pass
     if driver_cmd is None:
         try:
-            from hermes_cli.tools_config import _cua_driver_cmd
+            from vigil_cli.tools_config import _cua_driver_cmd
             driver_cmd = _cua_driver_cmd()
         except Exception:
             driver_cmd = os.environ.get("VIGIL_CUA_DRIVER_CMD") or "cua-driver"
@@ -248,7 +248,7 @@ def run_doctor(
     binary = shutil.which(driver_cmd)
     if not binary:
         print(f"cua-driver: not installed (looked for {driver_cmd!r}).")
-        print("  Run: hermes computer-use install")
+        print("  Run: vigil computer-use install")
         return 2
 
     try:

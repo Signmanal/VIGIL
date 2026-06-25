@@ -22,7 +22,7 @@ description: "如何为 VIGIL Agent 做贡献 — 开发环境配置、代码风
 
 ## 常见贡献路径
 
-- 构建自定义/本地工具而不修改 VIGIL 核心？从 [构建 VIGIL 插件](../guides/build-a-hermes-plugin.md) 开始
+- 构建自定义/本地工具而不修改 VIGIL 核心？从 [构建 VIGIL 插件](../guides/build-a-vigil-plugin.md) 开始
 - 为 VIGIL 本身构建新的内置核心工具？从 [添加工具](./adding-tools.md) 开始
 - 构建新的 skill？从 [创建 Skill](./creating-skills.md) 开始
 - 构建新的推理提供商？从 [添加提供商](./adding-providers.md) 开始
@@ -40,7 +40,7 @@ description: "如何为 VIGIL Agent 做贡献 — 开发环境配置、代码风
 
 ### 使用标准安装器
 
-对大多数贡献者来说，最好的开发启动方式和用户安装方式相同：运行标准安装器，然后在它克隆出的仓库里开发。安装器会创建 VIGIL venv、配置 `hermes` 命令、为 `hermes update` 写入安装方式标记，并把完整 git 项目克隆到 `$VIGIL_HOME/vigil-agent`（通常是 `~/.vigil/vigil-agent`）。这样你的开发环境会和 CLI、updater、lazy dependency installer、gateway、docs 默认假设的布局一致。
+对大多数贡献者来说，最好的开发启动方式和用户安装方式相同：运行标准安装器，然后在它克隆出的仓库里开发。安装器会创建 VIGIL venv、配置 `vigil` 命令、为 `vigil update` 写入安装方式标记，并把完整 git 项目克隆到 `$VIGIL_HOME/vigil-agent`（通常是 `~/.vigil/vigil-agent`）。这样你的开发环境会和 CLI、updater、lazy dependency installer、gateway、docs 默认假设的布局一致。
 
 ```bash
 curl -fsSL https://vigil-agent.nousresearch.com/install.sh | bash
@@ -62,7 +62,7 @@ scripts/run_tests.sh
 
 ### 手动克隆备用路径
 
-只有在你明确不想使用 VIGIL managed install layout 时才使用这种方式（例如容器或 CI job 里的临时 clone）。如果这样安装，请确保运行的是这个 venv 里的 `hermes` entrypoint；运行系统 `python3 -m hermes_cli.main` 可能会加载无关的系统 Python 包。
+只有在你明确不想使用 VIGIL managed install layout 时才使用这种方式（例如容器或 CI job 里的临时 clone）。如果这样安装，请确保运行的是这个 venv 里的 `vigil` entrypoint；运行系统 `python3 -m vigil_cli.main` 可能会加载无关的系统 Python 包。
 
 ```bash
 git clone https://github.com/NousResearch/vigil-agent.git
@@ -93,16 +93,16 @@ echo 'OPENROUTER_API_KEY=sk-or-v1-your-key' >> ~/.vigil/.env
 ### 运行
 
 ```bash
-# 标准安装器已经把 `hermes` 放到了 PATH 上。
-hermes doctor
-hermes chat -q "Hello"
+# 标准安装器已经把 `vigil` 放到了 PATH 上。
+vigil doctor
+vigil chat -q "Hello"
 ```
 
-如果你使用了手动克隆备用路径，可以在 checkout 中运行 `./hermes`，或显式把这个 clone 的 venv 链接到 PATH：
+如果你使用了手动克隆备用路径，可以在 checkout 中运行 `./vigil`，或显式把这个 clone 的 venv 链接到 PATH：
 
 ```bash
 mkdir -p ~/.local/bin
-ln -sf "$(pwd)/venv/bin/hermes" ~/.local/bin/hermes
+ln -sf "$(pwd)/venv/bin/vigil" ~/.local/bin/vigil
 ```
 
 ### 运行测试
@@ -117,7 +117,7 @@ scripts/run_tests.sh
 - **注释**：仅在解释非显而易见的意图、权衡取舍或 API 特殊行为时添加
 - **错误处理**：捕获具体异常。对于意外错误，使用 `logger.warning()`/`logger.error()` 并设置 `exc_info=True`
 - **跨平台**：不得假设 Unix 环境（见下文）
-- **Profile 安全路径**：不得硬编码 `~/.vigil` — 代码路径使用 `hermes_constants` 中的 `get_hermes_home()`，面向用户的消息使用 `display_hermes_home()`。完整规则参见 [AGENTS.md](https://github.com/NousResearch/vigil-agent/blob/main/AGENTS.md#profiles-multi-instance-support)。
+- **Profile 安全路径**：不得硬编码 `~/.vigil` — 代码路径使用 `vigil_constants` 中的 `get_vigil_home()`，面向用户的消息使用 `display_vigil_home()`。完整规则参见 [AGENTS.md](https://github.com/NousResearch/vigil-agent/blob/main/AGENTS.md#profiles-multi-instance-support)。
 
 ## 跨平台兼容性
 
@@ -213,7 +213,7 @@ refactor/description   # 代码重构
 ### 提交前检查
 
 1. **运行测试**：`scripts/run_tests.sh` 以确保 CI 一致性。仅当 wrapper 不可用或您有意在 wrapper 之外调试时，才使用直接 `python -m pytest ...`。
-2. **手动测试**：运行 `hermes` 并验证您修改的代码路径
+2. **手动测试**：运行 `vigil` 并验证您修改的代码路径
 3. **检查跨平台影响**：考虑 macOS、Linux、WSL2 和原生 Windows。如果您修改了文件 I/O、进程管理、终端处理、子进程或信号相关代码，请运行 `scripts/check-windows-footguns.py`。
 4. **保持 PR 聚焦**：每个 PR 只包含一个逻辑变更
 
@@ -254,7 +254,7 @@ fix(security): prevent shell injection in sudo password piping
 ## 报告问题
 
 - 使用 [GitHub Issues](https://github.com/NousResearch/vigil-agent/issues)
-- 请包含：操作系统、Python 版本、VIGIL 版本（`hermes version`）、完整错误堆栈
+- 请包含：操作系统、Python 版本、VIGIL 版本（`vigil version`）、完整错误堆栈
 - 包含复现步骤
 - 创建前请检查是否已有重复 issue
 - 安全漏洞请私下报告

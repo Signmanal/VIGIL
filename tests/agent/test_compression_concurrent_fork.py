@@ -36,12 +36,16 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from hermes_state import SessionDB
+from vigil_state import SessionDB
 
 
-def _build_agent_with_db(db: SessionDB, session_id: str):
+def _build_agent_with_db(db: SessionDB, session_id: str, compress_side_effect=None):
     """Build an AIAgent that's wired to ``db`` and pinned to ``session_id``."""
-    with patch.dict(os.environ, {"OPENROUTER_API_KEY": "test-key"}):
+    with (
+        patch.dict(os.environ, {"OPENROUTER_API_KEY": "test-key"}),
+        patch("agent.agent_init.query_ollama_num_ctx", return_value=None),
+        patch("agent.context_compressor.get_model_context_length", return_value=256000),
+    ):
         from run_agent import AIAgent
 
         agent = AIAgent(
@@ -68,7 +72,7 @@ def _build_agent_with_db(db: SessionDB, session_id: str):
             {"role": "user", "content": "tail"},
         ]
 
-    compressor.compress.side_effect = _compress_with_overlap
+    compressor.compress.side_effect = compress_side_effect or _compress_with_overlap
     compressor.compression_count = 1
     compressor.last_prompt_tokens = 0
     compressor.last_completion_tokens = 0
@@ -100,27 +104,58 @@ def test_concurrent_compression_does_not_fork_session(tmp_path: Path) -> None:
 
     parent_sid = "PARENT_TEST_SESSION"
     db.create_session(parent_sid, source="discord")
+    first_compress_started = threading.Event()
+    second_lock_attempted = threading.Event()
+
+    real_try_acquire = db.try_acquire_compression_lock
+
+    def _coordinated_try_acquire(session_id: str, holder: str):
+        acquired = real_try_acquire(session_id, holder)
+        if not acquired:
+            second_lock_attempted.set()
+        return acquired
+
+    db.try_acquire_compression_lock = _coordinated_try_acquire
+
+    def _compress_after_second_attempt(*_a, **_kw):
+        first_compress_started.set()
+        if not second_lock_attempted.wait(timeout=5):
+            raise AssertionError("Second compression path never attempted the held lock")
+        return [
+            {"role": "user", "content": "[CONTEXT COMPACTION] summary"},
+            {"role": "user", "content": "tail"},
+        ]
 
     # Two agents on the same session_id, both wired to the same db —
     # mirrors the parent-turn agent + the background-review fork right
     # after a turn ends.
-    agent_a = _build_agent_with_db(db, parent_sid)
+    agent_a = _build_agent_with_db(
+        db,
+        parent_sid,
+        compress_side_effect=_compress_after_second_attempt,
+    )
     agent_b = _build_agent_with_db(db, parent_sid)
     messages = [{"role": "user", "content": f"m{i}"} for i in range(20)]
+    errors = []
 
     def run(agent):
         try:
             agent._compress_context(messages, "sys", approx_tokens=120_000)
-        except Exception:
-            # Surface to the test if either raises — should not happen.
-            raise
+        except BaseException as exc:
+            errors.append(exc)
 
     t_a = threading.Thread(target=run, args=(agent_a,), name="main_turn")
     t_b = threading.Thread(target=run, args=(agent_b,), name="review_fork")
     t_a.start()
+    assert first_compress_started.wait(timeout=5), (
+        "First compression path never reached compressor.compress"
+    )
     t_b.start()
     t_a.join(timeout=10)
     t_b.join(timeout=10)
+    assert not t_a.is_alive()
+    assert not t_b.is_alive()
+    assert not errors
 
     # Exactly one canonical child — not two orphans.
     assert _count_children(db, parent_sid) == 1, (
@@ -176,7 +211,7 @@ def test_skipped_compression_returns_messages_unchanged(tmp_path: Path) -> None:
 class _NoLockSubsystemDB:
     """Wraps a real SessionDB but simulates a pre-#34351 version skew.
 
-    A long-lived process can hold ``hermes_state.SessionDB`` bound to the
+    A long-lived process can hold ``vigil_state.SessionDB`` bound to the
     OLD class in memory (no compression-lock methods) while a lazily
     re-imported ``conversation_compression.py`` calls the NEW lock code.
     ``try_acquire_compression_lock`` then raises ``AttributeError`` — which

@@ -215,7 +215,7 @@ async def test_auto_registers_plugin_commands_for_discord(adapter):
     adapter._run_simple_slash = AsyncMock()
 
     with patch(
-        "hermes_cli.plugins.get_plugin_commands",
+        "vigil_cli.plugins.get_plugin_commands",
         return_value={
             "metricas": {
                 "handler": lambda _a: "ok",
@@ -244,7 +244,7 @@ async def test_auto_registered_plugin_command_without_args_hint(adapter):
     adapter._run_simple_slash = AsyncMock()
 
     with patch(
-        "hermes_cli.plugins.get_plugin_commands",
+        "vigil_cli.plugins.get_plugin_commands",
         return_value={
             "ping": {
                 "handler": lambda _a: "pong",
@@ -269,7 +269,7 @@ async def test_plugin_command_name_conflict_skipped(adapter):
     adapter._run_simple_slash = AsyncMock()
 
     with patch(
-        "hermes_cli.plugins.get_plugin_commands",
+        "vigil_cli.plugins.get_plugin_commands",
         return_value={
             "status": {
                 "handler": lambda _a: "plugin-status",
@@ -323,7 +323,7 @@ async def test_slash_command_registration_stays_under_discord_limit(adapter):
         for i in range(200)
     }
 
-    with patch("hermes_cli.plugins.get_plugin_commands", return_value=many_plugins):
+    with patch("vigil_cli.plugins.get_plugin_commands", return_value=many_plugins):
         adapter._register_slash_commands()
 
     tree_names = set(adapter._client.tree.commands.keys())
@@ -589,7 +589,7 @@ async def test_auto_create_thread_strips_mention_syntax_from_name(adapter):
 
 
 @pytest.mark.asyncio
-async def test_auto_create_thread_falls_back_to_hermes_when_only_mentions(adapter):
+async def test_auto_create_thread_falls_back_to_vigil_when_only_mentions(adapter):
     """If a message contains only mention syntax, the stripped content is
     empty — fall back to the 'VIGIL' default rather than ''."""
     thread = SimpleNamespace(id=999, name="VIGIL")
@@ -827,15 +827,15 @@ def test_discord_auto_thread_config_bridge(monkeypatch, tmp_path):
     from pathlib import Path
 
     # Write a config.yaml the loader will find
-    hermes_dir = tmp_path / ".vigil"
-    hermes_dir.mkdir()
-    config_path = hermes_dir / "config.yaml"
+    vigil_dir = tmp_path / ".vigil"
+    vigil_dir.mkdir()
+    config_path = vigil_dir / "config.yaml"
     config_path.write_text(yaml.dump({
         "discord": {"auto_thread": True},
     }))
 
     monkeypatch.delenv("DISCORD_AUTO_THREAD", raising=False)
-    monkeypatch.setenv("VIGIL_HOME", str(hermes_dir))
+    monkeypatch.setenv("VIGIL_HOME", str(vigil_dir))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
     from gateway.config import load_gateway_config
@@ -873,7 +873,7 @@ def test_register_skill_command_is_flat_not_nested(adapter):
     ]
 
     with patch(
-        "hermes_cli.commands.discord_skill_commands_by_category",
+        "vigil_cli.commands.discord_skill_commands_by_category",
         return_value=(mock_categories, mock_uncategorized, 0),
     ):
         adapter._register_slash_commands()
@@ -891,7 +891,7 @@ def test_register_skill_command_is_flat_not_nested(adapter):
 def test_register_skill_command_empty_skills_no_command(adapter):
     """No /skill command should be registered when there are zero skills."""
     with patch(
-        "hermes_cli.commands.discord_skill_commands_by_category",
+        "vigil_cli.commands.discord_skill_commands_by_category",
         return_value=({}, [], 0),
     ):
         adapter._register_slash_commands()
@@ -914,7 +914,7 @@ def test_register_skill_command_callback_dispatches_by_name(adapter):
     ]
 
     with patch(
-        "hermes_cli.commands.discord_skill_commands_by_category",
+        "vigil_cli.commands.discord_skill_commands_by_category",
         return_value=(mock_categories, mock_uncategorized, 0),
     ):
         adapter._register_slash_commands()
@@ -946,7 +946,7 @@ def test_register_skill_command_handles_unknown_skill_gracefully(adapter):
     an ephemeral error message, NOT crash the callback.
     """
     with patch(
-        "hermes_cli.commands.discord_skill_commands_by_category",
+        "vigil_cli.commands.discord_skill_commands_by_category",
         return_value=({"media": [("gif-search", "GIFs", "/gif-search")]}, [], 0),
     ):
         adapter._register_slash_commands()
@@ -994,7 +994,7 @@ def test_register_skill_command_payload_fits_discord_8kb_limit(adapter):
         ]
 
     with patch(
-        "hermes_cli.commands.discord_skill_commands_by_category",
+        "vigil_cli.commands.discord_skill_commands_by_category",
         return_value=(large_categories, [], 0),
     ):
         adapter._register_slash_commands()
@@ -1030,7 +1030,7 @@ def test_register_skill_command_autocomplete_filters_by_name_and_description(ada
     }
 
     with patch(
-        "hermes_cli.commands.discord_skill_commands_by_category",
+        "vigil_cli.commands.discord_skill_commands_by_category",
         return_value=(mock_categories, [], 0),
     ):
         adapter._register_slash_commands()

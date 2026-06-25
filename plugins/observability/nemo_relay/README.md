@@ -38,7 +38,7 @@ https://github.com/harbor-framework/harbor/blob/main/rfcs/0001-trajectory-format
 Enable the plugin before setting export options:
 
 ```bash
-hermes plugins enable observability/nemo_relay
+vigil plugins enable observability/nemo_relay
 ```
 
 The `VIGIL_NEMO_RELAY_*` environment variables below only configure an
@@ -48,8 +48,8 @@ For isolated test homes, enable the plugin in the same `VIGIL_HOME` that the
 agent run will use:
 
 ```bash
-env VIGIL_HOME=/tmp/hermes-nemo-relay-test \
-  hermes plugins enable observability/nemo_relay
+env VIGIL_HOME=/tmp/vigil-nemo-relay-test \
+  vigil plugins enable observability/nemo_relay
 ```
 
 Runs started with `--ignore_user_config` skip the enabled-plugin state from
@@ -57,25 +57,25 @@ Runs started with `--ignore_user_config` skip the enabled-plugin state from
 loads `observability/nemo_relay` explicitly another way.
 
 `VIGIL_HOME` is the VIGIL profile/config home used by both
-`hermes plugins enable ...` and the later `hermes chat ...` run. If unset,
+`vigil plugins enable ...` and the later `vigil chat ...` run. If unset,
 VIGIL uses the user's default home, usually `~/.vigil`. For isolated smoke
 tests, choose any writable temporary directory and use the same value for every
 command in that test:
 
 ```bash
-export VIGIL_HOME=/tmp/hermes-nemo-relay-test
-hermes plugins enable observability/nemo_relay
-hermes chat --query 'Reply exactly ok' --provider custom --model qwen3.6:35b
+export VIGIL_HOME=/tmp/vigil-nemo-relay-test
+vigil plugins enable observability/nemo_relay
+vigil chat --query 'Reply exactly ok' --provider custom --model qwen3.6:35b
 ```
 
-For source checkouts, make sure the `hermes` command you run is built from the
+For source checkouts, make sure the `vigil` command you run is built from the
 checkout that contains this plugin. A globally installed older CLI will not see
 new bundled plugins from your working tree.
 
 ```bash
 uv sync --extra nemo-relay
-uv run hermes plugins enable observability/nemo_relay
-uv run hermes chat --query 'Reply exactly ok' --provider custom --model qwen3.6:35b
+uv run vigil plugins enable observability/nemo_relay
+uv run vigil chat --query 'Reply exactly ok' --provider custom --model qwen3.6:35b
 ```
 
 To ship the updated CLI into another environment, build and install a fresh
@@ -83,9 +83,9 @@ wheel from this checkout, then install the official NeMo Relay runtime extra:
 
 ```bash
 uv build --wheel
-python -m pip install --force-reinstall dist/hermes_agent-*.whl
+python -m pip install --force-reinstall dist/vigil_agent-*.whl
 python -m pip install "nemo-relay==0.3"
-hermes plugins enable observability/nemo_relay
+vigil plugins enable observability/nemo_relay
 ```
 
 The plugin fails open when `nemo-relay` is not installed. Install and test it against the official NeMo Relay 0.3 PyPI distribution:
@@ -200,7 +200,7 @@ distribution and a local Ollama model served through the OpenAI-compatible API.
 ```bash
 pip install "nemo-relay==0.3"
 
-export VIGIL_HOME=/tmp/hermes-nemo-relay-docs/hermes-home
+export VIGIL_HOME=/tmp/vigil-nemo-relay-docs/vigil-home
 mkdir -p "$VIGIL_HOME"
 
 cat > "$VIGIL_HOME/config.yaml" <<'YAML'
@@ -230,17 +230,17 @@ child call `terminal`, and writes both ATOF and ATIF.
 
 ```bash
 export VIGIL_NEMO_RELAY_ATOF_ENABLED=1
-export VIGIL_NEMO_RELAY_ATOF_OUTPUT_DIRECTORY=/tmp/hermes-nemo-relay-docs/subagent/atof
+export VIGIL_NEMO_RELAY_ATOF_OUTPUT_DIRECTORY=/tmp/vigil-nemo-relay-docs/subagent/atof
 export VIGIL_NEMO_RELAY_ATOF_FILENAME=nested-subagent-atof.jsonl
 export VIGIL_NEMO_RELAY_ATOF_MODE=overwrite
 export VIGIL_NEMO_RELAY_ATIF_ENABLED=1
-export VIGIL_NEMO_RELAY_ATIF_OUTPUT_DIRECTORY=/tmp/hermes-nemo-relay-docs/subagent/atif
+export VIGIL_NEMO_RELAY_ATIF_OUTPUT_DIRECTORY=/tmp/vigil-nemo-relay-docs/subagent/atif
 export VIGIL_NEMO_RELAY_ATIF_FILENAME_TEMPLATE='nested-subagent-atif-{session_id}.json'
 export VIGIL_NEMO_RELAY_ATIF_AGENT_NAME='VIGIL Agent E2E'
 export VIGIL_NEMO_RELAY_ATIF_AGENT_VERSION=docs-example
 export VIGIL_NEMO_RELAY_ATIF_SUBAGENT_EXPORT_MODE=all
 
-hermes chat \
+vigil chat \
   --query 'Use delegate_task exactly once. Ask the child subagent to use the terminal tool exactly once to run printf docs_nested_leaf_function. After the child returns, reply with exactly: parent received nested subagent result.' \
   --provider custom \
   --model qwen3.6:35b \
@@ -261,7 +261,7 @@ Sanitized ATOF excerpt:
 
 ```jsonl
 {"kind":"scope","category":"tool","name":"delegate_task","scope_category":"start","metadata":{"session_id":"docs-parent-session","tool_call_id":"call_delegate"},"data":{"goal":"Run the command `printf docs_nested_leaf_function` using the terminal tool.","toolsets":["terminal"]}}
-{"kind":"mark","name":"hermes.subagent.start","metadata":{"parent_session_id":"docs-parent-session","session_id":"docs-child-session","subagent_id":"sa-0-docs","child_role":"leaf"}}
+{"kind":"mark","name":"vigil.subagent.start","metadata":{"parent_session_id":"docs-parent-session","session_id":"docs-child-session","subagent_id":"sa-0-docs","child_role":"leaf"}}
 {"kind":"scope","category":"tool","name":"terminal","scope_category":"end","metadata":{"session_id":"docs-child-session","tool_call_id":"call_terminal","status":"ok"},"data":"{\"output\":\"docs_nested_leaf_function\",\"exit_code\":0,\"error\":null}"}
 {"kind":"scope","category":"tool","name":"delegate_task","scope_category":"end","metadata":{"session_id":"docs-parent-session","tool_call_id":"call_delegate","status":"ok"}}
 ```
@@ -310,22 +310,22 @@ message. VIGIL dispatches the read-only tools as one batch, and NeMo Relay
 records both tool invocations.
 
 ```bash
-mkdir -p /tmp/hermes-nemo-relay-docs/workdir
-printf 'docs_parallel_alpha_function\n' > /tmp/hermes-nemo-relay-docs/workdir/alpha.txt
-printf 'docs_parallel_beta_function\n' > /tmp/hermes-nemo-relay-docs/workdir/beta.txt
-cd /tmp/hermes-nemo-relay-docs/workdir
+mkdir -p /tmp/vigil-nemo-relay-docs/workdir
+printf 'docs_parallel_alpha_function\n' > /tmp/vigil-nemo-relay-docs/workdir/alpha.txt
+printf 'docs_parallel_beta_function\n' > /tmp/vigil-nemo-relay-docs/workdir/beta.txt
+cd /tmp/vigil-nemo-relay-docs/workdir
 
 export VIGIL_NEMO_RELAY_ATOF_ENABLED=1
-export VIGIL_NEMO_RELAY_ATOF_OUTPUT_DIRECTORY=/tmp/hermes-nemo-relay-docs/parallel/atof
+export VIGIL_NEMO_RELAY_ATOF_OUTPUT_DIRECTORY=/tmp/vigil-nemo-relay-docs/parallel/atof
 export VIGIL_NEMO_RELAY_ATOF_FILENAME=parallel-tools-atof.jsonl
 export VIGIL_NEMO_RELAY_ATOF_MODE=overwrite
 export VIGIL_NEMO_RELAY_ATIF_ENABLED=1
-export VIGIL_NEMO_RELAY_ATIF_OUTPUT_DIRECTORY=/tmp/hermes-nemo-relay-docs/parallel/atif
+export VIGIL_NEMO_RELAY_ATIF_OUTPUT_DIRECTORY=/tmp/vigil-nemo-relay-docs/parallel/atif
 export VIGIL_NEMO_RELAY_ATIF_FILENAME_TEMPLATE='parallel-tools-atif-{session_id}.json'
 export VIGIL_NEMO_RELAY_ATIF_AGENT_NAME='VIGIL Agent E2E'
 export VIGIL_NEMO_RELAY_ATIF_AGENT_VERSION=docs-example
 
-hermes chat \
+vigil chat \
   --query 'Use exactly two read_file tool calls in the same assistant message. Read alpha.txt and beta.txt. Do not call terminal. After both tool results are available, reply with exactly: parallel tools complete.' \
   --provider custom \
   --model qwen3.6:35b \
@@ -416,7 +416,7 @@ mode = "observe_only"
 Enable it for VIGIL:
 
 ```bash
-export VIGIL_NEMO_RELAY_PLUGINS_TOML=/tmp/hermes-middleware-test/plugins.toml
+export VIGIL_NEMO_RELAY_PLUGINS_TOML=/tmp/vigil-middleware-test/plugins.toml
 ```
 
 When the adaptive component is enabled and the installed NeMo Relay runtime
@@ -449,8 +449,8 @@ install used by the earlier observability-only examples does not support this
 adaptive config.
 
 ```bash
-export VIGIL_HOME=/tmp/hermes-middleware-test/hermes-home
-mkdir -p "$VIGIL_HOME" /tmp/hermes-middleware-test/nemo-relay
+export VIGIL_HOME=/tmp/vigil-middleware-test/vigil-home
+mkdir -p "$VIGIL_HOME" /tmp/vigil-middleware-test/nemo-relay
 
 cat > "$VIGIL_HOME/config.yaml" <<'YAML'
 model:
@@ -463,7 +463,7 @@ plugins:
     - observability/nemo_relay
 YAML
 
-cat > /tmp/hermes-middleware-test/nemo-relay/plugins.toml <<'TOML'
+cat > /tmp/vigil-middleware-test/nemo-relay/plugins.toml <<'TOML'
 version = 1
 
 [[components]]
@@ -475,13 +475,13 @@ version = 1
 
 [components.config.atof]
 enabled = true
-output_directory = "/tmp/hermes-middleware-test/atof"
+output_directory = "/tmp/vigil-middleware-test/atof"
 filename = "middleware-events.jsonl"
 mode = "overwrite"
 
 [components.config.atif]
 enabled = true
-output_directory = "/tmp/hermes-middleware-test/atif"
+output_directory = "/tmp/vigil-middleware-test/atif"
 filename_template = "middleware-trajectory-{session_id}.json"
 agent_name = "VIGIL Middleware E2E"
 agent_version = "local"
@@ -494,9 +494,9 @@ enabled = true
 mode = "observe_only"
 TOML
 
-export VIGIL_NEMO_RELAY_PLUGINS_TOML=/tmp/hermes-middleware-test/nemo-relay/plugins.toml
+export VIGIL_NEMO_RELAY_PLUGINS_TOML=/tmp/vigil-middleware-test/nemo-relay/plugins.toml
 
-hermes chat \
+vigil chat \
   --query 'Use the terminal tool exactly once to run printf middleware_execution_ok. Then reply with exactly the command output.' \
   --provider custom \
   --model qwen3.6:35b \

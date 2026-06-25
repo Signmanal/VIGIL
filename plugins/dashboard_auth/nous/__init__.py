@@ -1,4 +1,4 @@
-"""NousDashboardAuthProvider — Nous Portal OAuth (authorization-code + PKCE).
+"""NousDashboardAuthProvider — VIGIL Portal OAuth (authorization-code + PKCE).
 
 Implements ``nous-account-service/docs/agent-dashboard-oauth-contract.md``
 (PR #180). The plugin auto-loads (bundled, kind=backend) but only registers
@@ -43,7 +43,7 @@ Key contract points encoded here:
     middleware persists back to the HttpOnly cookie. On a dead/expired/
     reuse-detected refresh token Portal returns 400 → ``RefreshExpiredError``
     → middleware redirects to ``/auth/login``.
-  - audience claim is the bare ``client_id`` (no ``hermes-cli:`` prefix).
+  - audience claim is the bare ``client_id`` (no ``vigil-cli:`` prefix).
   - tolerant ``oauth_contract_version`` check: missing → warn + proceed;
     present and ``!= 1`` → refuse.
 
@@ -51,7 +51,7 @@ The cookie payload returned by ``start_login`` stashes the PKCE
 ``code_verifier`` and the OAuth ``state`` parameter for the
 ``/auth/callback`` handler to retrieve. The auth-route layer is the owner
 of cookie names; this provider just hands back ``{"code_verifier": …,
-"state": …}`` and the route serializes those into the ``hermes_session_pkce``
+"state": …}`` and the route serializes those into the ``vigil_session_pkce``
 cookie.
 
 Refresh-token rotation: Portal rotates the refresh token on every
@@ -79,7 +79,7 @@ from typing import Any, Dict, Optional
 
 import httpx
 
-from hermes_cli.dashboard_auth import (
+from vigil_cli.dashboard_auth import (
     DashboardAuthProvider,
     InvalidCodeError,
     LoginStart,
@@ -151,7 +151,7 @@ def _b64url_no_pad(raw: bytes) -> str:
 
 
 class NousDashboardAuthProvider(DashboardAuthProvider):
-    """Nous Portal OAuth via authorization-code + PKCE (S256)."""
+    """VIGIL Portal OAuth via authorization-code + PKCE (S256)."""
 
     name = "nous"
     display_name = "Nous Research"
@@ -195,12 +195,12 @@ class NousDashboardAuthProvider(DashboardAuthProvider):
             "code_challenge_method": "S256",
         }
         redirect_url = f"{self._authorize_url}?{urllib.parse.urlencode(params)}"
-        # The auth-route layer expects ``cookie_payload[\"hermes_session_pkce\"]``
+        # The auth-route layer expects ``cookie_payload[\"vigil_session_pkce\"]``
         # as a single semicolon-delimited string of ``key=value`` segments,
         # matching the stub provider's shape. The route handler prepends
         # ``provider=`` so the callback knows which plugin to dispatch to.
         cookie_payload = {
-            "hermes_session_pkce": f"state={state};verifier={code_verifier}",
+            "vigil_session_pkce": f"state={state};verifier={code_verifier}",
         }
         return LoginStart(redirect_url=redirect_url, cookie_payload=cookie_payload)
 
@@ -214,7 +214,7 @@ class NousDashboardAuthProvider(DashboardAuthProvider):
     ) -> Session:
         # ``state`` is verified by the auth-route layer before this call
         # (it checks the cookie-stashed state matches the query-param state);
-        # we just receive it for symmetry with the protocol. Nous Portal
+        # we just receive it for symmetry with the protocol. VIGIL Portal
         # doesn't re-check state at the token endpoint, so we ignore it here.
         _ = state
 
@@ -499,7 +499,7 @@ class NousDashboardAuthProvider(DashboardAuthProvider):
         contract_version = claims.get("oauth_contract_version")
         if contract_version is None:
             logger.warning(
-                "Nous Portal token missing oauth_contract_version claim "
+                "VIGIL Portal token missing oauth_contract_version claim "
                 "(contract says it should be %d); proceeding anyway.",
                 _EXPECTED_CONTRACT_VERSION,
             )
@@ -549,7 +549,7 @@ def _load_config_oauth_section() -> dict:
     through to ``{}`` so register() can rely on `.get(...)` access.
     """
     try:
-        from hermes_cli.config import cfg_get, load_config
+        from vigil_cli.config import cfg_get, load_config
 
         cfg = load_config()
     except Exception as exc:  # noqa: BLE001 — broad catch is intentional
@@ -616,7 +616,7 @@ def register(ctx) -> None:
 
     Operator-owned dashboards (loopback / ``--insecure``) leave both
     surfaces unset, so this plugin is a no-op for them. The gate-
-    engagement layer (``hermes_cli.web_server.should_require_auth`` +
+    engagement layer (``vigil_cli.web_server.should_require_auth`` +
     the fail-closed check in ``start_server``) handles the "public bind
     with zero providers" case independently.
     """
@@ -630,7 +630,7 @@ def register(ctx) -> None:
         LAST_SKIP_REASON = (
             "VIGIL_DASHBOARD_OAUTH_CLIENT_ID is not set (and "
             "dashboard.oauth.client_id in config.yaml is empty). The "
-            "Nous Portal provisions this env var (shape "
+            "VIGIL Portal provisions this env var (shape "
             "'agent:{instance_id}') when it deploys a VIGIL Agent "
             "instance — set it to your provisioned client id (either "
             "as an env var or under dashboard.oauth.client_id in "
@@ -643,7 +643,7 @@ def register(ctx) -> None:
     if not client_id.startswith("agent:"):
         LAST_SKIP_REASON = (
             f"VIGIL_DASHBOARD_OAUTH_CLIENT_ID={client_id!r} doesn't match "
-            f"the contract shape 'agent:{{instance_id}}'. The Nous Portal "
+            f"the contract shape 'agent:{{instance_id}}'. The VIGIL Portal "
             f"provisions this value at deploy time; check your Fly app's "
             f"secrets or override with the value from the Portal admin UI."
         )

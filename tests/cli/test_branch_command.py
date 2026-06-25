@@ -21,7 +21,7 @@ def session_db(tmp_path):
     """Create a real SessionDB for testing."""
     os.environ["VIGIL_HOME"] = str(tmp_path / ".vigil")
     os.makedirs(tmp_path / ".vigil", exist_ok=True)
-    from hermes_state import SessionDB
+    from vigil_state import SessionDB
     db = SessionDB(db_path=tmp_path / ".vigil" / "test_sessions.db")
     yield db
     db.close()
@@ -166,7 +166,7 @@ class TestBranchCommandCLI:
 
         assert cli_instance._resumed is True
 
-    def test_branch_rotates_hermes_session_id_env_and_context(self, cli_instance, session_db):
+    def test_branch_rotates_vigil_session_id_env_and_context(self, cli_instance, session_db):
         """Branching must update process-local session-id readers too."""
         from cli import VIGILCLI
         from gateway.session_context import _UNSET, _VAR_MAP, get_session_env
@@ -214,7 +214,7 @@ class TestBranchCommandCLI:
 
     def test_fork_alias(self):
         """The /fork alias should resolve to 'branch'."""
-        from hermes_cli.commands import resolve_command
+        from vigil_cli.commands import resolve_command
         result = resolve_command("fork")
         assert result is not None
         assert result.name == "branch"
@@ -225,18 +225,18 @@ class TestBranchCommandDef:
 
     def test_branch_in_registry(self):
         """The branch command should be in the command registry."""
-        from hermes_cli.commands import COMMAND_REGISTRY
+        from vigil_cli.commands import COMMAND_REGISTRY
         names = [c.name for c in COMMAND_REGISTRY]
         assert "branch" in names
 
     def test_branch_has_fork_alias(self):
         """The branch command should have 'fork' as an alias."""
-        from hermes_cli.commands import COMMAND_REGISTRY
+        from vigil_cli.commands import COMMAND_REGISTRY
         branch = next(c for c in COMMAND_REGISTRY if c.name == "branch")
         assert "fork" in branch.aliases
 
     def test_branch_in_session_category(self):
         """The branch command should be in the Session category."""
-        from hermes_cli.commands import COMMAND_REGISTRY
+        from vigil_cli.commands import COMMAND_REGISTRY
         branch = next(c for c in COMMAND_REGISTRY if c.name == "branch")
         assert branch.category == "Session"

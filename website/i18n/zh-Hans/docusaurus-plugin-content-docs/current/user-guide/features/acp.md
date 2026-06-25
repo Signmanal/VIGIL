@@ -19,7 +19,7 @@ VIGIL Agent 可作为 ACP 服务器运行，让兼容 ACP 的编辑器通过 std
 
 ## VIGIL 在 ACP 模式下暴露的内容
 
-VIGIL 使用专为编辑器工作流设计的精选 `hermes-acp` 工具集运行，包括：
+VIGIL 使用专为编辑器工作流设计的精选 `vigil-acp` 工具集运行，包括：
 
 - 文件工具：`read_file`、`write_file`、`patch`、`search_files`
 - 终端工具：`terminal`、`process`
@@ -41,14 +41,14 @@ pip install -e '.[acp]'
 
 这将安装 `agent-client-protocol` 依赖并启用：
 
-- `hermes acp`
-- `hermes-acp`
+- `vigil acp`
+- `vigil-acp`
 - `python -m acp_adapter`
 
 对于 Zed registry 安装，Zed 通过官方 ACP Registry 条目启动 VIGIL。该条目使用 `uvx` 发行版运行：
 
 ```bash
-uvx --from 'vigil-agent[acp]==<version>' hermes-acp
+uvx --from 'vigil-agent[acp]==<version>' vigil-acp
 ```
 
 使用 registry 安装路径前，请确保 `uv` 已在 `PATH` 中可用。
@@ -58,11 +58,11 @@ uvx --from 'vigil-agent[acp]==<version>' hermes-acp
 以下任意命令均可以 ACP 模式启动 VIGIL：
 
 ```bash
-hermes acp
+vigil acp
 ```
 
 ```bash
-hermes-acp
+vigil-acp
 ```
 
 ```bash
@@ -74,8 +74,8 @@ VIGIL 将日志输出到 stderr，以保留 stdout 用于 ACP JSON-RPC 流量。
 非交互式检查：
 
 ```bash
-hermes acp --version
-hermes acp --check
+vigil acp --version
+vigil acp --check
 ```
 
 ### 浏览器工具（可选）
@@ -83,11 +83,11 @@ hermes acp --check
 浏览器工具（`browser_navigate`、`browser_click` 等）依赖 `agent-browser` npm 包和 Chromium，这些不包含在 Python wheel 中。通过以下命令安装：
 
 ```bash
-hermes acp --setup-browser           # 交互式（下载约 400 MB 前会提示确认）
-hermes acp --setup-browser --yes     # 非交互式接受下载
+vigil acp --setup-browser           # 交互式（下载约 400 MB 前会提示确认）
+vigil acp --setup-browser --yes     # 非交互式接受下载
 ```
 
-这是独立命令。Zed registry 的终端认证流程（`hermes acp --setup`）在模型选择后也会将浏览器引导作为后续问题提供，因此大多数用户无需直接运行 `--setup-browser`。
+这是独立命令。Zed registry 的终端认证流程（`vigil acp --setup`）在模型选择后也会将浏览器引导作为后续问题提供，因此大多数用户无需直接运行 `--setup-browser`。
 
 具体操作：
 
@@ -115,7 +115,7 @@ hermes acp --setup-browser --yes     # 非交互式接受下载
 {
   "acp.agents": {
     "VIGIL Agent": {
-      "command": "hermes",
+      "command": "vigil",
       "args": ["acp"]
     }
   }
@@ -133,8 +133,8 @@ Zed v0.221.x 及更新版本通过官方 ACP Registry 安装外部 agent。
 
 前提条件：
 
-- 先通过 `hermes model` 配置 VIGIL provider 凭据，或在 `~/.vigil/.env` / `~/.vigil/config.yaml` 中设置。
-- 安装 `uv`，以便 registry 启动器可以运行 `uvx --from 'vigil-agent[acp]==<version>' hermes-acp`。
+- 先通过 `vigil model` 配置 VIGIL provider 凭据，或在 `~/.vigil/.env` / `~/.vigil/config.yaml` 中设置。
+- 安装 `uv`，以便 registry 启动器可以运行 `uvx --from 'vigil-agent[acp]==<version>' vigil-acp`。
 
 在 registry 条目可用之前进行本地开发时，在 Zed 设置中使用自定义 agent 服务器：
 
@@ -143,7 +143,7 @@ Zed v0.221.x 及更新版本通过官方 ACP Registry 安装外部 agent。
   "agent_servers": {
     "vigil-agent": {
       "type": "custom",
-      "command": "hermes",
+      "command": "vigil",
       "args": ["acp"]
     }
   }
@@ -172,7 +172,7 @@ acp_registry/icon.svg
 Registry 条目使用直接指向 `vigil-agent` PyPI 发行版的 `uvx` 发行版：
 
 ```text
-uvx --from 'vigil-agent[acp]==<version>' hermes-acp
+uvx --from 'vigil-agent[acp]==<version>' vigil-acp
 ```
 
 Registry CI 会验证固定版本是否存在于 PyPI，因此清单的 `version` 和 uvx `package` 固定版本必须始终与 `pyproject.toml` 匹配。`scripts/release.py` 会自动保持它们同步。
@@ -238,7 +238,7 @@ ACP 桥接将这些选项映射到 VIGIL 的内部审批语义——`allow_alway
 检查：
 
 - 在 Zed 中，使用 `zed: acp registry` 打开 ACP Registry 并搜索 **VIGIL Agent**。
-- 对于手动/本地开发，验证自定义 `agent_servers` 命令是否指向 `hermes acp`。
+- 对于手动/本地开发，验证自定义 `agent_servers` 命令是否指向 `vigil acp`。
 - VIGIL 已安装且在 PATH 中。
 - ACP 扩展已安装（`pip install -e '.[acp]'`）。
 - 如果从官方 Zed registry 条目启动，`uv` 已安装。
@@ -248,10 +248,10 @@ ACP 桥接将这些选项映射到 VIGIL 的内部审批语义——`allow_alway
 尝试以下检查：
 
 ```bash
-hermes acp --version
-hermes acp --check
-hermes doctor
-hermes status
+vigil acp --version
+vigil acp --check
+vigil doctor
+vigil status
 ```
 
 ### 缺少凭据
@@ -259,7 +259,7 @@ hermes status
 ACP 模式使用 VIGIL 现有的 provider 设置。通过以下方式配置凭据：
 
 ```bash
-hermes model
+vigil model
 ```
 
 或编辑 `~/.vigil/.env`。Registry 客户端也可以触发 VIGIL 的终端认证流程，该流程运行相同的交互式 provider/模型设置。

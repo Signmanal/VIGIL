@@ -171,7 +171,7 @@ export default function SystemPage() {
 
   const [importPath, setImportPath] = useState("");
   // Restore-from-backup is destructive (overwrites the live config) and the
-  // spawned `hermes import` runs non-interactively (stdin is /dev/null), so
+  // spawned `vigil import` runs non-interactively (stdin is /dev/null), so
   // its CLI "Continue? [y/N]" prompt would auto-abort. The dashboard owns the
   // consent: confirm here, then call the endpoint with force=true.
   const [importConfirmOpen, setImportConfirmOpen] = useState(false);
@@ -435,7 +435,7 @@ export default function SystemPage() {
         );
         return;
       }
-      setActiveAction(resp.name ?? "hermes-update");
+      setActiveAction(resp.name ?? "vigil-update");
       showToast("Update started", "success");
     } catch (e) {
       showToast(`Update failed: ${e}`, "error");
@@ -527,8 +527,8 @@ export default function SystemPage() {
         title="Update VIGIL?"
         description={
           updateInfo && updateInfo.behind && updateInfo.behind > 0
-            ? `This will run 'hermes update' (${updateInfo.update_command}) and pull ${updateInfo.behind} new commit${updateInfo.behind === 1 ? "" : "s"}. The gateway restarts when the update finishes; the current session keeps its prompt cache until then.`
-            : `This will run 'hermes update' (${updateInfo?.update_command ?? "hermes update"}) and restart the gateway when it finishes.`
+            ? `This will run 'vigil update' (${updateInfo.update_command}) and pull ${updateInfo.behind} new commit${updateInfo.behind === 1 ? "" : "s"}. The gateway restarts when the update finishes; the current session keeps its prompt cache until then.`
+            : `This will run 'vigil update' (${updateInfo?.update_command ?? "vigil update"}) and restart the gateway when it finishes.`
         }
         confirmLabel="Update now"
       />
@@ -699,7 +699,7 @@ export default function SystemPage() {
               <div>
                 <div className="text-xs uppercase tracking-wider text-muted-foreground">VIGIL</div>
                 <div className="flex items-center gap-2">
-                  <span>v{stats?.hermes_version}</span>
+                  <span>v{stats?.vigil_version}</span>
                   {canUpdateVIGIL &&
                     updateInfo &&
                     (updateInfo.update_available ? (
@@ -809,7 +809,7 @@ export default function SystemPage() {
       {/* ── Portal ────────────────────────────────────────────────── */}
       <section className="flex flex-col gap-3">
         <H2 variant="sm" className="flex items-center gap-2 text-muted-foreground">
-          <Globe className="h-4 w-4" /> Nous Portal
+          <Globe className="h-4 w-4" /> VIGIL Portal
         </H2>
         <Card>
           <CardContent className="flex flex-col gap-3 py-4">
@@ -846,7 +846,7 @@ export default function SystemPage() {
             )}
             {!portal?.logged_in && (
               <p className="text-xs text-muted-foreground">
-                Log in with <span className="font-mono">hermes portal</span>.
+                Log in with <span className="font-mono">vigil portal</span>.
               </p>
             )}
           </CardContent>
@@ -954,7 +954,7 @@ export default function SystemPage() {
               </Link>
               <span className="ml-auto">
                 New credentials:{" "}
-                <span className="font-mono">hermes memory setup</span>
+                <span className="font-mono">vigil memory setup</span>
               </span>
             </div>
 
@@ -1190,7 +1190,7 @@ export default function SystemPage() {
           <CardContent className="flex flex-col gap-3 py-4 sm:flex-row sm:items-end">
             <div className="grid gap-2 flex-1">
               <Label htmlFor="import-path">Restore from backup archive</Label>
-              <Input id="import-path" value={importPath} onChange={(e) => setImportPath(e.target.value)} placeholder="/path/to/hermes-backup.zip" />
+              <Input id="import-path" value={importPath} onChange={(e) => setImportPath(e.target.value)} placeholder="/path/to/vigil-backup.zip" />
             </div>
             <Button
               size="sm"

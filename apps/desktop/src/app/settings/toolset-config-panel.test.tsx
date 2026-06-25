@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { ToolsetConfig } from '@/types/hermes'
+import type { ToolsetConfig } from '@/types/vigil'
 
 const getToolsetConfig = vi.fn()
 const selectToolsetProvider = vi.fn()
@@ -11,7 +11,7 @@ const revealEnvVar = vi.fn()
 const runToolsetPostSetup = vi.fn()
 const getActionStatus = vi.fn()
 
-vi.mock('@/hermes', () => ({
+vi.mock('@/vigil', () => ({
   getToolsetConfig: (name: string) => getToolsetConfig(name),
   selectToolsetProvider: (name: string, provider: string) => selectToolsetProvider(name, provider),
   setEnvVar: (key: string, value: string) => setEnvVar(key, value),
@@ -101,8 +101,9 @@ describe('ToolsetConfigPanel', () => {
     const elevenlabs = await screen.findByRole('button', { name: /ElevenLabs/ })
     fireEvent.click(elevenlabs)
 
-    // Click "Set" to reveal the input for the unset key.
-    fireEvent.click(await screen.findByRole('button', { name: 'Set' }))
+    // Open the credential actions menu and click "Set" to reveal the input.
+    fireEvent.pointerDown(await screen.findByRole('button', { name: 'Actions for ELEVENLABS_API_KEY' }))
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Set' }))
 
     const input = await screen.findByPlaceholderText('ElevenLabs API key')
     fireEvent.change(input, { target: { value: 'sk-test-123' } })

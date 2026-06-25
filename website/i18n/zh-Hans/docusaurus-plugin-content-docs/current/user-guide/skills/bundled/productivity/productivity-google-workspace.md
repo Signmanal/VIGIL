@@ -109,7 +109,7 @@ $GSETUP --check
 $GSETUP --client-secret /path/to/client_secret.json
 ```
 
-若用户粘贴的是原始客户端 ID / 客户端密钥值而非文件路径，请自行为其编写一个有效的桌面 OAuth JSON 文件，保存到明确的位置（例如 `~/Downloads/hermes-google-client-secret.json`），然后对该文件运行 `--client-secret`。
+若用户粘贴的是原始客户端 ID / 客户端密钥值而非文件路径，请自行为其编写一个有效的桌面 OAuth JSON 文件，保存到明确的位置（例如 `~/Downloads/vigil-google-client-secret.json`），然后对该文件运行 `--client-secret`。
 
 ### 步骤 3：获取授权 URL
 

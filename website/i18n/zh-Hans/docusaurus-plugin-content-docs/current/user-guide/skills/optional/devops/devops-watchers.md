@@ -14,7 +14,7 @@ description: "使用水印去重轮询 RSS、JSON API 和 GitHub"
 
 | | |
 |---|---|
-| 来源 | 可选 — 通过 `hermes skills install official/devops/watchers` 安装 |
+| 来源 | 可选 — 通过 `vigil skills install official/devops/watchers` 安装 |
 | 路径 | `optional-skills/devops/watchers` |
 | 版本 | `1.0.0` |
 | 作者 | VIGIL Agent |
@@ -81,7 +81,7 @@ python $VIGIL_HOME/skills/devops/watchers/scripts/watch_rss.py \
 
 ```bash
 python $VIGIL_HOME/skills/devops/watchers/scripts/watch_github.py \
-  --name hermes-issues --repo NousResearch/vigil-agent --scope issues
+  --name vigil-issues --repo NousResearch/vigil-agent --scope issues
 ```
 
 轮询任意 JSON API：

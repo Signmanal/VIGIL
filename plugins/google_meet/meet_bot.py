@@ -2,7 +2,7 @@
 
 Runs as a standalone subprocess spawned by ``process_manager.py``. Reads config
 from env vars, writes status + transcript to files under
-``$VIGIL_HOME/workspace/meetings/<meeting-id>/``. The main hermes process
+``$VIGIL_HOME/workspace/meetings/<meeting-id>/``. The main vigil process
 reads those files via the ``meet_*`` tools — no IPC beyond filesystem.
 
 The scraping strategy mirrors OpenUtter (sumansid/openutter): we don't parse
@@ -346,7 +346,7 @@ def _start_realtime_speaker(
     if platform_tag == "linux":
         import subprocess as _sp
 
-        sink = (bridge_info or {}).get("write_target") or "hermes_meet_sink"
+        sink = (bridge_info or {}).get("write_target") or "vigil_meet_sink"
         try:
             proc = _sp.Popen(
                 [

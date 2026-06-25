@@ -136,8 +136,8 @@ def _get_mcp_stderr_log() -> Any:
         if _mcp_stderr_log_fh is not None:
             return _mcp_stderr_log_fh
         try:
-            from hermes_constants import get_hermes_home
-            log_dir = get_hermes_home() / "logs"
+            from vigil_constants import get_vigil_home
+            log_dir = get_vigil_home() / "logs"
             log_dir.mkdir(parents=True, exist_ok=True)
             log_path = log_dir / "mcp-stderr.log"
             # Line-buffered so server output lands on disk promptly; errors=
@@ -520,13 +520,13 @@ def _resolve_stdio_command(command: str, env: dict) -> tuple[str, dict]:
         if which_hit:
             resolved_command = which_hit
         elif resolved_command in {"npx", "npm", "node"}:
-            hermes_home = os.path.expanduser(
+            vigil_home = os.path.expanduser(
                 os.getenv(
                     "VIGIL_HOME", os.path.join(os.path.expanduser("~"), ".vigil")
                 )
             )
             candidates = [
-                os.path.join(hermes_home, "node", "bin", resolved_command),
+                os.path.join(vigil_home, "node", "bin", resolved_command),
                 os.path.join(os.path.expanduser("~"), ".local", "bin", resolved_command),
                 # /usr/local/bin is the canonical install location for Node on
                 # Linux from-source builds, the upstream node:bookworm-slim
@@ -2650,7 +2650,7 @@ def _handle_auth_error_and_retry(
     return json.dumps({
         "error": (
             f"MCP server '{server_name}' requires re-authentication. "
-            f"Run `hermes mcp login {server_name}` (or delete the tokens "
+            f"Run `vigil mcp login {server_name}` (or delete the tokens "
             f"file under ~/.vigil/mcp-tokens/ and restart). Do NOT retry "
             f"this tool — ask the user to re-authenticate."
         ),
@@ -2902,24 +2902,24 @@ def _wrap_with_home_override(coro: "Coroutine") -> "Coroutine":
     carrying different scopes don't interfere.
     """
     try:
-        from hermes_constants import (
-            get_hermes_home_override,
-            reset_hermes_home_override,
-            set_hermes_home_override,
+        from vigil_constants import (
+            get_vigil_home_override,
+            reset_vigil_home_override,
+            set_vigil_home_override,
         )
 
-        home_override = get_hermes_home_override()
+        home_override = get_vigil_home_override()
     except Exception:
         return coro
     if not home_override:
         return coro
 
     async def _scoped():
-        token = set_hermes_home_override(home_override)
+        token = set_vigil_home_override(home_override)
         try:
             return await coro
         finally:
-            reset_hermes_home_override(token)
+            reset_vigil_home_override(token)
 
     return _scoped()
 
@@ -2952,7 +2952,7 @@ def _run_on_mcp_loop(coro_or_factory, timeout: float = 30):
     # loop thread, so they copy the loop thread's context — not the
     # scheduling thread's. A per-request profile scope (the dashboard's
     # ?profile= endpoints, e.g. the MCP "Test server" probe) would silently
-    # vanish here: OAuth token stores and any other get_hermes_home()
+    # vanish here: OAuth token stores and any other get_vigil_home()
     # resolution inside the coroutine would read the process home instead
     # of the selected profile's. Re-establish the override inside the
     # task's own context (task-local — concurrent calls carrying different
@@ -3028,7 +3028,7 @@ def _interpolate_env_vars(value):
 def _filter_suspicious_mcp_servers(servers: Dict[str, dict]) -> Dict[str, dict]:
     """Drop exfiltration-shaped MCP configs before any stdio spawn path."""
     try:
-        from hermes_cli.mcp_security import validate_mcp_server_entry as _validate_mcp_server_entry
+        from vigil_cli.mcp_security import validate_mcp_server_entry as _validate_mcp_server_entry
     except Exception:
         _validate_mcp_server_entry: Callable[[str, dict[str, Any]], list[str]] | None = None
 
@@ -3064,7 +3064,7 @@ def _load_mcp_config() -> Dict[str, dict]:
     ``os.environ`` (which includes ``~/.vigil/.env`` loaded at startup).
     """
     try:
-        from hermes_cli.config import load_config
+        from vigil_cli.config import load_config
         # Safe mode (--safe-mode / VIGIL_SAFE_MODE=1): troubleshooting run
         # with all customizations disabled — no MCP servers connect.
         from utils import env_var_enabled as _env_enabled
@@ -3076,8 +3076,8 @@ def _load_mcp_config() -> Dict[str, dict]:
             return {}
         # Ensure .env vars are available for interpolation
         try:
-            from hermes_cli.env_loader import load_hermes_dotenv
-            load_hermes_dotenv()
+            from vigil_cli.env_loader import load_vigil_dotenv
+            load_vigil_dotenv()
         except Exception:
             pass
         safe_servers: Dict[str, dict] = {}
@@ -4281,7 +4281,7 @@ def get_mcp_status() -> List[dict]:
 def probe_mcp_server_tools() -> Dict[str, List[tuple]]:
     """Temporarily connect to configured MCP servers and list their tools.
 
-    Designed for ``hermes tools`` interactive configuration — connects to each
+    Designed for ``vigil tools`` interactive configuration — connects to each
     enabled server, grabs tool names and descriptions, then disconnects.
     Does NOT register tools in the VIGIL registry.
 
@@ -4609,7 +4609,7 @@ def _kill_orphaned_mcp_children(include_active: bool = False) -> None:
     sessions are not disrupted.
 
     Sends SIGTERM, waits 2 seconds, then escalates to SIGKILL for any
-    survivors, avoiding shared-resource collisions when multiple hermes
+    survivors, avoiding shared-resource collisions when multiple vigil
     processes run on the same host (each has its own ``_stdio_pids`` dict).
 
     On POSIX, signals are sent via ``os.killpg`` to the spawn-time pgid when

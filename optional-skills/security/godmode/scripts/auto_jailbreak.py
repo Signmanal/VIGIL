@@ -179,7 +179,7 @@ MODEL_STRATEGIES = {
         },
     },
     # Nous/VIGIL models — already uncensored, just needs clean prompt
-    "hermes": {
+    "vigil": {
         "order": ["prefill_only"],
         "system_templates": {},
     },
@@ -305,8 +305,8 @@ def _detect_model_family(model: str) -> str:
         return "gemini"
     if "grok" in model_lower or "x-ai" in model_lower:
         return "grok"
-    if "hermes" in model_lower or "nous" in model_lower:
-        return "hermes"
+    if "vigil" in model_lower or "nous" in model_lower:
+        return "vigil"
     if "deepseek" in model_lower:
         return "deepseek"
     if "llama" in model_lower or "meta" in model_lower:

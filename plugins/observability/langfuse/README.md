@@ -9,16 +9,16 @@ Pick one:
 
 ```bash
 # Interactive: walks you through credentials + SDK install + enable
-hermes tools  # → Langfuse Observability
+vigil tools  # → Langfuse Observability
 
 # Manual
 pip install langfuse
-hermes plugins enable observability/langfuse
+vigil plugins enable observability/langfuse
 ```
 
 ## Required credentials
 
-Set these in `~/.vigil/.env` (or via `hermes tools`):
+Set these in `~/.vigil/.env` (or via `vigil tools`):
 
 ```bash
 VIGIL_LANGFUSE_PUBLIC_KEY=pk-lf-...
@@ -32,8 +32,8 @@ open.
 ## Verify
 
 ```bash
-hermes plugins list                 # observability/langfuse should show "enabled"
-hermes chat -q "hello"              # then check Langfuse for a "VIGIL turn" trace
+vigil plugins list                 # observability/langfuse should show "enabled"
+vigil chat -q "hello"              # then check Langfuse for a "VIGIL turn" trace
 ```
 
 ## Optional tuning
@@ -49,5 +49,5 @@ VIGIL_LANGFUSE_DEBUG=true           # verbose plugin logging
 ## Disable
 
 ```bash
-hermes plugins disable observability/langfuse
+vigil plugins disable observability/langfuse
 ```

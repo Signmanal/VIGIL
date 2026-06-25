@@ -349,14 +349,14 @@ class TestMatrixConfigLoading:
     def test_matrix_user_id_stored_in_extra(self, monkeypatch):
         monkeypatch.setenv("MATRIX_ACCESS_TOKEN", "syt_abc123")
         monkeypatch.setenv("MATRIX_HOMESERVER", "https://matrix.example.org")
-        monkeypatch.setenv("MATRIX_USER_ID", "@hermes:example.org")
+        monkeypatch.setenv("MATRIX_USER_ID", "@vigil:example.org")
 
         from gateway.config import GatewayConfig, _apply_env_overrides
         config = GatewayConfig()
         _apply_env_overrides(config)
 
         mc = config.platforms[Platform.MATRIX]
-        assert mc.extra.get("user_id") == "@hermes:example.org"
+        assert mc.extra.get("user_id") == "@vigil:example.org"
 
 
 # ---------------------------------------------------------------------------
@@ -585,7 +585,7 @@ class TestMatrixDmDetection:
             if event_type == "m.room.name":
                 raise Exception("no name")
             if event_type == "m.room.canonical_alias":
-                return {"content": {"alias": "#hermes:ex.org"}}
+                return {"content": {"alias": "#vigil:ex.org"}}
             raise Exception("unknown")
 
         self.adapter._client.get_state_event = AsyncMock(side_effect=get_state_event)
@@ -594,7 +594,7 @@ class TestMatrixDmDetection:
 
         identity = await self.adapter._resolve_room_identity("!alias:ex.org")
 
-        assert identity.display_name == "#hermes:ex.org"
+        assert identity.display_name == "#vigil:ex.org"
         assert identity.chat_type == "room"
 
     @pytest.mark.asyncio
@@ -4315,6 +4315,8 @@ class TestMatrixProxyConfig:
     def _make_adapter(self, monkeypatch, proxy_env=None):
         monkeypatch.setenv("MATRIX_ACCESS_TOKEN", "syt_test")
         monkeypatch.setenv("MATRIX_HOMESERVER", "https://matrix.example.org")
+        from gateway.platforms import base as platform_base
+        monkeypatch.setattr(platform_base, "_detect_macos_system_proxy", lambda: None)
         # Clear generic proxy vars so they don't leak from the host
         for key in ("HTTPS_PROXY", "HTTP_PROXY", "ALL_PROXY",
                     "https_proxy", "http_proxy", "all_proxy", "MATRIX_PROXY"):

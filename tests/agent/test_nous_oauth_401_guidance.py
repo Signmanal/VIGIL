@@ -9,7 +9,7 @@ Regression context: ashh hit a Nous 401 (OAuth token expired / portal said
 account out of credits) plus a model slug ``deepseek/deepseek-v4-flash:free``
 that's OpenRouter syntax, not a Nous catalog name. The previous guidance
 branch only covered ``openai-codex`` and ``xai-oauth``; ``nous`` fell through
-to a generic "Your API key was rejected... run hermes setup" message, which is
+to a generic "Your API key was rejected... run vigil setup" message, which is
 the wrong advice for a pure-OAuth provider.
 """
 from __future__ import annotations
@@ -45,11 +45,11 @@ def test_nous_401_guidance_strings_present():
     source = inspect.getsource(conversation_loop.run_conversation)
 
     # Must tell the user it's an OAuth token problem, NOT an API key problem
-    # (Nous Portal has no API key path — auth_type=oauth_device_code only).
-    assert "Nous Portal OAuth token was rejected" in source
+    # (VIGIL Portal has no API key path — auth_type=oauth_device_code only).
+    assert "VIGIL Portal OAuth token was rejected" in source
 
-    # Must give a concrete re-auth command, not a generic "hermes setup".
-    assert "hermes portal" in source
+    # Must give a concrete re-auth command, not a generic "vigil setup".
+    assert "vigil portal" in source
 
     # Must point at the portal so users can check account/credit status.
     assert "portal.nousresearch.com" in source
@@ -61,7 +61,7 @@ def test_free_slug_hint_for_nous_provider():
     suggest switching providers via ``/model openrouter:<slug>``.
 
     Without this hint, users re-OAuth successfully and then hit the same 401
-    on the next message because Nous Portal doesn't carry the OpenRouter
+    on the next message because VIGIL Portal doesn't carry the OpenRouter
     free-tier slug.
     """
     source = inspect.getsource(conversation_loop.run_conversation)

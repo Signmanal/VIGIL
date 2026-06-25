@@ -12,7 +12,7 @@ VIGIL Agent automatically discovers and loads context files that shape how it be
 
 | File | Purpose | Discovery |
 |------|---------|-----------| 
-| **.vigil.md** / **HERMES.md** | Project instructions (highest priority) | Walks to git root |
+| **.vigil.md** / **VIGIL.md** | Project instructions (highest priority) | Walks to git root |
 | **AGENTS.md** | Project instructions, conventions, architecture | CWD at startup + subdirectories progressively |
 | **CLAUDE.md** | Claude Code context files (also detected) | CWD at startup + subdirectories progressively |
 | **SOUL.md** | Global personality and tone customization for this VIGIL instance | `VIGIL_HOME/SOUL.md` only |

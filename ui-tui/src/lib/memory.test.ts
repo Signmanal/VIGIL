@@ -20,7 +20,7 @@ describe('performHeapDump auto opt-in gate (#21767)', () => {
       delete process.env[k]
     }
 
-    dir = mkdtempSync(join(tmpdir(), 'hermes-heapdump-test-'))
+    dir = mkdtempSync(join(tmpdir(), 'vigil-heapdump-test-'))
     process.env.VIGIL_HEAPDUMP_DIR = dir
   })
 
@@ -116,7 +116,7 @@ describe('heapdump retention guard (#21767)', () => {
     savedDir = process.env.VIGIL_HEAPDUMP_DIR
     savedMax = process.env.VIGIL_HEAPDUMP_MAX_BYTES
     delete process.env.VIGIL_AUTO_HEAPDUMP
-    dir = mkdtempSync(join(tmpdir(), 'hermes-heapdump-prune-'))
+    dir = mkdtempSync(join(tmpdir(), 'vigil-heapdump-prune-'))
     process.env.VIGIL_HEAPDUMP_DIR = dir
   })
 

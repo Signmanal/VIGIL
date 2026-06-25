@@ -379,6 +379,9 @@ class TestEvaluateRuntimeResponseShaping:
             daemon=True,
         )
         thread.start()
+        ready = threading.Event()
+        loop.call_soon_threadsafe(ready.set)
+        assert ready.wait(timeout=2)
         sup._loop = loop
         try:
             out = sup.evaluate_runtime("1+1")

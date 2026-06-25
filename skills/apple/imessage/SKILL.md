@@ -6,7 +6,7 @@ author: VIGIL Agent
 license: MIT
 platforms: [macos]
 metadata:
-  hermes:
+  vigil:
     tags: [iMessage, SMS, messaging, macOS, Apple]
 prerequisites:
   commands: [imsg]

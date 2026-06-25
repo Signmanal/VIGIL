@@ -64,7 +64,7 @@ def _resolve_review_runtime(agent: Any) -> Dict[str, Any]:
         "routed": False,
     }
     try:
-        from hermes_cli.config import load_config
+        from vigil_cli.config import load_config
         cfg = load_config()
     except Exception:
         return parent
@@ -79,7 +79,7 @@ def _resolve_review_runtime(agent: Any) -> Dict[str, Any]:
     if task_provider == (agent.provider or "") and task_model == (agent.model or ""):
         return parent  # same model/provider as parent -> not routed
     try:
-        from hermes_cli.runtime_provider import resolve_runtime_provider
+        from vigil_cli.runtime_provider import resolve_runtime_provider
         rp = resolve_runtime_provider(
             requested=task_provider,
             target_model=task_model,
@@ -239,8 +239,8 @@ _SKILL_REVIEW_PROMPT = (
     "reply — the background curator handles consolidation at scale.\n\n"
     "Protected skills (DO NOT edit these):\n"
     "  • Bundled skills (shipped with VIGIL, e.g. 'vigil-agent').\n"
-    "  • Hub-installed skills (installed via 'hermes skills install').\n"
-    "Pinned skills (marked via 'hermes curator pin') CAN be improved — "
+    "  • Hub-installed skills (installed via 'vigil skills install').\n"
+    "Pinned skills (marked via 'vigil curator pin') CAN be improved — "
     "pin only blocks deletion/archive/consolidation by the curator, not "
     "content updates. Patch them when a pitfall or missing step turns up, "
     "same as any other agent-created skill.\n"
@@ -325,8 +325,8 @@ _COMBINED_REVIEW_PROMPT = (
     "background curator handles consolidation.\n\n"
     "Protected skills (DO NOT edit these):\n"
     "  • Bundled skills (shipped with VIGIL, e.g. 'vigil-agent').\n"
-    "  • Hub-installed skills (installed via 'hermes skills install').\n"
-    "Pinned skills (marked via 'hermes curator pin') CAN be improved — "
+    "  • Hub-installed skills (installed via 'vigil skills install').\n"
+    "Pinned skills (marked via 'vigil curator pin') CAN be improved — "
     "pin only blocks deletion/archive/consolidation by the curator, not "
     "content updates. Patch them when a pitfall or missing step turns up, "
     "same as any other agent-created skill.\n"
@@ -679,7 +679,7 @@ def _run_review_in_thread(
             # the review fork's outbound HTTP request hits the same
             # Anthropic/OpenRouter prefix cache the parent warmed.
             # Without this, the fork rebuilds the system prompt from
-            # scratch (fresh _hermes_now() timestamp, fresh
+            # scratch (fresh _vigil_now() timestamp, fresh
             # session_id, narrower toolset → different skills_prompt)
             # and the byte-exact prefix-cache key misses. See
             # issue #25322 and PR #17276 for the full analysis +
@@ -720,7 +720,7 @@ def _run_review_in_thread(
             review_agent.compression_enabled = False
 
             from model_tools import get_tool_definitions
-            from hermes_cli.plugins import (
+            from vigil_cli.plugins import (
                 set_thread_tool_whitelist,
                 clear_thread_tool_whitelist,
             )

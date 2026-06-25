@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import type { VIGILConfigRecord } from '@/types/hermes'
+import type { VIGILConfigRecord } from '@/types/vigil'
 
 import { voiceFieldVisible } from './config-settings'
 

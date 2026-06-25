@@ -176,10 +176,10 @@ def check_env_vars():
 
     # Load .env
     try:
-        from hermes_cli.env_loader import load_hermes_dotenv
+        from vigil_cli.env_loader import load_vigil_dotenv
 
-        load_hermes_dotenv(
-            hermes_home=ENV_FILE.parent,
+        load_vigil_dotenv(
+            vigil_home=ENV_FILE.parent,
             project_env=PROJECT_ROOT / ".env",
         )
     except ImportError:
@@ -235,7 +235,7 @@ def check_env_vars():
 
 
 def check_config(groq_key, eleven_key):
-    """Check hermes config.yaml."""
+    """Check vigil config.yaml."""
     section("Configuration")
 
     config_path = VIGIL_HOME / "config.yaml"

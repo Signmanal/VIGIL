@@ -10,7 +10,7 @@
   "distribution": {
     "uvx": {
       "package": "vigil-agent[acp]==0.17.0",
-      "args": ["hermes-acp"]
+      "args": ["vigil-acp"]
     }
   }
 }

@@ -15,8 +15,8 @@ import {
   DropdownMenuSubTrigger
 } from '@/components/ui/dropdown-menu'
 import { Skeleton } from '@/components/ui/skeleton'
-import type { VIGILGateway } from '@/hermes'
-import { getGlobalModelOptions } from '@/hermes'
+import type { VIGILGateway } from '@/vigil'
+import { getGlobalModelOptions } from '@/vigil'
 import { useI18n } from '@/i18n'
 import { currentPickerSelection, displayModelName, modelDisplayParts, reasoningEffortLabel } from '@/lib/model-status-label'
 import { cn } from '@/lib/utils'
@@ -37,7 +37,7 @@ import {
   $currentProvider,
   $currentReasoningEffort
 } from '@/store/session'
-import type { ModelOptionProvider, ModelOptionsResponse } from '@/types/hermes'
+import type { ModelOptionProvider, ModelOptionsResponse } from '@/types/vigil'
 
 import { ModelEditSubmenu, resolveFastControl } from './model-edit-submenu'
 

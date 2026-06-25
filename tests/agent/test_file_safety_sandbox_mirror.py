@@ -81,7 +81,7 @@ class TestClassifySandboxMirrorTarget:
 
         assert classify_sandbox_mirror_target(str(target)) is None
 
-    def test_sandboxes_segment_without_home_hermes_returns_none(self, tmp_path):
+    def test_sandboxes_segment_without_home_vigil_returns_none(self, tmp_path):
         """A ``sandboxes/`` directory unrelated to VIGIL-state mirroring (e.g.
         the sandbox workspace itself) is not flagged."""
         from agent.file_safety import classify_sandbox_mirror_target
@@ -95,8 +95,8 @@ class TestClassifySandboxMirrorTarget:
 
         assert classify_sandbox_mirror_target(str(target)) is None
 
-    def test_sandboxes_segment_with_home_but_no_hermes_returns_none(self, tmp_path):
-        """``sandboxes/<backend>/<task>/home/anything-not-hermes`` is not a mirror."""
+    def test_sandboxes_segment_with_home_but_no_vigil_returns_none(self, tmp_path):
+        """``sandboxes/<backend>/<task>/home/anything-not-vigil`` is not a mirror."""
         from agent.file_safety import classify_sandbox_mirror_target
 
         target = (
@@ -204,8 +204,8 @@ class TestSandboxMirrorIsOrthogonalToCrossProfile:
 
     def test_same_profile_mirror_still_flagged(self, tmp_path, monkeypatch):
         import agent.file_safety as fs
-        monkeypatch.setattr(fs, "_hermes_root_path", lambda: tmp_path)
-        monkeypatch.setattr(fs, "_hermes_home_path", lambda: tmp_path / "profiles" / "group1")
+        monkeypatch.setattr(fs, "_vigil_root_path", lambda: tmp_path)
+        monkeypatch.setattr(fs, "_vigil_home_path", lambda: tmp_path / "profiles" / "group1")
 
         target = (
             tmp_path

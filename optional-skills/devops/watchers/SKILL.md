@@ -6,7 +6,7 @@ author: VIGIL Agent
 license: MIT
 platforms: [linux, macos]
 metadata:
-  hermes:
+  vigil:
     tags: [cron, polling, rss, github, http, automation, monitoring]
     category: devops
     requires_toolsets: [terminal]
@@ -66,7 +66,7 @@ Watch a GitHub repo (set `GITHUB_TOKEN` in `${VIGIL_HOME:-~/.vigil}/.env` to avo
 
 ```bash
 python $VIGIL_HOME/skills/devops/watchers/scripts/watch_github.py \
-  --name hermes-issues --repo NousResearch/vigil-agent --scope issues
+  --name vigil-issues --repo NousResearch/vigil-agent --scope issues
 ```
 
 Poll an arbitrary JSON API:

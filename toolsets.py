@@ -105,7 +105,7 @@ TOOLSETS = {
             "Search X (Twitter) posts and threads via xAI's built-in "
             "x_search Responses tool. Available when xAI credentials are "
             "configured (SuperGrok OAuth or XAI_API_KEY). Off by default; "
-            "enable in `hermes tools` → X (Twitter) Search."
+            "enable in `vigil tools` → X (Twitter) Search."
         ),
         "tools": ["x_search"],
         "includes": []
@@ -134,7 +134,7 @@ TOOLSETS = {
             "Video generation tools. Single ``video_generate`` tool covers "
             "text-to-video (prompt only) and image-to-video (prompt + "
             "image_url) — the active backend auto-routes. Configure via "
-            "``hermes tools`` → Video Generation."
+            "``vigil tools`` → Video Generation."
         ),
         "tools": ["video_generate"],
         "includes": []
@@ -355,7 +355,7 @@ TOOLSETS = {
         "includes": [],
         # Posture toolset: selected per-session by agent/coding_context.py,
         # never auto-recovered into per-platform tool config (see the
-        # non-configurable-toolset recovery loop in hermes_cli/tools_config.py).
+        # non-configurable-toolset recovery loop in vigil_cli/tools_config.py).
         "posture": True,
     },
     
@@ -365,10 +365,10 @@ TOOLSETS = {
     # All platforms share the same core tools. Note: agents do NOT get an
     # agent-callable send_message tool — outbound platform messaging is handled
     # outside the agent loop (cron delivery, the gateway kanban notifier, and
-    # the `hermes send` CLI), not by the model deciding to send on its own.
+    # the `vigil send` CLI), not by the model deciding to send on its own.
     # ==========================================================================
 
-    "hermes-acp": {
+    "vigil-acp": {
         "description": "Editor integration (VS Code, Zed, JetBrains) — coding-focused tools without messaging, audio, or clarify UI",
         "tools": [
             "web_search", "web_extract",
@@ -387,7 +387,7 @@ TOOLSETS = {
         "includes": []
     },
 
-    "hermes-api-server": {
+    "vigil-api-server": {
         "description": "OpenAI-compatible API server — full agent tools accessible via HTTP (no interactive UI tools like clarify or send_message)",
         "tools": [
             # Web
@@ -420,30 +420,30 @@ TOOLSETS = {
         "includes": []
     },
     
-    "hermes-cli": {
+    "vigil-cli": {
         "description": "Full interactive CLI toolset - all default tools plus cronjob management",
         "tools": _VIGIL_CORE_TOOLS,
         "includes": []
     },
 
-    "hermes-cron": {
-        # Mirrors hermes-cli so cron's "default" toolset is the same set of
-        # core tools users see interactively — then `hermes tools` filters
+    "vigil-cron": {
+        # Mirrors vigil-cli so cron's "default" toolset is the same set of
+        # core tools users see interactively — then `vigil tools` filters
         # them down per the platform config. _DEFAULT_OFF_TOOLSETS (moa,
         # homeassistant) are excluded by _get_platform_tools() unless
         # the user explicitly enables them.
-        "description": "Default cron toolset - same core tools as hermes-cli; gated by `hermes tools`",
+        "description": "Default cron toolset - same core tools as vigil-cli; gated by `vigil tools`",
         "tools": _VIGIL_CORE_TOOLS,
         "includes": []
     },
 
-    "hermes-telegram": {
+    "vigil-telegram": {
         "description": "Telegram bot toolset - full access for personal use (terminal has safety checks)",
         "tools": _VIGIL_CORE_TOOLS,
         "includes": []
     },
     
-    "hermes-discord": {
+    "vigil-discord": {
         "description": "Discord bot toolset - full access (terminal has safety checks via dangerous command approval)",
         "tools": _VIGIL_CORE_TOOLS + [
             "discord",
@@ -452,61 +452,61 @@ TOOLSETS = {
         "includes": []
     },
     
-    "hermes-whatsapp": {
+    "vigil-whatsapp": {
         "description": "WhatsApp bot toolset - similar to Telegram (personal messaging, more trusted)",
         "tools": _VIGIL_CORE_TOOLS,
         "includes": []
     },
     
-    "hermes-slack": {
+    "vigil-slack": {
         "description": "Slack bot toolset - full access for workspace use (terminal has safety checks)",
         "tools": _VIGIL_CORE_TOOLS,
         "includes": []
     },
     
-    "hermes-signal": {
+    "vigil-signal": {
         "description": "Signal bot toolset - encrypted messaging platform (full access)",
         "tools": _VIGIL_CORE_TOOLS,
         "includes": []
     },
 
-    "hermes-bluebubbles": {
+    "vigil-bluebubbles": {
         "description": "BlueBubbles iMessage bot toolset - Apple iMessage via local BlueBubbles server",
         "tools": _VIGIL_CORE_TOOLS,
         "includes": []
     },
 
-    "hermes-homeassistant": {
+    "vigil-homeassistant": {
         "description": "Home Assistant bot toolset - smart home event monitoring and control",
         "tools": _VIGIL_CORE_TOOLS,
         "includes": []
     },
 
-    "hermes-email": {
+    "vigil-email": {
         "description": "Email bot toolset - interact with VIGIL via email (IMAP/SMTP)",
         "tools": _VIGIL_CORE_TOOLS,
         "includes": []
     },
 
-    "hermes-mattermost": {
+    "vigil-mattermost": {
         "description": "Mattermost bot toolset - self-hosted team messaging (full access)",
         "tools": _VIGIL_CORE_TOOLS,
         "includes": []
     },
 
-    "hermes-matrix": {
+    "vigil-matrix": {
         "description": "Matrix bot toolset - decentralized encrypted messaging (full access)",
         "tools": _VIGIL_CORE_TOOLS,
         "includes": []
     },
 
-    "hermes-dingtalk": {
+    "vigil-dingtalk": {
         "description": "DingTalk bot toolset - enterprise messaging platform (full access)",
         "tools": _VIGIL_CORE_TOOLS,
         "includes": []
     },
 
-    "hermes-feishu": {
+    "vigil-feishu": {
         "description": "Feishu/Lark bot toolset - enterprise messaging via Feishu/Lark (full access)",
         "tools": _VIGIL_CORE_TOOLS + [
             "feishu_doc_read",
@@ -518,31 +518,31 @@ TOOLSETS = {
         "includes": []
     },
 
-    "hermes-weixin": {
+    "vigil-weixin": {
         "description": "Weixin bot toolset - personal WeChat messaging via iLink (full access)",
         "tools": _VIGIL_CORE_TOOLS,
         "includes": []
     },
 
-    "hermes-qqbot": {
+    "vigil-qqbot": {
         "description": "QQBot toolset - QQ messaging via Official Bot API v2 (full access)",
         "tools": _VIGIL_CORE_TOOLS,
         "includes": []
     },
 
-    "hermes-wecom": {
+    "vigil-wecom": {
         "description": "WeCom bot toolset - enterprise WeChat messaging (full access)",
         "tools": _VIGIL_CORE_TOOLS,
         "includes": []
     },
 
-    "hermes-wecom-callback": {
+    "vigil-wecom-callback": {
         "description": "WeCom callback toolset - enterprise self-built app messaging (full access)",
         "tools": _VIGIL_CORE_TOOLS,
         "includes": []
     },
 
-    "hermes-yuanbao": {
+    "vigil-yuanbao": {
         "description": "Yuanbao Bot 元宝消息平台工具集 - 群信息、成员查询、私聊、贴纸表情",
         "tools": _VIGIL_CORE_TOOLS + [
             "yb_query_group_info",
@@ -555,22 +555,22 @@ TOOLSETS = {
         "includes": []
     },
 
-    "hermes-sms": {
+    "vigil-sms": {
         "description": "SMS bot toolset - interact with VIGIL via SMS (Twilio)",
         "tools": _VIGIL_CORE_TOOLS,
         "includes": []
     },
 
-    "hermes-webhook": {
+    "vigil-webhook": {
         "description": "Webhook toolset - receive and process external webhook events",
         "tools": _VIGIL_WEBHOOK_SAFE_TOOLS,
         "includes": []
     },
 
-    "hermes-gateway": {
+    "vigil-gateway": {
         "description": "Gateway toolset - union of all messaging platform tools",
         "tools": [],
-        "includes": ["hermes-telegram", "hermes-discord", "hermes-whatsapp", "hermes-slack", "hermes-signal", "hermes-bluebubbles", "hermes-homeassistant", "hermes-email", "hermes-sms", "hermes-mattermost", "hermes-matrix", "hermes-dingtalk", "hermes-feishu", "hermes-wecom", "hermes-wecom-callback", "hermes-weixin", "hermes-qqbot", "hermes-webhook", "hermes-yuanbao"]
+        "includes": ["vigil-telegram", "vigil-discord", "vigil-whatsapp", "vigil-slack", "vigil-signal", "vigil-bluebubbles", "vigil-homeassistant", "vigil-email", "vigil-sms", "vigil-mattermost", "vigil-matrix", "vigil-dingtalk", "vigil-feishu", "vigil-wecom", "vigil-wecom-callback", "vigil-weixin", "vigil-qqbot", "vigil-webhook", "vigil-yuanbao"]
     }
 }
 
@@ -628,7 +628,7 @@ def get_toolset(name: str) -> Optional[Dict[str, Any]]:
 
 
 def bundle_non_core_tools(toolset_name: str) -> Set[str]:
-    """Return a ``hermes-*`` bundle's platform-specific tools, excluding core.
+    """Return a ``vigil-*`` bundle's platform-specific tools, excluding core.
 
     Platform bundles are defined as ``_VIGIL_CORE_TOOLS + [platform extras]``.
     When a bundle name appears in ``disabled_toolsets``, subtracting the whole
@@ -638,7 +638,7 @@ def bundle_non_core_tools(toolset_name: str) -> Set[str]:
     one-level ``includes``), so disabling a bundle removes its platform tools
     while leaving core intact.
 
-    Bundle nesting is one level deep in practice (only ``hermes-gateway``
+    Bundle nesting is one level deep in practice (only ``vigil-gateway``
     includes other bundles, and those leaves don't nest further), so a single
     ``includes`` pass is sufficient. Unknown/garbage names fall back to the
     full resolution minus core — never re-introducing the core wipe.
@@ -693,11 +693,11 @@ def resolve_toolset(name: str, visited: Set[str] = None) -> List[str]:
     # Get toolset definition
     toolset = get_toolset(name)
     if not toolset:
-        # Auto-generate a toolset for plugin platforms (hermes-<name>).
+        # Auto-generate a toolset for plugin platforms (vigil-<name>).
         # Gives them _VIGIL_CORE_TOOLS plus any tools the plugin registered
         # into a toolset matching the platform name.
-        if name.startswith("hermes-"):
-            platform_name = name[len("hermes-"):]
+        if name.startswith("vigil-"):
+            platform_name = name[len("vigil-"):]
             try:
                 from gateway.platform_registry import platform_registry
                 if platform_registry.is_registered(platform_name):

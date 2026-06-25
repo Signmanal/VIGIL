@@ -11,7 +11,7 @@ In this tutorial, you'll build a personal briefing bot that wakes up every morni
 By the end, you'll have a fully automated workflow combining **web search**, **cron scheduling**, **delegation**, and **messaging delivery** — no code required.
 
 :::tip
-This recipe hits web search, summarization, and optional TTS — all bundled in a Portal subscription. The fastest setup is `hermes setup --portal`. See [Nous Portal](/integrations/nous-portal).
+This recipe hits web search, summarization, and optional TTS — all bundled in a Portal subscription. The fastest setup is `vigil setup --portal`. See [VIGIL Portal](/integrations/nous-portal).
 :::
 
 ## What We're Building
@@ -33,10 +33,10 @@ Before starting, make sure you have:
 - **VIGIL Agent installed** — see the [Installation guide](/getting-started/installation)
 - **Gateway running** — the gateway daemon handles cron execution:
   ```bash
-  hermes gateway install   # Install as a user service
-  sudo hermes gateway install --system   # Linux servers: boot-time system service
+  vigil gateway install   # Install as a user service
+  sudo vigil gateway install --system   # Linux servers: boot-time system service
   # or
-  hermes gateway           # Run in foreground
+  vigil gateway           # Run in foreground
   ```
 - **Firecrawl API key** — set `FIRECRAWL_API_KEY` in your environment for web search
 - **Messaging configured** (optional but recommended) — [Telegram](/user-guide/messaging/telegram) or Discord set up with a home channel
@@ -50,7 +50,7 @@ You can still follow this tutorial using `deliver: "local"`. Briefings will be s
 Before automating anything, let's make sure the briefing works. Start a chat session:
 
 ```bash
-hermes
+vigil
 ```
 
 Then enter this prompt:
@@ -215,7 +215,7 @@ In chat:
 
 Or from the terminal:
 ```bash
-hermes cron list
+vigil cron list
 ```
 
 You'll see output like:
@@ -246,15 +246,15 @@ VIGIL will use `cronjob(action="list")` to find it and `cronjob(action="remove")
 Make sure the scheduler is actually running:
 
 ```bash
-hermes cron status
+vigil cron status
 ```
 
 If the gateway isn't running, your jobs won't execute. Install it as a background service for reliability:
 
 ```bash
-hermes gateway install
+vigil gateway install
 # or on Linux servers
-sudo hermes gateway install --system
+sudo vigil gateway install --system
 ```
 
 ## Going Further

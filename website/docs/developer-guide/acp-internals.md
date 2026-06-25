@@ -22,7 +22,7 @@ Key implementation files:
 ## Boot flow
 
 ```text
-hermes acp / hermes-acp / python -m acp_adapter
+vigil acp / vigil-acp / python -m acp_adapter
   -> acp_adapter.entry.main()
   -> parse --version / --check / --setup before server startup
   -> load ~/.vigil/.env
@@ -31,7 +31,7 @@ hermes acp / hermes-acp / python -m acp_adapter
   -> acp.run_agent(agent, use_unstable_protocol=True)
 ```
 
-The Zed ACP Registry path launches the same adapter through `uvx --from 'vigil-agent[acp]==<version>' hermes-acp`, pointed at the `vigil-agent` PyPI release.
+The Zed ACP Registry path launches the same adapter through `uvx --from 'vigil-agent[acp]==<version>' vigil-acp`, pointed at the `vigil-agent` PyPI release.
 
 Stdout is reserved for ACP JSON-RPC transport. Human-readable logs go to stderr.
 
@@ -116,7 +116,7 @@ Examples:
 ```text
 new_session(cwd)
   -> create SessionState
-  -> create AIAgent(platform="acp", enabled_toolsets=["hermes-acp"])
+  -> create AIAgent(platform="acp", enabled_toolsets=["vigil-acp"])
   -> bind task_id/session_id to cwd override
 
 prompt(..., session_id)
@@ -147,9 +147,9 @@ ACP does not implement its own auth store.
 Instead it reuses VIGIL' runtime resolver:
 
 - `acp_adapter/auth.py`
-- `hermes_cli/runtime_provider.py`
+- `vigil_cli/runtime_provider.py`
 
-So ACP advertises and uses the currently configured VIGIL provider/credentials. It also always advertises a terminal setup auth method (`hermes-setup`, args `--setup`) so first-run registry clients can open VIGIL' interactive model/provider configuration before starting a normal ACP session.
+So ACP advertises and uses the currently configured VIGIL provider/credentials. It also always advertises a terminal setup auth method (`vigil-setup`, args `--setup`) so first-run registry clients can open VIGIL' interactive model/provider configuration before starting a normal ACP session.
 
 ## Working directory binding
 
@@ -179,6 +179,6 @@ ACP temporarily installs an approval callback on the terminal tool during prompt
 ## Related files
 
 - `tests/acp/` — ACP test suite
-- `toolsets.py` — `hermes-acp` toolset definition
-- `hermes_cli/main.py` — `hermes acp` CLI subcommand
-- `pyproject.toml` — `[acp]` optional dependency + `hermes-acp` script
+- `toolsets.py` — `vigil-acp` toolset definition
+- `vigil_cli/main.py` — `vigil acp` CLI subcommand
+- `pyproject.toml` — `[acp]` optional dependency + `vigil-acp` script

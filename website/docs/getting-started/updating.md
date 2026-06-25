@@ -11,40 +11,40 @@ description: "How to update VIGIL Agent to the latest version or uninstall it"
 Update to the latest version with a single command:
 
 ```bash
-hermes update
+vigil update
 ```
 
 This pulls the latest code from `main`, updates dependencies, and prompts you to configure any new options that were added since your last update.
 
 :::tip
-`hermes update` automatically detects new configuration options and prompts you to add them. If you skipped that prompt, you can manually run `hermes config check` to see missing options, then `hermes config migrate` to interactively add them.
+`vigil update` automatically detects new configuration options and prompts you to add them. If you skipped that prompt, you can manually run `vigil config check` to see missing options, then `vigil config migrate` to interactively add them.
 :::
 
 ### What happens during an update
 
-When you run `hermes update`, the following steps occur:
+When you run `vigil update`, the following steps occur:
 
 1. **Pairing-data snapshot** — a lightweight pre-update state snapshot is saved (covers `~/.vigil/pairing/`, Feishu comment rules, and other state files that get modified at runtime). Recoverable via the snapshot restore flow described under [Snapshots and rollback](../user-guide/checkpoints-and-rollback.md), or by extracting the most recent quick-snapshot zip VIGIL wrote next to your `~/.vigil/` directory.
 2. **Git pull** — pulls the latest code from the `main` branch and updates submodules
-3. **Post-pull syntax validation + auto-rollback** — after the pull, VIGIL compiles the eight critical files every `hermes` invocation imports at startup. If any fails to parse (e.g. an orphan merge-conflict marker, an accidentally truncated file), VIGIL runs `git reset --hard <pre-pull-sha>` to roll the install back so your shell stays bootable. Re-run `hermes update` once the upstream fix lands.
+3. **Post-pull syntax validation + auto-rollback** — after the pull, VIGIL compiles the eight critical files every `vigil` invocation imports at startup. If any fails to parse (e.g. an orphan merge-conflict marker, an accidentally truncated file), VIGIL runs `git reset --hard <pre-pull-sha>` to roll the install back so your shell stays bootable. Re-run `vigil update` once the upstream fix lands.
 4. **Dependency install** — runs `uv pip install -e ".[all]"` to pick up new or changed dependencies
 5. **Config migration** — detects new config options added since your version and prompts you to set them
 6. **Gateway auto-restart** — running gateways are refreshed after the update completes so the new code takes effect immediately. Service-managed gateways (systemd on Linux, launchd on macOS) are restarted through the service manager. Manual gateways are relaunched automatically when VIGIL can map the running PID back to a profile.
 
 ### Updating against a non-default branch: `--branch`
 
-By default `hermes update` tracks `origin/main`. Pass `--branch <name>` to update against a different branch — useful for QA channels, feature branches, or release-candidate testing:
+By default `vigil update` tracks `origin/main`. Pass `--branch <name>` to update against a different branch — useful for QA channels, feature branches, or release-candidate testing:
 
 ```bash
-hermes update --branch release-candidate
-hermes update --check --branch experimental   # preview behindness only
+vigil update --branch release-candidate
+vigil update --check --branch experimental   # preview behindness only
 ```
 
 If your local checkout is on a different branch, VIGIL auto-stashes any uncommitted work, switches HEAD to the target branch, and then pulls. Branches that don't exist locally are auto-tracked from `origin/<name>` (`git checkout -B <name> origin/<name>`). Branches that don't exist anywhere fail cleanly — your stashed changes are restored before exit so you're never stranded in a weird state. The `main`-only fork-upstream sync logic is automatically skipped on non-`main` branches.
 
 ### Local changes on non-interactive updates
 
-When you run `hermes update` in a terminal, VIGIL stashes any uncommitted source-tree changes, pulls, then **asks** whether to restore them — exactly as it always has. Nothing changes for interactive updates.
+When you run `vigil update` in a terminal, VIGIL stashes any uncommitted source-tree changes, pulls, then **asks** whether to restore them — exactly as it always has. Nothing changes for interactive updates.
 
 When the update runs **without a terminal** — from the desktop/chat app's "Update" button or a gateway-triggered update — there's no prompt to answer. The `updates.non_interactive_local_changes` setting decides what happens to your stashed changes:
 
@@ -60,16 +60,16 @@ updates:
 
 In the desktop app this is **Settings → Advanced → In-App Update Local Changes**.
 
-### Preview-only: `hermes update --check`
+### Preview-only: `vigil update --check`
 
-Want to know if an update is available before pulling? Run `hermes update --check` — it fetches and compares commits against `origin/main`. No files are modified, no gateway is restarted. Useful in scripts and cron jobs that gate on "is there an update".
+Want to know if an update is available before pulling? Run `vigil update --check` — it fetches and compares commits against `origin/main`. No files are modified, no gateway is restarted. Useful in scripts and cron jobs that gate on "is there an update".
 
 ### Full pre-update backup: `--backup`
 
 For high-value profiles (production gateways, shared team installs) you can opt into a full pre-pull backup of `VIGIL_HOME` (config, auth, sessions, skills, pairing):
 
 ```bash
-hermes update --backup
+vigil update --backup
 ```
 
 Or make it the default for every run:
@@ -82,21 +82,21 @@ updates:
 
 `--backup` was the always-on behavior in earlier builds, but it was adding minutes to every update on large homes, so it's now opt-in. The lightweight pairing-data snapshot above still runs unconditionally.
 
-### Windows: another `hermes.exe` is running
+### Windows: another `vigil.exe` is running
 
-On Windows, `hermes update` will refuse to run if it detects another `hermes.exe` process holding the venv's entry-point executable open — most commonly the VIGIL Desktop app's spawned backend, an open `hermes` REPL in another terminal, or a running gateway:
+On Windows, `vigil update` will refuse to run if it detects another `vigil.exe` process holding the venv's entry-point executable open — most commonly the VIGIL Desktop app's spawned backend, an open `vigil` REPL in another terminal, or a running gateway:
 
 ```
-$ hermes update
-✗ Another hermes.exe is running:
-    PID 12345  hermes.exe
+$ vigil update
+✗ Another vigil.exe is running:
+    PID 12345  vigil.exe
 
-  Updating now would fail to overwrite ...\venv\Scripts\hermes.exe because
+  Updating now would fail to overwrite ...\venv\Scripts\vigil.exe because
   Windows blocks REPLACE on a running executable.
 
-  Close VIGIL Desktop, exit any open `hermes` REPLs, and
-  stop the gateway (`hermes gateway stop`) before retrying.
-  Override with `hermes update --force` if you've already
+  Close VIGIL Desktop, exit any open `vigil` REPLs, and
+  stop the gateway (`vigil gateway stop`) before retrying.
+  Override with `vigil update --force` if you've already
   confirmed those processes will not write to the venv.
 ```
 
@@ -105,7 +105,7 @@ Close the listed processes and re-run. If you're sure the concurrent process won
 Expected output looks like:
 
 ```
-$ hermes update
+$ vigil update
 Updating VIGIL Agent...
 📥 Pulling latest code...
 Already up to date.  (or: Updating abc1234..def5678)
@@ -120,21 +120,21 @@ Already up to date.  (or: Updating abc1234..def5678)
 
 ### Recommended Post-Update Validation
 
-`hermes update` handles the main update path, but a quick validation confirms everything landed cleanly:
+`vigil update` handles the main update path, but a quick validation confirms everything landed cleanly:
 
 1. `git status --short` — if the tree is unexpectedly dirty, inspect before continuing
-2. `hermes doctor` — checks config, dependencies, and service health
-3. `hermes --version` — confirm the version bumped as expected
-4. If you use the gateway: `hermes gateway status`
+2. `vigil doctor` — checks config, dependencies, and service health
+3. `vigil --version` — confirm the version bumped as expected
+4. If you use the gateway: `vigil gateway status`
 5. If `doctor` reports npm audit issues: run `npm audit fix` in the flagged directory
 
 :::warning Dirty working tree after update
-If `git status --short` shows unexpected changes after `hermes update`, stop and inspect them before continuing. This usually means local modifications were reapplied on top of the updated code, or a dependency step refreshed lockfiles.
+If `git status --short` shows unexpected changes after `vigil update`, stop and inspect them before continuing. This usually means local modifications were reapplied on top of the updated code, or a dependency step refreshed lockfiles.
 :::
 
 ### If your terminal disconnects mid-update
 
-`hermes update` protects itself against accidental terminal loss:
+`vigil update` protects itself against accidental terminal loss:
 
 - The update ignores `SIGHUP`, so closing your SSH session or terminal window no longer kills it mid-install. `pip` and `git` child processes inherit this protection, so the Python environment cannot be left half-installed by a dropped connection.
 - All output is mirrored to `~/.vigil/logs/update.log` while the update runs. If your terminal disappears, reconnect and inspect the log to see whether the update finished and whether the gateway restart succeeded:
@@ -145,12 +145,12 @@ tail -f ~/.vigil/logs/update.log
 
 - `Ctrl-C` (SIGINT) and system shutdown (SIGTERM) are still honored — those are deliberate cancellations, not accidents.
 
-You no longer need to wrap `hermes update` in `screen` or `tmux` to survive a terminal drop.
+You no longer need to wrap `vigil update` in `screen` or `tmux` to survive a terminal drop.
 
 ### Checking your current version
 
 ```bash
-hermes version
+vigil version
 ```
 
 Compare against the latest release at the [GitHub releases page](https://github.com/NousResearch/vigil-agent/releases).
@@ -180,8 +180,8 @@ git pull origin main
 uv pip install -e ".[all]"
 
 # Check for new config options
-hermes config check
-hermes config migrate   # Interactively add any missing options
+vigil config check
+vigil config migrate   # Interactively add any missing options
 ```
 
 ### Rollback instructions
@@ -199,7 +199,7 @@ git checkout <commit-hash>
 uv pip install -e ".[all]"
 
 # Restart the gateway if running
-hermes gateway restart
+vigil gateway restart
 ```
 
 To roll back to a specific release tag (substitute your previous tag — e.g. a recent release like `v2026.5.16`, or any earlier tag from `git tag --sort=-version:refname`):
@@ -210,7 +210,7 @@ uv pip install -e ".[all]"
 ```
 
 :::warning
-Rolling back may cause config incompatibilities if new options were added. Run `hermes config check` after rolling back and remove any unrecognized options from `config.yaml` if you encounter errors.
+Rolling back may cause config incompatibilities if new options were added. Run `vigil config check` after rolling back and remove any unrecognized options from `config.yaml` if you encounter errors.
 :::
 
 ### Note for Nix users
@@ -238,7 +238,7 @@ See [Nix Setup](./nix-setup.md) for more details.
 ## Uninstalling
 
 ```bash
-hermes uninstall
+vigil uninstall
 ```
 
 The uninstaller gives you the option to keep your configuration files (`~/.vigil/`) for a future reinstall.
@@ -246,7 +246,7 @@ The uninstaller gives you the option to keep your configuration files (`~/.vigil
 ### Manual Uninstall
 
 ```bash
-rm -f ~/.local/bin/hermes
+rm -f ~/.local/bin/vigil
 rm -rf /path/to/vigil-agent
 rm -rf ~/.vigil            # Optional — keep if you plan to reinstall
 ```
@@ -254,8 +254,8 @@ rm -rf ~/.vigil            # Optional — keep if you plan to reinstall
 :::info
 If you installed the gateway as a system service, stop and disable it first:
 ```bash
-hermes gateway stop
-# Linux: systemctl --user disable hermes-gateway
+vigil gateway stop
+# Linux: systemctl --user disable vigil-gateway
 # macOS: launchctl remove ai.vigil.gateway
 ```
 :::

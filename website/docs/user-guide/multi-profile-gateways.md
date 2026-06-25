@@ -26,16 +26,16 @@ be online at the same time. Common reasons:
 
 Every profile already gets its own per-platform LaunchAgent
 (`ai.vigil.gateway-<name>.plist`) or systemd user service
-(`hermes-gateway-<name>.service`). This guide adds the patterns for managing
+(`vigil-gateway-<name>.service`). This guide adds the patterns for managing
 them collectively.
 
 ## Quick start
 
 ```bash
 # Create profiles (once)
-hermes profile create coder
-hermes profile create personal-bot
-hermes profile create research
+vigil profile create coder
+vigil profile create personal-bot
+vigil profile create research
 
 # Configure each
 coder setup
@@ -85,8 +85,8 @@ Set the flag on the **default profile** (it owns the multiplexer) and restart
 its gateway:
 
 ```bash
-hermes config set gateway.multiplex_profiles true
-hermes gateway restart
+vigil config set gateway.multiplex_profiles true
+vigil gateway restart
 ```
 
 Equivalently, in the default profile's `~/.vigil/config.yaml`:
@@ -103,7 +103,7 @@ credentials, and routes each inbound message to the profile it belongs to. Each
 turn resolves the routed profile's config, skills, memory, SOUL, **and provider
 keys** — credentials are never shared across profiles.
 
-You do **not** run `hermes gateway start` for the secondary profiles — the
+You do **not** run `vigil gateway start` for the secondary profiles — the
 default gateway serves them. See the contract changes below.
 
 ### What changes when multiplexing is on
@@ -113,7 +113,7 @@ moment the flag is off.
 
 #### 1. Secondary profiles must not start their own gateway
 
-With a multiplexer running, a named-profile `hermes gateway start` / `run` is a
+With a multiplexer running, a named-profile `vigil gateway start` / `run` is a
 **hard error**, pointing you back at the multiplexer:
 
 ```
@@ -175,8 +175,8 @@ migration, no orphaned history.
 #### 5. One PID/lock and one status surface
 
 There is a single process-level PID and lock (the multiplexer, under the default
-home). `hermes status` reports the multiplexer and the profiles it serves;
-`hermes status -p <name>` slices to one profile. Each profile still writes its
+home). `vigil status` reports the multiplexer and the profiles it serves;
+`vigil status -p <name>` slices to one profile. Each profile still writes its
 own `runtime_status.json` under its own home, so existing per-profile readers
 keep working.
 
@@ -193,7 +193,7 @@ exactly as they do with separate gateways.
 
 The CLI ships with single-profile lifecycle commands. To act across every
 profile, wrap them in a shell loop. Put the snippet below in
-`~/.local/bin/hermes-gateways` and `chmod +x` it:
+`~/.local/bin/vigil-gateways` and `chmod +x` it:
 
 ```sh
 #!/bin/sh
@@ -203,16 +203,16 @@ set -eu
 profiles="default coder personal-bot research"
 
 usage() {
-  echo "Usage: hermes-gateways {start|stop|restart|status|list}"
+  echo "Usage: vigil-gateways {start|stop|restart|status|list}"
 }
 
 run_for_profile() {
   profile="$1"
   action="$2"
   if [ "$profile" = "default" ]; then
-    hermes gateway "$action"
+    vigil gateway "$action"
   else
-    hermes -p "$profile" gateway "$action"
+    vigil -p "$profile" gateway "$action"
   fi
 }
 
@@ -225,7 +225,7 @@ case "$action" in
     done
     ;;
   list)
-    hermes gateway list
+    vigil gateway list
     ;;
   *)
     usage
@@ -237,16 +237,16 @@ esac
 Then:
 
 ```bash
-hermes-gateways start      # start every configured profile
-hermes-gateways stop       # stop every configured profile
-hermes-gateways restart    # restart all
-hermes-gateways status     # status across all
-hermes-gateways list       # delegates to `hermes gateway list`
+vigil-gateways start      # start every configured profile
+vigil-gateways stop       # stop every configured profile
+vigil-gateways restart    # restart all
+vigil-gateways status     # status across all
+vigil-gateways list       # delegates to `vigil gateway list`
 ```
 
 :::tip
-The `default` profile is targeted with `hermes gateway <action>` (no `-p`),
-not `hermes -p default gateway <action>`. The wrapper above handles both forms.
+The `default` profile is targeted with `vigil gateway <action>` (no `-p`),
+not `vigil -p default gateway <action>`. The wrapper above handles both forms.
 :::
 
 ## Manage one profile
@@ -263,7 +263,7 @@ coder gateway install    # create the LaunchAgent / systemd unit
 coder gateway uninstall  # remove the service file
 ```
 
-These are equivalent to `hermes -p coder gateway <action>` — useful if a
+These are equivalent to `vigil -p coder gateway <action>` — useful if a
 profile alias is not on `PATH` or if you target profiles dynamically from a
 script.
 
@@ -275,10 +275,10 @@ never clash:
 | Platform | Path                                                              |
 | -------- | ----------------------------------------------------------------- |
 | macOS    | `~/Library/LaunchAgents/ai.vigil.gateway-<profile>.plist`        |
-| Linux    | `~/.config/systemd/user/hermes-gateway-<profile>.service`         |
+| Linux    | `~/.config/systemd/user/vigil-gateway-<profile>.service`         |
 
 The default profile keeps the historical names: `ai.vigil.gateway.plist` /
-`hermes-gateway.service`.
+`vigil-gateway.service`.
 
 ## Viewing logs
 
@@ -303,18 +303,18 @@ tail -f ~/.vigil/logs/gateway.log ~/.vigil/profiles/*/logs/gateway.log
 The CLI also has a structured log viewer:
 
 ```bash
-hermes logs -f                  # follow default profile
-hermes -p coder logs -f         # follow one profile
-hermes logs --help              # filters, levels, JSON output
+vigil logs -f                  # follow default profile
+vigil -p coder logs -f         # follow one profile
+vigil logs --help              # filters, levels, JSON output
 ```
 
 ## Identify what's actually running
 
 ```bash
-hermes profile list             # profiles + model + gateway state
-hermes-gateways status          # full status across every profile
-launchctl list | grep hermes    # macOS — PIDs and labels
-systemctl --user list-units 'hermes-gateway-*'   # Linux — units
+vigil profile list             # profiles + model + gateway state
+vigil-gateways status          # full status across every profile
+launchctl list | grep vigil    # macOS — PIDs and labels
+systemctl --user list-units 'vigil-gateway-*'   # Linux — units
 ```
 
 ## Editing configuration
@@ -333,7 +333,7 @@ The default profile uses `~/.vigil/` directly with the same three files.
 Edit them with any editor or via the CLI:
 
 ```bash
-hermes config set model.model anthropic/claude-sonnet-4    # default profile
+vigil config set model.model anthropic/claude-sonnet-4    # default profile
 coder config set model.model openai/gpt-5                  # named profile
 ```
 
@@ -342,7 +342,7 @@ After editing `.env` or `config.yaml`, restart the affected gateway:
 ```bash
 coder gateway restart
 # or, for everything:
-hermes-gateways restart
+vigil-gateways restart
 ```
 
 ## Keeping the host awake
@@ -388,7 +388,7 @@ use a third-party tool.
 
 ```bash
 # Inhibit suspend while a command runs
-systemd-inhibit --what=idle:sleep --who=hermes --why="gateways running" \
+systemd-inhibit --what=idle:sleep --who=vigil --why="gateways running" \
   sleep infinity &
 
 # Allow user services to keep running after logout (recommended)
@@ -396,7 +396,7 @@ sudo loginctl enable-linger "$USER"
 ```
 
 After enabling lingering, your systemd user units (including
-`hermes-gateway-<profile>.service`) continue running across SSH disconnects
+`vigil-gateway-<profile>.service`) continue running across SSH disconnects
 and reboots.
 
 ## Token-conflict safety
@@ -414,12 +414,12 @@ grep -H 'TELEGRAM_BOT_TOKEN\|DISCORD_BOT_TOKEN' \
 
 ## Updating the code
 
-`hermes update` pulls the latest code once and syncs new bundled skills into
+`vigil update` pulls the latest code once and syncs new bundled skills into
 every profile:
 
 ```bash
-hermes update
-hermes-gateways restart
+vigil update
+vigil-gateways restart
 ```
 
 User-modified skills are never overwritten.
@@ -428,7 +428,7 @@ User-modified skills are never overwritten.
 
 ### "Could not find service in domain for user gui: 501"
 
-You ran `hermes gateway start` after a previous `hermes gateway stop`. The
+You ran `vigil gateway start` after a previous `vigil gateway stop`. The
 CLI's `stop` does a full `launchctl unload`, which removes the service from
 launchd's registry. The CLI catches this specific error on `start` and
 automatically re-loads the plist (`↻ launchd job was unloaded; reloading
@@ -439,7 +439,7 @@ service definition`). The service starts normally. Nothing to fix.
 If a profile's gateway shows `not running` but a process is still alive:
 
 ```bash
-ps -ef | grep "hermes_cli.*-p <profile>"
+ps -ef | grep "vigil_cli.*-p <profile>"
 cat ~/.vigil/profiles/<profile>/gateway.pid
 kill -TERM <pid>          # graceful
 kill -KILL <pid>          # if that fails after a few seconds
@@ -454,12 +454,12 @@ launchctl unload ~/Library/LaunchAgents/ai.vigil.gateway-<profile>.plist
 launchctl load   ~/Library/LaunchAgents/ai.vigil.gateway-<profile>.plist
 
 # Linux
-systemctl --user restart hermes-gateway-<profile>.service
+systemctl --user restart vigil-gateway-<profile>.service
 ```
 
 ### Health check
 
 ```bash
-hermes doctor                  # default profile
-hermes -p <profile> doctor     # one profile
+vigil doctor                  # default profile
+vigil -p <profile> doctor     # one profile
 ```

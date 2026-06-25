@@ -38,6 +38,7 @@ Exit code: 0 if every file's pytest exited 0; 1 otherwise.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import subprocess
@@ -72,12 +73,24 @@ _SKIP_PARTS = {"integration", "e2e", "docker"}
 
 # Per-file wall-clock cap. Override
 # via --file-timeout or VIGIL_TEST_FILE_TIMEOUT.
-_DEFAULT_FILE_TIMEOUT_SECONDS = 140.0 # set by observing the slowest file at commit time was ~100s in CI and adding some leeway
+_DEFAULT_FILE_TIMEOUT_SECONDS = 600.0  # Large run_agent suites can exceed 5 min on loaded macOS runners.
 
 # Duration cache: maps relative file paths to last-observed subprocess
 # wall-clock seconds. Used by ``--slice`` to distribute files across
 # CI jobs by estimated total time, so no one job gets all the slow files.
 _DURATIONS_FILE = "test_durations.json"
+
+
+def _pytest_basetemp_for_file(file: Path, repo_root: Path) -> Path:
+    """Return a stable, per-file pytest temp root for this runner process."""
+    resolved_file = file.resolve()
+    resolved_root = repo_root.resolve()
+    try:
+        label = resolved_file.relative_to(resolved_root).as_posix()
+    except ValueError:
+        label = resolved_file.as_posix()
+    digest = hashlib.sha1(label.encode("utf-8")).hexdigest()[:12]
+    return Path(os.getenv("TMPDIR") or "/tmp") / f"agt-{os.getpid()}" / digest
 
 
 def _count_tests(
@@ -274,7 +287,12 @@ def _run_one_file(
     orphan onto PID 1. This outer timeout exists only to
     bound a pathologically slow or hung file as a whole.
     """
-    cmd = [sys.executable, "-m", "pytest", str(file), *pytest_args]
+    basetemp_arg = []
+    if not any(arg == "--basetemp" or arg.startswith("--basetemp=") for arg in pytest_args):
+        basetemp = _pytest_basetemp_for_file(file, repo_root)
+        basetemp.parent.mkdir(parents=True, exist_ok=True)
+        basetemp_arg = [f"--basetemp={basetemp}"]
+    cmd = [sys.executable, "-m", "pytest", str(file), *basetemp_arg, *pytest_args]
     
     subproc_start = time.monotonic()
     # launch the pytest process

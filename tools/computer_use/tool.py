@@ -8,7 +8,7 @@ OpenAI function-calling so every tool-capable model can drive it.
 Linux is the most recent runtime (X11 + Wayland, via cua-driver-rs's
 AT-SPI tree path); it is enabled here alongside macOS and Windows. When a
 host's display server or accessibility stack isn't reachable, cua-driver's
-`health_report` (surfaced by `hermes computer-use doctor`) reports the
+`health_report` (surfaced by `vigil computer-use doctor`) reports the
 exact blocked check rather than the toolset silently failing.
 
 Return contract
@@ -277,7 +277,7 @@ def handle_computer_use(args: Dict[str, Any], **kwargs) -> Any:
     except Exception as e:
         return json.dumps({
             "error": f"computer_use backend unavailable: {e}",
-            "hint": "If the cua-driver binary is missing, run `hermes computer-use install`. "
+            "hint": "If the cua-driver binary is missing, run `vigil computer-use install`. "
                     "If a Python dependency is missing, the error above shows the exact install command.",
         })
 
@@ -707,7 +707,7 @@ def _should_route_through_aux_vision() -> bool:
     """
     try:
         from agent.auxiliary_client import _read_main_model, _read_main_provider
-        from hermes_cli.config import load_config
+        from vigil_cli.config import load_config
         from tools.computer_use.vision_routing import (
             should_route_capture_to_aux_vision,
         )
@@ -752,7 +752,7 @@ def _route_capture_through_aux_vision(
         import os as _os
         import uuid as _uuid
 
-        from hermes_constants import get_hermes_dir
+        from vigil_constants import get_vigil_dir
         from model_tools import _run_async
         from tools.vision_tools import vision_analyze_tool
     except Exception as exc:  # pragma: no cover - defensive
@@ -775,7 +775,7 @@ def _route_capture_through_aux_vision(
             ext = ".jpg"
         else:
             ext = ".png"
-        cache_dir = get_hermes_dir("cache/vision", "temp_vision_images")
+        cache_dir = get_vigil_dir("cache/vision", "temp_vision_images")
         cache_dir.mkdir(parents=True, exist_ok=True)
         temp_image_path = cache_dir / f"computer_use_{_uuid.uuid4().hex}{ext}"
         raw = _shrink_capture_for_vision(raw, ext)
@@ -903,7 +903,7 @@ def check_computer_use_requirements() -> bool:
     override via env). cua-driver runs on all three; the Linux path is
     headed/X11 today (Wayland via XWayland), pure-Wayland progress tracked
     upstream. Linux users see specific blocked checks via
-    `hermes computer-use doctor` if their session is incomplete (e.g. no
+    `vigil computer-use doctor` if their session is incomplete (e.g. no
     DISPLAY set).
     """
     if sys.platform not in ("darwin", "win32", "linux"):

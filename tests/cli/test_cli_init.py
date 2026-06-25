@@ -304,7 +304,7 @@ class TestHistoryDisplay:
             {
                 "id": "20260401_201329_d85961",
                 "title": "Checking Running VIGIL Agent",
-                "preview": "check running gateways for hermes agent",
+                "preview": "check running gateways for vigil agent",
                 "last_active": 0,
             },
         ]
@@ -332,7 +332,7 @@ class TestHistoryDisplay:
             {
                 "id": "20260401_201329_d85961",
                 "title": "Checking Running VIGIL Agent",
-                "preview": "check running gateways for hermes agent",
+                "preview": "check running gateways for vigil agent",
                 "last_active": 0,
             },
         ]
@@ -345,9 +345,9 @@ class TestHistoryDisplay:
         assert "Use /resume" in output
         assert "session title" in output
 
-    def test_resume_updates_hermes_session_id_env_and_context(self, tmp_path):
+    def test_resume_updates_vigil_session_id_env_and_context(self, tmp_path):
         from gateway.session_context import _UNSET, _VAR_MAP, get_session_env
-        from hermes_state import SessionDB
+        from vigil_state import SessionDB
 
         cli = _make_cli()
         cli.session_id = "current_session"
@@ -415,7 +415,7 @@ class TestHistoryDisplay:
             {
                 "id": "20260401_201329_d85961",
                 "title": "Checking Running VIGIL Agent",
-                "preview": "check running gateways for hermes agent",
+                "preview": "check running gateways for vigil agent",
                 "last_active": 0,
             },
         ]
@@ -439,7 +439,7 @@ class TestHistoryDisplay:
             {
                 "id": "20260401_201329_d85961",
                 "title": "Checking Running VIGIL Agent",
-                "preview": "check running gateways for hermes agent",
+                "preview": "check running gateways for vigil agent",
                 "last_active": 0,
             },
         ]
@@ -491,11 +491,11 @@ class TestRootLevelProviderOverride:
         """model.provider takes priority — root-level provider is only a fallback."""
         import yaml
 
-        hermes_home = tmp_path / ".vigil"
-        hermes_home.mkdir()
-        monkeypatch.setenv("VIGIL_HOME", str(hermes_home))
+        vigil_home = tmp_path / ".vigil"
+        vigil_home.mkdir()
+        monkeypatch.setenv("VIGIL_HOME", str(vigil_home))
 
-        config_path = hermes_home / "config.yaml"
+        config_path = vigil_home / "config.yaml"
         config_path.write_text(yaml.safe_dump({
             "provider": "opencode-go",  # stale root-level key
             "model": {
@@ -505,7 +505,7 @@ class TestRootLevelProviderOverride:
         }))
 
         import cli
-        monkeypatch.setattr(cli, "_hermes_home", hermes_home)
+        monkeypatch.setattr(cli, "_vigil_home", vigil_home)
         cfg = cli.load_cli_config()
 
         assert cfg["model"]["provider"] == "openrouter"
@@ -514,11 +514,11 @@ class TestRootLevelProviderOverride:
         """Legacy root-level provider still populates model.provider in the CLI loader."""
         import yaml
 
-        hermes_home = tmp_path / ".vigil"
-        hermes_home.mkdir()
-        monkeypatch.setenv("VIGIL_HOME", str(hermes_home))
+        vigil_home = tmp_path / ".vigil"
+        vigil_home.mkdir()
+        monkeypatch.setenv("VIGIL_HOME", str(vigil_home))
 
-        config_path = hermes_home / "config.yaml"
+        config_path = vigil_home / "config.yaml"
         config_path.write_text(yaml.safe_dump({
             "provider": "opencode-go",  # stale root key
             "model": {
@@ -528,7 +528,7 @@ class TestRootLevelProviderOverride:
         }))
 
         import cli
-        monkeypatch.setattr(cli, "_hermes_home", hermes_home)
+        monkeypatch.setattr(cli, "_vigil_home", vigil_home)
         cfg = cli.load_cli_config()
 
         assert cfg["model"]["provider"] == "opencode-go"
@@ -537,11 +537,11 @@ class TestRootLevelProviderOverride:
         """Legacy root-level base_url still populates model.base_url in the CLI loader."""
         import yaml
 
-        hermes_home = tmp_path / ".vigil"
-        hermes_home.mkdir()
-        monkeypatch.setenv("VIGIL_HOME", str(hermes_home))
+        vigil_home = tmp_path / ".vigil"
+        vigil_home.mkdir()
+        monkeypatch.setenv("VIGIL_HOME", str(vigil_home))
 
-        config_path = hermes_home / "config.yaml"
+        config_path = vigil_home / "config.yaml"
         config_path.write_text(yaml.safe_dump({
             "base_url": "https://example.com/v1",
             "model": {
@@ -550,14 +550,14 @@ class TestRootLevelProviderOverride:
         }))
 
         import cli
-        monkeypatch.setattr(cli, "_hermes_home", hermes_home)
+        monkeypatch.setattr(cli, "_vigil_home", vigil_home)
         cfg = cli.load_cli_config()
 
         assert cfg["model"]["base_url"] == "https://example.com/v1"
 
     def test_normalize_root_model_keys_moves_to_model(self):
         """_normalize_root_model_keys migrates root keys into model section."""
-        from hermes_cli.config import _normalize_root_model_keys
+        from vigil_cli.config import _normalize_root_model_keys
 
         config = {
             "provider": "opencode-go",
@@ -576,7 +576,7 @@ class TestRootLevelProviderOverride:
 
     def test_normalize_root_model_keys_does_not_override_existing(self):
         """Existing model.provider is never overridden by root-level key."""
-        from hermes_cli.config import _normalize_root_model_keys
+        from vigil_cli.config import _normalize_root_model_keys
 
         config = {
             "provider": "stale-provider",
@@ -591,7 +591,7 @@ class TestRootLevelProviderOverride:
 
     def test_normalize_model_api_base_aliases_to_base_url(self):
         """model.api_base is migrated to model.base_url (issue #8919)."""
-        from hermes_cli.config import _normalize_root_model_keys
+        from vigil_cli.config import _normalize_root_model_keys
 
         config = {
             "model": {
@@ -607,7 +607,7 @@ class TestRootLevelProviderOverride:
 
     def test_normalize_api_base_does_not_override_base_url(self):
         """An explicit model.base_url is never overridden by api_base."""
-        from hermes_cli.config import _normalize_root_model_keys
+        from vigil_cli.config import _normalize_root_model_keys
 
         config = {
             "model": {
@@ -623,7 +623,7 @@ class TestRootLevelProviderOverride:
 
     def test_normalize_root_context_length_migrates_to_model(self):
         """Root-level context_length is migrated into the model section."""
-        from hermes_cli.config import _normalize_root_model_keys
+        from vigil_cli.config import _normalize_root_model_keys
 
         config = {
             "context_length": 128000,
@@ -637,7 +637,7 @@ class TestRootLevelProviderOverride:
 
     def test_normalize_root_context_length_does_not_override_existing(self):
         """Existing model.context_length is not overridden by root-level key."""
-        from hermes_cli.config import _normalize_root_model_keys
+        from vigil_cli.config import _normalize_root_model_keys
 
         config = {
             "context_length": 256000,
@@ -652,7 +652,7 @@ class TestRootLevelProviderOverride:
 
     def test_normalize_root_context_length_with_string_model(self):
         """Root-level context_length is migrated even when model is a string."""
-        from hermes_cli.config import _normalize_root_model_keys
+        from vigil_cli.config import _normalize_root_model_keys
 
         config = {
             "context_length": 128000,

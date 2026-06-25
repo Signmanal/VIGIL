@@ -12,7 +12,7 @@ import urllib.parse
 import urllib.request
 
 DEFAULT_UA = (
-    "hermes-osint-investigation/0.2 "
+    "vigil-osint-investigation/0.2 "
     "(+https://github.com/NousResearch/vigil-agent; "
     "set VIGIL_OSINT_UA env var to identify yourself per "
     "Wikimedia / SEC fair-use guidance)"

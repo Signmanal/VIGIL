@@ -26,7 +26,7 @@ In BlueBubbles Server → **Settings → API**, note:
 Run the setup wizard:
 
 ```bash
-hermes gateway setup
+vigil gateway setup
 ```
 
 Select **BlueBubbles (iMessage)** and enter your server URL and password.
@@ -70,9 +70,9 @@ Choose one approach:
 **DM Pairing (recommended):**
 When someone messages your iMessage, VIGIL automatically sends them a pairing code. Approve it with:
 ```bash
-hermes pairing approve bluebubbles <CODE>
+vigil pairing approve bluebubbles <CODE>
 ```
-Use `hermes pairing list` to see pending codes and approved users.
+Use `vigil pairing list` to see pending codes and approved users.
 
 **Pre-authorize specific users** (in `~/.vigil/.env`):
 ```bash
@@ -87,7 +87,7 @@ BLUEBUBBLES_ALLOW_ALL_USERS=true
 ### 5. Start the Gateway
 
 ```bash
-hermes gateway run
+vigil gateway run
 ```
 
 VIGIL will connect to your BlueBubbles server, register a webhook, and start listening for iMessage messages.
@@ -163,7 +163,7 @@ Without the Private API, basic text messaging and media still work.
 ### Messages not arriving
 - Check that the webhook is registered in BlueBubbles Server → Settings → API → Webhooks
 - Verify the webhook URL is reachable from the Mac
-- Check `hermes logs gateway` for webhook errors (or `hermes logs -f` to follow in real-time)
+- Check `vigil logs gateway` for webhook errors (or `vigil logs -f` to follow in real-time)
 
 ### "Private API helper not connected"
 - Install the Private API helper: [docs.bluebubbles.app](https://docs.bluebubbles.app/helper-bundle/installation)

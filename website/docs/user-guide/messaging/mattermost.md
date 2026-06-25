@@ -71,7 +71,7 @@ If you don't have System Admin access, ask your Mattermost administrator to enab
 1. In Mattermost, click the **☰** menu (top-left) → **Integrations** → **Bot Accounts**.
 2. Click **Add Bot Account**.
 3. Fill in the details:
-   - **Username**: e.g., `hermes`
+   - **Username**: e.g., `vigil`
    - **Display Name**: e.g., `VIGIL Agent`
    - **Description**: optional
    - **Role**: `Member` is sufficient
@@ -94,7 +94,7 @@ The bot needs to be a member of any channel where you want it to respond:
 
 1. Open the channel where you want the bot.
 2. Click the channel name → **Add Members**.
-3. Search for your bot username (e.g., `hermes`) and add it.
+3. Search for your bot username (e.g., `vigil`) and add it.
 
 For DMs, simply open a direct message with the bot — it will be able to respond immediately.
 
@@ -129,7 +129,7 @@ To get a **Channel ID**: click the channel name → **View Info**. The Channel I
 Run the guided setup command:
 
 ```bash
-hermes gateway setup
+vigil gateway setup
 ```
 
 Select **Mattermost** when prompted, then paste your server URL, bot token, and user ID when asked.
@@ -170,13 +170,13 @@ group_sessions_per_user: true
 Once configured, start the Mattermost gateway:
 
 ```bash
-hermes gateway
+vigil gateway
 ```
 
 The bot should connect to your Mattermost server within a few seconds. Send it a message — either a DM or in a channel where it's been added — to test.
 
 :::tip
-You can run `hermes gateway` in the background or as a systemd service for persistent operation. See the deployment docs for details.
+You can run `vigil gateway` in the background or as a systemd service for persistent operation. See the deployment docs for details.
 :::
 
 ## Home Channel
@@ -300,7 +300,7 @@ If this returns your bot's user info, the token is valid. If it returns an error
 
 **Cause**: The VIGIL gateway isn't running, or it failed to connect.
 
-**Fix**: Check that `hermes gateway` is running. Look at the terminal output for error messages. Common issues: wrong URL, expired token, Mattermost server unreachable.
+**Fix**: Check that `vigil gateway` is running. Look at the terminal output for error messages. Common issues: wrong URL, expired token, Mattermost server unreachable.
 
 ### "User not allowed" / Bot ignores you
 

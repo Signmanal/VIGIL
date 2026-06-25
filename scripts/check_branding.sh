@@ -15,12 +15,12 @@ targets = [
     "README.md",
     "package.json",
     "pyproject.toml",
-    "hermes",
     "vigil",
-    "hermes_constants.py",
-    "hermes_cli/main.py",
-    "hermes_cli/subcommands/dashboard.py",
-    "hermes_cli/subcommands/gui.py",
+    "setup-vigil.sh",
+    "vigil_constants.py",
+    "vigil_cli/main.py",
+    "vigil_cli/subcommands/dashboard.py",
+    "vigil_cli/subcommands/gui.py",
     "web/src",
     "apps/desktop/package.json",
     "apps/desktop/src",
@@ -52,14 +52,15 @@ if proc.returncode not in (0, 1):
     sys.exit(proc.returncode)
 
 allowed_files = {
+    "LICENSE",
     "NOTICE.md",
     "UPSTREAM_SYNC.md",
     "BRANDING_CHECK.md",
+    "check_branding.sh",
 }
 
 allowed_line = re.compile(
-    r"hermes_cli|set_hermes_home|get_hermes_home|reset_hermes_home|"
-    r"_hermes_home|Hermes-compatible|upstream Hermes|V1 updateability"
+    r"upstream Hermes|Hermes-compatible"
 )
 
 violations = []
@@ -71,8 +72,21 @@ for line in proc.stdout.splitlines():
         continue
     violations.append(line)
 
+tracked = subprocess.run(
+    ["git", "ls-files"],
+    check=True,
+    text=True,
+    stdout=subprocess.PIPE,
+)
+for path in tracked.stdout.splitlines():
+    name = Path(path).name
+    if name in allowed_files:
+        continue
+    if re.search(r"hermes", path, re.IGNORECASE):
+        violations.append(f"{path}: legacy Hermes name in tracked path")
+
 if violations:
-    print(f"Unapproved Hermes branding references: {len(violations)}")
+    print(f"Unapproved legacy Hermes branding references: {len(violations)}")
     for line in violations[:120]:
         print(line)
     sys.exit(1)

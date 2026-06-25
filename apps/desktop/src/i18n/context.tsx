@@ -1,6 +1,6 @@
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 
-import { getVIGILConfigRecord, type VIGILConfigRecord, saveVIGILConfig } from '@/hermes'
+import { getVIGILConfigRecord, type VIGILConfigRecord, saveVIGILConfig } from '@/vigil'
 
 import { TRANSLATIONS } from './catalog'
 import { DEFAULT_LOCALE, localeConfigValue, normalizeLocale } from './languages'

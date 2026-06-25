@@ -10,7 +10,7 @@ description: "VIGIL Agent MCP 配置键、过滤语义及工具策略参考"
 
 概念说明请参阅：
 - [MCP（Model Context Protocol）](/user-guide/features/mcp)
-- [在 VIGIL 中使用 MCP](/guides/use-mcp-with-hermes)
+- [在 VIGIL 中使用 MCP](/guides/use-mcp-with-vigil)
 
 ## 根配置结构
 

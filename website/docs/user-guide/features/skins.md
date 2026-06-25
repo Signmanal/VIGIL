@@ -214,9 +214,9 @@ tool_prefix: "▏"
 
 ## VIGIL Mod — Visual Skin Editor
 
-[VIGIL Mod](https://github.com/cocktailpeanut/hermes-mod) is a community-built web UI for creating and managing skins visually. Instead of writing YAML by hand, you get a point-and-click editor with live preview.
+[VIGIL Mod](https://github.com/cocktailpeanut/vigil-mod) is a community-built web UI for creating and managing skins visually. Instead of writing YAML by hand, you get a point-and-click editor with live preview.
 
-![VIGIL Mod skin editor](https://raw.githubusercontent.com/cocktailpeanut/hermes-mod/master/nous.png)
+![VIGIL Mod skin editor](https://raw.githubusercontent.com/cocktailpeanut/vigil-mod/master/nous.png)
 
 **What it does:**
 
@@ -237,14 +237,14 @@ Find it on [pinokio.computer](https://pinokio.computer) and install with one cli
 **Option 2 — npx (quickest from terminal):**
 
 ```bash
-npx -y hermes-mod
+npx -y vigil-mod
 ```
 
 **Option 3 — Manual:**
 
 ```bash
-git clone https://github.com/cocktailpeanut/hermes-mod.git
-cd hermes-mod/app
+git clone https://github.com/cocktailpeanut/vigil-mod.git
+cd vigil-mod/app
 npm install
 npm start
 ```
@@ -263,7 +263,7 @@ VIGIL Mod respects the `VIGIL_HOME` environment variable, so it works with [prof
 
 ## Operational notes
 
-- Built-in skins load from `hermes_cli/skin_engine.py`.
+- Built-in skins load from `vigil_cli/skin_engine.py`.
 - Unknown skins automatically fall back to `default`.
 - `/skin` updates the active CLI theme immediately for the current session.
 - User skins in `~/.vigil/skins/` take precedence over built-in skins with the same name.

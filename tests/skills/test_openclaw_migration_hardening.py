@@ -20,14 +20,14 @@ SCRIPT_PATH = (
     Path(__file__).resolve().parents[2]
     / "optional-skills"
     / "migration"
-    / "openclaw-migration"
-    / "scripts"
-    / "openclaw_to_hermes.py"
-)
+	    / "openclaw-migration"
+	    / "scripts"
+	    / "openclaw_to_vigil.py"
+	)
 
 
 def _load():
-    spec = importlib.util.spec_from_file_location("openclaw_to_hermes_hard", SCRIPT_PATH)
+    spec = importlib.util.spec_from_file_location("openclaw_to_vigil_hard", SCRIPT_PATH)
     module = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     sys.modules[spec.name] = module
@@ -98,7 +98,7 @@ def test_redact_is_recursive():
 
 def test_redact_preserves_non_secret_keys_and_values():
     mod = _load()
-    input_data = {"name": "hermes", "count": 42, "tags": ["a", "b"]}
+    input_data = {"name": "vigil", "count": 42, "tags": ["a", "b"]}
     out = mod.redact_migration_value(input_data)
     assert out == input_data
 

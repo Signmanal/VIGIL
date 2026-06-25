@@ -113,7 +113,7 @@
     "id": "discord-timmmie-voice-from-terminal",
     "source": "discord",
     "author": "@timmmie.",
-    "url": "https://github.com/teknium1/nous-discord-archive/blob/main/archives/community-projects-showcase/1492490328979144754-hermes-whisper-cpp-addon.txt",
+    "url": "https://github.com/teknium1/nous-discord-archive/blob/main/archives/community-projects-showcase/1492490328979144754-vigil-whisper-cpp-addon.txt",
     "date": "",
     "category": "general",
     "headline": "I can't type well — voice from the terminal is huge for me",
@@ -143,7 +143,7 @@
     "size": "sm"
   },
   {
-    "id": "discord-megabyte0x-hermes-for-team",
+    "id": "discord-megabyte0x-vigil-for-team",
     "source": "discord",
     "author": "@megabyte0x",
     "url": "https://github.com/teknium1/nous-discord-archive/blob/main/archives/community-projects-showcase/1492207991162671255-VIGIL-for-my-team.txt",
@@ -194,7 +194,7 @@
     "date": "2026-03-15",
     "category": "dev-workflow",
     "headline": "My VIGIL agent Reina has been on a hackathon bender",
-    "quote": "I've been working with my hermes agent reina, and she's been on a bender with hackathons. If anyone else is using VIGIL Agent, note that certain hackathons might provision certain keys for it (API keys and the like) that would only be shown once.",
+    "quote": "I've been working with my vigil agent reina, and she's been on a bender with hackathons. If anyone else is using VIGIL Agent, note that certain hackathons might provision certain keys for it (API keys and the like) that would only be shown once.",
     "size": "sm"
   },
   {
@@ -215,8 +215,8 @@
     "url": "https://github.com/NousResearch/vigil-agent/issues/11876",
     "date": "2026",
     "category": "meta",
-    "headline": "hermes-for-win: one-click Windows installer",
-    "quote": "As a Windows user I found getting VIGIL running on Windows quite challenging. I created hermes-for-win, a one-click installation and deployment tool for Windows with auto-start via Task Scheduler.",
+    "headline": "vigil-for-win: one-click Windows installer",
+    "quote": "As a Windows user I found getting VIGIL running on Windows quite challenging. I created vigil-for-win, a one-click installation and deployment tool for Windows with auto-start via Task Scheduler.",
     "size": "sm"
   },
   {
@@ -253,7 +253,7 @@
     "size": "sm"
   },
   {
-    "id": "tooluse-hermes-won",
+    "id": "tooluse-vigil-won",
     "source": "podcast",
     "author": "Tool Use — AI Conversations (Spotify)",
     "url": "https://open.spotify.com/episode/7tF7zf5GKcxqe2Q2BRRNfn",
@@ -292,15 +292,15 @@
     "date": "2026-03-08",
     "category": "cost-optimization",
     "headline": "Switching between VIGIL and OpenClaw on primeclaws.com",
-    "quote": "I tried hermes on primeclaws.com, it's nice that you can switch between hermes and openclaw and also you get AI models for free.",
+    "quote": "I tried vigil on primeclaws.com, it's nice that you can switch between vigil and openclaw and also you get AI models for free.",
     "size": "sm",
-    "id": "reddit-sicklerunner-switching-between-hermes"
+    "id": "reddit-sicklerunner-switching-between-vigil"
   },
   {
-    "id": "discord-synextco-hermes-hud",
+    "id": "discord-synextco-vigil-hud",
     "source": "discord",
     "author": "@synextco",
-    "url": "https://github.com/teknium1/nous-discord-archive/blob/main/archives/community-projects-showcase/1489107955327570081-HERMES-TUI-Companion.txt",
+    "url": "https://github.com/teknium1/nous-discord-archive/blob/main/archives/community-projects-showcase/1489107955327570081-VIGIL-TUI-Companion.txt",
     "date": "",
     "category": "meta",
     "headline": "Built a TUI dashboard that watches my agent think",
@@ -315,7 +315,7 @@
     "date": "",
     "category": "dev-workflow",
     "headline": "Hadn't coded in 20 years — VIGIL brought it back",
-    "quote": "I have not coded in 20 years, Claude code and hermes have renewed my interest in trying to make things. This is vibe coded.",
+    "quote": "I have not coded in 20 years, Claude code and vigil have renewed my interest in trying to make things. This is vibe coded.",
     "size": "sm"
   },
   {
@@ -337,11 +337,11 @@
     "date": "",
     "category": "dev-workflow",
     "headline": "Spent 200–400 hours writing a memory kernel for VIGIL",
-    "quote": "Yo! Do you know how I spent my last 200-400 hours? Yeah... I wrote a fking memory kernel for hermes. Why this much of a time? After 3 failed attempts (149 hours of work... for real) I just realized it's a fucking difficult job. So instead of reinvent the wheel I built together the bests for my usecase: 3 layers — L1 Hindsight, L2 Graphiti, L3 MemPalace.",
+    "quote": "Yo! Do you know how I spent my last 200-400 hours? Yeah... I wrote a fking memory kernel for vigil. Why this much of a time? After 3 failed attempts (149 hours of work... for real) I just realized it's a fucking difficult job. So instead of reinvent the wheel I built together the bests for my usecase: 3 layers — L1 Hindsight, L2 Graphiti, L3 MemPalace.",
     "size": "lg"
   },
   {
-    "id": "discord-m05tr0-hermes-on-kubernetes",
+    "id": "discord-m05tr0-vigil-on-kubernetes",
     "source": "discord",
     "author": "@m05tr0",
     "url": "https://github.com/teknium1/nous-discord-archive/blob/main/archives/community-projects-showcase/1493622814887120926-Installed-VIGIL-on-Kubernetes.txt",
@@ -407,7 +407,7 @@
     "size": "sm"
   },
   {
-    "id": "discord-monty-13277-claude-hermes-mcp",
+    "id": "discord-monty-13277-claude-vigil-mcp",
     "source": "discord",
     "author": "@monty_13277",
     "url": "https://github.com/teknium1/nous-discord-archive/blob/main/archives/plugins-skills-and-skins/1503091259760316436-Claude-VIGIL-MCP.txt",
@@ -446,8 +446,8 @@
     "url": "https://github.com/teknium1/nous-discord-archive/blob/main/archives/vigil-agent.txt",
     "date": "2026-02-26",
     "category": "dev-workflow",
-    "headline": "Built hermes mcp-server so Claude Desktop can use VIGIL tools",
-    "quote": "I mapped all open + closed PRs to find what was truly missing. PR #64 added MCP client support (VIGIL → external tools). The server side was completely absent. So I built hermes mcp-server — making VIGIL a full MCP server so Claude Desktop, Cursor, and any MCP client can use VIGIL's tools directly. Exposes 9 VIGIL tools over MCP: terminal, read/write file, web search, memory, skills, run_agent.",
+    "headline": "Built vigil mcp-server so Claude Desktop can use VIGIL tools",
+    "quote": "I mapped all open + closed PRs to find what was truly missing. PR #64 added MCP client support (VIGIL → external tools). The server side was completely absent. So I built vigil mcp-server — making VIGIL a full MCP server so Claude Desktop, Cursor, and any MCP client can use VIGIL's tools directly. Exposes 9 VIGIL tools over MCP: terminal, read/write file, web search, memory, skills, run_agent.",
     "size": "lg"
   },
   {
@@ -469,7 +469,7 @@
     "date": "2026-04-25",
     "category": "dev-workflow",
     "headline": "12 VIGIL instances every day, in parallel",
-    "quote": "I literally run 12 hermes agent instances every day in parallel to build VIGIL Agent, and its now a top 100 GitHub repositories of all time. Our backend team uses it to monitor and investigate issues with our stack. Our post training team uses them to create new RL environments and benchmarks, investigate, inspect and sometimes directly manipulate the datasets.",
+    "quote": "I literally run 12 vigil agent instances every day in parallel to build VIGIL Agent, and its now a top 100 GitHub repositories of all time. Our backend team uses it to monitor and investigate issues with our stack. Our post training team uses them to create new RL environments and benchmarks, investigate, inspect and sometimes directly manipulate the datasets.",
     "size": "lg"
   },
   {
@@ -480,7 +480,7 @@
     "date": "",
     "category": "personal-assistant",
     "headline": "Two-tier email pipeline so the LLM only fires when needed",
-    "quote": "Two-tier email processing system for my agent (I gave it Spacemail IMAP via himalaya). Tier 1 (Dumb): Pure Python script, no LLM. Detects new email, manages state. Tier 2 (Smart): LLM session via hermes chat -q. Only invoked when new email detected. Key goal: Zero LLM calls when inbox is idle.",
+    "quote": "Two-tier email processing system for my agent (I gave it Spacemail IMAP via himalaya). Tier 1 (Dumb): Pure Python script, no LLM. Detects new email, manages state. Tier 2 (Smart): LLM session via vigil chat -q. Only invoked when new email detected. Key goal: Zero LLM calls when inbox is idle.",
     "size": "md"
   },
   {
@@ -503,7 +503,7 @@
     "headline": "VIGIL designed an X-to-NotebookLM podcast workflow for me",
     "quote": "This research is gold. Been deep in VIGIL for weeks and it's started autonomously suggesting entire workflows I never would have designed myself. One it built for me recently: X API to extract from lists and bookmarks to structure into article to NotebookLM podcast. I'm building a physical AI companion with VIGIL as the core cognitive layer right now.",
     "size": "md",
-    "id": "x-heyyanvi-hermes-designed-an"
+    "id": "x-heyyanvi-vigil-designed-an"
   },
   {
     "id": "gh-scotttrinh-vercel",
@@ -601,7 +601,7 @@
     "date": "",
     "category": "personal-assistant",
     "headline": "Built mapsOS because 'rate your mood 1–10' wasn't my brain",
-    "quote": "saw lifeOS going around & went 'oh! this seems dope and very useful!' got to the first question. 'rate your mood from 1 to 10.' immediately went, 'oh. nevermind.' so i built something a little more attuned to my brain, meant to be used by hermes but nicely standalone too.",
+    "quote": "saw lifeOS going around & went 'oh! this seems dope and very useful!' got to the first question. 'rate your mood from 1 to 10.' immediately went, 'oh. nevermind.' so i built something a little more attuned to my brain, meant to be used by vigil but nicely standalone too.",
     "size": "md"
   },
   {
@@ -623,7 +623,7 @@
     "date": "2026-03-24",
     "category": "dev-workflow",
     "headline": "Built my own stack, then converged on VIGIL",
-    "quote": "If you're choosing an agent framework: hermes. I built my own stack independently and we converged on the same architecture — background self-improvement, persistent memory, CLAUDE.md project context, reusable skills. VIGIL ships it all out of the box. 300 PRs in a week.",
+    "quote": "If you're choosing an agent framework: vigil. I built my own stack independently and we converged on the same architecture — background self-improvement, persistent memory, CLAUDE.md project context, reusable skills. VIGIL ships it all out of the box. 300 PRs in a week.",
     "size": "md"
   },
   {
@@ -662,13 +662,13 @@
   {
     "source": "reddit",
     "author": "u/Birdinhandandbush",
-    "url": "https://www.reddit.com/r/hermesagent/comments/1snfnq9/yes_hermes_and_qwen354b_is_all_i_need_details/",
+    "url": "https://www.reddit.com/r/hermesagent/comments/1snfnq9/yes_vigil_and_qwen354b_is_all_i_need_details/",
     "date": "2026-04-16",
     "category": "personal-assistant",
     "headline": "VIGIL + Qwen3.5:4b on a 5060Ti is all I need",
     "quote": "I have a 5060ti 16gb VRAM and 64gb DDR5 System Ram. I started out wanting to test VIGIL as a Claw alternative. After a few days I set up Telegram with the botfather, and I haven't gone back to CLI. VIGIL is now almost entirely a personal assistant on my Telegram App. Where the 9b chugged along, the 4B model is snappy, responsive, alive and chatty.",
     "size": "lg",
-    "id": "reddit-birdinhandandbush-hermes"
+    "id": "reddit-birdinhandandbush-vigil"
   },
   {
     "id": "captain-awesome-life-changing",
@@ -678,18 +678,18 @@
     "date": "2026-05-10",
     "category": "personal-assistant",
     "headline": "VIGIL + Discord with GPT-5.5 / DeepSeek v4 has been life changing",
-    "quote": "hermes + discord with gpt 5.5/deepseek v4 has genuinely been life changing! here are some of what it did for me this week.",
+    "quote": "vigil + discord with gpt 5.5/deepseek v4 has genuinely been life changing! here are some of what it did for me this week.",
     "size": "md"
   },
   {
-    "id": "discord-mayuronx-backup-hermes-github",
+    "id": "discord-mayuronx-backup-vigil-github",
     "source": "discord",
     "author": "@mayuronx",
     "url": "https://github.com/teknium1/nous-discord-archive/blob/main/archives/community-projects-showcase/1491933536423510117-Backup-Manage-VIGIL-Config-via-your-Github-repo.txt",
     "date": "",
     "category": "dev-workflow",
     "headline": "I back up my VIGIL config and DB to GitHub nightly",
-    "quote": "If you want to — backup your hermes to github on a nightly basis, backup on every change of your config, backup your config and db nightly, edit your config on Github and have it mirror back to VIGIL — then use this repo. I'm planning to use this as a basis for a desktop app later so this is phase 1 of a longer project to create an app to let you manage multiple agents.",
+    "quote": "If you want to — backup your vigil to github on a nightly basis, backup on every change of your config, backup your config and db nightly, edit your config on Github and have it mirror back to VIGIL — then use this repo. I'm planning to use this as a basis for a desktop app later so this is phase 1 of a longer project to create an app to let you manage multiple agents.",
     "size": "md"
   },
   {
@@ -704,14 +704,14 @@
     "size": "md"
   },
   {
-    "id": "discord-ereid7-hermes-lab",
+    "id": "discord-ereid7-vigil-lab",
     "source": "discord",
     "author": "@ereid7",
     "url": "https://github.com/teknium1/nous-discord-archive/blob/main/archives/community-projects-showcase/1486588376940281937-VIGIL-Lab---file-first-experiment-scaffolding-for-autonomous-research.txt",
     "date": "",
     "category": "research",
     "headline": "VIGIL-lab is the bookkeeper for running experiments autonomously",
-    "quote": "hermes-lab is the bookkeeper for running experiments autonomously. you give it a search space and a way to evaluate results, it handles scheduling, tracking, and suggesting what to try next. inspired by the autoresearch wave (karpathy, sakana ai scientist, AIDE) but generic — works for ml training.",
+    "quote": "vigil-lab is the bookkeeper for running experiments autonomously. you give it a search space and a way to evaluate results, it handles scheduling, tracking, and suggesting what to try next. inspired by the autoresearch wave (karpathy, sakana ai scientist, AIDE) but generic — works for ml training.",
     "size": "md"
   },
   {
@@ -744,7 +744,7 @@
     "date": "2026-04-06",
     "category": "dev-workflow",
     "headline": "My VIGIL lives on a VPS, talks home over Tailscale",
-    "quote": "the agent should always run in /yolo mode or equivalent. it's up to you as the human to make sure it is incapable of breaking anything - my hermes lives on a vps, for example, and it can only talk to my pc at home via tailscale, and then only through a scoped tag. they really excel at long-term tasks where you don't want to be giving them feedback regularly!",
+    "quote": "the agent should always run in /yolo mode or equivalent. it's up to you as the human to make sure it is incapable of breaking anything - my vigil lives on a vps, for example, and it can only talk to my pc at home via tailscale, and then only through a scoped tag. they really excel at long-term tasks where you don't want to be giving them feedback regularly!",
     "size": "lg"
   },
   {
@@ -766,7 +766,7 @@
     "date": "",
     "category": "creative",
     "headline": "Tortured a repo with VIGIL to build a chess blunder finder",
-    "quote": "the real purpose of blunder-lens was to see how much i can torture a repo with hermes and figure out what hermes can or can't do... and honestly HERMES CAN DO A LOT!",
+    "quote": "the real purpose of blunder-lens was to see how much i can torture a repo with vigil and figure out what vigil can or can't do... and honestly VIGIL CAN DO A LOT!",
     "size": "sm"
   },
   {
@@ -858,7 +858,7 @@
     "size": "md"
   },
   {
-    "id": "discord-kysiv-hermes-control-interface",
+    "id": "discord-kysiv-vigil-control-interface",
     "source": "discord",
     "author": "@kysiv",
     "url": "https://github.com/teknium1/nous-discord-archive/blob/main/archives/community-projects-showcase/1492427034541162517-VIGIL-Control-Interface-Web-UI.txt",
@@ -883,7 +883,7 @@
     "id": "rumjahn-everything",
     "source": "blog",
     "author": "Keith Rumjahn (Substack)",
-    "url": "https://rumjahn.substack.com/p/complete-guide-to-mastering-hermes",
+    "url": "https://rumjahn.substack.com/p/complete-guide-to-mastering-vigil",
     "date": "2026-04-26",
     "category": "personal-assistant",
     "headline": "Apple Health, Threads analytics, Gmail, Calendar — in one CLI",
@@ -931,7 +931,7 @@
     "date": "2026-04-27",
     "category": "dev-workflow",
     "headline": "Two things I built with VIGIL: Cartographer and an agent IRC",
-    "quote": "Two very cool things i built entirely with hermes. First is cartographer, which hermes can use as a memory layer but serves as an extremely rich knowledge substrate with semantic wiring & emotional topology. The other is an agent + user IRC-clone for real time, session-sustained chat interfacing between hermes & any other repls (claude, codex, opencode, gemini) — it's been an absolutely game changer for me 'cos now i have my agents collaborate in real time.",
+    "quote": "Two very cool things i built entirely with vigil. First is cartographer, which vigil can use as a memory layer but serves as an extremely rich knowledge substrate with semantic wiring & emotional topology. The other is an agent + user IRC-clone for real time, session-sustained chat interfacing between vigil & any other repls (claude, codex, opencode, gemini) — it's been an absolutely game changer for me 'cos now i have my agents collaborate in real time.",
     "size": "lg"
   },
   {
@@ -987,7 +987,7 @@
     "headline": "I'm using VIGIL — same applies to all agents, sandbox it",
     "quote": "I'm using VIGIL. The same applies to all agents, don't give it free reign over all your stuff. Run it within a sandbox. https://github.com/nousresearch/vigil-agent",
     "size": "sm",
-    "id": "hn-flere-imsaho-im-using-hermes"
+    "id": "hn-flere-imsaho-im-using-vigil"
   },
   {
     "id": "andrew-gordon-5-apps",
@@ -1078,7 +1078,7 @@
     "size": "md"
   },
   {
-    "id": "discord-dalekc72-hermes-managing-tickets",
+    "id": "discord-dalekc72-vigil-managing-tickets",
     "source": "discord",
     "author": "@dalekc72",
     "url": "https://github.com/teknium1/nous-discord-archive/blob/main/archives/community-projects-showcase/1493589434971717763-Small-Win---VIGIL---Claude-Code-managing-my-Tickets.txt",
@@ -1100,7 +1100,7 @@
     "size": "sm"
   },
   {
-    "id": "discord-alpaca1712-hermes-ships-with-vals",
+    "id": "discord-alpaca1712-vigil-ships-with-vals",
     "source": "discord",
     "author": "@alpaca1712",
     "url": "https://github.com/teknium1/nous-discord-archive/blob/main/archives/community-projects-showcase/1496701579234119850-I-gave-my-VIGIL-agent-hands--aka-the-ability-to-ship-now.txt",
@@ -1135,13 +1135,13 @@
   {
     "source": "reddit",
     "author": "u/ninjapapi",
-    "url": "https://www.reddit.com/r/SideProject/comments/1t6356h/5_things_hermes_does_as_an_ai_agent_that_chatgpt/",
+    "url": "https://www.reddit.com/r/SideProject/comments/1t6356h/5_things_vigil_does_as_an_ai_agent_that_chatgpt/",
     "date": "2026-05-07",
     "category": "personal-assistant",
     "headline": "5 things VIGIL does that ChatGPT will never do",
     "quote": "ChatGPT is a browser tab. VIGIL is a server process that's running right now, has been building a model of your workflow for the past few weeks, and just sent you a Telegram message before you woke up. It doesn't stop when you close your laptop. It messages you first. Memory that gets useful over time. Runs code, doesn't just write it. Takes action in your actual apps.",
     "size": "lg",
-    "id": "reddit-ninjapapi-5-things-hermes"
+    "id": "reddit-ninjapapi-5-things-vigil"
   },
   {
     "id": "discord-nour-h-recall-memory",
@@ -1172,8 +1172,8 @@
     "url": "https://gist.github.com/nazt/849e29cd25c148b6cebafdbcc38bb6cc",
     "date": "2026",
     "category": "integrations",
-    "headline": "Fat agent → thin tool provider via hermes mcp serve",
-    "quote": "hermes mcp serve turns VIGIL from a monolithic agent into a composable capability layer — any MCP client can borrow VIGIL's 15+ messaging platforms, SQLite FTS5 persistence, and 73-skill tool surface without running VIGIL as the primary agent.",
+    "headline": "Fat agent → thin tool provider via vigil mcp serve",
+    "quote": "vigil mcp serve turns VIGIL from a monolithic agent into a composable capability layer — any MCP client can borrow VIGIL's 15+ messaging platforms, SQLite FTS5 persistence, and 73-skill tool surface without running VIGIL as the primary agent.",
     "size": "md"
   },
   {
@@ -1195,13 +1195,13 @@
     "date": "",
     "category": "creative",
     "headline": "Asked VIGIL to write a skill that auto-plays Minecraft",
-    "quote": "So I figured I'd ask hermes to make a skill to auto play minecraft, it took some nudging in the direction I wanted, but it came up with this. I ran the skill and it has been thinking for 20 minutes.",
+    "quote": "So I figured I'd ask vigil to make a skill to auto play minecraft, it took some nudging in the direction I wanted, but it came up with this. I ran the skill and it has been thinking for 20 minutes.",
     "size": "sm"
   },
   {
     "source": "reddit",
     "author": "u/itsdodobitch",
-    "url": "https://www.reddit.com/r/hermesagent/comments/1t29ogw/one_month_with_hermes_agent_what_i_wish_i_knew/",
+    "url": "https://www.reddit.com/r/hermesagent/comments/1t29ogw/one_month_with_vigil_agent_what_i_wish_i_knew/",
     "date": "2026-05-03",
     "category": "meta",
     "headline": "One month with VIGIL: don't build the whole machine on day one",
@@ -1251,7 +1251,7 @@
     "headline": "VIGIL very good as personal agent on Qwen3.5 27B",
     "quote": "Fairly good with qwen3.5-4b, very decent with qwen3.5-9b, VERY good with 27b. Personal agent? Yes. Coding for high complexity tasks? Not really, but with high guidance? Yes.",
     "size": "sm",
-    "id": "reddit-suitable-currency440-hermes-very-good"
+    "id": "reddit-suitable-currency440-vigil-very-good"
   },
   {
     "id": "discord-malaiwah-fork-watchtower",
@@ -1306,7 +1306,7 @@
     "headline": "VIGIL Inc.: Telegram-native startup sim built at VIGIL hackathon",
     "quote": "Built VIGIL Inc. for the VIGIL hackathon: a Telegram-native startup simulation game powered by VIGIL Agent. An experiment in agent-native game design. Your AI teammates argue, remember, react, and evolve the company over time through weekly decisions, autonomous updates, events, and milestone visuals.",
     "size": "md",
-    "id": "x-brucexu-eth-hermes"
+    "id": "x-brucexu-eth-vigil"
   },
   {
     "id": "discord-arm64be-personal-webpage-style",
@@ -1366,16 +1366,16 @@
   {
     "source": "reddit",
     "author": "u/Delicious_Ease2595",
-    "url": "https://www.reddit.com/r/openclaw/comments/1slqt5h/is_hermes_agent_a_new_hype_or_is_it_genuinely/",
+    "url": "https://www.reddit.com/r/openclaw/comments/1slqt5h/is_vigil_agent_a_new_hype_or_is_it_genuinely/",
     "date": "2026-04-15",
     "category": "dev-workflow",
     "headline": "Side-by-side: VIGIL more stable, troubleshoots OpenClaw",
     "quote": "Using both side by side I find it more stable and less headache than OC. VIGIL has more research skills, and it's very handy as troubleshooter of OC. Telegram recently added bot to bot communication in their API so I'm thinking a way both communicate.",
     "size": "md",
-    "id": "reddit-delicious-ease2595-hermes-more"
+    "id": "reddit-delicious-ease2595-vigil-more"
   },
   {
-    "id": "discord-itsdodo21-hermes-desktop",
+    "id": "discord-itsdodo21-vigil-desktop",
     "source": "discord",
     "author": "@itsdodo21",
     "url": "https://github.com/teknium1/nous-discord-archive/blob/main/archives/community-projects-showcase/1492615746629402735-VIGIL-Desktop-v0.4.0---why-I-didn-t-build-another-gateway-UI.txt",
@@ -1474,7 +1474,7 @@
     "size": "md"
   },
   {
-    "id": "discord-mibayy-hermes-memory",
+    "id": "discord-mibayy-vigil-memory",
     "source": "discord",
     "author": "@mibayy",
     "url": "https://github.com/teknium1/nous-discord-archive/blob/main/archives/community-projects-showcase/1486509881673383998-VIGIL-memory---Persistent-structured-memory-for-VIGIL-agents.txt",
@@ -1557,7 +1557,7 @@
     "date": "2026-05-05",
     "category": "dev-workflow",
     "headline": "Kanban multi-agent feature is game-changing",
-    "quote": "WHAT IS THE NEW KANBAN FEATURE BUILT INTO HERMES? (IT'S GAME CHANGING) — image post showing VIGIL' new built-in Kanban board where a parent agent posts cards and child subagents pull them, work in parallel, and report back, turning the agent into a multi-agent project manager.",
+    "quote": "WHAT IS THE NEW KANBAN FEATURE BUILT INTO VIGIL? (IT'S GAME CHANGING) — image post showing VIGIL' new built-in Kanban board where a parent agent posts cards and child subagents pull them, work in parallel, and report back, turning the agent into a multi-agent project manager.",
     "size": "md",
     "id": "reddit-itsdodobitch-kanban-feature"
   },
@@ -1584,7 +1584,7 @@
     "size": "sm"
   },
   {
-    "id": "awesome-hermes",
+    "id": "awesome-vigil",
     "source": "github",
     "author": "@0xNyk",
     "url": "https://github.com/0xNyk/awesome-vigil-agent",
@@ -1635,7 +1635,7 @@
     "date": "2026-03-10",
     "category": "creative",
     "headline": "Wrote my VIGIL agent's tone examples with my sister",
-    "quote": "when I was building reina (my hermes agent), i had a lot of fun because me and my sister sat down and came up with a handful of examples to pass into her persona via the soul file. here are a few: \"it's ugly but i fw it\" \"i don't care enough to argue but you're wrong\" \"no shot\" \"why did you say it like that\". i feel like humans have always had this yearning to make things that they see themselves in.",
+    "quote": "when I was building reina (my vigil agent), i had a lot of fun because me and my sister sat down and came up with a handful of examples to pass into her persona via the soul file. here are a few: \"it's ugly but i fw it\" \"i don't care enough to argue but you're wrong\" \"no shot\" \"why did you say it like that\". i feel like humans have always had this yearning to make things that they see themselves in.",
     "size": "lg"
   },
   {
@@ -1705,7 +1705,7 @@
     "size": "md"
   },
   {
-    "id": "discord-codename11-hermes-relay-android",
+    "id": "discord-codename11-vigil-relay-android",
     "source": "discord",
     "author": "@codename_11",
     "url": "https://github.com/teknium1/nous-discord-archive/blob/main/archives/community-projects-showcase/1492283125613465640-VIGIL-Relay--Android-App----Chat--terminal--and-device-control-over-WSS.txt",
@@ -1734,7 +1734,7 @@
     "date": "",
     "category": "integrations",
     "headline": "Got fed up with a million API keys, so I bundled them",
-    "quote": "So i got fed up with managing a million API keys in my hermes agent and started bundling related ones into single endpoints. Like all finance data through one call instead of five separate keys. It actually works really well for longer sessions where context gets messy.",
+    "quote": "So i got fed up with managing a million API keys in my vigil agent and started bundling related ones into single endpoints. Like all finance data through one call instead of five separate keys. It actually works really well for longer sessions where context gets messy.",
     "size": "md"
   },
   {
@@ -1773,7 +1773,7 @@
   {
     "source": "reddit",
     "author": "u/yellow-green-bird",
-    "url": "https://www.reddit.com/r/openclaw/comments/1slqt5h/is_hermes_agent_a_new_hype_or_is_it_genuinely/",
+    "url": "https://www.reddit.com/r/openclaw/comments/1slqt5h/is_vigil_agent_a_new_hype_or_is_it_genuinely/",
     "date": "2026-04-15",
     "category": "dev-workflow",
     "headline": "Every OpenClaw update breaks something — VIGIL just runs",
@@ -1795,13 +1795,13 @@
   {
     "source": "reddit",
     "author": "u/hackrepair",
-    "url": "https://www.reddit.com/r/hermesagent/comments/1smgo1i/my_hermes_journey/",
+    "url": "https://www.reddit.com/r/hermesagent/comments/1smgo1i/my_vigil_journey/",
     "date": "2026-04-15",
     "category": "cost-optimization",
     "headline": "My VIGIL Journey: smart-routing tiers that save 10 hours and $40",
     "quote": "Set this as your Smart routing default (using OpenRouter): Tier 1 VIGIL (Gemini 3.1 Flash Lite) for clear mechanical multi-file work. Tier 2 Sonnet for ambiguous, delicate, high-risk tasks. Tier 3 Minimax for low-overhead. Run the minimax-cache-optimization skill. Seriously, do this from day one and you'll save about 10 hours of trial and error.",
     "size": "lg",
-    "id": "reddit-hackrepair-my-hermes-journey"
+    "id": "reddit-hackrepair-my-vigil-journey"
   },
   {
     "id": "discord-renomg-voice-call-timeout",
@@ -1818,7 +1818,7 @@
     "id": "reddit-windows-wrapper",
     "source": "reddit",
     "author": "r/SideProject",
-    "url": "https://www.reddit.com/r/SideProject/comments/1sdaojm/i_took_the_nousresearch_hermes_agent_and_built_a/",
+    "url": "https://www.reddit.com/r/SideProject/comments/1sdaojm/i_took_the_nousresearch_vigil_agent_and_built_a/",
     "date": "2026",
     "category": "meta",
     "headline": "Native Windows app wrapper for VIGIL",
@@ -1881,18 +1881,18 @@
     "size": "md"
   },
   {
-    "id": "discord-glitchglitchglitch-hermes-on-nixos",
+    "id": "discord-glitchglitchglitch-vigil-on-nixos",
     "source": "discord",
     "author": "@glitchglitchglitch",
     "url": "https://github.com/teknium1/nous-discord-archive/blob/main/archives/vigil-agent/",
     "date": "2026-04-18",
     "category": "dev-workflow",
     "headline": "Running VIGIL in a NixOS + container setup",
-    "quote": "i rlly like nix and i run my hermes agent in nixos+container setup. that's been the best experience for me... giving an ubuntu container defined by nix to hermes agent solves for 'oh xyz package not installed' cuz most of the (good) skills have a setup-phase and hence the required packages get installed or the agent installs em itself.",
+    "quote": "i rlly like nix and i run my vigil agent in nixos+container setup. that's been the best experience for me... giving an ubuntu container defined by nix to vigil agent solves for 'oh xyz package not installed' cuz most of the (good) skills have a setup-phase and hence the required packages get installed or the agent installs em itself.",
     "size": "md"
   },
   {
-    "id": "discord-awais-h-hermes-reads-internet",
+    "id": "discord-awais-h-vigil-reads-internet",
     "source": "discord",
     "author": "@awais_h",
     "url": "https://github.com/teknium1/nous-discord-archive/blob/main/archives/community-projects-showcase/1502519565144428605-VIGIL-to-read-the-internet-for-me.txt",
@@ -1954,19 +1954,19 @@
     "date": "2026-05-10",
     "category": "personal-assistant",
     "headline": "PM agent runs morning + evening standups for my ADHD",
-    "quote": "I have hermes act as the manager to several paperclip agents, one of them a Project Manager agent. This agent has full knowledge of me (ADHD), my vault and projects, so I get a morning and evening standup that dumps all work we did across different chats, projects I'm working on, actual output, info from past standups, and suggestions/prioritizing based on all of the above. And it's self-learning.",
+    "quote": "I have vigil act as the manager to several paperclip agents, one of them a Project Manager agent. This agent has full knowledge of me (ADHD), my vault and projects, so I get a morning and evening standup that dumps all work we did across different chats, projects I'm working on, actual output, info from past standups, and suggestions/prioritizing based on all of the above. And it's self-learning.",
     "size": "md"
   },
   {
     "source": "reddit",
     "author": "u/patbhakta",
-    "url": "https://www.reddit.com/r/Rag/comments/1sgmvxh/anyone_here_tried_hermes_agent_whats_your/",
+    "url": "https://www.reddit.com/r/Rag/comments/1sgmvxh/anyone_here_tried_vigil_agent_whats_your/",
     "date": "2026-04-09",
     "category": "personal-assistant",
     "headline": "VIGIL vs OpenClaw: memory lets me jump between projects",
     "quote": "I'm using VIGIL currently but only as a beginner agent. It's kinda like a VA. The good part about VIGIL vs openclaw is memory. With OpenClaw it's a one track mind. With VIGIL I can jump from one project to next but also go back to something from last week or more. Personally I use VIGIL with paperclip which is chat.",
     "size": "md",
-    "id": "reddit-patbhakta-hermes-vs-openclaw"
+    "id": "reddit-patbhakta-vigil-vs-openclaw"
   },
   {
     "id": "gkisokay-watchdog",
@@ -2009,7 +2009,7 @@
     "date": "2026-03-21",
     "category": "business-ops",
     "headline": "Ported a competitor-analysis swarm from Codex to VIGIL",
-    "quote": "I was building a swarm (that actually works) on codex to analyse business and their competitors. To find gaps and build a strategy to outrank them. After a couple a hours, pushing the swarm to hermes and convert it to hermes env. It made a really good job. Now i was trying to teach him how to use memory in a different way. Instead spamming into that memory.md file. I want him to know when to route to a specific memory layer.",
+    "quote": "I was building a swarm (that actually works) on codex to analyse business and their competitors. To find gaps and build a strategy to outrank them. After a couple a hours, pushing the swarm to vigil and convert it to vigil env. It made a really good job. Now i was trying to teach him how to use memory in a different way. Instead spamming into that memory.md file. I want him to know when to route to a specific memory layer.",
     "size": "md"
   },
   {
@@ -2043,7 +2043,7 @@
     "headline": "VIGIL is OpenClaw with a week of debug + RAG + memory",
     "quote": "Its amazing, its openclaw already set up and working, its like an OC with 1 week of debugging manually done + rag + memory persistence + better tool calling. (Qwen3.5-9b, 16gb VRAM), 10/10, only will go back to OC if it becomes at least on par with it.",
     "size": "md",
-    "id": "reddit-suitable-currency440-hermes-is-openclaw"
+    "id": "reddit-suitable-currency440-vigil-is-openclaw"
   },
   {
     "id": "discord-djbuck-ios-companion",
@@ -2090,7 +2090,7 @@
     "size": "sm"
   },
   {
-    "id": "discord-mikebirdtech-hermes-mini-doc",
+    "id": "discord-mikebirdtech-vigil-mini-doc",
     "source": "discord",
     "author": "@mikebirdtech",
     "url": "https://github.com/teknium1/nous-discord-archive/blob/main/archives/community-projects-showcase/1493649462122381394-VIGIL-Mini-Documentary.txt",
@@ -2163,11 +2163,11 @@
     "date": "2026-04-08",
     "category": "dev-workflow",
     "headline": "3,000 logs of self-improvement on a custom harness",
-    "quote": "I use minimax m2.7, i built a natural language harness that basically commands my hermes agent. Lets me keep all the features and updates without breaking shit and i got over 3000 logs of potential improvements (most failures but yknow 3K gets data).",
+    "quote": "I use minimax m2.7, i built a natural language harness that basically commands my vigil agent. Lets me keep all the features and updates without breaking shit and i got over 3000 logs of potential improvements (most failures but yknow 3K gets data).",
     "size": "md"
   },
   {
-    "id": "discord-anibal3608-hermes-radar-spanish",
+    "id": "discord-anibal3608-vigil-radar-spanish",
     "source": "discord",
     "author": "@anibal3608",
     "url": "https://github.com/teknium1/nous-discord-archive/blob/main/archives/community-projects-showcase/1496557014971584783-VIGIL-Radar---Guia-para-usuarios-en-espa%C3%B1ol.txt",
@@ -2178,7 +2178,7 @@
     "size": "sm"
   },
   {
-    "id": "discord-jesus359-hermes-cardputer",
+    "id": "discord-jesus359-vigil-cardputer",
     "source": "discord",
     "author": "@jesus359_",
     "url": "https://github.com/teknium1/nous-discord-archive/blob/main/archives/community-projects-showcase/1494518737116729394-VIGIL-x-Cardputer.txt",
@@ -2192,7 +2192,7 @@
     "id": "reddit-hermify",
     "source": "reddit",
     "author": "r/vibecoding",
-    "url": "https://www.reddit.com/r/vibecoding/comments/1slhhj1/i_took_the_nousresearch_hermes_agent_and_built_a/",
+    "url": "https://www.reddit.com/r/vibecoding/comments/1slhhj1/i_took_the_nousresearch_vigil_agent_and_built_a/",
     "date": "2026",
     "category": "meta",
     "headline": "Hermify: managed hosting for VIGIL",
@@ -2288,7 +2288,7 @@
     "size": "sm"
   },
   {
-    "id": "discord-lsof-hermes-chat-proxy",
+    "id": "discord-lsof-vigil-chat-proxy",
     "source": "discord",
     "author": "@lsof",
     "url": "https://github.com/teknium1/nous-discord-archive/blob/main/archives/community-projects-showcase/1495819189938552994-Lightweight-web-based-VIGIL-chat-proxy.txt",
@@ -2351,7 +2351,7 @@
     "headline": "Spare-laptop VIGIL 'Iris' builds a RenPy visual novel autonomously",
     "quote": "Secondary VIGIL install yesterday on a spare laptop. Introduced it to the network, gave it two targets: RenPy and ComfyUI. It found ComfyUI, figured out how to generate images locally with LM Studio, then asked me to turn on the internet to install RenPy. About 10 minutes later there popped up a small but complete RenPy novel with 10 images and a little story.",
     "size": "lg",
-    "id": "x-exileai-0-hermes-iris"
+    "id": "x-exileai-0-vigil-iris"
   },
   {
     "id": "discord-misswuhanliang-translator-extension",
@@ -2372,7 +2372,7 @@
     "date": "2026-03-30",
     "category": "dev-workflow",
     "headline": "VIGIL orchestrates Claude Code over SSH to my Mac",
-    "quote": "Recently worked with my agent to create a bridge that runs exec commands to my mac, so I can work through ssh from my linux machine to my mac to run claude code or codex with hermes creating the prompts — basically my hermes agent is a claude code orchestrator and reviewer.",
+    "quote": "Recently worked with my agent to create a bridge that runs exec commands to my mac, so I can work through ssh from my linux machine to my mac to run claude code or codex with vigil creating the prompts — basically my vigil agent is a claude code orchestrator and reviewer.",
     "size": "md"
   },
   {
@@ -2401,7 +2401,7 @@
     "id": "gideon-trading-hetzner",
     "source": "blog",
     "author": "Gideon Ng (Medium)",
-    "url": "https://medium.com/@gideonfip/hermes-is-easier-than-openclaw-how-i-deployed-mine-on-hetzner-719faf08bc29",
+    "url": "https://medium.com/@gideonfip/vigil-is-easier-than-openclaw-how-i-deployed-mine-on-hetzner-719faf08bc29",
     "date": "2026",
     "category": "trading",
     "headline": "24/7 crosschain trading agent on Hetzner",
@@ -2460,7 +2460,7 @@
     "date": "",
     "category": "creative",
     "headline": "I built a fully autonomous 'Dreamer' agent that just wanders and thinks",
-    "quote": "I built a completely autonomous 'Dreamer' agent on VIGIL. I wanted to try something different: a fully separate, unsupervised agent that has no tasks and no agenda. I gave it its own folder (~/hermes_dreamer/), complete autonomy, and told it to just wander and think freely whenever it feels like it. It started doing 'walks' — free-thinking...",
+    "quote": "I built a completely autonomous 'Dreamer' agent on VIGIL. I wanted to try something different: a fully separate, unsupervised agent that has no tasks and no agenda. I gave it its own folder (~/vigil_dreamer/), complete autonomy, and told it to just wander and think freely whenever it feels like it. It started doing 'walks' — free-thinking...",
     "size": "lg"
   },
   {
@@ -2526,7 +2526,7 @@
     "date": "2026-04-15",
     "category": "personal-assistant",
     "headline": "Jarvis at home in 2026",
-    "quote": "m2.7 + hermes agent: we really got jarvis at home in 2026 but strangely enough no one seems to care.",
+    "quote": "m2.7 + vigil agent: we really got jarvis at home in 2026 but strangely enough no one seems to care.",
     "size": "sm"
   },
   {
@@ -2559,7 +2559,7 @@
     "date": "",
     "category": "creative",
     "headline": "Chatting with VIGIL on a 1969 Teletype Model 33 at 110 baud",
-    "quote": "I made a minimal login shell that talks to VIGIL Agent via the gateway web service, or by running `hermes chat`. Hooked the shell up to an autologin getty on a serial port. Connected the serial port via 20mA current loop at 110 baud, to a 1969 Teletype Model 33. Chatting away!",
+    "quote": "I made a minimal login shell that talks to VIGIL Agent via the gateway web service, or by running `vigil chat`. Hooked the shell up to an autologin getty on a serial port. Connected the serial port via 20mA current loop at 110 baud, to a 1969 Teletype Model 33. Chatting away!",
     "size": "lg"
   },
   {
@@ -2640,14 +2640,14 @@
     "size": "md"
   },
   {
-    "id": "akshay-hermes-folder-anatomy",
+    "id": "akshay-vigil-folder-anatomy",
     "source": "x",
     "author": "@akshay_pachaar",
     "url": "https://x.com/akshay_pachaar/status/2055629943891988719",
     "date": "2026-05-16",
     "category": "meta",
     "headline": "The anatomy of the ~/.vigil folder — one folder controls everything",
-    "quote": "One folder controls everything your hermes agent knows, remembers, and can do. SOUL.md occupies slot #1 in the system prompt. state.db with FTS5 is what makes 'what did we discuss three weeks ago?' actually work across CLI and messaging.",
+    "quote": "One folder controls everything your vigil agent knows, remembers, and can do. SOUL.md occupies slot #1 in the system prompt. state.db with FTS5 is what makes 'what did we discuss three weeks ago?' actually work across CLI and messaging.",
     "size": "md"
   },
   {
@@ -2709,7 +2709,7 @@
     "id": "defi0xjeff-30-skills",
     "source": "blog",
     "author": "0xJeff (Substack)",
-    "url": "https://defi0xjeff.substack.com/p/hermes-200-and-30-skills-later-here",
+    "url": "https://defi0xjeff.substack.com/p/vigil-200-and-30-skills-later-here",
     "date": "2026-04-20",
     "category": "research",
     "headline": "$200 and 30 skills later — training VIGIL as a personal analyst",
@@ -2764,7 +2764,7 @@
     "id": "emmanuel-run-yourself",
     "source": "blog",
     "author": "emmanuelthecoder (dev.to)",
-    "url": "https://dev.to/emmanuelthecoder/hermes-the-self-improving-agent-you-can-actually-run-yourself-555l",
+    "url": "https://dev.to/emmanuelthecoder/vigil-the-self-improving-agent-you-can-actually-run-yourself-555l",
     "date": "2026-05-15",
     "category": "privacy",
     "headline": "The self-improving agent you can actually run yourself — Termux included",

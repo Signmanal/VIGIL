@@ -90,10 +90,10 @@ def _normalize_env_dict(env: dict | None) -> dict[str, str]:
     return normalized
 
 
-def _load_hermes_env_vars() -> dict[str, str]:
+def _load_vigil_env_vars() -> dict[str, str]:
     """Load ~/.vigil/.env values without failing Docker command execution."""
     try:
-        from hermes_cli.config import load_env
+        from vigil_cli.config import load_env
 
         return load_env() or {}
     except Exception:
@@ -128,7 +128,7 @@ def _get_active_profile_name() -> str:
     same process don't retroactively relabel running containers.
     """
     try:
-        from hermes_cli.profiles import get_active_profile_name
+        from vigil_cli.profiles import get_active_profile_name
 
         return get_active_profile_name() or "default"
     except Exception:
@@ -141,7 +141,7 @@ def reap_orphan_containers(
     profile_filter: str | None = None,
     docker_exe: str | None = None,
 ) -> int:
-    """Remove stale hermes-tagged containers left behind by prior processes.
+    """Remove stale vigil-tagged containers left behind by prior processes.
 
     Targets containers that match all of:
 
@@ -149,8 +149,8 @@ def reap_orphan_containers(
     * ``status=exited`` (running containers are NEVER reaped — they may
       belong to a sibling VIGIL process whose reuse path will pick them
       up; killing them would crash the sibling mid-command)
-    * (optional) ``label=hermes-profile=<profile_filter>`` (sweep only the
-      caller's profile by default; a hermes process in profile A must not
+    * (optional) ``label=vigil-profile=<profile_filter>`` (sweep only the
+      caller's profile by default; a vigil process in profile A must not
       tear down profile B's containers)
     * ``State.FinishedAt`` older than *max_age_seconds* ago (so a sibling
       process that just exited and is about to be replaced doesn't get
@@ -171,7 +171,7 @@ def reap_orphan_containers(
     docker = docker_exe or find_docker() or "docker"
     filters = ["--filter", "label=vigil-agent=1", "--filter", "status=exited"]
     if profile_filter:
-        filters.extend(["--filter", f"label=hermes-profile={_sanitize_label_value(profile_filter)}"])
+        filters.extend(["--filter", f"label=vigil-profile={_sanitize_label_value(profile_filter)}"])
 
     try:
         listing = subprocess.run(
@@ -314,7 +314,7 @@ def find_docker() -> Optional[str]:
 # We drop all capabilities then add back the minimum needed:
 #   DAC_OVERRIDE - root can write to bind-mounted dirs owned by host user
 #   CHOWN/FOWNER - package managers (pip, npm, apt) need to set file ownership
-#   SETUID/SETGID - the image's init drops from root to the 'hermes'
+#   SETUID/SETGID - the image's init drops from root to the 'vigil'
 #       user (via `s6-setuidgid` in the bundled image, or whatever
 #       privilege-drop helper a user image uses), which requires these
 #       caps. Combined with `no-new-privileges`, the dropped process
@@ -785,10 +785,10 @@ class DockerEnvironment(BaseEnvironment):
         logger.info(f"Docker run_args: {all_run_args}")
 
         # Start the container directly via `docker run -d`.
-        container_name = f"hermes-{uuid.uuid4().hex[:8]}"
-        # Labels make hermes-created containers identifiable to:
+        container_name = f"vigil-{uuid.uuid4().hex[:8]}"
+        # Labels make vigil-created containers identifiable to:
         #   * the orphan reaper (`vigil-agent=1` for the global sweep filter)
-        #   * future cross-process reuse (`hermes-task-id`, `hermes-profile`)
+        #   * future cross-process reuse (`vigil-task-id`, `vigil-profile`)
         #   * operators running `docker ps --filter label=vigil-agent=1`
         # Values are limited to the safe character set defined by
         # _sanitize_label_value(); the active VIGIL profile is captured at
@@ -797,8 +797,8 @@ class DockerEnvironment(BaseEnvironment):
         task_label = _sanitize_label_value(task_id)
         label_args = [
             "--label", "vigil-agent=1",
-            "--label", f"hermes-task-id={task_label}",
-            "--label", f"hermes-profile={profile_name}",
+            "--label", f"vigil-task-id={task_label}",
+            "--label", f"vigil-profile={profile_name}",
         ]
         # Save args for container recreation on "No such container" recovery.
         self._image = image
@@ -808,8 +808,8 @@ class DockerEnvironment(BaseEnvironment):
 
         self._labels = {
             "vigil-agent": "1",
-            "hermes-task-id": task_label,
-            "hermes-profile": profile_name,
+            "vigil-task-id": task_label,
+            "vigil-profile": profile_name,
         }
 
         # Cross-process container reuse (issue #20561 — docs claim "ONE long-lived
@@ -927,11 +927,11 @@ class DockerEnvironment(BaseEnvironment):
         # win over the generic VIGIL secret blocklist. Only implicit passthrough
         # keys are filtered.
         forward_keys = explicit_forward_keys | (passthrough_keys - _VIGIL_PROVIDER_ENV_BLOCKLIST)
-        hermes_env = _load_hermes_env_vars() if forward_keys else {}
+        vigil_env = _load_vigil_env_vars() if forward_keys else {}
         for key in sorted(forward_keys):
             value = os.getenv(key)
             if not value:
-                value = hermes_env.get(key)
+                value = vigil_env.get(key)
             if value:
                 exec_env[key] = value
 
@@ -992,8 +992,8 @@ class DockerEnvironment(BaseEnvironment):
         self._container_id = None
 
         # 1. Try label-based reuse (another process may have recreated it).
-        task_label = self._labels.get("hermes-task-id", "")
-        profile_label = self._labels.get("hermes-profile", "")
+        task_label = self._labels.get("vigil-task-id", "")
+        profile_label = self._labels.get("vigil-profile", "")
         existing = self._find_reusable_container(task_label, profile_label)
         if existing is not None:
             cid, state = existing
@@ -1019,7 +1019,7 @@ class DockerEnvironment(BaseEnvironment):
                 return False
             try:
                 import uuid as _uuid
-                new_name = f"hermes-{_uuid.uuid4().hex[:8]}"
+                new_name = f"vigil-{_uuid.uuid4().hex[:8]}"
                 init_args = [] if self._image_uses_s6_init else ["--init"]
                 label_args = []
                 for k, v in self._labels.items():
@@ -1129,7 +1129,7 @@ class DockerEnvironment(BaseEnvironment):
         whether the state warrants ``docker start`` before reuse.
 
         Restricted to the docker-stored label set this class creates; never
-        matches containers that happened to be named ``hermes-*`` but were
+        matches containers that happened to be named ``vigil-*`` but were
         started by some other tool.
         """
         try:
@@ -1137,8 +1137,8 @@ class DockerEnvironment(BaseEnvironment):
                 [
                     self._docker_exe, "ps", "-a",
                     "--filter", "label=vigil-agent=1",
-                    "--filter", f"label=hermes-task-id={task_label}",
-                    "--filter", f"label=hermes-profile={profile_label}",
+                    "--filter", f"label=vigil-task-id={task_label}",
+                    "--filter", f"label=vigil-profile={profile_label}",
                     "--format", "{{.ID}}\t{{.State}}",
                 ],
                 capture_output=True,
@@ -1283,7 +1283,7 @@ class DockerEnvironment(BaseEnvironment):
         # ``_atexit_cleanup`` in terminal_tool.py which waits up to ~60s for
         # outstanding cleanups, so most exits complete the work cleanly.
         import threading
-        t = threading.Thread(target=_do_cleanup, daemon=True, name=f"hermes-cleanup-{log_id}")
+        t = threading.Thread(target=_do_cleanup, daemon=True, name=f"vigil-cleanup-{log_id}")
         t.start()
         self._cleanup_thread = t
         self._container_id = None
@@ -1302,7 +1302,7 @@ class DockerEnvironment(BaseEnvironment):
         Returns ``True`` if the thread finished (or no thread was started),
         ``False`` on timeout. The atexit hook in terminal_tool.py calls this
         on every active environment so docker stop/rm actually completes
-        before the Python process exits — without this, ``hermes /quit``
+        before the Python process exits — without this, ``vigil /quit``
         races the interpreter shutdown and leaves stopped containers behind.
         """
         thread = getattr(self, "_cleanup_thread", None)

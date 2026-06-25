@@ -29,21 +29,21 @@ iex (irm https://vigil-agent.nousresearch.com/install.ps1)
 
 If you want to install & run VIGIL Desktop after a command-line only install, simply run
 ```bash
-hermes desktop
+vigil desktop
 ```
 
 ### What the Installer Does
 
-The installer handles everything automatically — all dependencies (Python, Node.js, ripgrep, ffmpeg), the repo clone, virtual environment, global `hermes` command setup, and LLM provider configuration. By the end, you're ready to chat.
+The installer handles everything automatically — all dependencies (Python, Node.js, ripgrep, ffmpeg), the repo clone, virtual environment, global `vigil` command setup, and LLM provider configuration. By the end, you're ready to chat.
 
 #### Install Layout
 
 Where the installer puts things depends on whether you're installing as a normal user or as root:
 
-| Installer | Code lives at | `hermes` binary | Data directory |
+| Installer | Code lives at | `vigil` binary | Data directory |
 |---|---|---|---|
-| pip install | Python site-packages | `~/.local/bin/hermes` (console_scripts) | `~/.vigil/` |
-| Per-user (git installer) | `~/.vigil/vigil-agent/` | `~/.local/bin/hermes` (symlink) | `~/.vigil/` |
+| pip install | Python site-packages | `~/.local/bin/vigil` (console_scripts) | `~/.vigil/` |
+| Per-user (git installer) | `~/.vigil/vigil-agent/` | `~/.local/bin/vigil` (symlink) | `~/.vigil/` |
 | Root-mode (`sudo curl … \| sudo bash`) | `/usr/local/lib/vigil-agent/` | `/usr/local/bin/vigil` | `/root/.vigil/` (or `$VIGIL_HOME`) |
 
 The root-mode **FHS layout** (`/usr/local/lib/…`, `/usr/local/bin/vigil`) matches where other system-wide developer tools land on Linux. It's useful for shared-machine deployments where one system install should serve every user. Per-user config (auth, skills, sessions) still lives under each user's `~/.vigil/` or explicit `VIGIL_HOME`.
@@ -54,24 +54,24 @@ Reload your shell and start chatting:
 
 ```bash
 source ~/.bashrc   # or: source ~/.zshrc
-hermes             # Start chatting!
+vigil             # Start chatting!
 ```
 
 To reconfigure individual settings later, use the dedicated commands:
 
 ```bash
-hermes model          # Choose your LLM provider and model
-hermes tools          # Configure which tools are enabled
-hermes gateway setup  # Set up messaging platforms
-hermes config set     # Set individual config values
-hermes setup          # Or run the full setup wizard to configure everything at once
+vigil model          # Choose your LLM provider and model
+vigil tools          # Configure which tools are enabled
+vigil gateway setup  # Set up messaging platforms
+vigil config set     # Set individual config values
+vigil setup          # Or run the full setup wizard to configure everything at once
 ```
 
-:::tip Fastest path: Nous Portal
+:::tip Fastest path: VIGIL Portal
 One subscription covers 300+ models plus the [Tool Gateway](/user-guide/features/tool-gateway) (web search, image generation, TTS, cloud browser). Skip the per-tool key juggling:
 
 ```bash
-hermes setup --portal
+vigil setup --portal
 ```
 
 That logs you in, sets Nous as your provider, and turns on the Tool Gateway in one command.
@@ -107,7 +107,7 @@ If you want to clone the repo and install from source — for contributing, runn
 
 ## Non-Sudo / System Service User Installs
 
-Running VIGIL as a dedicated unprivileged user (e.g. a `hermes` systemd service account, or any user without `sudo` access) is supported. The only thing on the install path that genuinely needs root is Playwright's `--with-deps` step, which `apt`-installs shared libraries (`libnss3`, `libxkbcommon`, etc.) used by Chromium. The installer detects whether sudo is available and gracefully degrades when it isn't — it will install the Chromium binary into the service user's own Playwright cache and print the exact command an administrator needs to run separately.
+Running VIGIL as a dedicated unprivileged user (e.g. a `vigil` systemd service account, or any user without `sudo` access) is supported. The only thing on the install path that genuinely needs root is Playwright's `--with-deps` step, which `apt`-installs shared libraries (`libnss3`, `libxkbcommon`, etc.) used by Chromium. The installer detects whether sudo is available and gracefully degrades when it isn't — it will install the Chromium binary into the service user's own Playwright cache and print the exact command an administrator needs to run separately.
 
 **Recommended split (Debian/Ubuntu):**
 
@@ -127,16 +127,16 @@ Running VIGIL as a dedicated unprivileged user (e.g. a `hermes` systemd service 
    curl -fsSL https://vigil-agent.nousresearch.com/install.sh | bash -s -- --skip-browser
    ```
 
-3. **Make `hermes` available to the service user's shells.** The installer writes the launcher to `~/.local/bin/hermes`. System service accounts often have a minimal PATH that doesn't include `~/.local/bin`. Either add it to the user's environment, or symlink the launcher into a system location:
+3. **Make `vigil` available to the service user's shells.** The installer writes the launcher to `~/.local/bin/vigil`. System service accounts often have a minimal PATH that doesn't include `~/.local/bin`. Either add it to the user's environment, or symlink the launcher into a system location:
    ```bash
    # Option A — add to the service user's profile
    echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
 
    # Option B — symlink system-wide (run as an admin)
-   sudo ln -s /home/vigil/.vigil/vigil-agent/venv/bin/hermes /usr/local/bin/vigil
+   sudo ln -s /home/vigil/.vigil/vigil-agent/venv/bin/vigil /usr/local/bin/vigil
    ```
 
-4. **Verify:** `hermes doctor` should now run cleanly. If you get `ModuleNotFoundError: No module named 'dotenv'`, you're invoking the repo source `hermes` file (`~/.vigil/vigil-agent/hermes`) with system Python instead of the venv launcher (`~/.vigil/vigil-agent/venv/bin/hermes`) — fix step 3.
+4. **Verify:** `vigil doctor` should now run cleanly. If you get `ModuleNotFoundError: No module named 'dotenv'`, you're invoking the repo source `vigil` file (`~/.vigil/vigil-agent/vigil`) with system Python instead of the venv launcher (`~/.vigil/vigil-agent/venv/bin/vigil`) — fix step 3.
 
 The same pattern works on Arch (the installer uses pacman with the same sudo-detection logic), Fedora/RHEL, and openSUSE — those distros don't support `--with-deps` at all, so an administrator always installs the system libraries separately. The relevant `dnf`/`zypper` commands are printed by the installer.
 
@@ -146,12 +146,12 @@ The same pattern works on Arch (the installer uses pacman with the same sudo-det
 
 | Problem | Solution |
 |---------|----------|
-| `hermes: command not found` | Reload your shell (`source ~/.bashrc`) or check PATH |
-| `API key not set` | Run `hermes model` to configure your provider, or `hermes config set OPENROUTER_API_KEY your_key` |
-| Missing config after update | Run `hermes config check` then `hermes config migrate` |
+| `vigil: command not found` | Reload your shell (`source ~/.bashrc`) or check PATH |
+| `API key not set` | Run `vigil model` to configure your provider, or `vigil config set OPENROUTER_API_KEY your_key` |
+| Missing config after update | Run `vigil config check` then `vigil config migrate` |
 
-For more diagnostics, run `hermes doctor` — it will tell you exactly what's missing and how to fix it.
+For more diagnostics, run `vigil doctor` — it will tell you exactly what's missing and how to fix it.
 
 ## Install method auto-detection
 
-VIGIL auto-detects whether it was installed via `pip`, the git installer, Homebrew, or NixOS, and `hermes update` prints the matching update command for that path. There's no env var to set — the detection is based on the install layout (Python site-packages, `~/.vigil/vigil-agent/`, Homebrew prefix, or Nix store path). `hermes doctor` also surfaces the detected method under its environment summary.
+VIGIL auto-detects whether it was installed via `pip`, the git installer, Homebrew, or NixOS, and `vigil update` prints the matching update command for that path. There's no env var to set — the detection is based on the install layout (Python site-packages, `~/.vigil/vigil-agent/`, Homebrew prefix, or Nix store path). `vigil doctor` also surfaces the detected method under its environment summary.

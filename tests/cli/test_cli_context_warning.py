@@ -28,7 +28,7 @@ def cli_obj(_isolate):
         from cli import VIGILCLI
         obj = VIGILCLI.__new__(VIGILCLI)
         obj.model = "test-model"
-        obj.enabled_toolsets = ["hermes-core"]
+        obj.enabled_toolsets = ["vigil-core"]
         obj.compact = False
         obj.console = MagicMock()
         obj.session_id = None

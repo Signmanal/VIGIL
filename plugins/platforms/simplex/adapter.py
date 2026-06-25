@@ -39,7 +39,7 @@ Optional environment variables:
                                Telegram's text batching.
 
 The ``websockets`` Python package is imported lazily — the plugin is
-discoverable and ``hermes setup`` can describe it even when websockets is
+discoverable and ``vigil setup`` can describe it even when websockets is
 not installed. ``check_requirements()`` returns False until the package
 is present, so the gateway will not attempt to instantiate the adapter.
 """
@@ -79,7 +79,7 @@ HEALTH_CHECK_INTERVAL = 30.0
 HEALTH_CHECK_STALE_THRESHOLD = 300.0
 
 # Correlation ID prefix for requests we send so we can ignore our own echoes.
-_CORR_PREFIX = "hermes-"
+_CORR_PREFIX = "vigil-"
 
 
 # ---------------------------------------------------------------------------
@@ -1168,8 +1168,8 @@ async def _standalone_send(
     """Open an ephemeral WebSocket to the daemon, send, and close.
 
     Used by ``tools/send_message_tool._send_via_adapter`` when the gateway
-    runner is not in this process (e.g. ``hermes cron`` running as a
-    separate process from ``hermes gateway``). Without this hook,
+    runner is not in this process (e.g. ``vigil cron`` running as a
+    separate process from ``vigil gateway``). Without this hook,
     ``deliver=simplex`` cron jobs fail with "No live adapter for platform".
 
     ``thread_id`` and ``force_document`` are accepted for signature parity
@@ -1219,11 +1219,11 @@ async def _standalone_send(
 
 
 def interactive_setup() -> None:
-    """Minimal stdin wizard for ``hermes setup gateway`` → SimpleX.
+    """Minimal stdin wizard for ``vigil setup gateway`` → SimpleX.
 
     Prompts for the WebSocket URL and the optional allowlist / groups /
     auto-accept / home channel. Writes to ``~/.vigil/.env`` via
-    ``hermes_cli.config``.
+    ``vigil_cli.config``.
     """
     print()
     print("SimpleX Chat setup")
@@ -1234,10 +1234,10 @@ def interactive_setup() -> None:
     print()
 
     try:
-        from hermes_cli.config import get_env_value, save_env_value
+        from vigil_cli.config import get_env_value, save_env_value
     except ImportError:
         print(
-            "hermes_cli.config not available; set SIMPLEX_* vars manually in "
+            "vigil_cli.config not available; set SIMPLEX_* vars manually in "
             "~/.vigil/.env"
         )
         return
@@ -1247,7 +1247,7 @@ def interactive_setup() -> None:
         suffix = " [keep current]" if existing else ""
         try:
             if secret:
-                from hermes_cli.secret_prompt import masked_secret_prompt
+                from vigil_cli.secret_prompt import masked_secret_prompt
                 value = masked_secret_prompt(f"{prompt}{suffix}: ")
             else:
                 value = input(f"{prompt}{suffix}: ").strip()

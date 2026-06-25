@@ -16,9 +16,9 @@ VIGIL 拥有一个共享的 provider 运行时解析器，用于以下场景：
 
 主要实现：
 
-- `hermes_cli/runtime_provider.py` — 凭据解析，`_resolve_custom_runtime()`
-- `hermes_cli/auth.py` — provider 注册表，`resolve_provider()`
-- `hermes_cli/model_switch.py` — 共享 `/model` 切换流水线（CLI + gateway）
+- `vigil_cli/runtime_provider.py` — 凭据解析，`_resolve_custom_runtime()`
+- `vigil_cli/auth.py` — provider 注册表，`resolve_provider()`
+- `vigil_cli/model_switch.py` — 共享 `/model` 切换流水线（CLI + gateway）
 - `agent/auxiliary_client.py` — 辅助模型路由
 - `providers/` — ABC + 注册表入口点（`ProviderProfile`、`register_provider`、`get_provider_profile`、`list_providers`）
 - `plugins/model-providers/<name>/` — 每个 provider 的插件（内置），声明 `api_mode`、`base_url`、`env_vars`、`fallback_models` 并在首次访问时将自身注册到注册表。用户插件位于 `$VIGIL_HOME/plugins/model-providers/<name>/`，会覆盖同名的内置插件。
@@ -36,14 +36,14 @@ VIGIL 拥有一个共享的 provider 运行时解析器，用于以下场景：
 3. 环境变量
 4. provider 特定的默认值或自动解析
 
-该顺序很重要，因为 VIGIL 将已保存的模型/provider 选择视为正常运行的真实来源。这可以防止过时的 shell 导出变量悄悄覆盖用户在 `hermes model` 中最后选择的端点。
+该顺序很重要，因为 VIGIL 将已保存的模型/provider 选择视为正常运行的真实来源。这可以防止过时的 shell 导出变量悄悄覆盖用户在 `vigil model` 中最后选择的端点。
 
 ## Provider
 
 当前 provider 系列包括（完整内置集合见 `plugins/model-providers/`）：
 
 - OpenRouter
-- Nous Portal
+- VIGIL Portal
 - OpenAI Codex
 - Copilot / Copilot ACP
 - Anthropic（原生）
@@ -86,7 +86,7 @@ VIGIL 拥有一个共享的 provider 运行时解析器，用于以下场景：
 
 该解析器是 VIGIL 能够在以下场景之间共享认证/运行时逻辑的主要原因：
 
-- `hermes chat`
+- `vigil chat`
 - gateway 消息处理
 - 在全新会话中运行的 cron 任务
 - ACP 编辑器会话
@@ -153,7 +153,7 @@ Codex 使用独立的 Responses API 路径：
 当辅助任务配置的 provider 为 `main` 时，VIGIL 通过与普通对话相同的共享运行时路径进行解析。实际效果为：
 
 - 环境变量驱动的自定义端点仍然有效
-- 通过 `hermes model` / `config.yaml` 保存的自定义端点同样有效
+- 通过 `vigil model` / `config.yaml` 保存的自定义端点同样有效
 - 辅助路由能够区分真实保存的自定义端点与 OpenRouter 回退
 
 ## 回退模型

@@ -52,14 +52,14 @@ That's it — there is no public URL or tunnel to set up.
 Either run the unified gateway wizard and pick **Photon iMessage**:
 
 ```bash
-hermes gateway setup
+vigil gateway setup
 ```
 
 …or run the Photon setup directly (the wizard calls the same flow):
 
 ```bash
 # Device-code login + project + user + sidecar deps, all in one
-hermes photon setup --phone +15551234567
+vigil photon setup --phone +15551234567
 ```
 
 The setup, in order:
@@ -90,10 +90,10 @@ channel. Choose one approach:
 line, VIGIL replies with a pairing code. Approve it with:
 
 ```bash
-hermes pairing approve photon <CODE>
+vigil pairing approve photon <CODE>
 ```
 
-Use `hermes pairing list` to see pending codes and approved users.
+Use `vigil pairing list` to see pending codes and approved users.
 
 **Pre-authorize specific numbers** (in `~/.vigil/.env`):
 
@@ -145,7 +145,7 @@ BlueBubbles iMessage channel uses.
 ## Start the gateway
 
 ```bash
-hermes gateway start
+vigil gateway start
 ```
 
 You'll see something like:
@@ -159,7 +159,7 @@ Send an iMessage to your assigned number and VIGIL will reply.
 ## Status & troubleshooting
 
 ```bash
-hermes photon status
+vigil photon status
 ```
 
 Prints saved credentials, sidecar health, your registered number, and the
@@ -182,14 +182,14 @@ Photon iMessage status
 
 Common issues:
 
-- **`sidecar deps : ✗ run hermes photon install-sidecar`** — Node is
+- **`sidecar deps : ✗ run vigil photon install-sidecar`** — Node is
   installed but `spectrum-ts` isn't. Run the suggested command.
-- **`device token : ✗ missing`** — run `hermes photon setup` to log in.
+- **`device token : ✗ missing`** — run `vigil photon setup` to log in.
 - **`No iMessage line assigned yet`** — Spectrum is enabled but no line
-  has been provisioned; re-run `hermes photon setup` or check the
+  has been provisioned; re-run `vigil photon setup` or check the
   [dashboard][app].
 - **Sidecar won't start** — confirm `node --version` is 18.17+ and that
-  `hermes photon install-sidecar` completed without errors.
+  `vigil photon install-sidecar` completed without errors.
 
 ## Limits today
 

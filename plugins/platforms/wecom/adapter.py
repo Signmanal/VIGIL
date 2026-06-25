@@ -1512,7 +1512,7 @@ class WeComAdapter(BasePlatformAdapter):
 
 _QR_GENERATE_URL = "https://work.weixin.qq.com/ai/qc/generate"
 _QR_QUERY_URL = "https://work.weixin.qq.com/ai/qc/query_result"
-_QR_CODE_PAGE = "https://work.weixin.qq.com/ai/qc/gen?source=hermes&scode="
+_QR_CODE_PAGE = "https://work.weixin.qq.com/ai/qc/gen?source=vigil&scode="
 _QR_POLL_INTERVAL = 3  # seconds
 _QR_POLL_TIMEOUT = 300  # 5 minutes
 
@@ -1541,7 +1541,7 @@ def qr_scan_for_bot_info(
         logger.error("urllib is required for WeCom QR scan")
         return None
 
-    generate_url = f"{_QR_GENERATE_URL}?source=hermes"
+    generate_url = f"{_QR_GENERATE_URL}?source=vigil"
 
     # ── Step 1: Fetch QR code ──
     print("  Connecting to WeCom...", end="", flush=True)
@@ -1644,7 +1644,7 @@ def qr_scan_for_bot_info(
 # plugin. register() exposes BOTH platforms via the registry, replacing the
 # Platform.WECOM / Platform.WECOM_CALLBACK elifs in gateway/run.py, the
 # _PLATFORM_CONNECTED_CHECKERS entries in gateway/config.py, the _setup_wecom
-# wizard + _PLATFORMS["wecom"] static dict in hermes_cli/gateway.py, and the
+# wizard + _PLATFORMS["wecom"] static dict in vigil_cli/gateway.py, and the
 # _send_wecom dispatch in tools/send_message_tool.py. Env→PlatformConfig
 # seeding stays in core, same as prior migrations.
 # ──────────────────────────────────────────────────────────────────────────
@@ -1692,12 +1692,12 @@ async def _standalone_send(
 def interactive_setup() -> None:
     """Interactive setup for WeCom — QR scan or manual credential input.
 
-    Replaces hermes_cli/gateway.py::_setup_wecom and the static
+    Replaces vigil_cli/gateway.py::_setup_wecom and the static
     _PLATFORMS["wecom"] dict. CLI helpers are lazy-imported.
     """
-    from hermes_cli.config import get_env_value, save_env_value
-    from hermes_cli.setup import prompt_choice
-    from hermes_cli.cli_output import (
+    from vigil_cli.config import get_env_value, save_env_value
+    from vigil_cli.setup import prompt_choice
+    from vigil_cli.cli_output import (
         prompt,
         prompt_yes_no,
         print_header,
@@ -1773,7 +1773,7 @@ def interactive_setup() -> None:
             "How should unauthorized users be handled?",
             [
                 "Enable open access (anyone can message the bot)",
-                "Use DM pairing (unknown users request access, you approve with 'hermes pairing approve')",
+                "Use DM pairing (unknown users request access, you approve with 'vigil pairing approve')",
                 "Disable direct messages",
                 "Skip for now (bot will deny all users until configured)",
             ],
@@ -1786,12 +1786,12 @@ def interactive_setup() -> None:
         elif access_idx == 1:
             save_env_value("WECOM_DM_POLICY", "pairing")
             print_success("DM pairing mode — users will receive a code to request access.")
-            print_info("Approve with: hermes pairing approve <platform> <code>")
+            print_info("Approve with: vigil pairing approve <platform> <code>")
         elif access_idx == 2:
             save_env_value("WECOM_DM_POLICY", "disabled")
             print_warning("Direct messages disabled.")
         else:
-            print_info("Skipped — configure later with 'hermes gateway setup'")
+            print_info("Skipped — configure later with 'vigil gateway setup'")
 
     home = prompt("Home chat ID (optional, for cron/notifications)", password=False)
     if home:

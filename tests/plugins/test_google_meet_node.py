@@ -18,10 +18,10 @@ import pytest
 
 @pytest.fixture(autouse=True)
 def _isolate_home(tmp_path, monkeypatch):
-    hermes_home = tmp_path / ".vigil"
-    hermes_home.mkdir()
-    monkeypatch.setenv("VIGIL_HOME", str(hermes_home))
-    yield hermes_home
+    vigil_home = tmp_path / ".vigil"
+    vigil_home.mkdir()
+    monkeypatch.setenv("VIGIL_HOME", str(vigil_home))
+    yield vigil_home
 
 
 # ---------------------------------------------------------------------------
@@ -211,7 +211,7 @@ def test_registry_resolve_by_name(tmp_path):
     assert r.resolve("ghost") is None
 
 
-def test_registry_defaults_to_hermes_home(tmp_path, monkeypatch):
+def test_registry_defaults_to_vigil_home(tmp_path, monkeypatch):
     from plugins.google_meet.node.registry import NodeRegistry
 
     # _isolate_home already set VIGIL_HOME to tmp_path/.vigil; the
@@ -629,7 +629,7 @@ def test_cli_status_pings_via_node_client(capsys, monkeypatch):
             assert token == "tok"
 
         def ping(self):
-            return {"type": "pong", "display_name": "hermes-meet-node"}
+            return {"type": "pong", "display_name": "vigil-meet-node"}
 
     monkeypatch.setattr(node_cli, "NodeClient", _FakeClient)
 

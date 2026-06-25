@@ -46,16 +46,16 @@ installer:
 **Option 1: dedicated CLI command (most direct).**
 
 ```
-hermes computer-use install
+vigil computer-use install
 ```
 
 This fetches and runs the upstream cua-driver installer — `install.sh`
-on macOS/Linux, `install.ps1` on Windows. Use `hermes computer-use
+on macOS/Linux, `install.ps1` on Windows. Use `vigil computer-use
 status` to verify the install.
 
 **Option 2: enable the toolset interactively.**
 
-1. Run `hermes tools`, pick `🖱️  Computer Use (macOS/Windows/Linux)`.
+1. Run `vigil tools`, pick `🖱️  Computer Use (macOS/Windows/Linux)`.
 2. The setup runs the upstream installer (same as Option 1).
 
 After installing, regardless of which path you took, grant the
@@ -63,26 +63,26 @@ platform-appropriate prereqs:
 
 | Platform | Prereqs |
 |---|---|
-| **macOS** | System Settings → Privacy & Security → **Accessibility** + **Screen Recording** → allow your terminal (or VIGIL app). `hermes computer-use doctor` will tell you which permission is missing. |
+| **macOS** | System Settings → Privacy & Security → **Accessibility** + **Screen Recording** → allow your terminal (or VIGIL app). `vigil computer-use doctor` will tell you which permission is missing. |
 | **Windows** | None at install time. If you're driving over SSH (not RDP / console), you need the autostart pattern — see [cua.ai/docs/how-to-guides/driver/windows-ssh](https://cua.ai/docs/how-to-guides/driver/windows-ssh) for the Session 0 ↔ Session 1+ proxy. |
 | **Linux** | A reachable display server: `DISPLAY` set for X11, or `XDG_SESSION_TYPE=wayland`. Wayland sessions need an XWayland bridge for capture. AT-SPI must be on (default on GNOME/KDE/Xfce). |
 
 Then start a session with the toolset enabled:
 
 ```
-hermes -t computer_use chat
+vigil -t computer_use chat
 ```
 
 or add `computer_use` to your enabled toolsets in `~/.vigil/config.yaml`.
 
-## `hermes computer-use doctor` — your first triage stop
+## `vigil computer-use doctor` — your first triage stop
 
-`hermes computer-use doctor` runs cua-driver's structured
+`vigil computer-use doctor` runs cua-driver's structured
 `health_report` MCP tool and prints a per-check matrix. It's the single
 fastest way to find out *why* an action isn't working.
 
 ```
-$ hermes computer-use doctor
+$ vigil computer-use doctor
 ⚠️  cua-driver 0.5.8 on darwin — degraded
   ✅ binary_version: cua-driver 0.5.8
   ✅ platform_supported: macOS 26.4.1 (arm64)
@@ -117,7 +117,7 @@ When the agent acts, you'll see a **tinted overlay cursor** glide
 across the screen to where each click / type / scroll lands. The real
 OS cursor never moves — the overlay is a visual cue that says "the
 agent is acting here." Each VIGIL run declares its own cua-driver
-**session id** (something like `hermes-3a7b9c14d2e8`); the cursor's
+**session id** (something like `vigil-3a7b9c14d2e8`); the cursor's
 identity is keyed to that session, so concurrent runs / subagents each
 get their own cursor without stepping on each other.
 
@@ -316,7 +316,7 @@ computer_use:
   cua_telemetry: true   # default: false (telemetry off)
 ```
 
-When it's on, `hermes computer-use doctor` reports `telemetry: enabled`;
+When it's on, `vigil computer-use doctor` reports `telemetry: enabled`;
 when off (the default), it reports `telemetry: disabled via
 CUA_DRIVER_RS_TELEMETRY_ENABLED`.
 
@@ -381,9 +381,9 @@ VIGIL_CUA_DRIVER_CMD=/path/to/cua/libs/cua-driver/rust/target/debug/cua-driver
 
 ### Confirm VIGIL is using your build
 
-- `hermes computer-use status` prints the resolved binary path and
+- `vigil computer-use status` prints the resolved binary path and
   version.
-- `hermes computer-use doctor` confirms the binary is reachable and
+- `vigil computer-use doctor` confirms the binary is reachable and
   exercises the full MCP path end-to-end.
 - In a session, `computer_use(action="capture")` exercises the spawned
   `cua-driver mcp` child process.
@@ -415,15 +415,15 @@ VIGIL_CUA_DRIVER_CMD=/path/to/cua/libs/cua-driver/rust/target/debug/cua-driver
 
 ## Troubleshooting
 
-**First action when anything's off: run `hermes computer-use doctor`.**
+**First action when anything's off: run `vigil computer-use doctor`.**
 The structured per-check matrix tells you (and any agent helping you
 debug) exactly what's wrong.
 
 Specific failure modes the doctor doesn't catch:
 
 **`computer_use backend unavailable: cua-driver is not installed`** —
-Run `hermes computer-use install` to fetch the cua-driver binary, or
-run `hermes tools` and enable the Computer Use toolset.
+Run `vigil computer-use install` to fetch the cua-driver binary, or
+run `vigil tools` and enable the Computer Use toolset.
 
 **Clicks seem to have no effect** — Capture and verify. A modal you
 didn't see may be blocking input. Dismiss it with `escape` or the close
@@ -439,7 +439,7 @@ matches the dangerous-shell-pattern list. Break the command up or
 reconsider.
 
 **Empty captures on Linux** — `DISPLAY` not set, or you're on pure
-Wayland without an XWayland bridge. `hermes computer-use doctor` will
+Wayland without an XWayland bridge. `vigil computer-use doctor` will
 flag this as `ax_capability: fail` with a `Set DISPLAY (X11)…` hint.
 
 **Empty captures on Windows over SSH** — You're in Session 0 (the

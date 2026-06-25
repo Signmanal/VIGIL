@@ -25,7 +25,7 @@ rather than locking the whole config. The two are independent and can coexist.
 
 ## Where it lives
 
-Managed scope is read from a system-level directory, default `/etc/hermes`:
+Managed scope is read from a system-level directory, default `/etc/vigil`:
 
 ```text
 /etc/vigil/
@@ -51,14 +51,14 @@ files. It is **never persisted** to any `.env` by VIGIL.
 
 ```bash
 # Point managed scope at a custom directory (set by IT / the deployment, not the user)
-export VIGIL_MANAGED_DIR=/opt/org/hermes-policy
+export VIGIL_MANAGED_DIR=/opt/org/vigil-policy
 ```
 
 :::warning
 A user who can set `VIGIL_MANAGED_DIR` can repoint managed scope at a directory
 they control, defeating it. In a real deployment this variable should be fixed
 by the administrator (e.g. baked into the service unit / container image), not
-left user-settable. `hermes doctor` reports the *resolved* managed directory so
+left user-settable. `vigil doctor` reports the *resolved* managed directory so
 a redirect is visible.
 :::
 
@@ -93,25 +93,25 @@ to the specific keys the managed layer specifies.
 ## Seeing what's managed
 
 ```bash
-hermes config        # shows a header naming the managed source + the pinned keys
-hermes doctor        # reports the resolved managed dir + pinned key counts
+vigil config        # shows a header naming the managed source + the pinned keys
+vigil doctor        # reports the resolved managed dir + pinned key counts
 ```
 
 If you try to change a managed value, VIGIL refuses and names the source:
 
 ```bash
-$ hermes config set model.default my/model
+$ vigil config set model.default my/model
 Cannot set 'model.default': it is managed by your administrator
 (/etc/vigil/config.yaml) and cannot be changed.
 ```
 
-The same applies to managed secrets — `hermes config set` / setup will not write
+The same applies to managed secrets — `vigil config set` / setup will not write
 a user value for an env key pinned by the managed `.env`.
 
 ## Setting up a managed scope (administrators)
 
 ```bash
-sudo mkdir -p /etc/hermes
+sudo mkdir -p /etc/vigil
 
 # Pin some config values for every user on this machine
 sudo tee /etc/vigil/config.yaml >/dev/null <<'YAML'
@@ -126,13 +126,13 @@ sudo tee /etc/vigil/.env >/dev/null <<'ENV'
 OPENAI_API_BASE=https://inference.example.com/v1
 ENV
 
-sudo chmod 0755 /etc/hermes
+sudo chmod 0755 /etc/vigil
 sudo chmod 0644 /etc/vigil/config.yaml /etc/vigil/.env
 ```
 
 Changes take effect on the next VIGIL start (a malformed managed file is logged
 loudly and ignored — it never blocks startup, but the admin should check
-`hermes doctor` to confirm the policy is being applied).
+`vigil doctor` to confirm the policy is being applied).
 
 ## Security model and limitations (v1)
 

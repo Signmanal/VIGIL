@@ -7,7 +7,7 @@ Reads a plan.json describing the team + brief, expands templates from
 initial kanban task.
 
 Profile-config patching, SOUL.md-per-profile, TEAM.md task-graph convention,
-and the `hermes kanban create --workspace dir:` initial-task pattern are
+and the `vigil kanban create --workspace dir:` initial-task pattern are
 adapted from alt-glitch's NousResearch/kanban-video-pipeline.
 
 Usage:
@@ -328,7 +328,7 @@ def render_setup_sh(plan: dict, brief_md: str, team_md: str) -> str:
     # API key checks
     key_checks = []
     for key in plan.get("api_keys_required", []):
-        key_checks.append(f'check_key {key} hermes {key} || exit 1')
+        key_checks.append(f'check_key {key} vigil {key} || exit 1')
     key_checks_str = "\n".join(key_checks) if key_checks else "# (no API keys required)"
 
     # Scene dirs
@@ -342,7 +342,7 @@ def render_setup_sh(plan: dict, brief_md: str, team_md: str) -> str:
     profile_creates = []
     for t in plan["team"]:
         profile_creates.append(
-            f'hermes profile create {t["profile"]} --clone 2>/dev/null || true'
+            f'vigil profile create {t["profile"]} --clone 2>/dev/null || true'
         )
 
     # Profile config — emit JSON arrays so the bash function can pass them

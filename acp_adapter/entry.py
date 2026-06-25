@@ -8,33 +8,33 @@ Usage::
 
     python -m acp_adapter.entry
     # or
-    hermes acp
+    vigil acp
     # or
-    hermes-acp
+    vigil-acp
 """
 
-# IMPORTANT: hermes_bootstrap must be the very first import — UTF-8 stdio
-# on Windows.  No-op on POSIX.  See hermes_bootstrap.py for full rationale.
+# IMPORTANT: vigil_bootstrap must be the very first import — UTF-8 stdio
+# on Windows.  No-op on POSIX.  See vigil_bootstrap.py for full rationale.
 try:
-    import hermes_bootstrap  # noqa: F401
+    import vigil_bootstrap  # noqa: F401
 except ModuleNotFoundError:
-    # Graceful fallback when hermes_bootstrap isn't registered in the venv
-    # yet — happens during partial ``hermes update`` where git-reset landed
+    # Graceful fallback when vigil_bootstrap isn't registered in the venv
+    # yet — happens during partial ``vigil update`` where git-reset landed
     # new code but ``uv pip install -e .`` didn't finish.  Missing bootstrap
     # means UTF-8 stdio setup is skipped on Windows; POSIX is unaffected.
     pass
 else:
     # Stop a ``utils/``/``proxy/``/``ui/`` package in the launch directory from
-    # shadowing VIGIL's own modules — ``hermes acp`` can be started from any
+    # shadowing VIGIL's own modules — ``vigil acp`` can be started from any
     # cwd, including a project that has same-named packages on its path.
-    hermes_bootstrap.harden_import_path()
+    vigil_bootstrap.harden_import_path()
 
 import argparse
 import asyncio
 import logging
 import sys
 from pathlib import Path
-from hermes_constants import get_hermes_home
+from vigil_constants import get_vigil_home
 
 
 # Methods clients send as periodic liveness probes. They are not part of the
@@ -100,22 +100,22 @@ def _setup_logging() -> None:
 
 def _load_env() -> None:
     """Load .env from VIGIL_HOME (default ``~/.vigil``)."""
-    from hermes_cli.env_loader import load_hermes_dotenv
+    from vigil_cli.env_loader import load_vigil_dotenv
 
-    hermes_home = get_hermes_home()
-    loaded = load_hermes_dotenv(hermes_home=hermes_home)
+    vigil_home = get_vigil_home()
+    loaded = load_vigil_dotenv(vigil_home=vigil_home)
     if loaded:
         for env_file in loaded:
             logging.getLogger(__name__).info("Loaded env from %s", env_file)
     else:
         logging.getLogger(__name__).info(
-            "No .env found at %s, using system env", hermes_home / ".env"
+            "No .env found at %s, using system env", vigil_home / ".env"
         )
 
 
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        prog="hermes-acp",
+        prog="vigil-acp",
         description="Run VIGIL Agent as an ACP stdio server.",
     )
     parser.add_argument("--version", action="store_true", help="Print VIGIL version and exit")
@@ -147,9 +147,9 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 
 def _print_version() -> None:
-    from hermes_cli import __version__ as hermes_version
+    from vigil_cli import __version__ as vigil_version
 
-    print(hermes_version)
+    print(vigil_version)
 
 
 def _run_check() -> None:
@@ -160,12 +160,12 @@ def _run_check() -> None:
 
 
 def _run_setup() -> None:
-    from hermes_cli.main import main as hermes_main
+    from vigil_cli.main import main as vigil_main
 
     old_argv = sys.argv[:]
     try:
-        sys.argv = [old_argv[0] if old_argv else "hermes", "model"]
-        hermes_main()
+        sys.argv = [old_argv[0] if old_argv else "vigil", "model"]
+        vigil_main()
     finally:
         sys.argv = old_argv
 
@@ -190,11 +190,11 @@ def _run_setup_browser(assume_yes: bool = False) -> int:
     """Bootstrap agent-browser + Chromium.
 
     Routes through dep_ensure -> install.{sh,ps1} --ensure, sharing code
-    with ``hermes postinstall`` and the runtime lazy installer.
+    with ``vigil postinstall`` and the runtime lazy installer.
 
     Returns 0 on success, 1 on failure.
     """
-    from hermes_cli.dep_ensure import ensure_dependency
+    from vigil_cli.dep_ensure import ensure_dependency
 
     try:
         node_ok = ensure_dependency("node", interactive=not assume_yes)

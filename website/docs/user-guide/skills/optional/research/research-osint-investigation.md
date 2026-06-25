@@ -14,7 +14,7 @@ Public-records OSINT investigation framework — SEC EDGAR filings, USAspending 
 
 | | |
 |---|---|
-| Source | Optional — install with `hermes skills install official/research/osint-investigation` |
+| Source | Optional — install with `vigil skills install official/research/osint-investigation` |
 | Path | `optional-skills/research/osint-investigation` |
 | Version | `0.1.0` |
 | Author | VIGIL Agent (adapted from ShinMegamiBoson/OpenPlanter, MIT) |
@@ -132,7 +132,7 @@ python3 SKILL_DIR/scripts/fetch_ofac_sdn.py --out data/ofac_sdn.csv
 
 # ICIJ Offshore Leaks — downloads ~70 MB bulk CSV on first use,
 # then searches it locally. Cached for 30 days under
-# $VIGIL_OSINT_CACHE/icij/ (default: ~/.cache/hermes-osint/icij/).
+# $VIGIL_OSINT_CACHE/icij/ (default: ~/.cache/vigil-osint/icij/).
 python3 SKILL_DIR/scripts/fetch_icij_offshore.py --entity "EXAMPLE CORP" \
     --out data/icij.csv
 ```

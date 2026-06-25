@@ -52,7 +52,7 @@
 //                          adapter, which holds our stdin pipe — parent-death
 //                          detection so a dead gateway can't orphan us)
 //   PHOTON_TELEMETRY       enable Spectrum SDK telemetry ("true"/"1"/"on"/"yes";
-//                          default off — toggle with `hermes photon telemetry`)
+//                          default off — toggle with `vigil photon telemetry`)
 
 import http from "node:http";
 import crypto from "node:crypto";
@@ -665,7 +665,7 @@ function tokenOk(header) {
 }
 
 const server = http.createServer(async (req, res) => {
-  if (!tokenOk(req.headers["x-hermes-sidecar-token"])) {
+  if (!tokenOk(req.headers["x-vigil-sidecar-token"])) {
     return unauthorized(res);
   }
   // Long-lived inbound NDJSON stream.

@@ -23,7 +23,7 @@ Open **PowerShell** (or Windows Terminal) and run:
 iex (irm https://raw.githubusercontent.com/NousResearch/vigil-agent/main/scripts/install.ps1)
 ```
 
-No admin rights required. The installer goes to `%LOCALAPPDATA%\vigil\` and adds `hermes` to your **User PATH** — open a new terminal after it finishes.
+No admin rights required. The installer goes to `%LOCALAPPDATA%\vigil\` and adds `vigil` to your **User PATH** — open a new terminal after it finishes.
 
 **Installer options** (requires the scriptblock form to pass parameters):
 
@@ -37,7 +37,7 @@ No admin rights required. The installer goes to `%LOCALAPPDATA%\vigil\` and adds
 | `-Commit` | unset | Pin install to a specific commit SHA (overrides `-Branch`) |
 | `-Tag` | unset | Pin install to a specific git tag (e.g. `v0.14.0`) |
 | `-NoVenv` | off | Skip venv creation (advanced — you manage Python yourself) |
-| `-SkipSetup` | off | Skip the post-install `hermes setup` wizard |
+| `-SkipSetup` | off | Skip the post-install `vigil setup` wizard |
 | `-VIGILHome` | `%LOCALAPPDATA%\vigil` | Override data directory |
 | `-InstallDir` | `%LOCALAPPDATA%\vigil\vigil-agent` | Override code location |
 
@@ -45,13 +45,13 @@ The installer auto-retries flaky git fetches and strips BOM from any downloaded 
 
 ### Desktop installer (alternative)
 
-A thin GUI installer is also available — useful if you'd rather double-click an `.exe` than open PowerShell. Download VIGIL Desktop, run the installer, and on first launch the GUI calls `install.ps1` under the hood to provision Python (via `uv`), Node, PortableGit, and the rest of the dependency bootstrap described below. After the first run, the desktop app and the PowerShell-installed `hermes` CLI share the same `%LOCALAPPDATA%\vigil\vigil-agent` install and `%LOCALAPPDATA%\vigil` data directory — switch between the GUI and the CLI freely.
+A thin GUI installer is also available — useful if you'd rather double-click an `.exe` than open PowerShell. Download VIGIL Desktop, run the installer, and on first launch the GUI calls `install.ps1` under the hood to provision Python (via `uv`), Node, PortableGit, and the rest of the dependency bootstrap described below. After the first run, the desktop app and the PowerShell-installed `vigil` CLI share the same `%LOCALAPPDATA%\vigil\vigil-agent` install and `%LOCALAPPDATA%\vigil` data directory — switch between the GUI and the CLI freely.
 
 Use the desktop installer when you want a familiar Windows install experience or you're handing VIGIL to a non-developer; use the PowerShell one-liner when you're already in a terminal.
 
 ### Dependency bootstrap (`dep_ensure`)
 
-On first launch (and on demand when a missing tool is detected), VIGIL runs a small Python bootstrapper — `hermes_cli/dep_ensure.py` — that checks for and lazily installs the non-Python dependencies it needs. On Windows, the relevant ones are:
+On first launch (and on demand when a missing tool is detected), VIGIL runs a small Python bootstrapper — `vigil_cli/dep_ensure.py` — that checks for and lazily installs the non-Python dependencies it needs. On Windows, the relevant ones are:
 
 | Dependency | Why VIGIL needs it |
 |---|---|
@@ -75,11 +75,11 @@ Top-to-bottom, in order:
 6. **Tiered `uv pip install`** — tries `.[all]` first, falls back to progressively smaller sets (`[messaging,dashboard,ext]` → `[messaging]` → `.`) if a `git+https` dep flakes on rate-limited GitHub. Prevents "single flake drops you to a bare install" failure mode.
 7. **Auto-installs messaging SDKs** keyed off `.env` — if `TELEGRAM_BOT_TOKEN` / `DISCORD_BOT_TOKEN` / `SLACK_BOT_TOKEN` / `SLACK_APP_TOKEN` / `WHATSAPP_ENABLED` are present, runs `python -m ensurepip --upgrade` and targeted `pip install` calls so each platform's SDK is actually importable.
 8. **Sets `VIGIL_GIT_BASH_PATH`** to the resolved `bash.exe` so VIGIL finds it deterministically in fresh shells.
-9. **Adds `%LOCALAPPDATA%\vigil\vigil-agent\venv\Scripts` to User PATH and sets `VIGIL_HOME=%LOCALAPPDATA%\vigil`** — exposes the `hermes` command (and points it at your data dir) after you open a new terminal.
-10. **Runs `hermes setup`** — the normal first-run wizard (model, provider, toolsets). Skip with `-SkipSetup`.
+9. **Adds `%LOCALAPPDATA%\vigil\vigil-agent\venv\Scripts` to User PATH and sets `VIGIL_HOME=%LOCALAPPDATA%\vigil`** — exposes the `vigil` command (and points it at your data dir) after you open a new terminal.
+10. **Runs `vigil setup`** — the normal first-run wizard (model, provider, toolsets). Skip with `-SkipSetup`.
 
 :::tip Skip provider hunting on Windows
-On Windows, per-tool API key setup (Firecrawl, FAL, Browser Use, OpenAI TTS) is the highest-friction part of getting a useful agent. A [Nous Portal](/user-guide/features/tool-gateway) subscription covers the model **and** all of those tools through one OAuth login. After the installer finishes, run `hermes setup --portal` to wire everything up.
+On Windows, per-tool API key setup (Firecrawl, FAL, Browser Use, OpenAI TTS) is the highest-friction part of getting a useful agent. A [VIGIL Portal](/user-guide/features/tool-gateway) subscription covers the model **and** all of those tools through one OAuth login. After the installer finishes, run `vigil setup --portal` to wire everything up.
 :::
 
 ## Feature matrix
@@ -88,8 +88,8 @@ Everything except the dashboard's embedded terminal pane runs natively on Window
 
 | Feature | Native Windows | WSL2 |
 |---|---|---|
-| CLI (`hermes chat`, `hermes setup`, `hermes gateway`, …) | ✓ | ✓ |
-| Interactive TUI (`hermes --tui`) | ✓ | ✓ |
+| CLI (`vigil chat`, `vigil setup`, `vigil gateway`, …) | ✓ | ✓ |
+| Interactive TUI (`vigil --tui`) | ✓ | ✓ |
 | Messaging gateway (Telegram, Discord, Slack, WhatsApp, 15+ platforms) | ✓ | ✓ |
 | Cron scheduler | ✓ | ✓ |
 | Browser tool (Chromium via Node) | ✓ | ✓ |
@@ -121,7 +121,7 @@ The installer sets `VIGIL_GIT_BASH_PATH` explicitly so fresh PowerShell sessions
 
 Python's default stdio on Windows uses the console's active code page (usually cp1252 or cp437). VIGIL's banner, slash-command list, tool feed, Rich panels, and skill descriptions all contain Unicode. Without intervention, any of that crashes with `UnicodeEncodeError: 'charmap' codec can't encode character…`.
 
-The fix is in `hermes_cli/stdio.py::configure_windows_stdio()`, called early in every entry point (`cli.py::main`, `hermes_cli/main.py::main`, `gateway/run.py::main`). It:
+The fix is in `vigil_cli/stdio.py::configure_windows_stdio()`, called early in every entry point (`cli.py::main`, `vigil_cli/main.py::main`, `gateway/run.py::main`). It:
 
 1. Flips the console code page to CP_UTF8 (65001) via `kernel32.SetConsoleCP` / `SetConsoleOutputCP`.
 2. Reconfigures `sys.stdout` / `sys.stderr` / `sys.stdin` to UTF-8 with `errors='replace'`.
@@ -166,12 +166,12 @@ On legacy `cmd.exe` consoles `Ctrl+Enter` collapses to plain `Enter` — use `Es
 
 ## Running the gateway at Windows login
 
-`hermes gateway install` on Windows uses **Scheduled Tasks** with a Startup-folder fallback — no admin required.
+`vigil gateway install` on Windows uses **Scheduled Tasks** with a Startup-folder fallback — no admin required.
 
 ### Install
 
 ```powershell
-hermes gateway install
+vigil gateway install
 ```
 
 What happens under the hood:
@@ -185,14 +185,14 @@ Flags used when spawning: `DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP | CREATE_
 ### Manage
 
 ```powershell
-hermes gateway status      # Merged view: schtasks + Startup folder + running PID
-hermes gateway start       # Starts the scheduled task now
-hermes gateway stop        # Graceful SIGTERM equivalent (TerminateProcess via psutil)
-hermes gateway restart
-hermes gateway uninstall   # Removes schtasks entry, Startup shortcut, pid file
+vigil gateway status      # Merged view: schtasks + Startup folder + running PID
+vigil gateway start       # Starts the scheduled task now
+vigil gateway stop        # Graceful SIGTERM equivalent (TerminateProcess via psutil)
+vigil gateway restart
+vigil gateway uninstall   # Removes schtasks entry, Startup shortcut, pid file
 ```
 
-`hermes gateway status` is idempotent — call it a thousand times in a row and it will never accidentally kill the gateway. (Pre-PR #21561 it silently did, via `os.kill(pid, 0)` colliding with `CTRL_C_EVENT` at the C level — see "process management internals" below if you care about the story.)
+`vigil gateway status` is idempotent — call it a thousand times in a row and it will never accidentally kill the gateway. (Pre-PR #21561 it silently did, via `os.kill(pid, 0)` colliding with `CTRL_C_EVENT` at the C level — see "process management internals" below if you care about the story.)
 
 ### Why not a Windows Service?
 
@@ -202,7 +202,7 @@ Services require admin rights to install and tie the gateway's lifecycle to mach
 
 | Path | Contents |
 |---|---|
-| `%LOCALAPPDATA%\vigil\vigil-agent\` | Git checkout + venv. `venv\Scripts\hermes.exe` is the command added to User PATH. Safe to `Remove-Item -Recurse` and reinstall. |
+| `%LOCALAPPDATA%\vigil\vigil-agent\` | Git checkout + venv. `venv\Scripts\vigil.exe` is the command added to User PATH. Safe to `Remove-Item -Recurse` and reinstall. |
 | `%LOCALAPPDATA%\vigil\git\` | PortableGit (only if the installer provisioned it). |
 | `%LOCALAPPDATA%\vigil\node\` | Portable Node.js (only if the installer provisioned it). |
 | `%LOCALAPPDATA%\vigil\bin\` | VIGIL's managed `uv.exe` (the Python manager it uses for updates). |
@@ -218,7 +218,7 @@ The browser tool uses `agent-browser` (a Node helper) to drive Chromium. On Wind
 
 - The installer puts `agent-browser` on PATH via npm.
 - `shutil.which("agent-browser", path=...)` picks up the `.cmd` shim automatically — `CreateProcessW` can't execute an extensionless shebang, so VIGIL always resolves to the `.CMD` wrapper. Don't manually invoke the shebang script; always go through the `.cmd`.
-- Playwright Chromium is auto-installed on first run (`npx playwright install chromium`). If installation fails, `hermes doctor` surfaces it with a fix-it hint.
+- Playwright Chromium is auto-installed on first run (`npx playwright install chromium`). If installation fails, `vigil doctor` surfaces it with a fix-it hint.
 
 ## Running VIGIL on Windows — practical notes
 
@@ -229,8 +229,8 @@ The installer adds `%LOCALAPPDATA%\vigil\vigil-agent\venv\Scripts` to your **Use
 Verify:
 
 ```powershell
-Get-Command hermes        # should print C:\Users\<you>\AppData\Local\vigil\vigil-agent\venv\Scripts\hermes.exe
-hermes --version
+Get-Command vigil        # should print C:\Users\<you>\AppData\Local\vigil\vigil-agent\venv\Scripts\vigil.exe
+vigil --version
 ```
 
 ### Environment variables
@@ -259,21 +259,21 @@ These only affect native Windows installs:
 From PowerShell:
 
 ```powershell
-hermes uninstall
+vigil uninstall
 ```
 
-That's the clean path — removes the schtasks entry, Startup folder shortcut, `hermes.cmd` shim, deletes `%LOCALAPPDATA%\vigil\vigil-agent\`, and trims the User PATH. It leaves the rest of `%LOCALAPPDATA%\vigil\` alone (your config, auth, skills, sessions, logs) in case you're reinstalling.
+That's the clean path — removes the schtasks entry, Startup folder shortcut, `vigil.cmd` shim, deletes `%LOCALAPPDATA%\vigil\vigil-agent\`, and trims the User PATH. It leaves the rest of `%LOCALAPPDATA%\vigil\` alone (your config, auth, skills, sessions, logs) in case you're reinstalling.
 
 To nuke everything:
 
 ```powershell
-hermes uninstall
-Remove-Item -Recurse -Force "$env:LOCALAPPDATA\hermes"
+vigil uninstall
+Remove-Item -Recurse -Force "$env:LOCALAPPDATA\vigil"
 # Also remove a legacy CLI/WSL data dir if you ever used one:
 Remove-Item -Recurse -Force "$env:USERPROFILE\.vigil"
 ```
 
-The `hermes uninstall` CLI subcommand also handles the case where the schtasks entry was registered under a different task name (older installs) — it searches by install path rather than by hardcoded task name.
+The `vigil uninstall` CLI subcommand also handles the case where the schtasks entry was registered under a different task name (older installs) — it searches by install path rather than by hardcoded task name.
 
 ## Process management internals
 
@@ -287,8 +287,8 @@ Consequence: any codepath that said "check if this PID is alive" via `os.kill(pi
 
 ## Common pitfalls
 
-**`hermes: command not found` right after install.**
-Open a new PowerShell window. The installer added `%LOCALAPPDATA%\vigil\bin` to User PATH, but existing shells need to be restarted to pick it up. In the meantime you can run `& "$env:LOCALAPPDATA\vigil\bin\hermes.cmd"`.
+**`vigil: command not found` right after install.**
+Open a new PowerShell window. The installer added `%LOCALAPPDATA%\vigil\bin` to User PATH, but existing shells need to be restarted to pick it up. In the meantime you can run `& "$env:LOCALAPPDATA\vigil\bin\vigil.cmd"`.
 
 **`WinError 193: %1 is not a valid Win32 application` when running a tool.**
 You hit a shebang-script invocation that bypassed the `.cmd` shim. VIGIL resolves commands through `shutil.which(cmd, path=local_bin)` so PATHEXT picks up `.CMD` — if you're invoking the tool via a hardcoded path instead, switch to the `.cmd` variant (e.g., `npx.cmd`, not `npx`).
@@ -297,13 +297,13 @@ You hit a shebang-script invocation that bypassed the `.cmd` shim. VIGIL resolve
 Your download of `install.ps1` picked up a UTF-8 BOM. The `irm | iex` form strips BOMs automatically; `[scriptblock]::Create((irm ...))` does not. Re-run with the simple `irm | iex` form, or download the script manually and save it without a BOM via `[IO.File]::WriteAllText($path, $text, (New-Object Text.UTF8Encoding $false))`.
 
 **Gateway won't stay running after restart.**
-Check `hermes gateway status` — it merges the schtasks entry, the Startup-folder shortcut (if used), and the live PID. If schtasks is registered but not running, group policy may be blocking `ONLOGON` triggers. Run `schtasks /Query /TN VIGILGateway /V /FO LIST` to see the task's failure reason, or fall back to the Startup-folder path by uninstalling and reinstalling with `VIGIL_GATEWAY_FORCE_STARTUP=1`.
+Check `vigil gateway status` — it merges the schtasks entry, the Startup-folder shortcut (if used), and the live PID. If schtasks is registered but not running, group policy may be blocking `ONLOGON` triggers. Run `schtasks /Query /TN VIGILGateway /V /FO LIST` to see the task's failure reason, or fall back to the Startup-folder path by uninstalling and reinstalling with `VIGIL_GATEWAY_FORCE_STARTUP=1`.
 
 **`/edit` still does nothing after setting `$env:EDITOR`.**
 You set it in the current process only; close and reopen the shell, or set it at User scope in System Properties → Environment Variables. Verify with `echo $env:EDITOR` in a new PowerShell window.
 
 **Browser tool launches but tools time out.**
-Chromium is auto-installed on first run. If the install failed (rate-limited GitHub, Playwright CDN hiccup), run `hermes doctor` — it will surface the missing Chromium and print the exact `npx playwright install chromium` command to fix it.
+Chromium is auto-installed on first run. If the install failed (rate-limited GitHub, Playwright CDN hiccup), run `vigil doctor` — it will surface the missing Chromium and print the exact `npx playwright install chromium` command to fix it.
 
 **`agent-browser` fails with a weird Node version error.**
 The installer provisions Node 22 at `%LOCALAPPDATA%\vigil\node` but your PATH may have an older system Node 18 first. Either move VIGIL's node dir earlier on PATH, or delete the system install if you don't use Node elsewhere.
@@ -321,6 +321,6 @@ If you edited VIGIL config or a skill on Windows using a non-UTF-8 editor (Notep
 
 - **[Installation](../getting-started/installation.md)** — the full install page, including Linux/macOS/WSL2/Termux.
 - **[Windows (WSL2) Guide](./windows-wsl-quickstart.md)** — if you want POSIX semantics or the dashboard terminal pane.
-- **[CLI Reference](../reference/cli-commands.md)** — every `hermes` subcommand.
+- **[CLI Reference](../reference/cli-commands.md)** — every `vigil` subcommand.
 - **[FAQ](../reference/faq.md)** — common non-Windows-specific questions.
 - **[Messaging Gateway](./messaging/index.md)** — running Telegram/Discord/Slack on Windows.

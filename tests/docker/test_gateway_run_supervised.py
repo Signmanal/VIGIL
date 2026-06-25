@@ -15,7 +15,7 @@ These tests verify the three load-bearing properties of that redirect:
   3. The supervised process itself does NOT recurse — the
      ``VIGIL_S6_SUPERVISED_CHILD`` sentinel breaks the loop.
 
-Every ``docker exec`` runs as ``hermes`` per the conftest module
+Every ``docker exec`` runs as ``vigil`` per the conftest module
 docstring; see ``tests/docker/conftest.py`` for rationale.
 """
 from __future__ import annotations
@@ -134,7 +134,7 @@ def test_gateway_run_no_supervise_flag_preserves_legacy_behavior(
 
     Three positive assertions confirm we took the pre-s6 path:
 
-      * The CMD process is a python ``hermes gateway run`` invocation
+      * The CMD process is a python ``vigil gateway run`` invocation
         (not ``sleep infinity``).
       * The ``gateway-default`` s6 service slot is NOT created.
       * No supervision-redirect breadcrumb appears in docker logs.
@@ -247,11 +247,11 @@ def test_supervised_gateway_does_not_recurse(
     built_image: str, container_name: str,
 ) -> None:
     """The VIGIL_S6_SUPERVISED_CHILD sentinel must prevent the
-    supervised ``hermes gateway run`` from re-entering the redirect.
+    supervised ``vigil gateway run`` from re-entering the redirect.
 
     If recursion happened, every supervised gateway start would itself
     re-dispatch to s6 and exec ``sleep infinity`` — so the supervised
-    gateway slot would never actually run a python ``hermes gateway
+    gateway slot would never actually run a python ``vigil gateway
     run`` process. The slot would oscillate or settle into a state
     with no python in the supervise tree at all.
 
@@ -267,15 +267,15 @@ def test_supervised_gateway_does_not_recurse(
     )
     time.sleep(6)
 
-    # Count python processes running `hermes gateway run`. If the
+    # Count python processes running `vigil gateway run`. If the
     # recursion guard fails, s6 would respawn fresh `gateway run`
     # processes on every cycle, leaving multiple Python-process
     # descendants under the gateway-default supervise tree.
-    r = _sh(container_name, "ps -eo pid,cmd | grep -v grep | grep -E 'python.*hermes.*gateway run' | wc -l")
+    r = _sh(container_name, "ps -eo pid,cmd | grep -v grep | grep -E 'python.*vigil.*gateway run' | wc -l")
     assert r.returncode == 0
     n = int(r.stdout.strip() or 0)
     assert n <= 1, (
-        f"expected at most one supervised python `hermes gateway run` "
+        f"expected at most one supervised python `vigil gateway run` "
         f"process (the legitimately-supervised gateway); found {n}. "
         f"Recursion guard may have failed. "
         f"ps:\n{_sh(container_name, 'ps -eo pid,ppid,cmd').stdout}"
@@ -283,7 +283,7 @@ def test_supervised_gateway_does_not_recurse(
 
     # Stronger positive assertion: there should be exactly one
     # `sleep infinity` process whose parent is the main-wrapper.sh
-    # CMD process (PID 17 typically). The static `main-hermes`
+    # CMD process (PID 17 typically). The static `main-vigil`
     # service has its own `sleep infinity` child; THAT one is fine
     # and unrelated to our redirect.
     r = _sh(
@@ -340,7 +340,7 @@ def test_supervised_gateway_stdout_reaches_docker_logs(
     swallows the gateway's stdout into the file and ``docker logs``
     only sees stderr (Python ``logging`` defaults to stderr). That's
     a poor user experience: the iconic "VIGIL Gateway Starting…"
-    banner with the ⚕ symbol is the most visible "yes, your gateway
+    banner with the ◆ symbol is the most visible "yes, your gateway
     started" signal, and forcing users to ``docker exec`` + ``tail``
     the log file just to see it is friction users don't expect.
 
@@ -349,7 +349,7 @@ def test_supervised_gateway_stdout_reaches_docker_logs(
     /init's stdout = container stdout = ``docker logs``) AND also
     writes a timestamped copy to the rotated file. Best of both.
 
-    We assert by looking for the literal banner glyph (``⚕``) — a
+    We assert by looking for the literal banner glyph (``◆``) — a
     distinctive character that won't appear in stderr-routed
     Python-logging output, so its presence in ``docker logs`` proves
     the stdout-tee is working.
@@ -369,10 +369,10 @@ def test_supervised_gateway_stdout_reaches_docker_logs(
     )
     combined = logs.stdout + logs.stderr
 
-    # The banner ⚕ symbol is the load-bearing assertion — it's unique
+    # The banner ◆ symbol is the load-bearing assertion — it's unique
     # to gateway startup stdout output and won't appear in stderr
     # (Python logging) or s6 boot messages.
-    assert "⚕" in combined or "VIGIL Gateway Starting" in combined, (
+    assert "◆" in combined or "VIGIL Gateway Starting" in combined, (
         "Supervised gateway's stdout banner did not reach docker logs. "
         "This means the `1` action directive in _render_log_run isn't "
         "forwarding stdout to /init. "
@@ -387,9 +387,8 @@ def test_supervised_gateway_stdout_reaches_docker_logs(
     file_contents = _sh(
         container_name, "cat /opt/data/logs/gateways/default/current",
     ).stdout
-    assert "⚕" in file_contents or "VIGIL Gateway Starting" in file_contents, (
+    assert "◆" in file_contents or "VIGIL Gateway Starting" in file_contents, (
         "Banner also missing from rotated log file — the file "
         "destination may have been dropped by the new s6-log script. "
         f"File contents:\n{file_contents}"
     )
-

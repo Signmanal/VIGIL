@@ -247,7 +247,7 @@ Include this object under `metadata.codex_lane` for every task where the lane wa
     "accepted_commits": ["<sha1>", "<sha2>"],
     "rejected_reason": "empty when fully accepted; otherwise concrete reason",
     "tests_run": [
-      {"command": "scripts/run_tests.sh tests/tools/test_x.py", "exit_code": 0, "owner": "hermes"},
+      {"command": "scripts/run_tests.sh tests/tools/test_x.py", "exit_code": 0, "owner": "vigil"},
       {"command": "codex-reported: npm test", "exit_code": 0, "owner": "codex"}
     ],
     "artifacts": ["/absolute/path/to/log-or-patch"]

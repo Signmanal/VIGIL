@@ -39,9 +39,9 @@ Cron 运行的会话不能递归创建更多 cron 任务。VIGIL 在 cron 执行
 ### 从独立 CLI
 
 ```bash
-hermes cron create "every 2h" "Check server status"
-hermes cron create "every 1h" "Summarize new feed items" --skill blogwatcher
-hermes cron create "every 1h" "Use both skills and combine the result" \
+vigil cron create "every 2h" "Check server status"
+vigil cron create "every 1h" "Summarize new feed items" --skill blogwatcher
+vigil cron create "every 1h" "Use both skills and combine the result" \
   --skill blogwatcher \
   --skill maps \
   --name "Skill combo"
@@ -95,7 +95,7 @@ Cron 任务默认与任何代码仓库脱离运行——不加载 `AGENTS.md`、
 
 ```bash
 # 独立 CLI（schedule 和 prompt 为位置参数）
-hermes cron create "every 1d at 09:00" \
+vigil cron create "every 1d at 09:00" \
   "Audit open PRs, summarize CI health, and post to #eng" \
   --workdir /home/me/projects/acme
 ```
@@ -127,7 +127,7 @@ cronjob(
 
 ```bash
 # 将任务固定到 `night-ops` profile，无论在哪里调度
-hermes cron create "every 1d at 03:00" \
+vigil cron create "every 1d at 03:00" \
   "Tail the security log and flag anomalies" \
   --profile night-ops
 ```
@@ -171,12 +171,12 @@ cronjob(
 ### 独立 CLI
 
 ```bash
-hermes cron edit <job_id> --schedule "every 4h"
-hermes cron edit <job_id> --prompt "Use the revised task"
-hermes cron edit <job_id> --skill blogwatcher --skill maps
-hermes cron edit <job_id> --add-skill maps
-hermes cron edit <job_id> --remove-skill blogwatcher
-hermes cron edit <job_id> --clear-skills
+vigil cron edit <job_id> --schedule "every 4h"
+vigil cron edit <job_id> --prompt "Use the revised task"
+vigil cron edit <job_id> --skill blogwatcher --skill maps
+vigil cron edit <job_id> --add-skill maps
+vigil cron edit <job_id> --remove-skill blogwatcher
+vigil cron edit <job_id> --clear-skills
 ```
 
 注意：
@@ -203,13 +203,13 @@ Cron 任务现在拥有比创建/删除更完整的生命周期。
 ### 独立 CLI
 
 ```bash
-hermes cron list
-hermes cron pause <job_id>
-hermes cron resume <job_id>
-hermes cron run <job_id>
-hermes cron remove <job_id>
-hermes cron status
-hermes cron tick
+vigil cron list
+vigil cron pause <job_id>
+vigil cron resume <job_id>
+vigil cron run <job_id>
+vigil cron remove <job_id>
+vigil cron status
+vigil cron tick
 ```
 
 各操作说明：
@@ -224,12 +224,12 @@ hermes cron tick
 **Cron 执行由 gateway 守护进程处理。** Gateway 每 60 秒 tick 一次调度器，在隔离的 agent 会话中运行到期的任务。
 
 ```bash
-hermes gateway install     # 安装为用户服务
-sudo hermes gateway install --system   # Linux：服务器开机启动的系统服务
-hermes gateway             # 或在前台运行
+vigil gateway install     # 安装为用户服务
+sudo vigil gateway install --system   # Linux：服务器开机启动的系统服务
+vigil gateway             # 或在前台运行
 
-hermes cron list
-hermes cron status
+vigil cron list
+vigil cron status
 ```
 
 ### Gateway 调度器行为
@@ -349,7 +349,7 @@ cron:
 对于不需要 LLM 推理的周期性任务——经典的看门狗、磁盘/内存告警、心跳、CI ping——在创建时传入 `no_agent=True`。调度器按计划运行你的脚本，并直接投递其 stdout，完全跳过 agent：
 
 ```bash
-hermes cron create "every 5m" \
+vigil cron create "every 5m" \
   --no-agent \
   --script memory-watchdog.sh \
   --deliver telegram \
@@ -523,10 +523,10 @@ cronjob(action="remove", job_id="...")
 
 ## Cron 任务可用的工具集
 
-Cron 在全新的 agent 会话中运行每个任务，不附加任何聊天平台。默认情况下，cron agent 获得**你在 `hermes tools` 中为 `cron` 平台配置的工具集**——不是 CLI 默认值，也不是所有工具。
+Cron 在全新的 agent 会话中运行每个任务，不附加任何聊天平台。默认情况下，cron agent 获得**你在 `vigil tools` 中为 `cron` 平台配置的工具集**——不是 CLI 默认值，也不是所有工具。
 
 ```bash
-hermes tools
+vigil tools
 # → 在 curses UI 中选择 "cron" 平台
 # → 像 Telegram/Discord 等平台一样切换工具集开关
 ```
@@ -540,7 +540,7 @@ cronjob(action="create", name="weekly-news-summary",
         prompt="Summarize this week's AI news: ...")
 ```
 
-当任务上设置了 `enabled_toolsets` 时，它优先生效；否则 `hermes tools` 的 cron 平台配置生效；否则 VIGIL 回退到内置默认值。这对成本控制很重要：在每个小型"获取新闻"任务中携带 `moa`、`browser`、`delegation` 会在每次 LLM 调用时膨胀工具 schema prompt。
+当任务上设置了 `enabled_toolsets` 时，它优先生效；否则 `vigil tools` 的 cron 平台配置生效；否则 VIGIL 回退到内置默认值。这对成本控制很重要：在每个小型"获取新闻"任务中携带 `moa`、`browser`、`delegation` 会在每次 LLM 调用时膨胀工具 schema prompt。
 
 ### 完全跳过 agent：`wakeAgent`
 

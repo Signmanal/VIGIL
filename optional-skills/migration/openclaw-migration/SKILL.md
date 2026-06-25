@@ -6,7 +6,7 @@ author: VIGIL Agent (Nous Research)
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  hermes:
+  vigil:
     tags: [Migration, OpenClaw, VIGIL, Memory, Persona, Import]
     related_skills: [vigil-agent]
 ---
@@ -20,20 +20,20 @@ Use this skill when a user wants to move their OpenClaw setup into VIGIL Agent w
 For a quick, non-interactive migration, use the built-in CLI command:
 
 ```bash
-hermes claw migrate              # Full interactive migration
-hermes claw migrate --dry-run    # Preview what would be migrated
-hermes claw migrate --preset user-data   # Migrate without secrets
-hermes claw migrate --overwrite  # Overwrite existing conflicts
-hermes claw migrate --source /custom/path/.openclaw  # Custom source
+vigil claw migrate              # Full interactive migration
+vigil claw migrate --dry-run    # Preview what would be migrated
+vigil claw migrate --preset user-data   # Migrate without secrets
+vigil claw migrate --overwrite  # Overwrite existing conflicts
+vigil claw migrate --source /custom/path/.openclaw  # Custom source
 ```
 
 The CLI command runs the same migration script described below. Use this skill (via the agent) when you want an interactive, guided migration with dry-run previews and per-item conflict resolution.
 
-**First-time setup:** The `hermes setup` wizard automatically detects `~/.openclaw` and offers migration before configuration begins.
+**First-time setup:** The `vigil setup` wizard automatically detects `~/.openclaw` and offers migration before configuration begins.
 
 ## What this skill does
 
-It uses `scripts/openclaw_to_hermes.py` to:
+It uses `scripts/openclaw_to_vigil.py` to:
 
 - import `SOUL.md` into the VIGIL home directory as `SOUL.md`
 - transform OpenClaw `MEMORY.md` and `USER.md` into VIGIL memory entries
@@ -49,11 +49,11 @@ It uses `scripts/openclaw_to_hermes.py` to:
 
 The helper script lives in this skill directory at:
 
-- `scripts/openclaw_to_hermes.py`
+- `scripts/openclaw_to_vigil.py`
 
 When this skill is installed from the Skills Hub, the normal location is:
 
-- `~/.vigil/skills/migration/openclaw-migration/scripts/openclaw_to_hermes.py`
+- `~/.vigil/skills/migration/openclaw-migration/scripts/openclaw_to_vigil.py`
 
 Do not guess a shorter path like `~/.vigil/skills/openclaw-migration/...`.
 
@@ -229,37 +229,37 @@ The helper script still supports category-level `--include` / `--exclude`, but t
 Dry run with full discovery:
 
 ```bash
-python3 ~/.vigil/skills/migration/openclaw-migration/scripts/openclaw_to_hermes.py
+python3 ~/.vigil/skills/migration/openclaw-migration/scripts/openclaw_to_vigil.py
 ```
 
 When using the terminal tool, prefer an absolute invocation pattern such as:
 
 ```json
-{"command":"python3 /home/USER/.vigil/skills/migration/openclaw-migration/scripts/openclaw_to_hermes.py","workdir":"/home/USER"}
+{"command":"python3 /home/USER/.vigil/skills/migration/openclaw-migration/scripts/openclaw_to_vigil.py","workdir":"/home/USER"}
 ```
 
 Dry run with the user-data preset:
 
 ```bash
-python3 ~/.vigil/skills/migration/openclaw-migration/scripts/openclaw_to_hermes.py --preset user-data
+python3 ~/.vigil/skills/migration/openclaw-migration/scripts/openclaw_to_vigil.py --preset user-data
 ```
 
 Execute a user-data migration:
 
 ```bash
-python3 ~/.vigil/skills/migration/openclaw-migration/scripts/openclaw_to_hermes.py --execute --preset user-data --skill-conflict skip
+python3 ~/.vigil/skills/migration/openclaw-migration/scripts/openclaw_to_vigil.py --execute --preset user-data --skill-conflict skip
 ```
 
 Execute a full compatible migration:
 
 ```bash
-python3 ~/.vigil/skills/migration/openclaw-migration/scripts/openclaw_to_hermes.py --execute --preset full --migrate-secrets --skill-conflict skip
+python3 ~/.vigil/skills/migration/openclaw-migration/scripts/openclaw_to_vigil.py --execute --preset full --migrate-secrets --skill-conflict skip
 ```
 
 Execute with workspace instructions included:
 
 ```bash
-python3 ~/.vigil/skills/migration/openclaw-migration/scripts/openclaw_to_hermes.py --execute --preset user-data --skill-conflict rename --workspace-target "/absolute/workspace/path"
+python3 ~/.vigil/skills/migration/openclaw-migration/scripts/openclaw_to_vigil.py --execute --preset user-data --skill-conflict rename --workspace-target "/absolute/workspace/path"
 ```
 
 Do not use `$PWD` or the home directory as the workspace target by default. Ask for an explicit workspace path first.

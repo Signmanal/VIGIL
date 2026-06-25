@@ -33,8 +33,8 @@ def _state_dir() -> Path:
     if override:
         return Path(override)
     # Default: $VIGIL_HOME/watcher-state/, falling back to ~/.vigil/watcher-state/.
-    hermes_home = os.environ.get("VIGIL_HOME") or str(Path.home() / ".vigil")
-    return Path(hermes_home) / "watcher-state"
+    vigil_home = os.environ.get("VIGIL_HOME") or str(Path.home() / ".vigil")
+    return Path(vigil_home) / "watcher-state"
 
 
 class Watermark:

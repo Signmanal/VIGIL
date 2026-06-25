@@ -256,7 +256,7 @@ class TestBlocklistCoverage:
     def test_registry_vars_are_in_blocklist(self):
         """Every api_key_env_var and base_url_env_var from PROVIDER_REGISTRY
         must appear in the blocklist — ensures no drift."""
-        from hermes_cli.auth import PROVIDER_REGISTRY
+        from vigil_cli.auth import PROVIDER_REGISTRY
 
         for pconfig in PROVIDER_REGISTRY.values():
             for var in pconfig.api_key_env_vars:
@@ -322,7 +322,7 @@ class TestBlocklistCoverage:
 
     def test_optional_tool_and_messaging_vars_are_in_blocklist(self):
         """Tool/messaging vars from OPTIONAL_ENV_VARS should stay covered."""
-        from hermes_cli.config import OPTIONAL_ENV_VARS
+        from vigil_cli.config import OPTIONAL_ENV_VARS
 
         for name, metadata in OPTIONAL_ENV_VARS.items():
             category = metadata.get("category")
@@ -382,10 +382,10 @@ class TestSanePathIncludesHomebrew:
     """Verify _SANE_PATH includes macOS Homebrew directories."""
 
     @pytest.fixture(autouse=True)
-    def _disable_hermes_bin_injection(self):
+    def _disable_vigil_bin_injection(self):
         """These tests assert the sane-path merge in isolation. Disable the
-        hermes-install-dir prepend (a separate concern, covered by
-        TestVIGILBinDirOnPath) so a real ``hermes`` on the test runner's PATH
+        vigil-install-dir prepend (a separate concern, covered by
+        TestVIGILBinDirOnPath) so a real ``vigil`` on the test runner's PATH
         doesn't shift the asserted PATH layout."""
         from tools.environments import local as local_mod
         saved = local_mod._VIGIL_BIN_DIR
@@ -488,12 +488,12 @@ class TestSanePathIncludesHomebrew:
 
 
 class TestVIGILBinDirOnPath:
-    """The hermes install dir is reachable in the terminal subshell PATH.
+    """The vigil install dir is reachable in the terminal subshell PATH.
 
-    Plugins shelling out to bare ``hermes`` via the terminal tool must work
-    even when the gateway was launched without the hermes install dir on
+    Plugins shelling out to bare ``vigil`` via the terminal tool must work
+    even when the gateway was launched without the vigil install dir on
     PATH (systemd, service managers, cron). See the discussion that motivated
-    _resolve_hermes_bin_dir / _prepend_hermes_bin_dir.
+    _resolve_vigil_bin_dir / _prepend_vigil_bin_dir.
     """
 
     def _reset_cache(self):
@@ -504,9 +504,9 @@ class TestVIGILBinDirOnPath:
         from tools.environments import local as local_mod
         self._reset_cache()
         monkeypatch.setattr(local_mod.shutil, "which",
-                            lambda name: "/opt/vigil/bin/hermes" if name == "hermes" else None)
+                            lambda name: "/opt/vigil/bin/vigil" if name == "vigil" else None)
         monkeypatch.setattr(local_mod.os.path, "isdir", lambda p: p == "/opt/vigil/bin")
-        assert local_mod._resolve_hermes_bin_dir() == "/opt/vigil/bin"
+        assert local_mod._resolve_vigil_bin_dir() == "/opt/vigil/bin"
 
     def test_resolves_via_sys_executable_dir(self, monkeypatch, tmp_path):
         from tools.environments import local as local_mod
@@ -518,7 +518,7 @@ class TestVIGILBinDirOnPath:
         monkeypatch.setattr(local_mod.sys, "argv", ["python"])
         monkeypatch.setattr(local_mod.sys, "executable", str(venv_bin / "python"))
         monkeypatch.setattr(local_mod, "_IS_WINDOWS", False)
-        assert local_mod._resolve_hermes_bin_dir() == str(venv_bin)
+        assert local_mod._resolve_vigil_bin_dir() == str(venv_bin)
 
     def test_returns_none_when_unresolvable(self, monkeypatch):
         from tools.environments import local as local_mod
@@ -526,13 +526,13 @@ class TestVIGILBinDirOnPath:
         monkeypatch.setattr(local_mod.shutil, "which", lambda name: None)
         monkeypatch.setattr(local_mod.sys, "argv", ["python"])
         monkeypatch.setattr(local_mod.sys, "executable", "/nonexistent/python")
-        assert local_mod._resolve_hermes_bin_dir() is None
+        assert local_mod._resolve_vigil_bin_dir() is None
 
     def test_prepend_adds_missing_dir_at_front(self, monkeypatch):
         from tools.environments import local as local_mod
         self._reset_cache()
         local_mod._VIGIL_BIN_DIR = "/opt/vigil/bin"
-        out = local_mod._prepend_hermes_bin_dir("/usr/bin:/bin")
+        out = local_mod._prepend_vigil_bin_dir("/usr/bin:/bin")
         assert out.split(os.pathsep)[0] == "/opt/vigil/bin"
         assert "/usr/bin" in out.split(os.pathsep)
 
@@ -540,8 +540,8 @@ class TestVIGILBinDirOnPath:
         from tools.environments import local as local_mod
         self._reset_cache()
         local_mod._VIGIL_BIN_DIR = "/opt/vigil/bin"
-        once = local_mod._prepend_hermes_bin_dir("/usr/bin:/bin")
-        twice = local_mod._prepend_hermes_bin_dir(once)
+        once = local_mod._prepend_vigil_bin_dir("/usr/bin:/bin")
+        twice = local_mod._prepend_vigil_bin_dir(once)
         assert twice == once
         assert once.split(os.pathsep).count("/opt/vigil/bin") == 1
 
@@ -549,10 +549,10 @@ class TestVIGILBinDirOnPath:
         from tools.environments import local as local_mod
         self._reset_cache()
         local_mod._VIGIL_BIN_DIR = None
-        assert local_mod._prepend_hermes_bin_dir("/usr/bin:/bin") == "/usr/bin:/bin"
+        assert local_mod._prepend_vigil_bin_dir("/usr/bin:/bin") == "/usr/bin:/bin"
 
-    def test_make_run_env_injects_hermes_bin_dir(self, monkeypatch):
-        """A gateway env missing the hermes dir gets it back in the subshell PATH."""
+    def test_make_run_env_injects_vigil_bin_dir(self, monkeypatch):
+        """A gateway env missing the vigil dir gets it back in the subshell PATH."""
         from tools.environments import local as local_mod
         from tools.environments.local import _make_run_env
         self._reset_cache()

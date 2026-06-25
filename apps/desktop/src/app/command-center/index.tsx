@@ -13,8 +13,8 @@ import {
   getUsageAnalytics,
   restartGateway,
   updateVIGIL
-} from '@/hermes'
-import type { ActionStatusResponse, AnalyticsResponse, StatusResponse } from '@/hermes'
+} from '@/vigil'
+import type { ActionStatusResponse, AnalyticsResponse, StatusResponse } from '@/vigil'
 import { useI18n } from '@/i18n'
 import { sessionTitle } from '@/lib/chat-runtime'
 import { Activity, AlertCircle, BarChart3, Pin } from '@/lib/icons'

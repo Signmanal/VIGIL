@@ -6,7 +6,7 @@ author: VIGIL Agent
 license: MIT
 platforms: [macos]
 metadata:
-  hermes:
+  vigil:
     tags: [FindMy, AirTag, location, tracking, macOS, Apple]
 ---
 

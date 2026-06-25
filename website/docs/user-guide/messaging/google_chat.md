@@ -13,7 +13,7 @@ process does not need a public URL, a tunnel, or a TLS certificate. It connects,
 authenticates, and listens on a subscription — the same way a Telegram bot listens
 on a token.
 
-> Run `hermes gateway setup` and pick **Google Chat** for a guided walk-through.
+> Run `vigil gateway setup` and pick **Google Chat** for a guided walk-through.
 
 :::note Workspace edition
 Google Chat is part of Google Workspace. You can use this integration with a
@@ -60,7 +60,7 @@ Both are free for the volumes a personal bot generates.
 
 **IAM & Admin → Service Accounts → Create Service Account.**
 
-- Name: `hermes-chat-bot`
+- Name: `vigil-chat-bot`
 - Skip the "Grant this service account access to project" step. IAM on the specific
   subscription is all you need — do **NOT** grant project-level Pub/Sub roles.
 
@@ -81,14 +81,14 @@ the subscription you create in the next step.
 
 **Pub/Sub → Topics → Create topic.**
 
-- Topic ID: `hermes-chat-events`
+- Topic ID: `vigil-chat-events`
 - Leave the defaults for everything else.
 
 After creation, the topic's detail page has a **Subscriptions** tab. Create one:
 
-- Subscription ID: `hermes-chat-events-sub`
+- Subscription ID: `vigil-chat-events-sub`
 - Delivery type: **Pull**
-- Message retention: **7 days** (so backlog survives a hermes restart)
+- Message retention: **7 days** (so backlog survives a vigil restart)
 - Leave the rest default.
 
 ---
@@ -109,7 +109,7 @@ never receive anything.
 
 On the **subscription**, add your own Service Account as a principal:
 
-- Principal: `hermes-chat-bot@<your-project>.iam.gserviceaccount.com`
+- Principal: `vigil-chat-bot@<your-project>.iam.gserviceaccount.com`
 - Role: `Pub/Sub Subscriber`
 
 Also grant `Pub/Sub Viewer` on the same subscription — VIGIL calls
@@ -127,7 +127,7 @@ Go to **APIs & Services → Google Chat API → Configuration**.
 - **Functionality**: enable **Receive 1:1 messages** and **Join spaces and group
   conversations**.
 - **Connection settings**: select **Cloud Pub/Sub**, enter the topic name
-  `projects/<your-project>/topics/hermes-chat-events`.
+  `projects/<your-project>/topics/vigil-chat-events`.
 - **Visibility**: restrict to your workspace (or specific users) — do not publish
   to everyone while you're testing.
 
@@ -151,7 +151,7 @@ Add the Google Chat section to `~/.vigil/.env`:
 ```bash
 # Required
 GOOGLE_CHAT_PROJECT_ID=my-chat-bot-123
-GOOGLE_CHAT_SUBSCRIPTION_NAME=projects/my-chat-bot-123/subscriptions/hermes-chat-events-sub
+GOOGLE_CHAT_SUBSCRIPTION_NAME=projects/my-chat-bot-123/subscriptions/vigil-chat-events-sub
 GOOGLE_CHAT_SERVICE_ACCOUNT_JSON=/home/you/.vigil/google-chat-sa.json
 
 # Authorization — paste the emails of people allowed to talk to the bot
@@ -175,7 +175,7 @@ pip install google-cloud-pubsub google-api-python-client google-auth google-auth
 Start the gateway:
 
 ```bash
-hermes gateway
+vigil gateway
 ```
 
 You should see a log line like:
@@ -244,7 +244,7 @@ python -m plugins.platforms.google_chat.oauth \
     --client-secret /path/to/client_secret.json
 
 # A named profile gets its own separate registration:
-hermes -p <profile> python -m plugins.platforms.google_chat.oauth \
+vigil -p <profile> python -m plugins.platforms.google_chat.oauth \
     --client-secret /path/to/client_secret.json
 ```
 
@@ -305,7 +305,7 @@ evicts only that user's cache. Users don't disrupt each other.
 2. If the subscription has zero messages, Google Chat isn't publishing.
    Double-check the IAM binding on the **topic**:
    `chat-api-push@system.gserviceaccount.com` must have `Pub/Sub Publisher`.
-3. Check `hermes gateway` logs for `[GoogleChat] Connected`. If you see
+3. Check `vigil gateway` logs for `[GoogleChat] Connected`. If you see
    `[GoogleChat] Config validation failed`, the error message tells you which
    env var to fix.
 
@@ -346,7 +346,7 @@ python -m plugins.platforms.google_chat.oauth \
     --client-secret /path/to/client_secret.json
 
 # Named profile:
-hermes -p <profile> python -m plugins.platforms.google_chat.oauth \
+vigil -p <profile> python -m plugins.platforms.google_chat.oauth \
     --client-secret /path/to/client_secret.json
 ```
 

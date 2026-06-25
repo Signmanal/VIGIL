@@ -6,7 +6,7 @@ author: Nous Research
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  hermes:
+  vigil:
     tags: [telephony, phone, sms, mms, voice, twilio, bland.ai, vapi, calling, texting]
     related_skills: [maps, google-workspace, agentmail]
     category: productivity
@@ -140,8 +140,8 @@ If `SCRIPT` is empty, the skill is not installed yet.
 This is an official optional skill, so install it from the Skills Hub:
 
 ```bash
-hermes skills search telephony
-hermes skills install official/productivity/telephony
+vigil skills search telephony
+vigil skills install official/productivity/telephony
 ```
 
 ## Provider setup

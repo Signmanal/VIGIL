@@ -1,7 +1,7 @@
-"""Cross-session rate limit guard for Nous Portal.
+"""Cross-session rate limit guard for VIGIL Portal.
 
 Writes rate limit state to a shared file so all sessions (CLI, gateway,
-cron, auxiliary) can check whether Nous Portal is currently rate-limited
+cron, auxiliary) can check whether VIGIL Portal is currently rate-limited
 before making requests.  Prevents retry amplification when RPH is tapped.
 
 Each 429 from Nous triggers up to 9 API calls per conversation turn
@@ -29,8 +29,8 @@ _STATE_FILENAME = "nous.json"
 def _state_path() -> str:
     """Return the path to the Nous rate limit state file."""
     try:
-        from hermes_constants import get_hermes_home
-        base = get_hermes_home()
+        from vigil_constants import get_vigil_home
+        base = get_vigil_home()
     except ImportError:
         base = os.path.join(os.path.expanduser("~"), ".vigil")
     return os.path.join(base, _STATE_SUBDIR, _STATE_FILENAME)
@@ -74,7 +74,7 @@ def record_nous_rate_limit(
     error_context: Optional[dict[str, Any]] = None,
     default_cooldown: float = 300.0,
 ) -> None:
-    """Record that Nous Portal is rate-limited.
+    """Record that VIGIL Portal is rate-limited.
 
     Parses the reset time from response headers or error context.
     Falls back to ``default_cooldown`` (5 minutes) if no reset info
@@ -137,7 +137,7 @@ def record_nous_rate_limit(
 
 
 def nous_rate_limit_remaining() -> Optional[float]:
-    """Check if Nous Portal is currently rate-limited.
+    """Check if VIGIL Portal is currently rate-limited.
 
     Returns:
         Seconds remaining until reset, or None if not rate-limited.
@@ -194,9 +194,9 @@ def is_genuine_nous_rate_limit(
     headers: Optional[Mapping[str, str]] = None,
     last_known_state: Optional[Any] = None,
 ) -> bool:
-    """Decide whether a 429 from Nous Portal is a real account rate limit.
+    """Decide whether a 429 from VIGIL Portal is a real account rate limit.
 
-    Nous Portal multiplexes multiple upstream providers (DeepSeek, Kimi,
+    VIGIL Portal multiplexes multiple upstream providers (DeepSeek, Kimi,
     MiMo, VIGIL, ...) behind one endpoint.  A 429 can mean either:
 
       (a) The caller's own RPM / RPH / TPM / TPH bucket on Nous is

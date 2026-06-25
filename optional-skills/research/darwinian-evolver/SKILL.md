@@ -6,7 +6,7 @@ author: Bihruze (Asahi0x), VIGIL Agent
 license: MIT
 platforms: [linux, macos]
 metadata:
-  hermes:
+  vigil:
     tags: [evolution, optimization, prompt-engineering, research]
     related_skills: [arxiv, jupyter-live-kernel]
 ---

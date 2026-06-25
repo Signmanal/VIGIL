@@ -82,7 +82,7 @@ def test_manager_remove_evicts_cache(tmp_path, monkeypatch):
     assert p1 is not p2
 
 
-def test_hermes_provider_subclass_exists():
+def test_vigil_provider_subclass_exists():
     """VIGILMCPOAuthProvider is defined and subclasses OAuthClientProvider."""
     from tools.mcp_oauth_manager import _VIGIL_PROVIDER_CLS
     from mcp.client.auth.oauth2 import OAuthClientProvider
@@ -134,7 +134,7 @@ async def test_disk_watch_invalidates_on_mtime_change(tmp_path, monkeypatch):
     assert provider._initialized is False
 
 
-def test_manager_builds_hermes_provider_subclass(tmp_path, monkeypatch):
+def test_manager_builds_vigil_provider_subclass(tmp_path, monkeypatch):
     """get_or_build_provider returns VIGILMCPOAuthProvider, not plain OAuthClientProvider."""
     from tools.mcp_oauth_manager import (
         MCPOAuthManager, _VIGIL_PROVIDER_CLS, reset_manager_for_tests,
@@ -148,7 +148,7 @@ def test_manager_builds_hermes_provider_subclass(tmp_path, monkeypatch):
 
     assert _VIGIL_PROVIDER_CLS is not None
     assert isinstance(provider, _VIGIL_PROVIDER_CLS)
-    assert provider._hermes_server_name == "srv"
+    assert provider._vigil_server_name == "srv"
 
 
 def test_manager_fails_fast_noninteractive_without_cached_tokens(tmp_path, monkeypatch):

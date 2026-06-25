@@ -98,7 +98,7 @@ gateway:
     upload_failed:         "✗ Échec de l'envoi du rapport de débogage : {error}"
     header:                "**Rapport de débogage envoyé :**"
     auto_delete:           "⏱ Les pastes s'effaceront automatiquement dans 6 heures."
-    full_logs_hint:        "Pour envoyer les journaux complets, utilisez `hermes debug share` depuis la CLI."
+    full_logs_hint:        "Pour envoyer les journaux complets, utilisez `vigil debug share` depuis la CLI."
     share_hint:            "Partagez ces liens avec l'équipe VIGIL pour obtenir de l'aide."
 
   deny:
@@ -147,7 +147,7 @@ gateway:
   kanban:
     error_prefix:          "⚠ erreur kanban : {error}"
     subscribed_suffix:     "(abonné — vous serez notifié lorsque {task_id} se terminera ou sera bloqué)"
-    truncated_suffix:      "… (tronqué ; utilisez `hermes kanban …` dans votre terminal pour la sortie complète)"
+    truncated_suffix:      "… (tronqué ; utilisez `vigil kanban …` dans votre terminal pour la sortie complète)"
     no_output:             "(aucune sortie)"
 
   personality:
@@ -215,7 +215,7 @@ gateway:
 
   restart:
     in_progress:           "⏳ Redémarrage du gateway déjà en cours..."
-    restarting:            "♻ Redémarrage du gateway. Si vous n'êtes pas notifié dans les 60 secondes, redémarrez depuis la console avec `hermes gateway restart`."
+    restarting:            "♻ Redémarrage du gateway. Si vous n'êtes pas notifié dans les 60 secondes, redémarrez depuis la console avec `vigil gateway restart`."
 
   resume:
     db_unavailable:        "Base de données des sessions indisponible."
@@ -312,9 +312,9 @@ Future messages in this room will use that transcript until `/reset` or another 
     invalid_count:         "Nombre invalide « {arg} » — utilisez /undo ou /undo N."
 
   update:
-    platform_not_messaging:  "✗ /update n'est disponible que depuis les plateformes de messagerie. Exécutez `hermes update` depuis le terminal."
+    platform_not_messaging:  "✗ /update n'est disponible que depuis les plateformes de messagerie. Exécutez `vigil update` depuis le terminal."
     not_git_repo:            "✗ Pas un dépôt git — impossible de mettre à jour."
-    hermes_cmd_not_found:    "✗ Impossible de localiser la commande `hermes`. VIGIL est en cours d'exécution, mais la commande de mise à jour n'a pas pu trouver l'exécutable dans le PATH ni via l'interpréteur Python actuel. Essayez d'exécuter `hermes update` manuellement dans votre terminal."
+    vigil_cmd_not_found:    "✗ Impossible de localiser la commande `vigil`. VIGIL est en cours d'exécution, mais la commande de mise à jour n'a pas pu trouver l'exécutable dans le PATH ni via l'interpréteur Python actuel. Essayez d'exécuter `vigil update` manuellement dans votre terminal."
     start_failed:            "✗ Échec du démarrage de la mise à jour : {error}"
     starting:                "⚕ Démarrage de la mise à jour VIGIL… Je diffuserai la progression ici."
 
@@ -339,7 +339,7 @@ Future messages in this room will use that transcript until `/reset` or another 
     no_data:                  "Aucune donnée d'utilisation disponible pour cette session."
 
   credits:
-    not_logged_in:            "Non connecté à Nous Portal. Connecte-toi pour voir ton solde de crédits et recharger."
+    not_logged_in:            "Non connecté à VIGIL Portal. Connecte-toi pour voir ton solde de crédits et recharger."
 
   verbose:
     not_enabled:           "La commande `/verbose` n'est pas activée pour les plateformes de messagerie.\n\nActivez-la dans `config.yaml` :\n```yaml\ndisplay:\n  tool_progress_command: true\n```"
