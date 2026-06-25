@@ -1,0 +1,108 @@
+name: SLSA Generic generator
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_private_rekor:
+        description: "Type: I understand public Rekor will reveal Signmanal/VIGIL"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: slsa-provenance-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  privacy-gate:
+    name: Private repository Rekor gate
+    runs-on: ubuntu-latest
+    outputs:
+      allowed: ${{ steps.gate.outputs.allowed }}
+    steps:
+      - name: Check explicit Rekor opt-in
+        id: gate
+        run: |
+          expected="I understand public Rekor will reveal Signmanal/VIGIL"
+          if [ "${{ inputs.confirm_private_rekor }}" = "$expected" ]; then
+            echo "allowed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "allowed=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::SLSA provenance was not generated. This private repository requires explicit opt-in because public Rekor entries reveal the repository name."
+          fi
+
+  build:
+    name: Build Python distributions
+    needs: privacy-gate
+    if: needs.privacy-gate.outputs.allowed == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      hashes: ${{ steps.hash.outputs.hashes }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: '3.13'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+
+      - name: Build web dashboard
+        run: cd web && npm ci && npm run build
+
+      - name: Build TUI bundle
+        run: cd ui-tui && npm ci && npm run build
+
+      - name: Bundle TUI into vigil_cli
+        run: |
+          mkdir -p vigil_cli/tui_dist
+          cp ui-tui/dist/entry.js vigil_cli/tui_dist/entry.js
+
+      - name: Bundle install scripts into wheel
+        run: |
+          mkdir -p vigil_cli/scripts
+          cp scripts/install.sh vigil_cli/scripts/install.sh
+          cp scripts/install.ps1 vigil_cli/scripts/install.ps1
+
+      - name: Build wheel and sdist
+        run: uv build --sdist --wheel
+
+      - name: Generate SLSA subjects
+        id: hash
+        run: |
+          cd dist
+          hashes=$(sha256sum * | base64 -w0)
+          echo "hashes=$hashes" >> "$GITHUB_OUTPUT"
+
+      - name: Upload distributions
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: vigil-python-distributions
+          path: dist/
+          retention-days: 14
+
+  provenance:
+    name: Generate SLSA provenance
+    needs: build
+    permissions:
+      actions: read
+      contents: read
+      id-token: write
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.1.0
+    with:
+      base64-subjects: ${{ needs.build.outputs.hashes }}
+      provenance-name: vigil-agent-python.intoto.jsonl
+      private-repository: true
+      upload-assets: false
