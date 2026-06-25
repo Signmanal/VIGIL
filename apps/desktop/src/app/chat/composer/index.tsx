@@ -67,7 +67,7 @@ import { $threadScrolledUp } from '@/store/thread-scroll'
 import { isSecondaryWindow } from '@/store/windows'
 import { useTheme } from '@/themes'
 
-import { extractDroppedFiles, HERMES_PATHS_MIME, partitionDroppedFiles } from '../hooks/use-composer-actions'
+import { extractDroppedFiles, VIGIL_PATHS_MIME, partitionDroppedFiles } from '../hooks/use-composer-actions'
 
 import { AttachmentList } from './attachments'
 import { ContextMenu } from './context-menu'
@@ -365,7 +365,7 @@ export function ChatBar({
   }, [followUpPlaceholders, newSessionPlaceholders, sessionId])
 
   // When the transport is disabled it's because the gateway isn't open.
-  // Distinguish a cold start ("Starting Hermes...") from a dropped connection
+  // Distinguish a cold start ("Starting VIGIL...") from a dropped connection
   // we're trying to restore. During reconnect, keep the textbox editable so a
   // flaky network doesn't block drafting; only submit/backend actions stay
   // disabled until the gateway is open again.
@@ -1225,7 +1225,7 @@ export function ChatBar({
   }
 
   const handleDragEnter = (event: ReactDragEvent<HTMLFormElement>) => {
-    if (!onAttachDroppedItems || !dragHasAttachments(event.dataTransfer, HERMES_PATHS_MIME)) {
+    if (!onAttachDroppedItems || !dragHasAttachments(event.dataTransfer, VIGIL_PATHS_MIME)) {
       return
     }
 
@@ -1238,7 +1238,7 @@ export function ChatBar({
   }
 
   const handleDragOver = (event: ReactDragEvent<HTMLFormElement>) => {
-    if (!onAttachDroppedItems || !dragHasAttachments(event.dataTransfer, HERMES_PATHS_MIME)) {
+    if (!onAttachDroppedItems || !dragHasAttachments(event.dataTransfer, VIGIL_PATHS_MIME)) {
       return
     }
 
@@ -1295,7 +1295,7 @@ export function ChatBar({
   }
 
   const handleInputDragOver = (event: ReactDragEvent<HTMLDivElement>) => {
-    if (!dragHasAttachments(event.dataTransfer, HERMES_PATHS_MIME)) {
+    if (!dragHasAttachments(event.dataTransfer, VIGIL_PATHS_MIME)) {
       return
     }
 
@@ -1305,7 +1305,7 @@ export function ChatBar({
   }
 
   const handleInputDrop = (event: ReactDragEvent<HTMLDivElement>) => {
-    if (!dragHasAttachments(event.dataTransfer, HERMES_PATHS_MIME)) {
+    if (!dragHasAttachments(event.dataTransfer, VIGIL_PATHS_MIME)) {
       return
     }
 

@@ -4,7 +4,7 @@ from hermes_cli.status import show_status
 
 
 def test_show_status_includes_tavily_key(monkeypatch, capsys, tmp_path):
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("VIGIL_HOME", str(tmp_path))
     monkeypatch.setenv("TAVILY_API_KEY", "tvly-1234567890abcdef")
 
     show_status(SimpleNamespace(all=False, deep=False))
@@ -183,13 +183,13 @@ class TestShowStatusXaiOAuth:
         import hermes_cli.auth as auth_mod
         status_mod = _base_xai_mocks(monkeypatch, tmp_path)
         monkeypatch.setattr(auth_mod, "get_xai_oauth_auth_status",
-                            lambda: {"logged_in": True, "auth_store": "/home/u/.hermes/auth.json"},
+                            lambda: {"logged_in": True, "auth_store": "/home/u/.vigil/auth.json"},
                             raising=False)
 
         status_mod.show_status(SimpleNamespace(all=False, deep=False))
         out = capsys.readouterr().out
 
-        assert "Auth file:  /home/u/.hermes/auth.json" in out
+        assert "Auth file:  /home/u/.vigil/auth.json" in out
 
     def test_logged_in_shows_last_refresh(self, monkeypatch, capsys, tmp_path):
         import hermes_cli.auth as auth_mod

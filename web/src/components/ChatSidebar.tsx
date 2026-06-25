@@ -31,7 +31,7 @@ import { ModelPickerDialog } from "@/components/ModelPickerDialog";
 import { ModelReloadConfirm } from "@/components/ModelReloadConfirm";
 import { ReasoningPicker } from "@/components/ReasoningPicker";
 import { GatewayClient, type ConnectionState } from "@/lib/gatewayClient";
-import { api, HERMES_BASE_PATH, buildWsAuthParam } from "@/lib/api";
+import { api, VIGIL_BASE_PATH, buildWsAuthParam } from "@/lib/api";
 import { titleFromSessionInfoPayload } from "@/lib/chat-title";
 
 import { cn } from "@/lib/utils";
@@ -237,7 +237,7 @@ export function ChatSidebar({
       const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
       const qs = new URLSearchParams({ [authName]: authValue, channel });
       ws = new WebSocket(
-        `${proto}//${window.location.host}${HERMES_BASE_PATH}/api/events?${qs.toString()}`,
+        `${proto}//${window.location.host}${VIGIL_BASE_PATH}/api/events?${qs.toString()}`,
       );
 
       // `unmounting` suppresses the banner during cleanup — `ws.close()`

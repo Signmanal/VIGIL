@@ -161,12 +161,12 @@ test('pathWithGlobalRemoteProfile skips empty profile/path safely', () => {
 
 test('normalizeRemoteBaseUrl strips trailing slashes, hash, and query', () => {
   assert.equal(normalizeRemoteBaseUrl('https://gw.example.com/'), 'https://gw.example.com')
-  assert.equal(normalizeRemoteBaseUrl('https://gw.example.com/hermes/'), 'https://gw.example.com/hermes')
-  assert.equal(normalizeRemoteBaseUrl('https://gw.example.com/hermes?x=1#frag'), 'https://gw.example.com/hermes')
+  assert.equal(normalizeRemoteBaseUrl('https://gw.example.com/vigil/'), 'https://gw.example.com/vigil')
+  assert.equal(normalizeRemoteBaseUrl('https://gw.example.com/vigil?x=1#frag'), 'https://gw.example.com/vigil')
 })
 
 test('normalizeRemoteBaseUrl preserves a path prefix', () => {
-  assert.equal(normalizeRemoteBaseUrl('https://host/hermes'), 'https://host/hermes')
+  assert.equal(normalizeRemoteBaseUrl('https://host/vigil'), 'https://host/vigil')
 })
 
 test('normalizeRemoteBaseUrl rejects empty input', () => {
@@ -194,7 +194,7 @@ test('buildGatewayWsUrl uses ws for http', () => {
 })
 
 test('buildGatewayWsUrl honors a path prefix', () => {
-  assert.equal(buildGatewayWsUrl('https://host/hermes', 't'), 'wss://host/hermes/api/ws?token=t')
+  assert.equal(buildGatewayWsUrl('https://host/vigil', 't'), 'wss://host/vigil/api/ws?token=t')
 })
 
 test('buildGatewayWsUrl url-encodes the token', () => {
@@ -204,8 +204,8 @@ test('buildGatewayWsUrl url-encodes the token', () => {
 // --- buildGatewayWsUrlWithTicket (oauth) ---
 
 test('buildGatewayWsUrlWithTicket uses ?ticket= not ?token=', () => {
-  const url = buildGatewayWsUrlWithTicket('https://gw.example.com/hermes', 'tkt-9')
-  assert.equal(url, 'wss://gw.example.com/hermes/api/ws?ticket=tkt-9')
+  const url = buildGatewayWsUrlWithTicket('https://gw.example.com/vigil', 'tkt-9')
+  assert.equal(url, 'wss://gw.example.com/vigil/api/ws?ticket=tkt-9')
   assert.ok(!url.includes('token='))
 })
 

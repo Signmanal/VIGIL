@@ -30,20 +30,20 @@ def _make_setup_args(**overrides):
 @pytest.fixture
 def existing_install(tmp_path, monkeypatch):
     """Simulate a returning user with an existing configured install."""
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".vigil"
     home.mkdir()
     monkeypatch.setattr("pathlib.Path.home", lambda: tmp_path)
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("VIGIL_HOME", str(home))
     return home
 
 
 @pytest.fixture
 def fresh_install(tmp_path, monkeypatch):
     """Simulate a first-time user with no existing configuration."""
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".vigil"
     home.mkdir()
     monkeypatch.setattr("pathlib.Path.home", lambda: tmp_path)
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("VIGIL_HOME", str(home))
     return home
 
 
@@ -244,7 +244,7 @@ class TestArgparse:
             "hermes_cli.setup.run_setup_wizard",
             lambda args: captured.setdefault("args", args),
         )
-        monkeypatch.setattr(sys, "argv", ["hermes", "setup", "--reconfigure"])
+        monkeypatch.setattr(sys, "argv", ["vigil", "setup", "--reconfigure"])
         try:
             main()
         except SystemExit:
@@ -261,7 +261,7 @@ class TestArgparse:
             "hermes_cli.setup.run_setup_wizard",
             lambda args: captured.setdefault("args", args),
         )
-        monkeypatch.setattr(sys, "argv", ["hermes", "setup", "--quick"])
+        monkeypatch.setattr(sys, "argv", ["vigil", "setup", "--quick"])
         try:
             main()
         except SystemExit:
@@ -278,7 +278,7 @@ class TestArgparse:
             "hermes_cli.setup.run_setup_wizard",
             lambda args: captured.setdefault("args", args),
         )
-        monkeypatch.setattr(sys, "argv", ["hermes", "setup"])
+        monkeypatch.setattr(sys, "argv", ["vigil", "setup"])
         try:
             main()
         except SystemExit:

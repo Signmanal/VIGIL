@@ -437,7 +437,7 @@ class TestPluginMemoryDiscovery:
 
 
 class TestUserInstalledProviderDiscovery:
-    """Memory providers installed to $HERMES_HOME/plugins/ should be found.
+    """Memory providers installed to $VIGIL_HOME/plugins/ should be found.
 
     Regression test for issues #4956 and #9099: load_memory_provider() and
     discover_memory_providers() only scanned the bundled plugins/memory/
@@ -478,7 +478,7 @@ class TestUserInstalledProviderDiscovery:
         assert "holographic" in names  # bundled still found
 
     def test_load_user_plugin(self, tmp_path, monkeypatch):
-        """load_memory_provider() can load from $HERMES_HOME/plugins/."""
+        """load_memory_provider() can load from $VIGIL_HOME/plugins/."""
         from plugins.memory import load_memory_provider
         self._make_user_memory_plugin(tmp_path, "myexternal")
         monkeypatch.setattr(
@@ -580,7 +580,7 @@ class TestUserInstalledProviderDiscovery:
         """
         from plugins.memory import load_memory_provider
         plugin_dir = tmp_path / "plugins" / "nestedimpl"
-        impl_dir = plugin_dir / "adapters" / "hermes"  # adapters/ has no __init__.py
+        impl_dir = plugin_dir / "adapters" / "vigil"  # adapters/ has no __init__.py
         impl_dir.mkdir(parents=True)
         (impl_dir / "__init__.py").write_text(
             "from agent.memory_provider import MemoryProvider\n"
@@ -594,7 +594,7 @@ class TestUserInstalledProviderDiscovery:
             "    def handle_tool_call(self, *a, **kw): return '{}'\n"
         )
         (plugin_dir / "__init__.py").write_text(
-            "from .adapters.hermes import MyProvider\n"
+            "from .adapters.vigil import MyProvider\n"
             "def register(ctx):\n"
             "    ctx.register_memory_provider(MyProvider())\n"
         )

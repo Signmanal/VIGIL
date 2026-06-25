@@ -16,7 +16,7 @@ import { PromptOverlays } from '@/components/prompt-overlays'
 import { Button } from '@/components/ui/button'
 import { Codicon } from '@/components/ui/codicon'
 import { ErrorState } from '@/components/ui/error-state'
-import { getGlobalModelOptions, type HermesGateway } from '@/hermes'
+import { getGlobalModelOptions, type VIGILGateway } from '@/hermes'
 import { useI18n } from '@/i18n'
 import type { ChatMessage } from '@/lib/chat-messages'
 import { quickModelOptions, sessionTitle, toRuntimeMessage } from '@/lib/chat-runtime'
@@ -64,7 +64,7 @@ import { SessionActionsMenu } from './sidebar/session-actions-menu'
 import { threadLoadingState } from './thread-loading'
 
 interface ChatViewProps extends Omit<React.ComponentProps<'div'>, 'onSubmit'> {
-  gateway: HermesGateway | null
+  gateway: VIGILGateway | null
   modelMenuContent?: React.ReactNode
   onToggleSelectedPin: () => void
   onDeleteSelectedSession: () => void
@@ -349,7 +349,7 @@ export function ChatView({
       }
 
       if (!gateway) {
-        throw new Error('Hermes gateway unavailable')
+        throw new Error('VIGIL gateway unavailable')
       }
 
       return gateway.request<ModelOptionsResponse>('model.options', { session_id: activeSessionId })

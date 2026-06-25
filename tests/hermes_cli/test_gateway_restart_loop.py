@@ -1,7 +1,7 @@
 """Tests for gateway restart-loop defenses (#30719).
 
 Covers:
-- Defense 1: gateway stop/restart refuse when _HERMES_GATEWAY=1
+- Defense 1: gateway stop/restart refuse when _VIGIL_GATEWAY=1
 - Defense 2: cron create rejects prompts containing gateway lifecycle commands
 - _contains_gateway_lifecycle_command pattern matching
 """
@@ -37,9 +37,9 @@ class TestGatewayLifecyclePattern:
         assert _contains_gateway_lifecycle_command(text), f"Should match: {text!r}"
 
     @pytest.mark.parametrize("text", [
-        "launchctl kickstart gui/501/ai.hermes.gateway",
-        "launchctl unload ~/Library/LaunchAgents/ai.hermes.gateway.plist",
-        "launchctl stop ai.hermes.gateway",
+        "launchctl kickstart gui/501/ai.vigil.gateway",
+        "launchctl unload ~/Library/LaunchAgents/ai.vigil.gateway.plist",
+        "launchctl stop ai.vigil.gateway",
         "systemctl restart hermes-gateway",
         "systemctl stop hermes-gateway.service",
         "systemctl start hermes-gateway",
@@ -106,7 +106,7 @@ class TestCronCreateLifecycleBlock:
         args = Namespace(
             cron_command="create",
             schedule="0 9 * * *",
-            prompt="Run launchctl kickstart -k gui/501/ai.hermes.gateway",
+            prompt="Run launchctl kickstart -k gui/501/ai.vigil.gateway",
             name=None,
             deliver=None,
             repeat=None,
@@ -195,10 +195,10 @@ class TestCronCreateLifecycleBlock:
 # ---------------------------------------------------------------------------
 
 class TestGatewaySelfTargetingGuard:
-    """Verify hermes gateway stop/restart refuse when _HERMES_GATEWAY=1."""
+    """Verify hermes gateway stop/restart refuse when _VIGIL_GATEWAY=1."""
 
     def test_stop_refuses_inside_gateway(self, monkeypatch):
-        monkeypatch.setenv("_HERMES_GATEWAY", "1")
+        monkeypatch.setenv("_VIGIL_GATEWAY", "1")
         from hermes_cli.gateway import gateway_command
         args = Namespace(gateway_command="stop", all=False, system=False)
         with pytest.raises(SystemExit) as exc_info:
@@ -206,7 +206,7 @@ class TestGatewaySelfTargetingGuard:
         assert exc_info.value.code == 1
 
     def test_restart_refuses_inside_gateway(self, monkeypatch):
-        monkeypatch.setenv("_HERMES_GATEWAY", "1")
+        monkeypatch.setenv("_VIGIL_GATEWAY", "1")
         from hermes_cli.gateway import gateway_command
         args = Namespace(gateway_command="restart", all=False, system=False)
         with pytest.raises(SystemExit) as exc_info:
@@ -218,7 +218,7 @@ class TestGatewaySelfTargetingGuard:
         # fire. Prove control reaches the real stop path (rather than driving
         # real signal delivery, which would trip the live-system guard) by
         # short-circuiting the first downstream call with a sentinel.
-        monkeypatch.delenv("_HERMES_GATEWAY", raising=False)
+        monkeypatch.delenv("_VIGIL_GATEWAY", raising=False)
         import hermes_cli.gateway as gw
 
         class _Reached(Exception):
@@ -237,7 +237,7 @@ class TestGatewaySelfTargetingGuard:
         # Same as above for restart: guard must not fire when the marker is
         # unset. The first thing restart does after the guard is the s6
         # dispatch check — sentinel it so we never reach real signal delivery.
-        monkeypatch.delenv("_HERMES_GATEWAY", raising=False)
+        monkeypatch.delenv("_VIGIL_GATEWAY", raising=False)
         import hermes_cli.gateway as gw
 
         class _Reached(Exception):
@@ -258,7 +258,7 @@ class TestGatewaySelfTargetingGuard:
 # ---------------------------------------------------------------------------
 
 class TestTerminalToolGatewayLifecycleGuard:
-    """terminal_tool must refuse gateway lifecycle commands when _HERMES_GATEWAY=1.
+    """terminal_tool must refuse gateway lifecycle commands when _VIGIL_GATEWAY=1.
 
     Issue #37453: systemctl --user restart hermes-gateway runs as a child of the
     gateway process.  When systemd delivers SIGTERM the gateway kills its own
@@ -284,16 +284,16 @@ class TestTerminalToolGatewayLifecycleGuard:
         monkeypatch.setattr(tt, "_task_env_overrides", {})
         monkeypatch.setattr(tt, "_get_env_config", self._minimal_config)
         if inside_gateway:
-            monkeypatch.setenv("_HERMES_GATEWAY", "1")
+            monkeypatch.setenv("_VIGIL_GATEWAY", "1")
         else:
-            monkeypatch.delenv("_HERMES_GATEWAY", raising=False)
+            monkeypatch.delenv("_VIGIL_GATEWAY", raising=False)
 
     @pytest.mark.parametrize("cmd", [
         "systemctl restart hermes-gateway",
         "systemctl --user restart hermes-gateway",
         "systemctl stop hermes-gateway.service",
         "hermes gateway restart",
-        "launchctl kickstart gui/501/ai.hermes.gateway",
+        "launchctl kickstart gui/501/ai.vigil.gateway",
         "pkill -f hermes.*gateway",
     ])
     def test_blocks_lifecycle_commands_inside_gateway(self, monkeypatch, cmd):
@@ -337,7 +337,7 @@ class TestTerminalToolGatewayLifecycleGuard:
         assert calls == ["systemctl status nginx"]
 
     def test_guard_inactive_outside_gateway(self, monkeypatch):
-        """Without _HERMES_GATEWAY=1 the lifecycle guard must not fire."""
+        """Without _VIGIL_GATEWAY=1 the lifecycle guard must not fire."""
         import tools.terminal_tool as tt
 
         calls = []

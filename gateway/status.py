@@ -4,9 +4,9 @@ Gateway runtime status helpers.
 Provides PID-file based detection of whether the gateway daemon is running,
 used by send_message's check_fn to gate availability in the CLI.
 
-The PID file lives at ``{HERMES_HOME}/gateway.pid``.  HERMES_HOME defaults to
-``~/.hermes`` but can be overridden via the environment variable.  This means
-separate HERMES_HOME directories naturally get separate PID files — a property
+The PID file lives at ``{VIGIL_HOME}/gateway.pid``.  VIGIL_HOME defaults to
+``~/.vigil`` but can be overridden via the environment variable.  This means
+separate VIGIL_HOME directories naturally get separate PID files — a property
 that will be useful when we add named profiles (multiple agents running
 concurrently under distinct configurations).
 """
@@ -43,7 +43,7 @@ _WINDOWS_LOCK_OFFSET = 1024 * 1024
 
 
 def _get_pid_path() -> Path:
-    """Return the path to the gateway PID file, respecting HERMES_HOME."""
+    """Return the path to the gateway PID file, respecting VIGIL_HOME."""
     home = get_hermes_home()
     return home / "gateway.pid"
 
@@ -63,11 +63,11 @@ def _get_runtime_status_path() -> Path:
 
 def _get_lock_dir() -> Path:
     """Return the machine-local directory for token-scoped gateway locks."""
-    override = os.getenv("HERMES_GATEWAY_LOCK_DIR")
+    override = os.getenv("VIGIL_GATEWAY_LOCK_DIR")
     if override:
         return Path(override)
     state_home = Path(os.getenv("XDG_STATE_HOME", Path.home() / ".local" / "state"))
-    return state_home / "hermes" / _LOCKS_DIRNAME
+    return state_home / "vigil" / _LOCKS_DIRNAME
 
 
 def _utc_now_iso() -> str:
@@ -191,7 +191,7 @@ def _read_process_cmdline(pid: int) -> Optional[str]:
 
 
 def _gateway_command_subcommand(command: str | None) -> str | None:
-    """Return the Hermes gateway lifecycle subcommand from a command line.
+    """Return the VIGIL gateway lifecycle subcommand from a command line.
 
     Lifecycle decisions (is the gateway up? did restart relaunch it?) must not
     fire on loose substring matches.  The previous ``"... gateway" in cmdline``
@@ -205,7 +205,7 @@ def _gateway_command_subcommand(command: str | None) -> str | None:
 
     Tokenizes quote-aware (``shlex``) so quoted Windows paths with spaces
     (``"C:\\Program Files\\...\\hermes-gateway.exe"``) survive, and strips
-    ``--profile``/``-p`` selectors from anywhere in argv -- Hermes's
+    ``--profile``/``-p`` selectors from anywhere in argv -- VIGIL's
     ``_apply_profile_override`` removes them before argparse, so the profile
     flag (and a profile literally named ``gateway``) can legally appear on
     either side of the ``gateway`` subcommand.
@@ -277,14 +277,14 @@ def looks_like_gateway_runtime_command_line(command: str | None) -> bool:
     fallback executes ``run_gateway()`` in that same process, so its argv stays
     as ``gateway restart`` while it owns the webhook port and writes runtime
     state. Keep the public ``looks_like_gateway_command_line()`` strict, and
-    use this broader matcher only when validating Hermes-owned runtime records
+    use this broader matcher only when validating VIGIL-owned runtime records
     or no-supervisor cleanup scans.
     """
     return _gateway_command_subcommand(command) in {"run", "restart"}
 
 
 def _looks_like_gateway_process(pid: int) -> bool:
-    """Return True when the live PID still looks like the Hermes gateway."""
+    """Return True when the live PID still looks like the VIGIL gateway."""
     cmdline = _read_process_cmdline(pid)
     if not cmdline:
         return False
@@ -305,10 +305,10 @@ def _record_looks_like_gateway(record: dict[str, Any]) -> bool:
 
 
 def _profile_name_for_home(profile_home: Path) -> Optional[str]:
-    """Return the profile id a HERMES_HOME directory represents, or None.
+    """Return the profile id a VIGIL_HOME directory represents, or None.
 
     A named profile's home is ``<root>/profiles/<name>`` (immediate parent is
-    ``profiles``).  The root/default home (``~/.hermes`` or ``$HERMES_HOME``)
+    ``profiles``).  The root/default home (``~/.vigil`` or ``$VIGIL_HOME``)
     has no such parent, so it maps to the default profile (``None`` here, which
     callers treat as "the bare, flag-less gateway").
     """
@@ -327,7 +327,7 @@ def _command_line_belongs_to_profile(command: str, profile_home: Path) -> bool:
     gateway.  That recycled PID's command line still ``looks_like_gateway`` —
     so without a profile check the dead profile is reported running.  A named
     profile gateway carries ``-p <name>``/``--profile <name>`` (or, rarely, an
-    explicit ``HERMES_HOME=<path>``) on its argv; the default/root gateway runs
+    explicit ``VIGIL_HOME=<path>``) on its argv; the default/root gateway runs
     bare with no profile flag.
     """
     command_lc = command.lower()
@@ -344,7 +344,7 @@ def _command_line_belongs_to_profile(command: str, profile_home: Path) -> bool:
 
     # Default/root profile: the gateway runs with no profile flag. Accept unless
     # the command advertises *some other* profile (an explicit -p/--profile) or
-    # a non-matching explicit HERMES_HOME= on the argv. HERMES_HOME is usually
+    # a non-matching explicit VIGIL_HOME= on the argv. VIGIL_HOME is usually
     # passed via the environment (not visible on the command line), so its mere
     # absence is not disqualifying — only a conflicting explicit value is.
     if "--profile " in command_lc or " -p " in command_lc:
@@ -747,7 +747,7 @@ def read_runtime_status(path: Optional[Path] = None) -> Optional[dict[str, Any]]
 
     ``path`` is optional so callers that need to inspect a *different*
     profile's state file (e.g. the dashboard enumerating every profile)
-    can do so without mutating ``HERMES_HOME`` in-process.  Defaults to
+    can do so without mutating ``VIGIL_HOME`` in-process.  Defaults to
     the active profile's ``gateway_state.json``.
     """
     return _read_json_file(path or _get_runtime_status_path())
@@ -825,7 +825,7 @@ def get_runtime_status_running_pid(
     OS process identity.
 
     ``expected_home`` scopes the OS-identity check to a specific profile's
-    HERMES_HOME.  Pass it when validating *another* profile's state file (the
+    VIGIL_HOME.  Pass it when validating *another* profile's state file (the
     dashboard enumerating every profile): a stale record whose PID the OS has
     recycled onto a different profile's live gateway must not be reported
     running for the dead profile.  Omit it (the default) for the active
@@ -883,7 +883,7 @@ def acquire_scoped_lock(scope: str, identity: str, metadata: Optional[dict[str, 
     """Acquire a machine-local lock keyed by scope + identity.
 
     Used to prevent multiple local gateways from using the same external identity
-    at once (e.g. the same Telegram bot token across different HERMES_HOME dirs).
+    at once (e.g. the same Telegram bot token across different VIGIL_HOME dirs).
     """
     lock_path = _get_scope_lock_path(scope, identity)
     lock_path.parent.mkdir(parents=True, exist_ok=True)

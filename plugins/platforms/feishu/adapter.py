@@ -37,7 +37,7 @@ For bots specifically:
                         puts in ``mentions[].id.open_id`` when someone
                         @-mentions the bot.  Used for mention gating only.
 
-In single-bot mode (what Hermes currently supports), open_id works as a
+In single-bot mode (what VIGIL currently supports), open_id works as a
 de-facto unique user identifier since there is only one app context.
 
 Session-key participant isolation prefers ``union_id`` (via user_id_alt)
@@ -1536,24 +1536,24 @@ class FeishuAdapter(BasePlatformAdapter):
             bot_name=os.getenv("FEISHU_BOT_NAME", "").strip(),
             dedup_cache_size=max(
                 32,
-                env_int("HERMES_FEISHU_DEDUP_CACHE_SIZE", _DEFAULT_DEDUP_CACHE_SIZE),
+                env_int("VIGIL_FEISHU_DEDUP_CACHE_SIZE", _DEFAULT_DEDUP_CACHE_SIZE),
             ),
             text_batch_delay_seconds=env_float(
-                "HERMES_FEISHU_TEXT_BATCH_DELAY_SECONDS", _DEFAULT_TEXT_BATCH_DELAY_SECONDS
+                "VIGIL_FEISHU_TEXT_BATCH_DELAY_SECONDS", _DEFAULT_TEXT_BATCH_DELAY_SECONDS
             ),
             text_batch_split_delay_seconds=env_float(
-                "HERMES_FEISHU_TEXT_BATCH_SPLIT_DELAY_SECONDS", 2.0
+                "VIGIL_FEISHU_TEXT_BATCH_SPLIT_DELAY_SECONDS", 2.0
             ),
             text_batch_max_messages=max(
                 1,
-                env_int("HERMES_FEISHU_TEXT_BATCH_MAX_MESSAGES", _DEFAULT_TEXT_BATCH_MAX_MESSAGES),
+                env_int("VIGIL_FEISHU_TEXT_BATCH_MAX_MESSAGES", _DEFAULT_TEXT_BATCH_MAX_MESSAGES),
             ),
             text_batch_max_chars=max(
                 1,
-                env_int("HERMES_FEISHU_TEXT_BATCH_MAX_CHARS", _DEFAULT_TEXT_BATCH_MAX_CHARS),
+                env_int("VIGIL_FEISHU_TEXT_BATCH_MAX_CHARS", _DEFAULT_TEXT_BATCH_MAX_CHARS),
             ),
             media_batch_delay_seconds=env_float(
-                "HERMES_FEISHU_MEDIA_BATCH_DELAY_SECONDS", _DEFAULT_MEDIA_BATCH_DELAY_SECONDS
+                "VIGIL_FEISHU_MEDIA_BATCH_DELAY_SECONDS", _DEFAULT_MEDIA_BATCH_DELAY_SECONDS
             ),
             webhook_host=str(
                 extra.get("webhook_host") or os.getenv("FEISHU_WEBHOOK_HOST", _DEFAULT_WEBHOOK_HOST)
@@ -1671,7 +1671,7 @@ class FeishuAdapter(BasePlatformAdapter):
             if not acquired:
                 owner_pid = existing.get("pid") if isinstance(existing, dict) else None
                 message = (
-                    "Another local Hermes gateway is already using this Feishu app_id"
+                    "Another local VIGIL gateway is already using this Feishu app_id"
                     + (f" (PID {owner_pid})." if owner_pid else ".")
                     + " Stop the other gateway before starting a second Feishu websocket client."
                 )
@@ -2437,7 +2437,7 @@ class FeishuAdapter(BasePlatformAdapter):
         )
 
     def _on_message_read_event(self, data: P2ImMessageMessageReadV1) -> None:
-        """Ignore read-receipt events that Hermes does not act on."""
+        """Ignore read-receipt events that VIGIL does not act on."""
         event = getattr(data, "event", None)
         message = getattr(event, "message", None)
         message_id = getattr(message, "message_id", None) or ""
@@ -3285,7 +3285,7 @@ class FeishuAdapter(BasePlatformAdapter):
             response = await client.get(
                 file_url,
                 headers={
-                    "User-Agent": "Mozilla/5.0 (compatible; HermesAgent/1.0)",
+                    "User-Agent": "Mozilla/5.0 (compatible; VIGILAgent/1.0)",
                     "Accept": "*/*",
                 },
             )
@@ -3398,7 +3398,7 @@ class FeishuAdapter(BasePlatformAdapter):
             return web.Response(status=401, text="Invalid signature")
 
         if payload.get("encrypt"):
-            logger.error("[Feishu] Encrypted webhook payloads are not supported by Hermes webhook mode")
+            logger.error("[Feishu] Encrypted webhook payloads are not supported by VIGIL webhook mode")
             self._record_webhook_anomaly(remote_ip, "400-encrypted")
             return web.json_response({"code": 400, "msg": "encrypted webhook payloads are not supported"}, status=400)
 
@@ -3899,7 +3899,7 @@ class FeishuAdapter(BasePlatformAdapter):
         *,
         is_bot: bool = False,
     ) -> Dict[str, Optional[str]]:
-        """Map Feishu's three-tier user IDs onto Hermes' SessionSource fields.
+        """Map Feishu's three-tier user IDs onto VIGIL' SessionSource fields.
 
         Preference order for the primary ``user_id`` field:
           1. user_id  (tenant-scoped, most stable — requires permission scope)
@@ -5251,7 +5251,7 @@ async def _standalone_send(
     (images, video, voice, documents). Replaces the legacy _send_feishu helper.
     """
     if not FEISHU_AVAILABLE:
-        return {"error": "Feishu dependencies not installed. Run: pip install 'hermes-agent[feishu]'"}
+        return {"error": "Feishu dependencies not installed. Run: pip install 'vigil-agent[feishu]'"}
 
     media_files = media_files or []
     try:
@@ -5490,7 +5490,7 @@ def _build_adapter(config):
 
 
 def register(ctx) -> None:
-    """Plugin entry point — called by the Hermes plugin system."""
+    """Plugin entry point — called by the VIGIL plugin system."""
     ctx.register_platform(
         name="feishu",
         label="Feishu / Lark",
@@ -5499,7 +5499,7 @@ def register(ctx) -> None:
         is_connected=_is_connected,
         validate_config=_is_connected,
         required_env=["FEISHU_APP_ID", "FEISHU_APP_SECRET"],
-        install_hint="pip install 'hermes-agent[feishu]'",
+        install_hint="pip install 'vigil-agent[feishu]'",
         setup_fn=interactive_setup,
         apply_yaml_config_fn=_apply_yaml_config,
         allowed_users_env="FEISHU_ALLOWED_USERS",

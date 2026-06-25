@@ -22,115 +22,115 @@ from hermes_constants import (
 )
 
 
-class TestGetDefaultHermesRoot:
+class TestGetDefaultVIGILRoot:
     """Tests for get_default_hermes_root() — Docker/custom deployment awareness."""
 
     def test_no_hermes_home_returns_native(self, tmp_path, monkeypatch):
-        """When HERMES_HOME is not set, returns ~/.hermes."""
-        monkeypatch.delenv("HERMES_HOME", raising=False)
+        """When VIGIL_HOME is not set, returns ~/.vigil."""
+        monkeypatch.delenv("VIGIL_HOME", raising=False)
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
-        assert get_default_hermes_root() == tmp_path / ".hermes"
+        assert get_default_hermes_root() == tmp_path / ".vigil"
 
     def test_hermes_home_is_native(self, tmp_path, monkeypatch):
-        """When HERMES_HOME = ~/.hermes, returns ~/.hermes."""
-        native = tmp_path / ".hermes"
+        """When VIGIL_HOME = ~/.vigil, returns ~/.vigil."""
+        native = tmp_path / ".vigil"
         native.mkdir()
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        monkeypatch.setenv("HERMES_HOME", str(native))
+        monkeypatch.setenv("VIGIL_HOME", str(native))
         assert get_default_hermes_root() == native
 
     def test_hermes_home_is_profile(self, tmp_path, monkeypatch):
-        """When HERMES_HOME is a profile under ~/.hermes, returns ~/.hermes."""
-        native = tmp_path / ".hermes"
+        """When VIGIL_HOME is a profile under ~/.vigil, returns ~/.vigil."""
+        native = tmp_path / ".vigil"
         profile = native / "profiles" / "coder"
         profile.mkdir(parents=True)
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        monkeypatch.setenv("HERMES_HOME", str(profile))
+        monkeypatch.setenv("VIGIL_HOME", str(profile))
         assert get_default_hermes_root() == native
 
     def test_hermes_home_is_docker(self, tmp_path, monkeypatch):
-        """When HERMES_HOME points outside ~/.hermes (Docker), returns HERMES_HOME."""
+        """When VIGIL_HOME points outside ~/.vigil (Docker), returns VIGIL_HOME."""
         docker_home = tmp_path / "opt" / "data"
         docker_home.mkdir(parents=True)
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        monkeypatch.setenv("HERMES_HOME", str(docker_home))
+        monkeypatch.setenv("VIGIL_HOME", str(docker_home))
         assert get_default_hermes_root() == docker_home
 
     def test_hermes_home_is_custom_path(self, tmp_path, monkeypatch):
-        """Any HERMES_HOME outside ~/.hermes is treated as the root."""
+        """Any VIGIL_HOME outside ~/.vigil is treated as the root."""
         custom = tmp_path / "my-hermes-data"
         custom.mkdir()
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        monkeypatch.setenv("HERMES_HOME", str(custom))
+        monkeypatch.setenv("VIGIL_HOME", str(custom))
         assert get_default_hermes_root() == custom
 
     def test_docker_profile_active(self, tmp_path, monkeypatch):
-        """When a Docker profile is active (HERMES_HOME=<root>/profiles/<name>),
+        """When a Docker profile is active (VIGIL_HOME=<root>/profiles/<name>),
         returns the Docker root, not the profile dir."""
         docker_root = tmp_path / "opt" / "data"
         profile = docker_root / "profiles" / "coder"
         profile.mkdir(parents=True)
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        monkeypatch.setenv("HERMES_HOME", str(profile))
+        monkeypatch.setenv("VIGIL_HOME", str(profile))
         assert get_default_hermes_root() == docker_root
 
     def test_no_hermes_home_returns_localappdata_root_on_windows(self, tmp_path, monkeypatch):
-        """Native Windows falls back to %LOCALAPPDATA%\\hermes, not ~/.hermes."""
+        """Native Windows falls back to %LOCALAPPDATA%\\hermes, not ~/.vigil."""
         local_appdata = tmp_path / "LocalAppData"
-        monkeypatch.delenv("HERMES_HOME", raising=False)
+        monkeypatch.delenv("VIGIL_HOME", raising=False)
         monkeypatch.setenv("LOCALAPPDATA", str(local_appdata))
         monkeypatch.setattr(Path, "home", lambda: tmp_path / "Home")
         monkeypatch.setattr(hermes_constants.sys, "platform", "win32")
 
-        assert get_default_hermes_root() == local_appdata / "hermes"
+        assert get_default_hermes_root() == local_appdata / "vigil"
 
     def test_no_hermes_home_uses_windows_path_when_localappdata_missing(self, tmp_path, monkeypatch):
         """Windows fallback still uses AppData/Local/hermes without LOCALAPPDATA."""
         home = tmp_path / "Home"
-        monkeypatch.delenv("HERMES_HOME", raising=False)
+        monkeypatch.delenv("VIGIL_HOME", raising=False)
         monkeypatch.delenv("LOCALAPPDATA", raising=False)
         monkeypatch.setattr(Path, "home", lambda: home)
         monkeypatch.setattr(hermes_constants.sys, "platform", "win32")
 
-        assert get_default_hermes_root() == home / "AppData" / "Local" / "hermes"
+        assert get_default_hermes_root() == home / "AppData" / "Local" / "vigil"
 
 
-class TestGetHermesHome:
+class TestGetVIGILHome:
     """Tests for get_hermes_home() platform-aware fallback."""
 
     def test_windows_fallback_uses_localappdata(self, tmp_path, monkeypatch):
-        """When HERMES_HOME is unset on Windows, use %LOCALAPPDATA%\\hermes."""
+        """When VIGIL_HOME is unset on Windows, use %LOCALAPPDATA%\\hermes."""
         local_appdata = tmp_path / "LocalAppData"
-        monkeypatch.delenv("HERMES_HOME", raising=False)
+        monkeypatch.delenv("VIGIL_HOME", raising=False)
         monkeypatch.setenv("LOCALAPPDATA", str(local_appdata))
         monkeypatch.setattr(Path, "home", lambda: tmp_path / "Home")
         monkeypatch.setattr(hermes_constants.sys, "platform", "win32")
         monkeypatch.setattr(hermes_constants, "_profile_fallback_warned", False)
 
-        assert get_hermes_home() == local_appdata / "hermes"
+        assert get_hermes_home() == local_appdata / "vigil"
 
 
-class TestHermesManagedNode:
+class TestVIGILManagedNode:
     def test_windows_node_dir_prefers_portable_root(self, tmp_path, monkeypatch):
-        home = tmp_path / "hermes"
+        home = tmp_path / "vigil"
         node_dir = home / "node"
         bin_dir = node_dir / "bin"
         node_dir.mkdir(parents=True)
         bin_dir.mkdir()
         monkeypatch.setattr(hermes_constants.sys, "platform", "win32")
-        monkeypatch.setenv("HERMES_HOME", str(home))
+        monkeypatch.setenv("VIGIL_HOME", str(home))
 
         assert iter_hermes_node_dirs() == [node_dir, bin_dir]
 
     def test_windows_finds_npm_cmd_before_path(self, tmp_path, monkeypatch):
-        home = tmp_path / "hermes"
+        home = tmp_path / "vigil"
         node_dir = home / "node"
         node_dir.mkdir(parents=True)
         npm_cmd = node_dir / "npm.cmd"
         npm_cmd.write_text("@echo off\n")
         monkeypatch.setattr(hermes_constants.sys, "platform", "win32")
-        monkeypatch.setenv("HERMES_HOME", str(home))
+        monkeypatch.setenv("VIGIL_HOME", str(home))
 
         assert find_hermes_node_executable("npm") == str(npm_cmd)
 
@@ -149,7 +149,7 @@ class TestHermesManagedNode:
         assert find_node_executable_on_path("npm") == str(npm_cmd)
 
     def test_windows_node_executable_falls_back_to_safe_path_shim(self, tmp_path, monkeypatch):
-        home = tmp_path / "hermes"
+        home = tmp_path / "vigil"
         home.mkdir()
         bin_dir = tmp_path / "nodejs"
         bin_dir.mkdir()
@@ -158,19 +158,19 @@ class TestHermesManagedNode:
         extensionless.write_text("#!/usr/bin/env node\n")
         npm_cmd.write_text("@echo off\n")
         monkeypatch.setattr(hermes_constants.sys, "platform", "win32")
-        monkeypatch.setenv("HERMES_HOME", str(home))
+        monkeypatch.setenv("VIGIL_HOME", str(home))
         monkeypatch.setenv("PATH", str(bin_dir))
 
         assert find_node_executable("npm") == str(npm_cmd)
 
     def test_with_hermes_node_path_prepends_existing_managed_dirs(self, tmp_path, monkeypatch):
-        home = tmp_path / "hermes"
+        home = tmp_path / "vigil"
         node_dir = home / "node"
         bin_dir = node_dir / "bin"
         node_dir.mkdir(parents=True)
         bin_dir.mkdir()
         monkeypatch.setattr(hermes_constants.sys, "platform", "win32")
-        monkeypatch.setenv("HERMES_HOME", str(home))
+        monkeypatch.setenv("VIGIL_HOME", str(home))
 
         env = with_hermes_node_path({"PATH": "system-node"})
         parts = env["PATH"].split(os.pathsep)
@@ -342,7 +342,7 @@ class TestSecureParentDir:
 
     def test_safe_path_calls_chmod(self, tmp_path, monkeypatch):
         """Normal nested path (depth >= 3) should call os.chmod."""
-        safe_dir = tmp_path / "home" / "user" / ".hermes"
+        safe_dir = tmp_path / "home" / "user" / ".vigil"
         safe_dir.mkdir(parents=True)
         target = safe_dir / "auth.json"
         target.touch()

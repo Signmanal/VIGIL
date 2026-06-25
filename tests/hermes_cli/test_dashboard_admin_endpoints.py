@@ -21,7 +21,7 @@ def _client():
 
     client = TestClient(app)
     client.headers[_SESSION_HEADER_NAME] = _SESSION_TOKEN
-    # Keep the state DB under the isolated HERMES_HOME for any handler that
+    # Keep the state DB under the isolated VIGIL_HOME for any handler that
     # touches it.
     hermes_state.DEFAULT_DB_PATH = get_hermes_home() / "state.db"
     return client, _SESSION_HEADER_NAME
@@ -722,7 +722,7 @@ class TestAdminEndpointsAuthGate:
             "/api/curator",
             "/api/portal",
             "/api/system/stats",
-            "/api/hermes/update/check",
+            "/api/vigil/update/check",
         ],
     )
     def test_gated(self, path):
@@ -735,11 +735,11 @@ class TestAdminEndpointsAuthGate:
 
 
 class TestUpdateCheckEndpoint:
-    """``GET /api/hermes/update/check`` reports availability without applying.
+    """``GET /api/vigil/update/check`` reports availability without applying.
 
     Powers the dashboard's check-before-you-update flow: the System page
     shows the commit-behind count and asks the user to confirm before
-    ``POST /api/hermes/update`` runs ``hermes update``.
+    ``POST /api/vigil/update`` runs ``hermes update``.
     """
 
     @pytest.fixture(autouse=True)
@@ -755,7 +755,7 @@ class TestUpdateCheckEndpoint:
 
         monkeypatch.setattr(banner, "check_for_updates", lambda: 5)
 
-        r = self.client.get("/api/hermes/update/check")
+        r = self.client.get("/api/vigil/update/check")
         assert r.status_code == 200
         body = r.json()
         assert {
@@ -780,7 +780,7 @@ class TestUpdateCheckEndpoint:
         monkeypatch.setattr(ws, "detect_install_method", lambda *a, **k: "git")
         monkeypatch.setattr(banner, "check_for_updates", lambda: 0)
 
-        body = self.client.get("/api/hermes/update/check").json()
+        body = self.client.get("/api/vigil/update/check").json()
         assert body["behind"] == 0
         assert body["update_available"] is False
 
@@ -788,7 +788,7 @@ class TestUpdateCheckEndpoint:
         import hermes_cli.web_server as ws
 
         monkeypatch.setattr(ws, "detect_install_method", lambda *a, **k: "docker")
-        body = self.client.get("/api/hermes/update/check").json()
+        body = self.client.get("/api/vigil/update/check").json()
         # Docker images are immutable — the dashboard can't apply an update.
         assert body["can_apply"] is False
         assert body["message"]
@@ -806,7 +806,7 @@ class TestUpdateCheckEndpoint:
             ),
         )
 
-        body = self.client.get("/api/hermes/update/check").json()
+        body = self.client.get("/api/vigil/update/check").json()
         assert body["install_method"] == "managed-runtime"
         assert body["can_apply"] is False
         assert body["update_available"] is False
@@ -824,7 +824,7 @@ class TestUpdateCheckEndpoint:
 
         monkeypatch.setattr(banner, "check_for_updates", _boom)
         # A failed check must not 500 — it returns behind=null with guidance.
-        r = self.client.get("/api/hermes/update/check")
+        r = self.client.get("/api/vigil/update/check")
         assert r.status_code == 200
         body = r.json()
         assert body["behind"] is None
@@ -845,7 +845,7 @@ class TestUpdateCheckEndpoint:
             ],
         )
 
-        body = self.client.get("/api/hermes/update/check").json()
+        body = self.client.get("/api/vigil/update/check").json()
         # The desktop overlay renders this as the "what's changed" list.
         assert isinstance(body["commits"], list)
         assert body["commits"][0]["sha"] == "abc1234"
@@ -858,7 +858,7 @@ class TestUpdateCheckEndpoint:
         monkeypatch.setattr(ws, "detect_install_method", lambda *a, **k: "git")
         monkeypatch.setattr(banner, "check_for_updates", lambda: 0)
 
-        body = self.client.get("/api/hermes/update/check").json()
+        body = self.client.get("/api/vigil/update/check").json()
         # No commits list when there's nothing to show (additive, non-breaking).
         assert body.get("commits", []) == []
 

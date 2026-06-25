@@ -1,7 +1,7 @@
 """Per-provider model-selection wizard flows for ``hermes setup`` / ``hermes model``.
 
 Extracted from ``hermes_cli/main.py`` as part of the god-file decomposition
-campaign (``~/.hermes/plans/god-file-decomposition.md``, Phase 2 — splitting
+campaign (``~/.vigil/plans/god-file-decomposition.md``, Phase 2 — splitting
 main.py handler/flow bodies out of the module). These 18 ``_model_flow_*``
 functions are the interactive provider-setup branches dispatched by
 ``select_provider_and_model`` (which stays in main.py).
@@ -78,7 +78,7 @@ def _model_flow_openrouter(config, current_model=""):
     from hermes_cli.config import get_env_value
 
     # Route through _prompt_api_key so users can replace a stale/broken key
-    # in-flow (K/R/C) instead of having to edit ~/.hermes/.env by hand. The
+    # in-flow (K/R/C) instead of having to edit ~/.vigil/.env by hand. The
     # previous bypass-when-key-exists branch left no way to recover from a
     # bad paste short of re-running `hermes setup` from scratch. OpenRouter
     # isn't in PROVIDER_REGISTRY so we synthesize a minimal pconfig.
@@ -721,7 +721,7 @@ def _model_flow_custom(config):
     else:
         print(
             f"Warning: could not verify this endpoint via {probe.get('probed_url')}. "
-            f"Hermes will still save it."
+            f"VIGIL will still save it."
         )
         if probe.get("suggested_base_url"):
             suggested = probe["suggested_base_url"]
@@ -916,7 +916,7 @@ def _model_flow_azure_foundry(config, current_model=""):
     print("=" * 50)
     print()
     print("Azure Foundry can host models with either OpenAI-style or")
-    print("Anthropic-style API endpoints.  Hermes will probe your")
+    print("Anthropic-style API endpoints.  VIGIL will probe your")
     print("endpoint to auto-detect the transport and the deployed")
     print("models when possible.")
     print()
@@ -1004,7 +1004,7 @@ def _model_flow_azure_foundry(config, current_model=""):
         if not has_azure_identity_installed():
             print("◐ The 'azure-identity' package is not installed yet.")
             print(
-                "  Hermes will install it now (the preflight below "
+                "  VIGIL will install it now (the preflight below "
                 "triggers the lazy-install). To skip lazy installs, "
                 "run:  pip install azure-identity"
             )
@@ -1641,9 +1641,9 @@ def _model_flow_copilot_acp(config, current_model=""):
     )
     effective_base = status.get("base_url") or pconfig.inference_base_url
 
-    print("  GitHub Copilot ACP delegates Hermes turns to `copilot --acp`.")
-    print("  Hermes currently starts its own ACP subprocess for each request.")
-    print("  Hermes uses your selected model as a hint for the Copilot ACP session.")
+    print("  GitHub Copilot ACP delegates VIGIL turns to `copilot --acp`.")
+    print("  VIGIL currently starts its own ACP subprocess for each request.")
+    print("  VIGIL uses your selected model as a hint for the Copilot ACP session.")
     print(f"  Command: {resolved_command}")
     print(f"  Backend marker: {effective_base}")
     print()
@@ -1653,7 +1653,7 @@ def _model_flow_copilot_acp(config, current_model=""):
     except Exception as exc:
         print(f"  ⚠ {exc}")
         print(
-            "  Set HERMES_COPILOT_ACP_COMMAND or COPILOT_CLI_PATH if Copilot CLI is installed elsewhere."
+            "  Set VIGIL_COPILOT_ACP_COMMAND or COPILOT_CLI_PATH if Copilot CLI is installed elsewhere."
         )
         return
 
@@ -2341,7 +2341,7 @@ def _model_flow_api_key_provider(config, provider_id, current_model=""):
                     "(<= 250 requests/day for gemini-2.5-flash)."
                 )
                 print(
-                    "   Hermes typically makes 3-10 API calls per user turn "
+                    "   VIGIL typically makes 3-10 API calls per user turn "
                     "(tool iterations + auxiliary tasks),"
                 )
                 print(
@@ -2351,7 +2351,7 @@ def _model_flow_api_key_provider(config, provider_id, current_model=""):
                 print("   an agent session.")
                 print()
                 print(
-                    "   To use Gemini with Hermes, enable billing on your "
+                    "   To use Gemini with VIGIL, enable billing on your "
                     "Google Cloud project and regenerate"
                 )
                 print(

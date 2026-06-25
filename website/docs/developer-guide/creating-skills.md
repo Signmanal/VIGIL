@@ -1,12 +1,12 @@
 ---
 sidebar_position: 3
 title: "Creating Skills"
-description: "How to create skills for Hermes Agent — SKILL.md format, guidelines, and publishing"
+description: "How to create skills for VIGIL Agent — SKILL.md format, guidelines, and publishing"
 ---
 
 # Creating Skills
 
-Skills are the preferred way to add new capabilities to Hermes Agent. They're easier to create than tools, require no code changes to the agent, and can be shared with the community.
+Skills are the preferred way to add new capabilities to VIGIL Agent. They're easier to create than tools, require no code changes to the agent, and can be shared with the community.
 
 ## Should it be a Skill or a Tool?
 
@@ -165,7 +165,7 @@ See `skills/apple/` for examples of macOS-only skills.
 
 ## Secure Setup on Load
 
-Use `required_environment_variables` when a skill needs an API key or token. Missing values do **not** hide the skill from discovery. Instead, Hermes prompts for them securely when the skill is loaded in the local CLI.
+Use `required_environment_variables` when a skill needs an API key or token. Missing values do **not** hide the skill from discovery. Instead, VIGIL prompts for them securely when the skill is loaded in the local CLI.
 
 ```yaml
 required_environment_variables:
@@ -175,7 +175,7 @@ required_environment_variables:
     required_for: full functionality
 ```
 
-The user can skip setup and keep loading the skill. Hermes never exposes the raw secret value to the model. Gateway and messaging sessions show local setup guidance instead of collecting secrets in-band.
+The user can skip setup and keep loading the skill. VIGIL never exposes the raw secret value to the model. Gateway and messaging sessions show local setup guidance instead of collecting secrets in-band.
 
 :::tip Sandbox Passthrough
 When your skill is loaded, any declared `required_environment_variables` that are set are **automatically passed through** to `execute_code` and `terminal` sandboxes — including remote backends like Docker and Modal. Your skill's scripts can access `$TENOR_API_KEY` (or `os.environ["TENOR_API_KEY"]` in Python) without the user needing to configure anything extra. See [Environment Variable Passthrough](/user-guide/security#environment-variable-passthrough) for details.
@@ -221,7 +221,7 @@ Each entry supports:
 
 3. **Runtime injection:** When a skill loads, its config values are resolved and appended to the skill message:
    ```
-   [Skill config (from ~/.hermes/config.yaml):
+   [Skill config (from ~/.vigil/config.yaml):
      myplugin.path = /home/user/my-data
    ]
    ```
@@ -233,7 +233,7 @@ Each entry supports:
    ```
 
 :::tip When to use which
-Use `required_environment_variables` for API keys, tokens, and other **secrets** (stored in `~/.hermes/.env`, never shown to the model). Use `config` for **paths, preferences, and non-sensitive settings** (stored in `config.yaml`, visible in config show).
+Use `required_environment_variables` for API keys, tokens, and other **secrets** (stored in `~/.vigil/.env`, never shown to the model). Use `config` for **paths, preferences, and non-sensitive settings** (stored in `config.yaml`, visible in config show).
 :::
 
 ### Credential File Requirements (OAuth tokens, etc.)
@@ -249,16 +249,16 @@ required_credential_files:
 ```
 
 Each entry supports:
-- `path` (required) — file path relative to `~/.hermes/`
+- `path` (required) — file path relative to `~/.vigil/`
 - `description` (optional) — explains what the file is and how it's created
 
-When loaded, Hermes checks if these files exist. Missing files trigger `setup_needed`. Existing files are automatically:
+When loaded, VIGIL checks if these files exist. Missing files trigger `setup_needed`. Existing files are automatically:
 - **Mounted into Docker** containers as read-only bind mounts
 - **Synced into Modal** sandboxes (at creation + before each command, so mid-session OAuth works)
 - Available on **local** backend without any special handling
 
 :::tip When to use which
-Use `required_environment_variables` for simple API keys and tokens (strings stored in `~/.hermes/.env`). Use `required_credential_files` for OAuth token files, client secrets, service account JSON, certificates, or any credential that's a file on disk.
+Use `required_environment_variables` for simple API keys and tokens (strings stored in `~/.vigil/.env`). Use `required_credential_files` for OAuth token files, client secrets, service account JSON, certificates, or any credential that's a file on disk.
 :::
 
 See the `skills/productivity/google-workspace/SKILL.md` for a complete example using both.
@@ -267,7 +267,7 @@ See the `skills/productivity/google-workspace/SKILL.md` for a complete example u
 
 ### No External Dependencies
 
-Prefer stdlib Python, curl, and existing Hermes tools (`web_extract`, `terminal`, `read_file`). If a dependency is needed, document installation steps in the skill.
+Prefer stdlib Python, curl, and existing VIGIL tools (`web_extract`, `terminal`, `read_file`). If a dependency is needed, document installation steps in the skill.
 
 ### Progressive Disclosure
 
@@ -287,15 +287,15 @@ When a skill is loaded, the activation message exposes the absolute skill direct
 
 | Token | Replaced with |
 |---|---|
-| `${HERMES_SKILL_DIR}` | Absolute path to the skill's directory |
-| `${HERMES_SESSION_ID}` | The active session id (left in place if there is no session) |
+| `${VIGIL_SKILL_DIR}` | Absolute path to the skill's directory |
+| `${VIGIL_SESSION_ID}` | The active session id (left in place if there is no session) |
 
 So a SKILL.md can tell the agent to run a bundled script directly with:
 
 ```markdown
 To analyse the input, run:
 
-    node ${HERMES_SKILL_DIR}/scripts/analyse.js <input>
+    node ${VIGIL_SKILL_DIR}/scripts/analyse.js <input>
 ```
 
 The agent sees the substituted absolute path and invokes the `terminal` tool with a ready-to-run command — no path math, no extra `skill_view` round-trip. Disable substitution globally with `skills.template_vars: false` in `config.yaml`.
@@ -306,7 +306,7 @@ Skills can also embed inline shell snippets written as `` !`cmd` `` in the SKILL
 
 ```markdown
 Current date: !`date -u +%Y-%m-%d`
-Git branch: !`git -C ${HERMES_SKILL_DIR} rev-parse --abbrev-ref HEAD`
+Git branch: !`git -C ${VIGIL_SKILL_DIR} rev-parse --abbrev-ref HEAD`
 ```
 
 This is **off by default** — any snippet in a SKILL.md runs on the host without approval, so only enable it for skill sources you trust:
@@ -330,7 +330,7 @@ hermes chat --toolsets skills -q "Use the X skill to do Y"
 
 ## Where Should the Skill Live?
 
-Bundled skills (in `skills/`) ship with every Hermes install. They should be **broadly useful to most users**:
+Bundled skills (in `skills/`) ship with every VIGIL install. They should be **broadly useful to most users**:
 
 - Document handling, web research, common dev workflows, system administration
 - Used regularly by a wide range of people
@@ -341,7 +341,7 @@ If your skill is specialized, community-contributed, or niche, it's better suite
 
 ## Blueprints: skills that are also automations
 
-A **blueprint** is an ordinary skill that additionally declares a schedule in its frontmatter. Add a `metadata.hermes.blueprint` block and the skill becomes a shareable, runnable automation:
+A **blueprint** is an ordinary skill that additionally declares a schedule in its frontmatter. Add a `metadata.vigil.blueprint` block and the skill becomes a shareable, runnable automation:
 
 ```yaml
 metadata:
@@ -356,7 +356,7 @@ metadata:
 
 Because a blueprint **is** a skill, it flows through the entire skills pipeline unchanged — search, inspect, install, security scan, provenance, taps, the centralized index, and `hermes skills publish` for sharing. Nothing new to learn.
 
-**Installing a blueprint.** When you install a skill that carries a `blueprint:` block, Hermes registers it as a **suggested cron job** rather than scheduling it. Scheduling is **opt-in** — installing never silently creates a recurring job. You review and accept it via `/suggestions`:
+**Installing a blueprint.** When you install a skill that carries a `blueprint:` block, VIGIL registers it as a **suggested cron job** rather than scheduling it. Scheduling is **opt-in** — installing never silently creates a recurring job. You review and accept it via `/suggestions`:
 
 ```bash
 hermes skills install owner/morning-brief
@@ -377,7 +377,7 @@ The blueprint layer adds no new object type, store, or transport — the bluepri
 
 ## Suggested Cron Jobs
 
-Hermes can *propose* automations and let you accept them with one tap, instead of making you assemble cron jobs by hand. Every proposal flows through one surface — the `/suggestions` command — regardless of where it came from:
+VIGIL can *propose* automations and let you accept them with one tap, instead of making you assemble cron jobs by hand. Every proposal flows through one surface — the `/suggestions` command — regardless of where it came from:
 
 | Source | Trigger |
 |--------|---------|
@@ -425,12 +425,12 @@ All hub-installed skills go through a security scanner that checks for:
 - Shell injection
 
 Trust levels:
-- `builtin` — ships with Hermes (always trusted)
+- `builtin` — ships with VIGIL (always trusted)
 - `official` — from `optional-skills/` in the repo (built-in trust, no third-party warning)
 - `trusted` — from openai/skills, anthropics/skills, huggingface/skills
 - `community` — non-dangerous findings can be overridden with `--force`; `dangerous` verdicts remain blocked
 
-Hermes can now consume third-party skills from multiple external discovery models:
+VIGIL can now consume third-party skills from multiple external discovery models:
 - direct GitHub identifiers (for example `openai/skills/k8s`)
 - `skills.sh` identifiers (for example `skills-sh/vercel-labs/json-render/json-render-react`)
 - well-known endpoints served from `/.well-known/skills/index.json`

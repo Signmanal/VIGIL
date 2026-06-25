@@ -9,12 +9,12 @@ const emptySessionsResponse = {
   total: 0
 }
 
-describe('Hermes REST session helpers', () => {
+describe('VIGIL REST session helpers', () => {
   let api: ReturnType<typeof vi.fn>
 
   beforeEach(() => {
     api = vi.fn().mockResolvedValue(emptySessionsResponse)
-    Object.defineProperty(window, 'hermesDesktop', {
+    Object.defineProperty(window, 'vigilDesktop', {
       configurable: true,
       value: { api }
     })
@@ -22,7 +22,7 @@ describe('Hermes REST session helpers', () => {
 
   afterEach(() => {
     vi.restoreAllMocks()
-    Reflect.deleteProperty(window, 'hermesDesktop')
+    Reflect.deleteProperty(window, 'vigilDesktop')
   })
 
   it('uses a longer timeout for the single-profile session list', async () => {

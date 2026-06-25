@@ -290,7 +290,7 @@ def check_whatsapp_requirements() -> bool:
     
     WhatsApp requires a Node.js bridge for most implementations.
     """
-    # Prefer Hermes-managed Node/npm so Windows installs are not broken by a
+    # Prefer VIGIL-managed Node/npm so Windows installs are not broken by a
     # bad or elevation-triggering system Node on PATH.
     _node = find_node_executable("node")
     if not _node:
@@ -476,7 +476,7 @@ class WhatsAppAdapter(WhatsAppBehaviorMixin, BasePlatformAdapter):
             # the package.json hash of the last successful install.
             bridge_dir = bridge_path.parent
             _pkg_json = bridge_dir / "package.json"
-            _dep_stamp = bridge_dir / "node_modules" / ".hermes-pkg-hash"
+            _dep_stamp = bridge_dir / "node_modules" / ".vigil-pkg-hash"
             _pkg_hash = _file_content_hash(_pkg_json)
             _deps_fresh = False
             if (bridge_dir / "node_modules").exists():
@@ -487,7 +487,7 @@ class WhatsAppAdapter(WhatsAppBehaviorMixin, BasePlatformAdapter):
             if not _deps_fresh:
                 print(f"[{self.name}] Installing WhatsApp bridge dependencies...")
                 # Resolve npm path so Windows uses npm.cmd from the
-                # Hermes-managed portable Node before falling back to PATH.
+                # VIGIL-managed portable Node before falling back to PATH.
                 _npm_bin = find_node_executable("npm") or "npm"
                 try:
                     # Read timeout from environment variable, default to 300 seconds (5 minutes)
@@ -578,16 +578,16 @@ class WhatsAppAdapter(WhatsAppBehaviorMixin, BasePlatformAdapter):
                 bridge_env["WHATSAPP_REPLY_PREFIX"] = self._reply_prefix
             # Pass the profile-aware cache directories so the bridge writes
             # media where the Python side reads it.  Without these the bridge
-            # hardcodes ~/.hermes/{image,audio,document}_cache, which diverges
-            # under HERMES_HOME overrides, profiles, and the new cache/ layout.
+            # hardcodes ~/.vigil/{image,audio,document}_cache, which diverges
+            # under VIGIL_HOME overrides, profiles, and the new cache/ layout.
             from gateway.platforms.base import (
                 get_audio_cache_dir as _get_audio_dir,
                 get_document_cache_dir as _get_doc_dir,
                 get_image_cache_dir as _get_img_dir,
             )
-            bridge_env["HERMES_IMAGE_CACHE_DIR"] = str(_get_img_dir())
-            bridge_env["HERMES_AUDIO_CACHE_DIR"] = str(_get_audio_dir())
-            bridge_env["HERMES_DOCUMENT_CACHE_DIR"] = str(_get_doc_dir())
+            bridge_env["VIGIL_IMAGE_CACHE_DIR"] = str(_get_img_dir())
+            bridge_env["VIGIL_AUDIO_CACHE_DIR"] = str(_get_audio_dir())
+            bridge_env["VIGIL_DOCUMENT_CACHE_DIR"] = str(_get_doc_dir())
 
             self._bridge_process = subprocess.Popen(
                 [
@@ -1445,7 +1445,7 @@ def _build_adapter(config):
 
 
 def register(ctx) -> None:
-    """Plugin entry point — called by the Hermes plugin system."""
+    """Plugin entry point — called by the VIGIL plugin system."""
     ctx.register_platform(
         name="whatsapp",
         label="WhatsApp",

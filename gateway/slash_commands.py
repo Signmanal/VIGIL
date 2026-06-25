@@ -84,7 +84,7 @@ class GatewaySlashCommandsMixin:
     """In-session slash-command handlers for GatewayRunner."""
 
     def _typed_command_prefix_for(self, platform) -> str:
-        """Return the prefix users can always type to reach Hermes commands.
+        """Return the prefix users can always type to reach VIGIL commands.
 
         Reads the adapter's ``typed_command_prefix`` capability flag
         (default "/"). Slack and Matrix return "!" because typed "/"
@@ -1016,7 +1016,7 @@ class GatewaySlashCommandsMixin:
         return EphemeralReply(t("gateway.restart.restarting"))
 
     async def _handle_version_command(self, event: MessageEvent) -> str:
-        """Handle /version — show the running Hermes Agent version."""
+        """Handle /version — show the running VIGIL Agent version."""
         from hermes_cli.banner import format_banner_version_label
 
         return format_banner_version_label()
@@ -1702,7 +1702,7 @@ class GatewaySlashCommandsMixin:
 
         Same surface as the CLI handler in cli.py:
             /codex-runtime                  — show current state
-            /codex-runtime auto             — Hermes default runtime
+            /codex-runtime auto             — VIGIL default runtime
             /codex-runtime codex_app_server — codex subprocess runtime
             /codex-runtime on / off         — synonyms
 
@@ -2478,7 +2478,7 @@ class GatewaySlashCommandsMixin:
         stranded).
 
         ``diff`` output is truncated for chat bubbles — the full diff lives in
-        the pending JSON file under ``~/.hermes/pending/skills/``. (Note this is
+        the pending JSON file under ``~/.vigil/pending/skills/``. (Note this is
         the write-approval ``diff <id>``; the CLI also has an unrelated
         ``hermes skills diff <name>`` that diffs a bundled skill vs stock.)
         """
@@ -2525,7 +2525,7 @@ class GatewaySlashCommandsMixin:
             pending_id = args[1] if len(args) > 1 else "<id>"
             out = (out[:3000]
                    + "\n… (truncated — full diff in "
-                     f"~/.hermes/pending/skills/{pending_id}.json)")
+                     f"~/.vigil/pending/skills/{pending_id}.json)")
         return out
 
     async def _handle_fast_command(self, event: MessageEvent) -> str:
@@ -3980,7 +3980,7 @@ class GatewaySlashCommandsMixin:
         return await loop.run_in_executor(None, _collect_and_upload)
 
     async def _handle_update_command(self, event: MessageEvent) -> str:
-        """Handle /update command — update Hermes Agent to the latest version.
+        """Handle /update command — update VIGIL Agent to the latest version.
 
         Spawns ``hermes update`` in a detached session (via ``setsid``) so it
         survives the gateway restart that ``hermes update`` may trigger. Marker
@@ -4008,7 +4008,7 @@ class GatewaySlashCommandsMixin:
                 return t("gateway.update.platform_not_messaging")
 
         if is_managed():
-            return f"✗ {format_managed_message('update Hermes Agent')}"
+            return f"✗ {format_managed_message('update VIGIL Agent')}"
 
         project_root = Path(__file__).parent.parent.resolve()
         git_dir = project_root / '.git'
@@ -4018,7 +4018,7 @@ class GatewaySlashCommandsMixin:
 
         hermes_cmd = _resolve_hermes_bin()
         if not hermes_cmd:
-            return t("gateway.update.hermes_cmd_not_found")
+            return t("gateway.update.vigil_cmd_not_found")
 
         pending_path = _hermes_home / ".update_pending.json"
         output_path = _hermes_home / ".update_output.txt"

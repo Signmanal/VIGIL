@@ -41,8 +41,8 @@ export const PROVIDER_GROUPS: ProviderPrefix[] = [
   {
     prefix: 'NOUS_',
     name: 'Nous Portal',
-    description: 'Hosted Hermes & Nous-trained models',
-    docsUrl: 'https://portal.nousresearch.com',
+    description: 'Hosted VIGIL & Nous-trained models',
+    docsUrl: 'https://github.com/Signmanal/VIGIL',
     priority: 0
   },
   {
@@ -88,7 +88,7 @@ export const PROVIDER_GROUPS: ProviderPrefix[] = [
     docsUrl: 'https://modelstudio.console.alibabacloud.com/',
     priority: 6
   },
-  { prefix: 'HERMES_QWEN_', name: 'DashScope (Qwen)', priority: 6 },
+  { prefix: 'VIGIL_QWEN_', name: 'DashScope (Qwen)', priority: 6 },
   {
     prefix: 'GLM_',
     name: 'GLM / Z.AI',
@@ -434,10 +434,10 @@ export const FIELD_DESCRIPTIONS: Record<string, string> = defineFieldCopy({
     personality: 'Default assistant style for new sessions.',
     showReasoning: 'Show reasoning sections when the backend provides them.'
   },
-  timezone: 'Used when Hermes needs local time context. Blank uses the system timezone.',
+  timezone: 'Used when VIGIL needs local time context. Blank uses the system timezone.',
   agent: {
     imageInputMode: 'Controls how image attachments are sent to the model.',
-    maxTurns: 'Upper bound for tool-calling turns before Hermes stops a run.'
+    maxTurns: 'Upper bound for tool-calling turns before VIGIL stops a run.'
   },
   terminal: {
     cwd: 'Default project folder for tool and terminal work.',
@@ -451,9 +451,9 @@ export const FIELD_DESCRIPTIONS: Record<string, string> = defineFieldCopy({
   codeExecution: {
     mode: 'How strictly code execution is scoped to the current project.'
   },
-  fileReadMaxChars: 'Maximum characters Hermes can read from one file request.',
+  fileReadMaxChars: 'Maximum characters VIGIL can read from one file request.',
   approvals: {
-    mode: 'How Hermes handles commands that need explicit approval.',
+    mode: 'How VIGIL handles commands that need explicit approval.',
     timeout: 'How long approval prompts wait before timing out.'
   },
   security: {
@@ -492,7 +492,7 @@ export const FIELD_DESCRIPTIONS: Record<string, string> = defineFieldCopy({
   },
   updates: {
     nonInteractiveLocalChanges:
-      'When Hermes updates itself from the app (no terminal prompt), keep local source edits (stash) or throw them away (discard). Terminal updates always ask.'
+      'When VIGIL updates itself from the app (no terminal prompt), keep local source edits (stash) or throw them away (discard). Terminal updates always ask.'
   }
 })
 

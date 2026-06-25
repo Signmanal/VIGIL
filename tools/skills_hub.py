@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Skills Hub — Source adapters and hub state management for the Hermes Skills Hub.
+Skills Hub — Source adapters and hub state management for the VIGIL Skills Hub.
 
 This is a library module (not an agent tool). It provides:
   - GitHubAuth: Shared GitHub API authentication (PAT, gh CLI, GitHub App)
@@ -46,8 +46,8 @@ logger = logging.getLogger(__name__)
 # Paths
 # ---------------------------------------------------------------------------
 
-HERMES_HOME = get_hermes_home()
-SKILLS_DIR = HERMES_HOME / "skills"
+VIGIL_HOME = get_hermes_home()
+SKILLS_DIR = VIGIL_HOME / "skills"
 HUB_DIR = SKILLS_DIR / ".hub"
 LOCK_FILE = HUB_DIR / "lock.json"
 QUARANTINE_DIR = HUB_DIR / "quarantine"
@@ -2927,7 +2927,7 @@ class OptionalSkillSource(SkillSource):
 
     These skills are official (maintained by Nous Research) but not activated
     by default — they don't appear in the system prompt and aren't copied to
-    ~/.hermes/skills/ during setup.  They are discoverable via the Skills Hub
+    ~/.vigil/skills/ during setup.  They are discoverable via the Skills Hub
     (search / install / inspect) and labelled "official" with "builtin" trust.
     """
 
@@ -3518,39 +3518,39 @@ def check_for_skill_updates(
 
 
 # ---------------------------------------------------------------------------
-# Hermes centralized index source
+# VIGIL centralized index source
 # ---------------------------------------------------------------------------
 
-HERMES_INDEX_URL = "https://hermes-agent.nousresearch.com/docs/api/skills-index.json"
-HERMES_INDEX_CACHE_FILE = INDEX_CACHE_DIR / "hermes-index.json"
-HERMES_INDEX_TTL = 6 * 3600  # 6 hours
+VIGIL_INDEX_URL = "https://vigil-agent.nousresearch.com/docs/api/skills-index.json"
+VIGIL_INDEX_CACHE_FILE = INDEX_CACHE_DIR / "hermes-index.json"
+VIGIL_INDEX_TTL = 6 * 3600  # 6 hours
 
 
 def _load_hermes_index() -> Optional[dict]:
     """Fetch the centralized skills index, with local cache.
 
     The index is a JSON file hosted on the docs site, rebuilt daily by CI.
-    We cache it locally for HERMES_INDEX_TTL seconds to avoid repeated
+    We cache it locally for VIGIL_INDEX_TTL seconds to avoid repeated
     downloads within a session.
     """
     # Check local cache
-    if HERMES_INDEX_CACHE_FILE.exists():
+    if VIGIL_INDEX_CACHE_FILE.exists():
         try:
-            age = time.time() - HERMES_INDEX_CACHE_FILE.stat().st_mtime
-            if age < HERMES_INDEX_TTL:
-                return json.loads(HERMES_INDEX_CACHE_FILE.read_text())
+            age = time.time() - VIGIL_INDEX_CACHE_FILE.stat().st_mtime
+            if age < VIGIL_INDEX_TTL:
+                return json.loads(VIGIL_INDEX_CACHE_FILE.read_text())
         except (OSError, json.JSONDecodeError):
             pass
 
     # Fetch from docs site
     try:
-        resp = httpx.get(HERMES_INDEX_URL, timeout=15, follow_redirects=True)
+        resp = httpx.get(VIGIL_INDEX_URL, timeout=15, follow_redirects=True)
         if resp.status_code != 200:
-            logger.debug("Hermes index fetch returned %d", resp.status_code)
+            logger.debug("VIGIL index fetch returned %d", resp.status_code)
             return _load_stale_index_cache()
         data = resp.json()
     except (httpx.HTTPError, json.JSONDecodeError) as e:
-        logger.debug("Hermes index fetch failed: %s", e)
+        logger.debug("VIGIL index fetch failed: %s", e)
         return _load_stale_index_cache()
 
     # Validate structure
@@ -3559,8 +3559,8 @@ def _load_hermes_index() -> Optional[dict]:
 
     # Cache locally
     try:
-        HERMES_INDEX_CACHE_FILE.parent.mkdir(parents=True, exist_ok=True)
-        HERMES_INDEX_CACHE_FILE.write_text(json.dumps(data))
+        VIGIL_INDEX_CACHE_FILE.parent.mkdir(parents=True, exist_ok=True)
+        VIGIL_INDEX_CACHE_FILE.write_text(json.dumps(data))
     except OSError:
         pass
 
@@ -3569,16 +3569,16 @@ def _load_hermes_index() -> Optional[dict]:
 
 def _load_stale_index_cache() -> Optional[dict]:
     """Fall back to stale cache when the network fetch fails."""
-    if HERMES_INDEX_CACHE_FILE.exists():
+    if VIGIL_INDEX_CACHE_FILE.exists():
         try:
-            return json.loads(HERMES_INDEX_CACHE_FILE.read_text())
+            return json.loads(VIGIL_INDEX_CACHE_FILE.read_text())
         except (OSError, json.JSONDecodeError):
             pass
     return None
 
 
-class HermesIndexSource(SkillSource):
-    """Skill source backed by the centralized Hermes Skills Index.
+class VIGILIndexSource(SkillSource):
+    """Skill source backed by the centralized VIGIL Skills Index.
 
     The index is a JSON catalog published to the docs site and rebuilt
     daily by CI.  It contains metadata + resolved GitHub paths for every
@@ -3746,7 +3746,7 @@ def create_source_router(auth: Optional[GitHubAuth] = None) -> List[SkillSource]
 
     sources: List[SkillSource] = [
         OptionalSkillSource(),        # Official optional skills (highest priority)
-        HermesIndexSource(auth=auth), # Centralized index (search + resolved install paths)
+        VIGILIndexSource(auth=auth), # Centralized index (search + resolved install paths)
         SkillsShSource(auth=auth),
         WellKnownSkillSource(),
         UrlSource(),                  # Direct HTTP(S) URL to a SKILL.md file

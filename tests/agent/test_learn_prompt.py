@@ -57,7 +57,7 @@ class TestBuildLearnPrompt:
         assert "platforms" in std
         # #4 author credits the human first.
         assert "author" in std
-        # #2 Hermes-tool framing names the wrapped tools, not shell utilities.
+        # #2 VIGIL-tool framing names the wrapped tools, not shell utilities.
         for tool in ("read_file", "search_files", "patch", "write_file"):
             assert tool in std
         # #6 scripts/references/templates layout.

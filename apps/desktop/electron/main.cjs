@@ -34,14 +34,14 @@ const {
   SESSION_WINDOW_MIN_HEIGHT,
   SESSION_WINDOW_MIN_WIDTH
 } = require('./session-windows.cjs')
-const { canImportHermesCli, verifyHermesCli } = require('./backend-probes.cjs')
+const { canImportVIGILCli, verifyVIGILCli } = require('./backend-probes.cjs')
 const { createLinkTitleWindow } = require('./link-title-window.cjs')
 const { probeGatewayWebSocket } = require('./gateway-ws-probe.cjs')
 const { adoptServedDashboardToken } = require('./dashboard-token.cjs')
 const { waitForDashboardPort } = require('./backend-ready.cjs')
 const { serializeJsonBody, setJsonRequestHeaders } = require('./oauth-net-request.cjs')
 const { fetchMarketplaceThemes, searchMarketplaceThemes } = require('./vscode-marketplace.cjs')
-const { buildDesktopBackendEnv, normalizeHermesHomeRoot } = require('./backend-env.cjs')
+const { buildDesktopBackendEnv, normalizeVIGILHomeRoot } = require('./backend-env.cjs')
 const { readWindowsUserEnvVar } = require('./windows-user-env.cjs')
 const { readDirForIpc } = require('./fs-read-dir.cjs')
 const { readLiveUpdateMarker } = require('./update-marker.cjs')
@@ -129,14 +129,14 @@ try {
   }
 }
 
-const USER_DATA_OVERRIDE = process.env.HERMES_DESKTOP_USER_DATA_DIR
+const USER_DATA_OVERRIDE = process.env.VIGIL_DESKTOP_USER_DATA_DIR
 if (USER_DATA_OVERRIDE) {
   const resolvedUserData = path.resolve(USER_DATA_OVERRIDE)
   fs.mkdirSync(resolvedUserData, { recursive: true })
   app.setPath('userData', resolvedUserData)
 }
 
-const DEV_SERVER = process.env.HERMES_DESKTOP_DEV_SERVER
+const DEV_SERVER = process.env.VIGIL_DESKTOP_DEV_SERVER
 const IS_PACKAGED = app.isPackaged
 const IS_MAC = process.platform === 'darwin'
 const IS_WINDOWS = process.platform === 'win32'
@@ -157,7 +157,7 @@ function hiddenWindowsChildOptions(options = {}) {
 // GPU and never see it. Fall back to software rendering when a remote display
 // is detected; it's rock-steady over the wire and the CPU cost is negligible
 // next to the connection's latency. Must run before app `ready` — these
-// switches only apply pre-launch. Override with HERMES_DESKTOP_DISABLE_GPU
+// switches only apply pre-launch. Override with VIGIL_DESKTOP_DISABLE_GPU
 // (1/true → always disable, 0/false → keep GPU on).
 const REMOTE_DISPLAY_REASON = detectRemoteDisplay()
 if (REMOTE_DISPLAY_REASON) {
@@ -250,91 +250,91 @@ if (INSTALL_STAMP) {
   )
 }
 
-// HERMES_HOME — the user-facing root for everything Hermes-related. Mirrors
-// scripts/install.ps1's $HermesHome and scripts/install.sh's $HERMES_HOME.
+// VIGIL_HOME — the user-facing root for everything VIGIL-related. Mirrors
+// scripts/install.ps1's $VIGILHome and scripts/install.sh's $VIGIL_HOME.
 //
 // Defaults:
-//   Windows: %LOCALAPPDATA%\hermes (matches install.ps1)
-//   macOS / Linux: ~/.hermes (matches install.sh)
+//   Windows: %LOCALAPPDATA%\vigil (matches install.ps1)
+//   macOS / Linux: ~/.vigil (matches install.sh)
 //
-// Special case for Windows: if the user has a legacy ~/.hermes directory
+// Special case for Windows: if the user has a legacy ~/.vigil directory
 // (e.g., from a prior pip install or a manual setup) AND no
-// %LOCALAPPDATA%\hermes yet, prefer the legacy path so we don't orphan their
+// %LOCALAPPDATA%\vigil yet, prefer the legacy path so we don't orphan their
 // existing config / sessions / .env. New installs go to %LOCALAPPDATA%.
 //
-// HERMES_DESKTOP_USER_DATA_DIR (used by test:desktop:fresh) puts the sandbox
-// HERMES_HOME beneath the throwaway userData dir so a fresh-install run never
-// touches the user's real ~/.hermes / %LOCALAPPDATA%\hermes.
-function resolveHermesHome() {
-  if (process.env.HERMES_HOME) return normalizeHermesHomeRoot(process.env.HERMES_HOME)
+// VIGIL_DESKTOP_USER_DATA_DIR (used by test:desktop:fresh) puts the sandbox
+// VIGIL_HOME beneath the throwaway userData dir so a fresh-install run never
+// touches the user's real ~/.vigil / %LOCALAPPDATA%\vigil.
+function resolveVIGILHome() {
+  if (process.env.VIGIL_HOME) return normalizeVIGILHomeRoot(process.env.VIGIL_HOME)
   if (USER_DATA_OVERRIDE) return path.join(path.resolve(USER_DATA_OVERRIDE), 'hermes-home')
   if (IS_WINDOWS) {
     // A GUI app launched from Explorer inherits the environment block captured
-    // at login, so a HERMES_HOME set via `setx` AFTER login is invisible in
+    // at login, so a VIGIL_HOME set via `setx` AFTER login is invisible in
     // process.env even though the CLI (a fresh shell) sees it. Without this the
-    // backend silently falls back to %LOCALAPPDATA%\hermes and reports "No
+    // backend silently falls back to %LOCALAPPDATA%\vigil and reports "No
     // inference provider configured" despite a valid configured home (#45471).
     // Consult the live User-scoped registry value before the default below.
-    const fromRegistry = readWindowsUserEnvVar('HERMES_HOME')
-    if (fromRegistry) return normalizeHermesHomeRoot(fromRegistry)
+    const fromRegistry = readWindowsUserEnvVar('VIGIL_HOME')
+    if (fromRegistry) return normalizeVIGILHomeRoot(fromRegistry)
   }
   if (IS_WINDOWS && process.env.LOCALAPPDATA) {
     const localappdata = path.join(process.env.LOCALAPPDATA, 'hermes')
-    const legacy = path.join(app.getPath('home'), '.hermes')
+    const legacy = path.join(app.getPath('home'), '.vigil')
     // Migrate transparently to LOCALAPPDATA, but honour an existing legacy
-    // ~/.hermes setup (no LOCALAPPDATA install yet) so users don't lose state.
+    // ~/.vigil setup (no LOCALAPPDATA install yet) so users don't lose state.
     if (!directoryExists(localappdata) && directoryExists(legacy)) return legacy
     return localappdata
   }
-  return path.join(app.getPath('home'), '.hermes')
+  return path.join(app.getPath('home'), '.vigil')
 }
 
-const HERMES_HOME = resolveHermesHome()
+const VIGIL_HOME = resolveVIGILHome()
 
 function hermesManagedNodePathEntries() {
   // NOTE: keep this ordering in sync with iter_hermes_node_dirs() in
   // hermes_constants.py — this Node main process cannot import the Python
   // module, so the platform-ordering rule is mirrored here.
-  const root = path.join(HERMES_HOME, 'node')
+  const root = path.join(VIGIL_HOME, 'node')
   const bin = path.join(root, 'bin')
   const entries = IS_WINDOWS ? [root, bin] : [bin, root]
   return entries.filter(directoryExists)
 }
 
-function pathWithHermesManagedNode(...entries) {
-  return [...hermesManagedNodePathEntries(), ...entries, process.env.PATH]
+function pathWithVIGILManagedNode(...entries) {
+  return [...vigilManagedNodePathEntries(), ...entries, process.env.PATH]
     .filter(Boolean)
     .join(path.delimiter)
 }
 
-// ACTIVE_HERMES_ROOT — the canonical mutable Hermes install. Same path
+// ACTIVE_VIGIL_ROOT — the canonical mutable VIGIL install. Same path
 // install.ps1 / install.sh use, so a desktop-only user and a CLI-only user end
 // up with identical layouts and can share one install.
-const ACTIVE_HERMES_ROOT = path.join(HERMES_HOME, 'hermes-agent')
+const ACTIVE_VIGIL_ROOT = path.join(VIGIL_HOME, 'vigil-agent')
 // VENV_ROOT — venv lives inside the repo, exactly like install.ps1 does it.
-const VENV_ROOT = path.join(ACTIVE_HERMES_ROOT, 'venv')
+const VENV_ROOT = path.join(ACTIVE_VIGIL_ROOT, 'venv')
 // BOOTSTRAP_COMPLETE_MARKER — written by the first-launch bootstrap runner
 // (Phase 1D) after install.ps1 has completed all stages and the user has
 // finished initial configuration. Presence of this marker means the install
 // is in a known-good state and we can skip the bootstrap flow on subsequent
-// boots, going straight to `resolveHermesBackend()`. Missing or stale marker
+// boots, going straight to `resolveVIGILBackend()`. Missing or stale marker
 // means we re-run the bootstrap; install.ps1's stages are idempotent so a
 // re-run on an already-good install just discovers everything in place.
 //
-// We deliberately put the marker INSIDE ACTIVE_HERMES_ROOT (not alongside)
+// We deliberately put the marker INSIDE ACTIVE_VIGIL_ROOT (not alongside)
 // so that deleting the checkout to start fresh also deletes the marker --
 // avoids the confusing "marker exists but checkout is gone" state.
-const BOOTSTRAP_COMPLETE_MARKER = path.join(ACTIVE_HERMES_ROOT, '.hermes-bootstrap-complete')
+const BOOTSTRAP_COMPLETE_MARKER = path.join(ACTIVE_VIGIL_ROOT, '.vigil-bootstrap-complete')
 const BOOTSTRAP_MARKER_SCHEMA_VERSION = 1
 
 const DESKTOP_CONNECTION_CONFIG_PATH = path.join(app.getPath('userData'), 'connection.json')
 const DESKTOP_UPDATE_CONFIG_PATH = path.join(app.getPath('userData'), 'updates.json')
 const DESKTOP_WINDOW_STATE_PATH = path.join(app.getPath('userData'), 'window-state.json')
-// active-profile.json records which Hermes profile the desktop launches its
-// local backend as. When set, startHermes() passes `hermes --profile <name>
-// dashboard …`, which deterministically pins HERMES_HOME (see
+// active-profile.json records which VIGIL profile the desktop launches its
+// local backend as. When set, startVIGIL() passes `hermes --profile <name>
+// dashboard …`, which deterministically pins VIGIL_HOME (see
 // _apply_profile_override in hermes_cli/main.py) and bypasses the sticky
-// ~/.hermes/active_profile file. Unset (null) preserves the legacy behavior:
+// ~/.vigil/active_profile file. Unset (null) preserves the legacy behavior:
 // no --profile flag, so the backend honors active_profile / default.
 const DESKTOP_PROFILE_CONFIG_PATH = path.join(app.getPath('userData'), 'active-profile.json')
 // Mirrors hermes_cli.profiles._PROFILE_ID_RE so we never hand the backend a
@@ -342,12 +342,12 @@ const DESKTOP_PROFILE_CONFIG_PATH = path.join(app.getPath('userData'), 'active-p
 const PROFILE_NAME_RE = /^[a-z0-9][a-z0-9_-]{0,63}$/
 // Branch we track for self-update. The GUI work has merged to main, so this
 // tracks main. User can also override at runtime via
-// hermesDesktop.updates.setBranch().
+// vigilDesktop.updates.setBranch().
 const DEFAULT_UPDATE_BRANCH = 'main'
-// desktop.log lives under HERMES_HOME/logs/ so it sits next to agent.log,
+// desktop.log lives under VIGIL_HOME/logs/ so it sits next to agent.log,
 // errors.log, gateway.log produced by hermes_logging.setup_logging — one log
 // directory per user, regardless of which UI surface produced the line.
-const DESKTOP_LOG_PATH = path.join(HERMES_HOME, 'logs', 'desktop.log')
+const DESKTOP_LOG_PATH = path.join(VIGIL_HOME, 'logs', 'desktop.log')
 const DESKTOP_LOG_FLUSH_MS = 120
 const DESKTOP_LOG_BUFFER_MAX_CHARS = 64 * 1024
 // Bound desktop.log on disk. It is an append-only forensic log, so a boot loop
@@ -369,13 +369,13 @@ const DESKTOP_LOG_MAX_BYTES = 10 * 1024 * 1024
 const DESKTOP_LOG_BACKUP_COUNT = 3
 const DESKTOP_LOG_DISCARD_BYTES = DESKTOP_LOG_MAX_BYTES * 4
 const desktopLogBackupPath = n => `${DESKTOP_LOG_PATH}.${n}`
-const BOOT_FAKE_MODE = process.env.HERMES_DESKTOP_BOOT_FAKE === '1'
+const BOOT_FAKE_MODE = process.env.VIGIL_DESKTOP_BOOT_FAKE === '1'
 const BOOT_FAKE_STEP_MS = (() => {
-  const raw = Number.parseInt(String(process.env.HERMES_DESKTOP_BOOT_FAKE_STEP_MS || ''), 10)
+  const raw = Number.parseInt(String(process.env.VIGIL_DESKTOP_BOOT_FAKE_STEP_MS || ''), 10)
   if (!Number.isFinite(raw) || raw <= 0) return 650
   return Math.max(120, raw)
 })()
-const APP_NAME = 'Hermes'
+const APP_NAME = 'VIGIL'
 const TITLEBAR_HEIGHT = 34
 const MACOS_TRAFFIC_LIGHTS_HEIGHT = 14
 const WINDOW_BUTTON_POSITION = {
@@ -633,20 +633,20 @@ app.setName(APP_NAME)
 // Windows toast notifications silently no-op unless an AppUserModelID is set:
 // `new Notification().show()` returns without error and nothing appears. The
 // AUMID must match the installed Start Menu shortcut's AUMID, which
-// electron-builder derives from the build `appId` (com.nousresearch.hermes) —
+// electron-builder derives from the build `appId` (com.signmanal.vigil) —
 // keep this string in sync with package.json `build.appId`. macOS/Linux don't
 // need this, so gate it on Windows. (Fixes: desktop approval/turn notifications
 // never firing on Windows.)
 if (IS_WINDOWS) {
-  app.setAppUserModelId('com.nousresearch.hermes')
+  app.setAppUserModelId('com.signmanal.vigil')
 }
-// Seed the native About panel with the live Hermes version. This is refreshed
+// Seed the native About panel with the live VIGIL version. This is refreshed
 // on every open via the explicit "About" menu handler (refreshAboutPanel), so
 // an in-place `hermes update` mid-session is reflected without an app restart;
 // the seed here just covers the first open and any non-menu invocation path.
 app.setAboutPanelOptions({
   applicationName: APP_NAME,
-  applicationVersion: resolveHermesVersion(),
+  applicationVersion: resolveVIGILVersion(),
   copyright: 'Copyright © 2026 Nous Research'
 })
 
@@ -715,7 +715,7 @@ let hermesProcess = null
 let connectionPromise = null
 // Additional per-profile backends, keyed by profile name. The PRIMARY backend
 // (the desktop's launch profile) stays managed by hermesProcess +
-// connectionPromise + startHermes(); this pool only holds EXTRA profile
+// connectionPromise + startVIGIL(); this pool only holds EXTRA profile
 // backends spawned lazily when a session belongs to a different profile. A user
 // with no named profiles never populates this map, so their experience is
 // byte-for-byte the single-backend behavior.
@@ -723,8 +723,8 @@ const backendPool = new Map() // profile -> { process, port, token, connectionPr
 // Keep the pool light: cap concurrent profile backends (LRU eviction) and reap
 // idle ones. A user idles at exactly the primary backend; pool backends only
 // exist while a non-primary profile is actively being chatted through.
-const POOL_MAX_BACKENDS = Math.max(1, Number(process.env.HERMES_DESKTOP_POOL_MAX) || 3)
-const POOL_IDLE_MS = Math.max(60_000, Number(process.env.HERMES_DESKTOP_POOL_IDLE_MS) || 10 * 60_000)
+const POOL_MAX_BACKENDS = Math.max(1, Number(process.env.VIGIL_DESKTOP_POOL_MAX) || 3)
+const POOL_IDLE_MS = Math.max(60_000, Number(process.env.VIGIL_DESKTOP_POOL_IDLE_MS) || 10 * 60_000)
 // A backend touched within this window has a live renderer socket (the keepalive
 // pings every 60s for every open profile). LRU eviction must spare these — a
 // concurrent multi-profile session keeps several backends "fresh" at once, and
@@ -739,7 +739,7 @@ const RENDERER_RELOAD_WINDOW_MS = 60_000
 const RENDERER_RELOAD_MAX = 3
 let rendererReloadTimes = []
 // Latched bootstrap failure: when the first-launch install fails, we hold
-// onto the error so subsequent startHermes() calls (e.g. the renderer's
+// onto the error so subsequent startVIGIL() calls (e.g. the renderer's
 // ensureGatewayOpen retrying after the WS won't open) return the same error
 // instead of re-running install.ps1 in a hot loop. Cleared explicitly by
 // the renderer's "Reload and retry" path or by quitting the app.
@@ -759,7 +759,7 @@ let nativeThemeListenerInstalled = false
 let bootProgressState = {
   error: null,
   fakeMode: BOOT_FAKE_MODE,
-  message: 'Waiting to start Hermes backend',
+  message: 'Waiting to start VIGIL backend',
   phase: 'idle',
   progress: 0,
   running: false,
@@ -1168,7 +1168,7 @@ function directoryExists(filePath) {
 }
 
 // --- in-app update mutual exclusion (#50238) -------------------------------
-// The Tauri updater writes HERMES_HOME/.hermes-update-in-progress for the whole
+// The Tauri updater writes VIGIL_HOME/.vigil-update-in-progress for the whole
 // duration of an `--update` run (see update.rs UpdateMarkerGuard). If the user
 // relaunches the desktop mid-update — because the window vanished with no
 // progress and looks crashed — a fresh instance must NOT spawn its own local
@@ -1198,7 +1198,7 @@ const UPDATE_HANDOFF_DWELL_MS = 2500
 // Emits a boot-progress phase so the renderer shows "Update in progress…"
 // rather than a frozen splash. Returns true if it parked at all.
 async function waitForUpdateToFinish() {
-  let marker = readLiveUpdateMarker(HERMES_HOME)
+  let marker = readLiveUpdateMarker(VIGIL_HOME)
   if (!marker) return false
 
   rememberLog(`[updates] update in progress (pid=${marker.pid}); deferring backend start until it finishes`)
@@ -1206,11 +1206,11 @@ async function waitForUpdateToFinish() {
   while (marker && Date.now() < deadline) {
     await advanceBootProgress(
       'backend.update-wait',
-      'An update is finishing — Hermes will start automatically when it completes…',
+      'An update is finishing — VIGIL will start automatically when it completes…',
       12
     )
     await new Promise(r => setTimeout(r, UPDATE_WAIT_POLL_MS))
-    marker = readLiveUpdateMarker(HERMES_HOME)
+    marker = readLiveUpdateMarker(VIGIL_HOME)
   }
   if (marker) {
     rememberLog('[updates] update still in progress after wait timeout; starting backend anyway')
@@ -1289,12 +1289,12 @@ function looksLikeDesktopAppBinary(commandPath) {
   )
 }
 
-function isHermesSourceRoot(root) {
+function isVIGILSourceRoot(root) {
   return directoryExists(root) && fileExists(path.join(root, 'hermes_cli', 'main.py'))
 }
 
 function findPythonForRoot(root) {
-  const override = process.env.HERMES_DESKTOP_PYTHON
+  const override = process.env.VIGIL_DESKTOP_PYTHON
   if (override && fileExists(override)) return override
 
   const relativePaths = IS_WINDOWS
@@ -1332,7 +1332,7 @@ function findSystemPython() {
   //      miss real Python 3.13 installs (user-reported case).
   //
   // We also restrict ourselves to Python 3.11–3.13. 3.14 is the latest
-  // CPython but several Hermes deps (notably pywinpty's Rust-built
+  // CPython but several VIGIL deps (notably pywinpty's Rust-built
   // windows_x86_64_msvc crate) don't yet publish 3.14 wheels, and
   // `pip install -e .` falls back to source-build, which fails without
   // a Rust toolchain. install.ps1 sidesteps this by pinning to 3.11
@@ -1430,7 +1430,7 @@ function findSystemPython() {
   return null
 }
 
-// findGitBash — locate bash.exe on Windows. Hermes' terminal tool requires
+// findGitBash — locate bash.exe on Windows. VIGIL' terminal tool requires
 // bash (POSIX shell), and on Windows that's almost always Git for Windows'
 // bundled Git Bash. We check the same set of locations tools/environments/
 // local.py:_find_bash() checks at runtime, so a positive result here means
@@ -1443,7 +1443,7 @@ function findGitBash() {
     return findOnPath('bash')
   }
 
-  // install.ps1 drops PortableGit at %LOCALAPPDATA%\hermes\git\... — checked
+  // install.ps1 drops PortableGit at %LOCALAPPDATA%\vigil\git\... — checked
   // first so users who installed via install.ps1 are detected before we
   // start probing system-wide locations.
   const localAppData = process.env.LOCALAPPDATA || ''
@@ -1475,7 +1475,7 @@ function getVenvPython(venvRoot) {
 }
 
 // resolveGitBinary — locate git.exe on Windows. A fresh installer-driven
-// install only has PortableGit under %LOCALAPPDATA%\hermes\git (never on
+// install only has PortableGit under %LOCALAPPDATA%\vigil\git (never on
 // PATH), so a bare spawn('git') ENOENTs and self-update checks fail with
 // "Couldn't check for updates". Mirror findGitBash: PortableGit first, then
 // standard Git-for-Windows locations, then PATH. Cached after first probe.
@@ -1503,7 +1503,7 @@ function resolveGitBinary() {
   return _gitBinaryCache
 }
 
-function recentHermesLog() {
+function recentVIGILLog() {
   return hermesLog.slice(-20).join('\n')
 }
 
@@ -1563,16 +1563,16 @@ function persistWindowState() {
 const schedulePersistWindowState = debounce(persistWindowState, 250)
 
 // Match the backend's source resolution but bias toward a real git checkout.
-// Dev → SOURCE_REPO_ROOT. Packaged/CLI install → ACTIVE_HERMES_ROOT.
-// HERMES_DESKTOP_HERMES_ROOT always wins so devs can pin a worktree.
+// Dev → SOURCE_REPO_ROOT. Packaged/CLI install → ACTIVE_VIGIL_ROOT.
+// VIGIL_DESKTOP_VIGIL_ROOT always wins so devs can pin a worktree.
 function resolveUpdateRoot() {
   const candidates = [
-    process.env.HERMES_DESKTOP_HERMES_ROOT && path.resolve(process.env.HERMES_DESKTOP_HERMES_ROOT),
-    !IS_PACKAGED && isHermesSourceRoot(SOURCE_REPO_ROOT) ? SOURCE_REPO_ROOT : null,
-    isHermesSourceRoot(ACTIVE_HERMES_ROOT) ? ACTIVE_HERMES_ROOT : null
+    process.env.VIGIL_DESKTOP_VIGIL_ROOT && path.resolve(process.env.VIGIL_DESKTOP_VIGIL_ROOT),
+    !IS_PACKAGED && isVIGILSourceRoot(SOURCE_REPO_ROOT) ? SOURCE_REPO_ROOT : null,
+    isVIGILSourceRoot(ACTIVE_VIGIL_ROOT) ? ACTIVE_VIGIL_ROOT : null
   ].filter(Boolean)
 
-  return candidates.find(c => directoryExists(path.join(c, '.git'))) || candidates[0] || ACTIVE_HERMES_ROOT
+  return candidates.find(c => directoryExists(path.join(c, '.git'))) || candidates[0] || ACTIVE_VIGIL_ROOT
 }
 
 function runGit(args, options = {}) {
@@ -1772,7 +1772,7 @@ async function readCommitLog(cwd, branch) {
 let updateInFlight = false
 
 // Resolve the staged updater binary. The Tauri installer copies itself to
-// HERMES_HOME/hermes-setup.exe on a successful install (see
+// VIGIL_HOME/hermes-setup.exe on a successful install (see
 // apps/bootstrap-installer paths::copy_self_to_hermes_home). That binary owns
 // ALL repo mutation — running `hermes update` + rebuilding the desktop — so
 // the desktop never touches its own bits while running. Returns null when the
@@ -1780,7 +1780,7 @@ let updateInFlight = false
 // installer); callers degrade gracefully.
 function resolveUpdaterBinary() {
   const name = IS_WINDOWS ? 'hermes-setup.exe' : 'hermes-setup'
-  const candidate = path.join(HERMES_HOME, name)
+  const candidate = path.join(VIGIL_HOME, name)
   return fileExists(candidate) ? candidate : null
 }
 
@@ -1812,7 +1812,7 @@ function repairMacUpdaterHelper(updater) {
 // Path to the venv shim whose lock decides whether `hermes update` can write
 // fresh entry points. On Windows this is the file the running backend
 // `hermes.exe` holds open; on POSIX it's never mandatory-locked.
-function venvHermesShimPath(updateRoot) {
+function venvVIGILShimPath(updateRoot) {
   return IS_WINDOWS
     ? path.join(updateRoot, 'venv', 'Scripts', 'hermes.exe')
     : path.join(updateRoot, 'venv', 'bin', 'hermes')
@@ -1913,7 +1913,7 @@ async function releaseBackendLock(updateRoot, tag) {
   stopAllPoolBackends()
   for (const pid of pids) forceKillProcessTree(pid)
 
-  const shim = venvHermesShimPath(updateRoot)
+  const shim = venvVIGILShimPath(updateRoot)
   const deadlineMs = Date.now() + 15000
   while (Date.now() < deadlineMs) {
     if (!isShimLocked(shim)) {
@@ -1930,7 +1930,7 @@ async function releaseBackendLock(updateRoot, tag) {
 //
 // The desktop is a pure consumer: it does NOT git pull / pip install / rebuild
 // itself (the old open-coded git dance lived here and drifted from
-// `hermes update`). Instead we spawn the staged Hermes-Setup binary with
+// `hermes update`). Instead we spawn the staged VIGIL-Setup binary with
 // --update and quit, so it can run `hermes update` (which refuses while we
 // hold the venv shim) and rebuild the desktop with our exe already gone.
 //
@@ -1956,7 +1956,7 @@ async function applyUpdates(opts = {}) {
     if (!updater) {
       // No staged updater binary — this is a CLI-installed user (they ran
       // `hermes desktop`, never the Tauri installer that self-copies
-      // hermes-setup.exe into HERMES_HOME). They DO have a working `hermes`
+      // hermes-setup.exe into VIGIL_HOME). They DO have a working `hermes`
       // on PATH / in the venv, so the correct path is the one-liner in their
       // native medium. We show the EXACT command, branch-pinned to the
       // checkout they're on — bare `hermes update` defaults to main and would
@@ -1982,7 +1982,7 @@ async function applyUpdates(opts = {}) {
 
     emitUpdateProgress({
       stage: 'restart',
-      message: 'Updating Hermes — this window will close and the updater will open. Don’t reopen Hermes yourself; it restarts automatically when the update finishes.',
+      message: 'Updating VIGIL — this window will close and the updater will open. Don’t reopen VIGIL yourself; it restarts automatically when the update finishes.',
       percent: 100
     })
     repairMacUpdaterHelper(updater)
@@ -2006,11 +2006,11 @@ async function applyUpdates(opts = {}) {
     // Detached so the updater outlives this process — it needs us GONE before
     // `hermes update` will run (the venv shim is locked while we live).
     const child = spawn(updater, updaterArgs, {
-      cwd: HERMES_HOME,
+      cwd: VIGIL_HOME,
       env: {
         ...process.env,
-        HERMES_HOME,
-        PATH: pathWithHermesManagedNode(venvBin)
+        VIGIL_HOME,
+        PATH: pathWithVIGILManagedNode(venvBin)
       },
       detached: true,
       stdio: 'ignore',
@@ -2047,17 +2047,17 @@ async function handOffWindowsBootstrapRecovery(reason) {
     ? await resolveHealedBranch(updateRoot, configuredBranch || DEFAULT_UPDATE_BRANCH)
     : configuredBranch || DEFAULT_UPDATE_BRANCH
   const venvBin = path.join(updateRoot, 'venv', IS_WINDOWS ? 'Scripts' : 'bin')
-  const venvHermes = path.join(venvBin, IS_WINDOWS ? 'hermes.exe' : 'hermes')
-  const updaterArgs = fileExists(venvHermes) ? ['--update', '--branch', branch] : ['--repair', '--branch', branch]
+  const venvVIGIL = path.join(venvBin, IS_WINDOWS ? 'hermes.exe' : 'hermes')
+  const updaterArgs = fileExists(venvVIGIL) ? ['--update', '--branch', branch] : ['--repair', '--branch', branch]
 
   await releaseBackendLockForUpdate(updateRoot)
 
   const child = spawn(updater, updaterArgs, {
-    cwd: HERMES_HOME,
+    cwd: VIGIL_HOME,
     env: {
       ...process.env,
-      HERMES_HOME,
-      PATH: pathWithHermesManagedNode(venvBin)
+      VIGIL_HOME,
+      PATH: pathWithVIGILManagedNode(venvBin)
     },
     detached: true,
     stdio: 'ignore',
@@ -2078,9 +2078,9 @@ async function handOffWindowsBootstrapRecovery(reason) {
 
 // Resolve the hermes CLI to drive an in-app update: prefer the venv shim in
 // the install we're updating, fall back to `hermes` on PATH.
-function resolveHermesCliBinary(updateRoot) {
-  const venvHermes = path.join(updateRoot, 'venv', 'bin', 'hermes')
-  if (fileExists(venvHermes)) return venvHermes
+function resolveVIGILCliBinary(updateRoot) {
+  const venvVIGIL = path.join(updateRoot, 'venv', 'bin', 'hermes')
+  if (fileExists(venvVIGIL)) return venvVIGIL
   return findOnPath('hermes') || null
 }
 
@@ -2134,18 +2134,18 @@ function shellQuote(value) {
 // restart to load the new GUI" if the swap can't be performed.
 async function applyUpdatesPosixInApp() {
   const updateRoot = resolveUpdateRoot()
-  const hermes = resolveHermesCliBinary(updateRoot)
+  const hermes = resolveVIGILCliBinary(updateRoot)
   if (!hermes) {
     emitUpdateProgress({ stage: 'manual', message: 'hermes update', percent: null })
     return { ok: true, manual: true, command: 'hermes update', hermesRoot: updateRoot }
   }
 
-  // Put the Hermes-managed Node and the venv on PATH so `hermes desktop`'s
+  // Put the VIGIL-managed Node and the venv on PATH so `hermes desktop`'s
   // npm build can find them on a machine with no system Node. Windows portable
-  // Node lives directly under %LOCALAPPDATA%\hermes\node, not node\bin.
+  // Node lives directly under %LOCALAPPDATA%\vigil\node, not node\bin.
   const env = {
-    HERMES_HOME,
-    PATH: pathWithHermesManagedNode(path.join(updateRoot, 'venv', 'bin'))
+    VIGIL_HOME,
+    PATH: pathWithVIGILManagedNode(path.join(updateRoot, 'venv', 'bin'))
   }
 
   // `hermes update` reaps stale `hermes dashboard` backends (a code update
@@ -2154,7 +2154,7 @@ async function applyUpdatesPosixInApp() {
   // mid-update produces the boot→kill→crash loop in #37532 — the desktop
   // already restarts its own backend via the rebuild+relaunch below, so the
   // reap must spare it. Hand the live backend's PID to the update process;
-  // _kill_stale_dashboard_processes reads HERMES_DESKTOP_CHILD_PID and excludes
+  // _kill_stale_dashboard_processes reads VIGIL_DESKTOP_CHILD_PID and excludes
   // it while still reaping any genuinely-orphaned dashboards. (#37532)
   // Exclude every desktop-managed backend (primary + all pool profiles) from
   // the update reaper. _kill_stale_dashboard_processes accepts a comma-separated
@@ -2169,7 +2169,7 @@ async function applyUpdatesPosixInApp() {
     }
   }
   if (desktopChildPids.length) {
-    env.HERMES_DESKTOP_CHILD_PID = desktopChildPids.join(',')
+    env.VIGIL_DESKTOP_CHILD_PID = desktopChildPids.join(',')
   }
 
   // Branch-pin so a non-main checkout doesn't get switched to main (and self-heal
@@ -2185,7 +2185,7 @@ async function applyUpdatesPosixInApp() {
     // best effort
   }
 
-  emitUpdateProgress({ stage: 'update', message: 'Updating Hermes (git + dependencies)…', percent: 10 })
+  emitUpdateProgress({ stage: 'update', message: 'Updating VIGIL (git + dependencies)…', percent: 10 })
   const updated = await runStreamedUpdate(hermes, ['update', '--yes', ...branchArgs], {
     cwd: updateRoot,
     env,
@@ -2209,7 +2209,7 @@ async function applyUpdatesPosixInApp() {
   if (rebuilt.code !== 0) {
     emitUpdateProgress({
       stage: 'error',
-      message: 'Backend updated, but the desktop rebuild failed. Restart Hermes to retry.',
+      message: 'Backend updated, but the desktop rebuild failed. Restart VIGIL to retry.',
       error: rebuilt.error || 'rebuild-failed'
     })
     return { ok: false, backendUpdated: true, error: 'desktop rebuild failed' }
@@ -2253,7 +2253,7 @@ async function applyUpdatesPosixInApp() {
     const outcome = decideRelaunchOutcome({ underUnpacked, sandboxOk })
 
     if (outcome === 'relaunch') {
-      emitUpdateProgress({ stage: 'restart', message: 'Restarting Hermes…', percent: 100 })
+      emitUpdateProgress({ stage: 'restart', message: 'Restarting VIGIL…', percent: 100 })
       // Preserve launch context across the re-exec: replay the original args
       // (filtered of Electron internals) and the env/cwd that define which
       // backend/profile/root this instance talks to. Without this the
@@ -2285,7 +2285,7 @@ async function applyUpdatesPosixInApp() {
           backendUpdated: true,
           guiUpdated: false,
           manualRestart: true,
-          message: 'Backend updated. Quit and reopen Hermes to load the new version.'
+          message: 'Backend updated. Quit and reopen VIGIL to load the new version.'
         }
       }
     }
@@ -2295,7 +2295,7 @@ async function applyUpdatesPosixInApp() {
         stage: 'guiSkew',
         message:
           'Backend updated, but the desktop app package was not changed. ' +
-          'Update or reinstall the Hermes desktop app to match.',
+          'Update or reinstall the VIGIL desktop app to match.',
         percent: 100
       })
       rememberLog(
@@ -2319,13 +2319,13 @@ async function applyUpdatesPosixInApp() {
       sandboxBlocked: true,
       message:
         'Backend updated. The rebuilt app can’t relaunch automatically ' +
-        '(sandbox helper needs root). Quit and reopen Hermes to finish.'
+        '(sandbox helper needs root). Quit and reopen VIGIL to finish.'
     }
   }
 
   const rebuiltApp = [
-    path.join(updateRoot, 'apps', 'desktop', 'release', 'mac-arm64', 'Hermes.app'),
-    path.join(updateRoot, 'apps', 'desktop', 'release', 'mac', 'Hermes.app')
+    path.join(updateRoot, 'apps', 'desktop', 'release', 'mac-arm64', 'VIGIL.app'),
+    path.join(updateRoot, 'apps', 'desktop', 'release', 'mac', 'VIGIL.app')
   ].find(directoryExists)
   const targetApp = runningAppBundle()
 
@@ -2334,7 +2334,7 @@ async function applyUpdatesPosixInApp() {
   if (!rebuiltApp || !targetApp) {
     emitUpdateProgress({
       stage: 'done',
-      message: 'Backend updated. Restart Hermes to load the new version.',
+      message: 'Backend updated. Restart VIGIL to load the new version.',
       percent: 100
     })
     return { ok: true, backendUpdated: true, rebuiltApp: rebuiltApp || null }
@@ -2354,11 +2354,11 @@ for _ in $(seq 1 240); do
   sleep 0.5
 done
 if [ "$SRC" != "$DST" ]; then
-  if /usr/bin/ditto "$SRC" "$DST.hermes-update-new"; then
-    rm -rf "$DST.hermes-update-old" 2>/dev/null || true
-    mv "$DST" "$DST.hermes-update-old" 2>/dev/null || rm -rf "$DST"
-    mv "$DST.hermes-update-new" "$DST"
-    rm -rf "$DST.hermes-update-old" 2>/dev/null || true
+  if /usr/bin/ditto "$SRC" "$DST.vigil-update-new"; then
+    rm -rf "$DST.vigil-update-old" 2>/dev/null || true
+    mv "$DST" "$DST.vigil-update-old" 2>/dev/null || rm -rf "$DST"
+    mv "$DST.vigil-update-new" "$DST"
+    rm -rf "$DST.vigil-update-old" 2>/dev/null || true
   fi
 fi
 /usr/bin/xattr -dr com.apple.quarantine "$DST" 2>/dev/null || true
@@ -2370,7 +2370,7 @@ fi
   } catch (err) {
     emitUpdateProgress({
       stage: 'done',
-      message: 'Backend + app updated. Restart Hermes to load the new version.',
+      message: 'Backend + app updated. Restart VIGIL to load the new version.',
       percent: 100
     })
     rememberLog(`[updates] could not write swap script: ${err.message}; rebuilt app at ${rebuiltApp}`)
@@ -2423,7 +2423,7 @@ function isBootstrapComplete() {
   // a runnable venv: an interrupted or split-home install can leave the marker
   // + checkout without a venv, and trusting that spawns a dead backend
   // ("gateway offline") instead of re-running bootstrap to repair it.
-  return isHermesSourceRoot(ACTIVE_HERMES_ROOT) && fileExists(getVenvPython(VENV_ROOT))
+  return isVIGILSourceRoot(ACTIVE_VIGIL_ROOT) && fileExists(getVenvPython(VENV_ROOT))
 }
 
 function writeBootstrapMarker(payload) {
@@ -2440,7 +2440,7 @@ function writeBootstrapMarker(payload) {
 }
 
 function resolveWebDist() {
-  const override = process.env.HERMES_DESKTOP_WEB_DIST
+  const override = process.env.VIGIL_DESKTOP_WEB_DIST
   if (override && directoryExists(path.resolve(override))) return path.resolve(override)
 
   const unpackedDist = path.join(unpackedPathFor(APP_ROOT), 'dist')
@@ -2457,7 +2457,7 @@ function resolveWebDist() {
     rememberLog(
       `[web-dist] dashboard frontend dir resolved to an asar-internal path that ` +
         `is not a real directory: ${fallback}. Static routes will 404. ` +
-        `Ensure dist/** is unpacked (asarUnpack) or set HERMES_DESKTOP_WEB_DIST.`
+        `Ensure dist/** is unpacked (asarUnpack) or set VIGIL_DESKTOP_WEB_DIST.`
     )
   }
   return fallback
@@ -2493,9 +2493,9 @@ function isPackagedInstallPath(dir) {
   })
 }
 
-function resolveHermesCwd() {
+function resolveVIGILCwd() {
   // In a packaged build, `process.cwd()` resolves to the install root (e.g.
-  // `…/win-unpacked` on Windows or `/Applications/Hermes.app/Contents/...`
+  // `…/win-unpacked` on Windows or `/Applications/VIGIL.app/Contents/...`
   // on macOS). Sessions spawned there leave files inside the app bundle
   // and bewilder users when "where did my files go?" is the install dir.
   // The user-configurable default project directory wins over everything,
@@ -2503,7 +2503,7 @@ function resolveHermesCwd() {
   // real directory), then the home dir.
   const candidates = [
     readDefaultProjectDir(),
-    process.env.HERMES_DESKTOP_CWD,
+    process.env.VIGIL_DESKTOP_CWD,
     IS_PACKAGED ? null : process.env.INIT_CWD,
     IS_PACKAGED ? null : process.cwd(),
     !IS_PACKAGED ? SOURCE_REPO_ROOT : null,
@@ -2528,7 +2528,7 @@ function sanitizeWorkspaceCwd(cwd) {
   const trimmed = typeof cwd === 'string' ? cwd.trim() : ''
 
   if (!trimmed || isPackagedInstallPath(trimmed)) {
-    return { cwd: resolveHermesCwd(), sanitized: Boolean(trimmed) }
+    return { cwd: resolveVIGILCwd(), sanitized: Boolean(trimmed) }
   }
 
   try {
@@ -2541,7 +2541,7 @@ function sanitizeWorkspaceCwd(cwd) {
     // Fall through to the resolved default.
   }
 
-  return { cwd: resolveHermesCwd(), sanitized: Boolean(trimmed) }
+  return { cwd: resolveVIGILCwd(), sanitized: Boolean(trimmed) }
 }
 
 // Persisted "Default project directory" — surfaced as a setting in the
@@ -2596,7 +2596,7 @@ function createPythonBackend(root, label, dashboardArgs, options = {}) {
     command: python,
     args: ['-m', 'hermes_cli.main', ...dashboardArgs],
     env: buildDesktopBackendEnv({
-      hermesHome: HERMES_HOME,
+      hermesHome: VIGIL_HOME,
       pythonPathEntries: [root],
       venvRoot: path.join(root, 'venv')
     }),
@@ -2606,7 +2606,7 @@ function createPythonBackend(root, label, dashboardArgs, options = {}) {
   }
 }
 
-// createActiveBackend — build a backend pointing at ACTIVE_HERMES_ROOT, the
+// createActiveBackend — build a backend pointing at ACTIVE_VIGIL_ROOT, the
 // canonical install location shared with the CLI installer. The venv at
 // VENV_ROOT may not exist yet on first run; bootstrap=true tells
 // ensureRuntime() to create / refresh it before launch.
@@ -2615,40 +2615,40 @@ function createActiveBackend(dashboardArgs) {
 
   return {
     kind: 'python',
-    label: `Hermes at ${ACTIVE_HERMES_ROOT}`,
+    label: `VIGIL at ${ACTIVE_VIGIL_ROOT}`,
     command: fileExists(venvPython) ? venvPython : findSystemPython(),
     args: ['-m', 'hermes_cli.main', ...dashboardArgs],
     env: buildDesktopBackendEnv({
-      hermesHome: HERMES_HOME,
-      pythonPathEntries: [ACTIVE_HERMES_ROOT],
+      hermesHome: VIGIL_HOME,
+      pythonPathEntries: [ACTIVE_VIGIL_ROOT],
       venvRoot: VENV_ROOT
     }),
-    root: ACTIVE_HERMES_ROOT,
+    root: ACTIVE_VIGIL_ROOT,
     bootstrap: true,
     shell: false
   }
 }
 
-function resolveHermesBackend(dashboardArgs) {
-  // 1. Explicit override -- HERMES_DESKTOP_HERMES_ROOT points at a developer
+function resolveVIGILBackend(dashboardArgs) {
+  // 1. Explicit override -- VIGIL_DESKTOP_VIGIL_ROOT points at a developer
   //    checkout. Honour it as-is (no bootstrap; the user is driving).
-  const overrideRoot = process.env.HERMES_DESKTOP_HERMES_ROOT && path.resolve(process.env.HERMES_DESKTOP_HERMES_ROOT)
-  if (overrideRoot && isHermesSourceRoot(overrideRoot)) {
-    const backend = createPythonBackend(overrideRoot, `Hermes source at ${overrideRoot}`, dashboardArgs)
+  const overrideRoot = process.env.VIGIL_DESKTOP_VIGIL_ROOT && path.resolve(process.env.VIGIL_DESKTOP_VIGIL_ROOT)
+  if (overrideRoot && isVIGILSourceRoot(overrideRoot)) {
+    const backend = createPythonBackend(overrideRoot, `VIGIL source at ${overrideRoot}`, dashboardArgs)
     if (backend) return backend
   }
 
   // 2. Development source -- when running `npm run dev` from a checkout, the
   //    cloned repo at SOURCE_REPO_ROOT takes precedence over ACTIVE and any
   //    installed `hermes` on PATH so local Python edits are actually exercised.
-  //    (In dev with no checkout, SOURCE_REPO_ROOT won't pass isHermesSourceRoot.)
-  if (!IS_PACKAGED && isHermesSourceRoot(SOURCE_REPO_ROOT)) {
-    const backend = createPythonBackend(SOURCE_REPO_ROOT, `Hermes source at ${SOURCE_REPO_ROOT}`, dashboardArgs)
+  //    (In dev with no checkout, SOURCE_REPO_ROOT won't pass isVIGILSourceRoot.)
+  if (!IS_PACKAGED && isVIGILSourceRoot(SOURCE_REPO_ROOT)) {
+    const backend = createPythonBackend(SOURCE_REPO_ROOT, `VIGIL source at ${SOURCE_REPO_ROOT}`, dashboardArgs)
     if (backend) return backend
   }
 
-  // 3. Bootstrap-complete ACTIVE_HERMES_ROOT -- the canonical install at
-  //    %LOCALAPPDATA%\hermes\hermes-agent (Windows) or ~/.hermes/hermes-agent.
+  // 3. Bootstrap-complete ACTIVE_VIGIL_ROOT -- the canonical install at
+  //    %LOCALAPPDATA%\vigil\vigil-agent (Windows) or ~/.vigil/vigil-agent.
   //    The bootstrap marker means install.ps1 stages finished and the user
   //    completed initial configuration; we trust the install and go straight
   //    to spawning hermes. Updates flow through the in-app update path
@@ -2661,10 +2661,10 @@ function resolveHermesBackend(dashboardArgs) {
   //    a previous tool-only setup, or pip-installed system-wide. Use it but
   //    do NOT write a bootstrap marker; the user did this themselves and we
   //    don't want to take ownership of an install we didn't perform.
-  //    HERMES_DESKTOP_IGNORE_EXISTING=1 forces the bootstrap path for testing.
-  if (process.env.HERMES_DESKTOP_IGNORE_EXISTING !== '1') {
+  //    VIGIL_DESKTOP_IGNORE_EXISTING=1 forces the bootstrap path for testing.
+  if (process.env.VIGIL_DESKTOP_IGNORE_EXISTING !== '1') {
     let hermesCommand = null
-    const hermesOverride = process.env.HERMES_DESKTOP_HERMES
+    const hermesOverride = process.env.VIGIL_DESKTOP_HERMES
 
     if (hermesOverride) {
       const resolvedOverride = findOnPath(hermesOverride)
@@ -2673,7 +2673,7 @@ function resolveHermesBackend(dashboardArgs) {
       } else if (!isWindowsBinaryPathInWsl(hermesOverride, { isWsl: IS_WSL })) {
         hermesCommand = hermesOverride
       } else {
-        rememberLog(`Ignoring Windows Hermes override under WSL: ${hermesOverride}`)
+        rememberLog(`Ignoring Windows VIGIL override under WSL: ${hermesOverride}`)
       }
     } else {
       hermesCommand = findOnPath('hermes')
@@ -2681,7 +2681,7 @@ function resolveHermesBackend(dashboardArgs) {
 
     if (hermesCommand) {
       if (looksLikeDesktopAppBinary(hermesCommand)) {
-        rememberLog(`Ignoring desktop app executable on PATH while resolving Hermes CLI: ${hermesCommand}`)
+        rememberLog(`Ignoring desktop app executable on PATH while resolving VIGIL CLI: ${hermesCommand}`)
         hermesCommand = null
       }
     }
@@ -2695,9 +2695,9 @@ function resolveHermesBackend(dashboardArgs) {
       // `--version` probe (see backend-probes.cjs) catches that case
       // and lets the resolver fall through to step 6 / bootstrap.
       const shellForProbe = isCommandScript(hermesCommand)
-      if (verifyHermesCli(hermesCommand, { shell: shellForProbe })) {
+      if (verifyVIGILCli(hermesCommand, { shell: shellForProbe })) {
         return {
-          label: `existing Hermes CLI at ${hermesCommand}`,
+          label: `existing VIGIL CLI at ${hermesCommand}`,
           command: hermesCommand,
           args: dashboardArgs,
           bootstrap: false,
@@ -2707,7 +2707,7 @@ function resolveHermesBackend(dashboardArgs) {
         }
       }
       rememberLog(
-        `Ignoring existing Hermes CLI at ${hermesCommand}: --version probe failed; falling through to bootstrap.`
+        `Ignoring existing VIGIL CLI at ${hermesCommand}: --version probe failed; falling through to bootstrap.`
       )
     }
   }
@@ -2724,8 +2724,8 @@ function resolveHermesBackend(dashboardArgs) {
     // backend hands the spawn step a guaranteed ModuleNotFoundError.
     // Verify the import works before trusting the candidate; on
     // failure, fall through to step 6 so the bootstrap runner pulls
-    // a uv-managed 3.11 into %LOCALAPPDATA%\hermes\hermes-agent\venv.
-    if (canImportHermesCli(python)) {
+    // a uv-managed 3.11 into %LOCALAPPDATA%\vigil\vigil-agent\venv.
+    if (canImportVIGILCli(python)) {
       return {
         kind: 'python',
         label: `installed hermes_cli module via ${python}`,
@@ -2746,19 +2746,19 @@ function resolveHermesBackend(dashboardArgs) {
   //    explaining what's missing.
   //
   //    We deliberately do NOT throw here -- throwing inside
-  //    resolveHermesBackend was the old "no payload" path and forced the
+  //    resolveVIGILBackend was the old "no payload" path and forced the
   //    user into a dead end. With the bootstrap protocol, "no install yet"
   //    is a recoverable state the GUI can drive through.
   return {
     kind: 'bootstrap-needed',
-    label: 'Hermes Agent not installed yet; bootstrap required',
+    label: 'VIGIL Agent not installed yet; bootstrap required',
     command: null,
     args: dashboardArgs,
     bootstrap: true,
     env: {},
     shell: false,
     // Hints for the bootstrap runner / UI layer:
-    activeRoot: ACTIVE_HERMES_ROOT,
+    activeRoot: ACTIVE_VIGIL_ROOT,
     installStamp: INSTALL_STAMP, // may be null in dev
     isPackaged: IS_PACKAGED,
     platform: process.platform
@@ -2771,7 +2771,7 @@ async function ensureRuntime(backend) {
     return backend
   }
 
-  // backend.kind === 'bootstrap-needed' means resolveHermesBackend couldn't
+  // backend.kind === 'bootstrap-needed' means resolveVIGILBackend couldn't
   // find anything to spawn. Hand off to the bootstrap runner which drives the
   // platform installer, writes the bootstrap-complete marker on success, then
   // we re-resolve to get the now-installed backend.
@@ -2781,10 +2781,10 @@ async function ensureRuntime(backend) {
   // will rewire startup to spawn the window first and route bootstrap events
   // to a renderer-side install overlay.
   if (backend.kind === 'bootstrap-needed') {
-    rememberLog('[bootstrap] no Hermes install found; starting first-launch bootstrap')
+    rememberLog('[bootstrap] no VIGIL install found; starting first-launch bootstrap')
 
     if (await handOffWindowsBootstrapRecovery('bootstrap-needed')) {
-      const handoffError = new Error('Hermes recovery was handed off to Hermes Setup. The desktop will restart when recovery completes.')
+      const handoffError = new Error('VIGIL recovery was handed off to VIGIL Setup. The desktop will restart when recovery completes.')
       handoffError.isBootstrapFailure = true
       handoffError.bootstrapHandedOff = true
       bootstrapFailure = handoffError
@@ -2813,8 +2813,8 @@ async function ensureRuntime(backend) {
       installStamp: backend.installStamp,
       activeRoot: backend.activeRoot,
       sourceRepoRoot: SOURCE_REPO_ROOT,
-      hermesHome: HERMES_HOME,
-      logRoot: path.join(HERMES_HOME, 'logs'),
+      hermesHome: VIGIL_HOME,
+      logRoot: path.join(VIGIL_HOME, 'logs'),
       abortSignal: bootstrapAbortController.signal,
       onEvent: ev => {
         // Tee every bootstrap event to (a) the desktop log for forensics
@@ -2838,7 +2838,7 @@ async function ensureRuntime(backend) {
     bootstrapAbortController = null
 
     if (bootstrapResult.cancelled) {
-      const cancelledError = new Error('Hermes install was cancelled.')
+      const cancelledError = new Error('VIGIL install was cancelled.')
       cancelledError.isBootstrapFailure = true
       cancelledError.bootstrapCancelled = true
       bootstrapFailure = cancelledError
@@ -2847,13 +2847,13 @@ async function ensureRuntime(backend) {
 
     if (!bootstrapResult.ok) {
       const bootstrapError = new Error(
-        `Hermes bootstrap failed${bootstrapResult.failedStage ? ` at stage '${bootstrapResult.failedStage}'` : ''}: ` +
+        `VIGIL bootstrap failed${bootstrapResult.failedStage ? ` at stage '${bootstrapResult.failedStage}'` : ''}: ` +
           `${bootstrapResult.error || 'unknown error'}. ` +
-          `Check ${path.join(HERMES_HOME, 'logs', 'desktop.log')} for the full transcript.`
+          `Check ${path.join(VIGIL_HOME, 'logs', 'desktop.log')} for the full transcript.`
       )
       bootstrapError.isBootstrapFailure = true
       bootstrapError.failedStage = bootstrapResult.failedStage || null
-      // Latch the failure so subsequent startHermes() calls return this
+      // Latch the failure so subsequent startVIGIL() calls return this
       // same error without re-running install.ps1.  Cleared by the
       // hermes:bootstrap:reset IPC (renderer's "Reload and retry").
       bootstrapFailure = bootstrapError
@@ -2863,7 +2863,7 @@ async function ensureRuntime(backend) {
     rememberLog('[bootstrap] bootstrap complete; marker written. Re-resolving backend.')
     // Re-resolve now that the install exists. The new resolution lands in
     // step 3 (bootstrap-complete marker) and we recurse to wire venvPython.
-    return ensureRuntime(resolveHermesBackend(backend.args))
+    return ensureRuntime(resolveVIGILBackend(backend.args))
   }
 
   // bootstrap=true with a real backend (createActiveBackend path) means we
@@ -2872,25 +2872,25 @@ async function ensureRuntime(backend) {
   // sync flow exited through, minus all the factory/pip/marker machinery
   // (install.ps1 owns those concerns now and the bootstrap-complete marker
   // attests they ran successfully).
-  if (!isHermesSourceRoot(ACTIVE_HERMES_ROOT)) {
+  if (!isVIGILSourceRoot(ACTIVE_VIGIL_ROOT)) {
     throw new Error(
-      `Hermes install at ${ACTIVE_HERMES_ROOT} is missing or incomplete. ` +
+      `VIGIL install at ${ACTIVE_VIGIL_ROOT} is missing or incomplete. ` +
         'Reinstall via the desktop installer or scripts/install.ps1.'
     )
   }
 
-  // On Windows, preflight Git Bash. Hermes' terminal tool calls bash.exe
+  // On Windows, preflight Git Bash. VIGIL' terminal tool calls bash.exe
   // directly (tools/environments/local.py); without it the agent can't run
   // terminal commands. install.ps1's Stage-Git puts PortableGit at
-  // %LOCALAPPDATA%\hermes\git\, which findGitBash() picks up, so for any
+  // %LOCALAPPDATA%\vigil\git\, which findGitBash() picks up, so for any
   // user who completed the bootstrap this is a no-op. For users who got
   // here via an external `hermes` on PATH, this check still helps.
   if (IS_WINDOWS && !findGitBash()) {
     throw new Error(
-      'Git for Windows is required for Hermes on Windows (provides Git Bash, ' +
+      'Git for Windows is required for VIGIL on Windows (provides Git Bash, ' +
         "which the agent's terminal tool uses). Install it from " +
         'https://git-scm.com/download/win or run `winget install -e --id Git.Git`, ' +
-        'then relaunch Hermes.'
+        'then relaunch VIGIL.'
     )
   }
 
@@ -2900,19 +2900,19 @@ async function ensureRuntime(backend) {
     // means we have a half-installed checkout: .git exists, source files
     // exist, but venv is missing or broken. This shouldn't happen in
     // normal flow because isBootstrapComplete() requires
-    // isHermesSourceRoot() and the bootstrap writes the marker only after
+    // isVIGILSourceRoot() and the bootstrap writes the marker only after
     // install.ps1 succeeds. If we hit this, the user (or a deleted venv)
     // broke the invariant; tell them to re-run the install.
     throw new Error(
-      `Hermes venv missing at ${VENV_ROOT}. Re-run the desktop installer or ` + '`scripts/install.ps1` to rebuild it.'
+      `VIGIL venv missing at ${VENV_ROOT}. Re-run the desktop installer or ` + '`scripts/install.ps1` to rebuild it.'
     )
   }
 
   backend.command = venvPython
-  backend.label = `Hermes at ${ACTIVE_HERMES_ROOT} (venv: ${VENV_ROOT})`
+  backend.label = `VIGIL at ${ACTIVE_VIGIL_ROOT} (venv: ${VENV_ROOT})`
   updateBootProgress({
     phase: 'runtime.ready',
-    message: 'Hermes runtime is ready',
+    message: 'VIGIL runtime is ready',
     progress: 82,
     running: true,
     error: null
@@ -2929,7 +2929,7 @@ function fetchJson(url, token, options = {}) {
     const timeoutMs = resolveTimeoutMs(options.timeoutMs, DEFAULT_FETCH_TIMEOUT_MS)
 
     if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-      reject(new Error(`Unsupported Hermes backend URL protocol: ${parsed.protocol}`))
+      reject(new Error(`Unsupported VIGIL backend URL protocol: ${parsed.protocol}`))
       return
     }
 
@@ -2939,7 +2939,7 @@ function fetchJson(url, token, options = {}) {
         method: options.method || 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'X-Hermes-Session-Token': token,
+          'X-VIGIL-Session-Token': token,
           ...(body ? { 'Content-Length': String(body.length) } : {})
         }
       },
@@ -2967,7 +2967,7 @@ function fetchJson(url, token, options = {}) {
             reject(
               new Error(
                 `Expected JSON from ${url} but got HTML (status ${res.statusCode}). ` +
-                  'The endpoint is likely missing on the Hermes backend.'
+                  'The endpoint is likely missing on the VIGIL backend.'
               )
             )
             return
@@ -2983,7 +2983,7 @@ function fetchJson(url, token, options = {}) {
 
     req.on('error', reject)
     req.setTimeout(timeoutMs, () => {
-      req.destroy(new Error(`Timed out connecting to Hermes backend after ${timeoutMs}ms`))
+      req.destroy(new Error(`Timed out connecting to VIGIL backend after ${timeoutMs}ms`))
     })
     if (body) req.write(body)
     req.end()
@@ -2993,7 +2993,7 @@ function fetchJson(url, token, options = {}) {
 function fetchPublicJson(url, options = {}) {
   // Credential-free JSON GET/POST for public gateway endpoints
   // (``/api/status``, ``/api/auth/providers``). Unlike ``fetchJson`` it sends
-  // NO ``X-Hermes-Session-Token`` header — used by the auth-mode probe before
+  // NO ``X-VIGIL-Session-Token`` header — used by the auth-mode probe before
   // any credentials exist, and any time we must not leak a token to an
   // endpoint that doesn't need one.
   return new Promise((resolve, reject) => {
@@ -3009,7 +3009,7 @@ function fetchPublicJson(url, options = {}) {
     const timeoutMs = resolveTimeoutMs(options.timeoutMs, DEFAULT_FETCH_TIMEOUT_MS)
 
     if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-      reject(new Error(`Unsupported Hermes backend URL protocol: ${parsed.protocol}`))
+      reject(new Error(`Unsupported VIGIL backend URL protocol: ${parsed.protocol}`))
       return
     }
 
@@ -3041,7 +3041,7 @@ function fetchPublicJson(url, options = {}) {
             reject(
               new Error(
                 `Expected JSON from ${url} but got HTML (status ${res.statusCode}). ` +
-                  'The endpoint is likely missing on the Hermes backend.'
+                  'The endpoint is likely missing on the VIGIL backend.'
               )
             )
             return
@@ -3057,7 +3057,7 @@ function fetchPublicJson(url, options = {}) {
 
     req.on('error', reject)
     req.setTimeout(timeoutMs, () => {
-      req.destroy(new Error(`Timed out connecting to Hermes backend after ${timeoutMs}ms`))
+      req.destroy(new Error(`Timed out connecting to VIGIL backend after ${timeoutMs}ms`))
     })
     if (body) req.write(body)
     req.end()
@@ -3414,7 +3414,7 @@ function expandUserPath(filePath) {
 
 async function previewFileTarget(rawTarget, baseDir) {
   const raw = String(rawTarget || '').trim()
-  const base = baseDir ? path.resolve(expandUserPath(baseDir)) : resolveHermesCwd()
+  const base = baseDir ? path.resolve(expandUserPath(baseDir)) : resolveVIGILCwd()
   let resolved = resolveRequestedPathForIpc(/^file:/i.test(raw) ? raw : expandUserPath(raw), {
     baseDir: base,
     purpose: 'Preview target'
@@ -3556,7 +3556,7 @@ function closePreviewWatchers() {
   }
 }
 
-async function waitForHermes(baseUrl, token) {
+async function waitForVIGIL(baseUrl, token) {
   const deadline = Date.now() + 45_000
   let lastError = null
 
@@ -3570,7 +3570,7 @@ async function waitForHermes(baseUrl, token) {
     }
   }
 
-  throw new Error(`Hermes backend did not become ready: ${lastError?.message || 'timeout'}`)
+  throw new Error(`VIGIL backend did not become ready: ${lastError?.message || 'timeout'}`)
 }
 
 function getWindowButtonPosition() {
@@ -3610,7 +3610,7 @@ function sendClosePreviewRequested() {
 
 // Tell the renderer the machine just woke. Sleep silently drops the
 // renderer's WebSocket to the local backend; the renderer reconnects on this
-// signal so the chat composer doesn't stay stuck on "Starting Hermes...".
+// signal so the chat composer doesn't stay stuck on "Starting VIGIL...".
 function sendPowerResume() {
   if (!mainWindow || mainWindow.isDestroyed()) return
   const { webContents } = mainWindow
@@ -4016,7 +4016,7 @@ function installMediaPermissions() {
 // ---------------------------------------------------------------------------
 // OAuth remote-gateway auth.
 //
-// Hosted Hermes gateways gate the dashboard behind an OAuth provider (e.g.
+// Hosted VIGIL gateways gate the dashboard behind an OAuth provider (e.g.
 // Nous Research) instead of a static session token. The auth model is
 // fundamentally different from the token path:
 //
@@ -4157,7 +4157,7 @@ function openOauthLoginWindow(baseUrl) {
       win = new BrowserWindow({
         width: 520,
         height: 720,
-        title: 'Sign in to Hermes gateway',
+        title: 'Sign in to VIGIL gateway',
         autoHideMenuBar: true,
         webPreferences: {
           contextIsolation: true,
@@ -4212,7 +4212,7 @@ function fetchJsonViaOauthSession(url, options = {}) {
       return
     }
     if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-      reject(new Error(`Unsupported Hermes backend URL protocol: ${parsed.protocol}`))
+      reject(new Error(`Unsupported VIGIL backend URL protocol: ${parsed.protocol}`))
       return
     }
     const body = serializeJsonBody(options.body)
@@ -4235,7 +4235,7 @@ function fetchJsonViaOauthSession(url, options = {}) {
       } catch {
         // already finished
       }
-      reject(new Error(`Timed out connecting to Hermes backend after ${timeoutMs}ms`))
+      reject(new Error(`Timed out connecting to VIGIL backend after ${timeoutMs}ms`))
     }, timeoutMs)
 
     request.on('response', res => {
@@ -4428,7 +4428,7 @@ function writeDesktopConnectionConfig(config) {
 }
 
 // Returns the desktop's chosen profile name, or null when unset. "default" is
-// a valid stored value (pins the root HERMES_HOME explicitly); null means "no
+// a valid stored value (pins the root VIGIL_HOME explicitly); null means "no
 // preference" and preserves the legacy launch (no --profile flag).
 function readActiveDesktopProfile() {
   try {
@@ -4468,11 +4468,11 @@ async function sanitizeDesktopConnectionConfig(config = readDesktopConnectionCon
   const scoped = key ? config.profiles?.[key] || null : null
   const block = key ? scoped || {} : config.remote || {}
 
-  const envOverride = key ? false : Boolean(process.env.HERMES_DESKTOP_REMOTE_URL)
+  const envOverride = key ? false : Boolean(process.env.VIGIL_DESKTOP_REMOTE_URL)
 
   const remoteToken = decryptDesktopSecret(block.token)
   const authMode = normAuthMode(block.authMode)
-  const remoteUrl = envOverride ? String(process.env.HERMES_DESKTOP_REMOTE_URL || '') : String(block.url || '')
+  const remoteUrl = envOverride ? String(process.env.VIGIL_DESKTOP_REMOTE_URL || '') : String(block.url || '')
   const mode = envOverride || (key ? scoped?.mode : config.mode) === 'remote' ? 'remote' : 'local'
 
   let remoteOauthConnected = false
@@ -4498,7 +4498,7 @@ async function sanitizeDesktopConnectionConfig(config = readDesktopConnectionCon
     remoteTokenPreview: tokenPreview(remoteToken),
     remoteTokenSet: Boolean(remoteToken),
     // The env override only forces the global/primary connection; a per-profile
-    // scope is never overridden by HERMES_DESKTOP_REMOTE_URL.
+    // scope is never overridden by VIGIL_DESKTOP_REMOTE_URL.
     envOverride
   }
 }
@@ -4570,7 +4570,7 @@ async function buildRemoteConnection(rawUrl, authMode, token, source) {
     // the authoritative liveness check.
     if (!(await hasLiveOauthSession(baseUrl))) {
       const err = new Error(
-        'Remote Hermes gateway uses OAuth, but you are not signed in. ' +
+        'Remote VIGIL gateway uses OAuth, but you are not signed in. ' +
           'Open Settings → Gateway and click "Sign in", or switch back to Local.'
       )
       err.needsOauthLogin = true
@@ -4602,7 +4602,7 @@ async function buildRemoteConnection(rawUrl, authMode, token, source) {
 
   if (!token) {
     throw new Error(
-      'Remote Hermes gateway is selected, but no session token is saved. ' +
+      'Remote VIGIL gateway is selected, but no session token is saved. ' +
         'Open Settings → Gateway and save a token, or switch back to Local.'
     )
   }
@@ -4620,7 +4620,7 @@ async function buildRemoteConnection(rawUrl, authMode, token, source) {
 // Resolve the remote backend for a given profile, or null when that profile
 // should run a LOCAL backend. Precedence:
 //   1. explicit per-profile remote override (connection.json `profiles[name]`)
-//   2. env override (HERMES_DESKTOP_REMOTE_URL/_TOKEN) — applies app-wide
+//   2. env override (VIGIL_DESKTOP_REMOTE_URL/_TOKEN) — applies app-wide
 //   3. global remote (connection.json `mode: 'remote'`)
 // A null/empty profile resolves the env/global remote, so legacy callers and
 // the connection test (which pass no profile) are unchanged.
@@ -4637,13 +4637,13 @@ async function resolveRemoteBackend(profile) {
   }
 
   // 2. Env override (global, token-auth only).
-  const rawEnvUrl = process.env.HERMES_DESKTOP_REMOTE_URL
-  const rawEnvToken = process.env.HERMES_DESKTOP_REMOTE_TOKEN
+  const rawEnvUrl = process.env.VIGIL_DESKTOP_REMOTE_URL
+  const rawEnvToken = process.env.VIGIL_DESKTOP_REMOTE_TOKEN
   if (rawEnvUrl) {
     if (!rawEnvToken) {
       throw new Error(
-        'HERMES_DESKTOP_REMOTE_URL is set but HERMES_DESKTOP_REMOTE_TOKEN is not. ' +
-          'Both must be provided to connect to a remote Hermes backend.'
+        'VIGIL_DESKTOP_REMOTE_URL is set but VIGIL_DESKTOP_REMOTE_TOKEN is not. ' +
+          'Both must be provided to connect to a remote VIGIL backend.'
       )
     }
     return buildRemoteConnection(rawEnvUrl, 'token', rawEnvToken, 'env')
@@ -4675,7 +4675,7 @@ function configuredRemoteProfileNames() {
 // Remote, or the env override): a SINGLE remote backend serves every profile via
 // ?profile=. Distinct from per-profile overrides — here there's one host for all.
 function globalRemoteActive() {
-  if (process.env.HERMES_DESKTOP_REMOTE_URL) {
+  if (process.env.VIGIL_DESKTOP_REMOTE_URL) {
     return true
   }
   return readDesktopConnectionConfig().mode === 'remote'
@@ -4696,7 +4696,7 @@ async function requestJsonForProfile(profile, path, method, body) {
 
 async function probeRemoteAuthMode(rawUrl) {
   // Determine how a remote gateway expects callers to authenticate, WITHOUT
-  // sending any credentials. ``/api/status`` is public on every Hermes
+  // sending any credentials. ``/api/status`` is public on every VIGIL
   // gateway (it backs the portal liveness probe) and reports:
   //   auth_required: true  → OAuth gate is engaged (cookie + ws-ticket auth)
   //   auth_required: false → loopback/--insecure: legacy session-token auth
@@ -4781,7 +4781,7 @@ async function testDesktopConnectionConfig(input = {}) {
       token = decryptDesktopSecret(block.token)
     }
   } else {
-    const remote = (await resolveRemoteBackend(key)) || (await startHermes())
+    const remote = (await resolveRemoteBackend(key)) || (await startVIGIL())
     baseUrl = remote.baseUrl
     token = remote.token
     authMode = normAuthMode(remote.authMode)
@@ -4793,7 +4793,7 @@ async function testDesktopConnectionConfig(input = {}) {
   // connects — a separate transport with separate server-side guards (Host/
   // Origin, ws-ticket/token auth). Validating only the HTTP side produced a
   // false-positive "reachable" while the real boot still failed with "Could not
-  // connect to Hermes gateway". Mirror the renderer's connect here so the test
+  // connect to VIGIL gateway". Mirror the renderer's connect here so the test
   // reflects the full path the app actually uses.
   const wsUrl = await resolveTestWsUrl(baseUrl, authMode, token, { mintTicket: mintGatewayWsTicket })
   // Skip the WS leg only when the runtime genuinely lacks a WebSocket (so an
@@ -4829,7 +4829,7 @@ function resetBootProgressForReconnect() {
   )
 }
 
-function resetHermesConnection() {
+function resetVIGILConnection() {
   connectionPromise = null
 
   if (hermesProcess && !hermesProcess.killed) {
@@ -4842,12 +4842,12 @@ function resetHermesConnection() {
 
 // Re-home the primary backend: reset connection state, then wait for the live
 // dashboard process to actually exit (SIGKILL after 5s) so the next
-// startHermes() spawns fresh instead of racing the dying one. Shared by the
+// startVIGIL() spawns fresh instead of racing the dying one. Shared by the
 // connection-config and profile switch flows.
 async function teardownPrimaryBackendAndWait() {
-  // Capture the reference before resetHermesConnection() nulls hermesProcess.
+  // Capture the reference before resetVIGILConnection() nulls hermesProcess.
   const dying = hermesProcess && !hermesProcess.killed ? hermesProcess : null
-  resetHermesConnection()
+  resetVIGILConnection()
 
   await waitForBackendExit(dying)
 }
@@ -4888,14 +4888,14 @@ function primaryProfileKey() {
 }
 
 // Resolve a backend connection for the given profile. Routes the primary
-// profile to startHermes() (the window backend: boot UI, bootstrap, remote
+// profile to startVIGIL() (the window backend: boot UI, bootstrap, remote
 // mode), and any OTHER profile to a lazily-spawned pool backend. An empty /
 // unknown profile resolves to the primary, so all legacy callers are unchanged.
 async function ensureBackend(profile) {
   const key = profile && String(profile).trim() ? String(profile).trim() : primaryProfileKey()
 
   if (key === primaryProfileKey()) {
-    return startHermes()
+    return startVIGIL()
   }
 
   const existing = backendPool.get(key)
@@ -4964,7 +4964,7 @@ function startPoolIdleReaper() {
 }
 
 // Spawn an additional dashboard backend pinned to a named profile. Mirrors the
-// local-spawn portion of startHermes() but without the boot-progress UI,
+// local-spawn portion of startVIGIL() but without the boot-progress UI,
 // bootstrap, or remote handling (those belong to the primary backend only).
 async function spawnPoolBackend(profile, entry) {
   // A profile may point at its OWN remote backend (connection.json
@@ -4975,7 +4975,7 @@ async function spawnPoolBackend(profile, entry) {
   // tolerate.
   const remote = await resolveRemoteBackend(profile)
   if (remote) {
-    await waitForHermes(remote.baseUrl, remote.token)
+    await waitForVIGIL(remote.baseUrl, remote.token)
     return {
       ...remote,
       profile,
@@ -4985,15 +4985,15 @@ async function spawnPoolBackend(profile, entry) {
   }
 
   const token = crypto.randomBytes(32).toString('base64url')
-  // --profile wins over the inherited HERMES_HOME env (see _apply_profile_override
+  // --profile wins over the inherited VIGIL_HOME env (see _apply_profile_override
   // step 3 in hermes_cli/main.py), so the child re-homes to this profile.
   // --port 0: the OS assigns an ephemeral port; the child announces it on stdout.
   const dashboardArgs = ['--profile', profile, 'dashboard', '--no-open', '--host', '127.0.0.1', '--port', '0']
-  const backend = await ensureRuntime(resolveHermesBackend(dashboardArgs))
-  const hermesCwd = resolveHermesCwd()
+  const backend = await ensureRuntime(resolveVIGILBackend(dashboardArgs))
+  const hermesCwd = resolveVIGILCwd()
   const webDist = resolveWebDist()
 
-  rememberLog(`Starting Hermes backend for profile "${profile}" via ${backend.label}`)
+  rememberLog(`Starting VIGIL backend for profile "${profile}" via ${backend.label}`)
 
   const child = spawn(
     backend.command,
@@ -5002,17 +5002,17 @@ async function spawnPoolBackend(profile, entry) {
       cwd: hermesCwd,
       env: {
         ...process.env,
-        HERMES_HOME,
+        VIGIL_HOME,
         ...backend.env,
         // Pin the gateway's tool/terminal cwd to the same directory we chose for
         // the child process. Inherited TERMINAL_CWD (or a stale config bridge)
         // can still point at the install dir even when spawn cwd is home.
         TERMINAL_CWD: hermesCwd,
-        HERMES_DASHBOARD_SESSION_TOKEN: token,
+        VIGIL_DASHBOARD_SESSION_TOKEN: token,
         // Marks this dashboard backend as desktop-spawned so it runs the cron
         // scheduler tick loop (the gateway isn't running under the app).
-        HERMES_DESKTOP: '1',
-        HERMES_WEB_DIST: webDist
+        VIGIL_DESKTOP: '1',
+        VIGIL_WEB_DIST: webDist
       },
       shell: backend.shell,
       stdio: ['ignore', 'pipe', 'pipe']
@@ -5030,16 +5030,16 @@ async function spawnPoolBackend(profile, entry) {
     rejectStart = reject
   })
   child.once('error', error => {
-    rememberLog(`Hermes backend for profile "${profile}" failed to start: ${error.message}`)
+    rememberLog(`VIGIL backend for profile "${profile}" failed to start: ${error.message}`)
     backendPool.delete(profile)
     rejectStart?.(error)
   })
   child.once('exit', (code, signal) => {
-    rememberLog(`Hermes backend for profile "${profile}" exited (${signal || code})`)
+    rememberLog(`VIGIL backend for profile "${profile}" exited (${signal || code})`)
     backendPool.delete(profile)
     if (!ready) {
       rejectStart?.(
-        new Error(`Hermes backend for profile "${profile}" exited before it became ready (${signal || code}).`)
+        new Error(`VIGIL backend for profile "${profile}" exited before it became ready (${signal || code}).`)
       )
     }
   })
@@ -5049,11 +5049,11 @@ async function spawnPoolBackend(profile, entry) {
   entry.port = port
 
   const baseUrl = `http://127.0.0.1:${port}`
-  await Promise.race([waitForHermes(baseUrl, token), startFailed])
+  await Promise.race([waitForVIGIL(baseUrl, token), startFailed])
   ready = true
   const authToken = await adoptServedDashboardToken(baseUrl, token, {
     childAlive: () => child.exitCode === null && !child.killed,
-    label: `Hermes backend for profile "${profile}"`,
+    label: `VIGIL backend for profile "${profile}"`,
     rememberLog
   })
   entry.token = authToken
@@ -5148,9 +5148,9 @@ async function prepareProfileDeleteRequest(request) {
   await teardownPoolBackendAndWait(profile)
 }
 
-async function startHermes() {
+async function startVIGIL() {
   // Latched-failure short-circuit: once bootstrap has failed in this
-  // process, every subsequent startHermes() call re-throws the same error
+  // process, every subsequent startVIGIL() call re-throws the same error
   // without re-running install.ps1. This prevents the renderer's
   // ensureGatewayOpen retries (and any other getConnection callers) from
   // restarting a 5-10 minute install loop while the user is still reading
@@ -5161,16 +5161,16 @@ async function startHermes() {
   if (connectionPromise) return connectionPromise
 
   connectionPromise = (async () => {
-    await advanceBootProgress('backend.resolve', 'Resolving Hermes backend', 8)
+    await advanceBootProgress('backend.resolve', 'Resolving VIGIL backend', 8)
     // Resolve for the desktop's primary profile so a per-profile remote
     // override on the active profile is honored (falls back to env / global).
     const remote = await resolveRemoteBackend(primaryProfileKey())
     if (remote) {
-      await advanceBootProgress('backend.remote', `Connecting to remote Hermes backend at ${remote.baseUrl}`, 24)
-      await waitForHermes(remote.baseUrl, remote.token)
+      await advanceBootProgress('backend.remote', `Connecting to remote VIGIL backend at ${remote.baseUrl}`, 24)
+      await waitForVIGIL(remote.baseUrl, remote.token)
       updateBootProgress({
         phase: 'backend.ready',
-        message: 'Remote Hermes backend is ready',
+        message: 'Remote VIGIL backend is ready',
         progress: 94,
         running: true,
         error: null
@@ -5199,21 +5199,21 @@ async function startHermes() {
     // --port 0: the OS assigns an ephemeral port; the child announces it on stdout.
     const dashboardArgs = ['dashboard', '--no-open', '--host', '127.0.0.1', '--port', '0']
     // Pin the desktop's chosen profile via the global --profile flag. This is
-    // deterministic (it wins over the sticky ~/.hermes/active_profile file) and
-    // resolves HERMES_HOME the same way `hermes -p <name>` does on the CLI. An
+    // deterministic (it wins over the sticky ~/.vigil/active_profile file) and
+    // resolves VIGIL_HOME the same way `hermes -p <name>` does on the CLI. An
     // unset preference keeps the legacy launch so existing installs are
     // unaffected.
     const activeProfile = readActiveDesktopProfile()
     if (activeProfile) {
       dashboardArgs.unshift('--profile', activeProfile)
     }
-    await advanceBootProgress('backend.runtime', 'Resolving Hermes runtime', 28)
-    const backend = await ensureRuntime(resolveHermesBackend(dashboardArgs))
-    const hermesCwd = resolveHermesCwd()
+    await advanceBootProgress('backend.runtime', 'Resolving VIGIL runtime', 28)
+    const backend = await ensureRuntime(resolveVIGILBackend(dashboardArgs))
+    const hermesCwd = resolveVIGILCwd()
     const webDist = resolveWebDist()
 
-    await advanceBootProgress('backend.spawn', `Starting Hermes backend via ${backend.label}`, 84)
-    rememberLog(`Starting Hermes backend via ${backend.label}`)
+    await advanceBootProgress('backend.spawn', `Starting VIGIL backend via ${backend.label}`, 84)
+    rememberLog(`Starting VIGIL backend via ${backend.label}`)
 
     hermesProcess = spawn(
       backend.command,
@@ -5222,22 +5222,22 @@ async function startHermes() {
         cwd: hermesCwd,
         env: {
           ...process.env,
-          // Explicitly pin HERMES_HOME for the child so Python's get_hermes_home()
-          // resolves to the SAME location our resolveHermesHome() picked. Without
-          // this pin, Python falls back to ~/.hermes on every platform — fine on
+          // Explicitly pin VIGIL_HOME for the child so Python's get_hermes_home()
+          // resolves to the SAME location our resolveVIGILHome() picked. Without
+          // this pin, Python falls back to ~/.vigil on every platform — fine on
           // mac/linux (where our default matches), but on Windows our default is
-          // %LOCALAPPDATA%\hermes, which differs from C:\Users\<u>\.hermes.
+          // %LOCALAPPDATA%\vigil, which differs from C:\Users\<u>\.vigil.
           // Mismatch would split config / sessions / .env / logs across two
-          // directories. install.ps1 sets HERMES_HOME via setx; the desktop
+          // directories. install.ps1 sets VIGIL_HOME via setx; the desktop
           // can't reliably do that, so we set it inline for every spawn.
-          HERMES_HOME,
+          VIGIL_HOME,
           ...backend.env,
           TERMINAL_CWD: hermesCwd,
-          HERMES_DASHBOARD_SESSION_TOKEN: token,
+          VIGIL_DASHBOARD_SESSION_TOKEN: token,
           // Marks this dashboard backend as desktop-spawned so it runs the cron
           // scheduler tick loop (the gateway isn't running under the app).
-          HERMES_DESKTOP: '1',
-          HERMES_WEB_DIST: webDist
+          VIGIL_DESKTOP: '1',
+          VIGIL_WEB_DIST: webDist
         },
         shell: backend.shell,
         stdio: ['ignore', 'pipe', 'pipe']
@@ -5252,11 +5252,11 @@ async function startHermes() {
       rejectBackendStart = reject
     })
     hermesProcess.once('error', error => {
-      rememberLog(`Hermes backend failed to start: ${error.message}`)
+      rememberLog(`VIGIL backend failed to start: ${error.message}`)
       updateBootProgress(
         {
           error: error.message,
-          message: `Hermes backend failed to start: ${error.message}`,
+          message: `VIGIL backend failed to start: ${error.message}`,
           phase: 'backend.error',
           running: false
         },
@@ -5268,12 +5268,12 @@ async function startHermes() {
       rejectBackendStart?.(error)
     })
     hermesProcess.once('exit', (code, signal) => {
-      rememberLog(`Hermes backend exited (${signal || code})`)
+      rememberLog(`VIGIL backend exited (${signal || code})`)
       hermesProcess = null
       connectionPromise = null
       sendBackendExit({ code, signal })
       if (!backendReady) {
-        const message = `Hermes backend exited before it became ready (${signal || code}).`
+        const message = `VIGIL backend exited before it became ready (${signal || code}).`
         updateBootProgress(
           {
             error: message,
@@ -5285,19 +5285,19 @@ async function startHermes() {
         )
         rejectBackendStart?.(
           new Error(
-            `Hermes backend exited before it became ready (${signal || code}). Log: ${DESKTOP_LOG_PATH}\n${recentHermesLog()}`
+            `VIGIL backend exited before it became ready (${signal || code}). Log: ${DESKTOP_LOG_PATH}\n${recentVIGILLog()}`
           )
         )
       }
     })
 
-    await advanceBootProgress('backend.port', 'Waiting for Hermes backend to launch', 86)
+    await advanceBootProgress('backend.port', 'Waiting for VIGIL backend to launch', 86)
     // Discover the ephemeral port the child bound to
     const port = await Promise.race([waitForDashboardPort(hermesProcess), backendStartFailed])
 
     const baseUrl = `http://127.0.0.1:${port}`
-    await advanceBootProgress('backend.wait', 'Waiting for Hermes backend to become ready', 90)
-    await Promise.race([waitForHermes(baseUrl, token), backendStartFailed])
+    await advanceBootProgress('backend.wait', 'Waiting for VIGIL backend to become ready', 90)
+    await Promise.race([waitForVIGIL(baseUrl, token), backendStartFailed])
     backendReady = true
     const authToken = await adoptServedDashboardToken(baseUrl, token, {
       // The exit/error handlers null hermesProcess when the child dies.
@@ -5306,7 +5306,7 @@ async function startHermes() {
     })
     updateBootProgress({
       phase: 'backend.ready',
-      message: 'Hermes backend is ready. Finalizing desktop startup',
+      message: 'VIGIL backend is ready. Finalizing desktop startup',
       progress: 94,
       running: true,
       error: null
@@ -5387,7 +5387,7 @@ function spawnSecondaryWindow({ sessionId, watch, newSession } = {}) {
     height: SESSION_WINDOW_MIN_HEIGHT,
     minWidth: SESSION_WINDOW_MIN_WIDTH,
     minHeight: SESSION_WINDOW_MIN_HEIGHT,
-    title: 'Hermes',
+    title: 'VIGIL',
     titleBarStyle: 'hidden',
     titleBarOverlay: getTitleBarOverlayOptions(),
     trafficLightPosition: IS_MAC ? WINDOW_BUTTON_POSITION : undefined,
@@ -5446,7 +5446,7 @@ function createNewSessionWindow() {
 
 // The pet overlay: a single transparent, frameless, always-on-top window that
 // hosts ONLY the floating mascot. Shift-clicking the in-window pet "pops it out"
-// here so it can leave the app's bounds and stay visible while Hermes is
+// here so it can leave the app's bounds and stay visible while VIGIL is
 // minimized (Codex-style task-completion glance). It carries no gateway
 // connection of its own — the main renderer is the single source of truth and
 // pushes pet state over IPC (hermes:pet-overlay:state); the overlay just renders
@@ -5478,7 +5478,7 @@ function spawnPetOverlayWindow(bounds) {
     // taskbar/alt-tab entry. On macOS, cmd-tab is app-level and this can make
     // the whole app look like it vanished when the only newly-created visible
     // window is a frameless overlay. Use NSPanel + Mission Control hiding below
-    // instead, leaving the main Hermes app as the Dock/cmd-tab anchor.
+    // instead, leaving the main VIGIL app as the Dock/cmd-tab anchor.
     skipTaskbar: !IS_MAC,
     hasShadow: false,
     alwaysOnTop: true,
@@ -5488,7 +5488,7 @@ function spawnPetOverlayWindow(bounds) {
     hiddenInMissionControl: IS_MAC,
     // Non-activating: the overlay must never become the app's key/main window,
     // or it (a frameless, taskbar-skipping panel) becomes the app's switcher
-    // anchor and the Hermes icon drops out of cmd/alt-tab — especially when the
+    // anchor and the VIGIL icon drops out of cmd/alt-tab — especially when the
     // main window is minimized. We flip this on only while the composer needs
     // the keyboard (see hermes:pet-overlay:set-focusable).
     focusable: false,
@@ -5516,7 +5516,7 @@ function spawnPetOverlayWindow(bounds) {
   try {
     // Electron docs: macOS may transform process type on each
     // setVisibleOnAllWorkspaces() call unless skipTransformProcessType=true,
-    // which briefly hides the Dock/cmd-tab presence. Keep Hermes in the normal
+    // which briefly hides the Dock/cmd-tab presence. Keep VIGIL in the normal
     // ForegroundApplication class so shift-clicking the pet never drops the app
     // out of app switchers.
     win.setVisibleOnAllWorkspaces(
@@ -5587,7 +5587,7 @@ function createWindow() {
     ...computeWindowOptions(savedWindowState, screen.getAllDisplays()),
     minWidth: WINDOW_MIN_WIDTH,
     minHeight: WINDOW_MIN_HEIGHT,
-    title: 'Hermes',
+    title: 'VIGIL',
     // Frameless title bar on every platform so the renderer can paint the
     // "hide sidebar" button (and other left-side titlebar tools) flush with
     // the top edge — matching the macOS layout where the traffic lights sit
@@ -5709,7 +5709,7 @@ function createWindow() {
     restorePersistedZoomLevel(mainWindow)
     broadcastBootProgress()
     sendWindowStateChanged()
-    startHermes().catch(error => rememberLog(error.stack || error.message))
+    startVIGIL().catch(error => rememberLog(error.stack || error.message))
   })
 }
 
@@ -5718,7 +5718,7 @@ ipcMain.handle('hermes:connection', async (_event, profile) => ensureBackend(pro
 // so the 'exit'/'error' handlers that would clear a dead connectionPromise never
 // fire — once the remote becomes unreachable across a sleep/wake the renderer
 // re-dials the same dead descriptor forever and the composer stays stuck on
-// "Starting Hermes…". Before the renderer's backoff loop reconnects, it asks us
+// "Starting VIGIL…". Before the renderer's backoff loop reconnects, it asks us
 // to confirm the cached PRIMARY backend is still reachable; if a remote one is
 // not, we drop the cache so the next getConnection() rebuilds it. Local backends
 // self-heal via their child 'exit' handler, so we never touch them here.
@@ -5746,10 +5746,10 @@ ipcMain.handle('hermes:connection:revalidate', async () => {
     return { ok: true, rebuilt: false }
   } catch {
     // Unreachable remote: drop the stale cache so the renderer's next reconnect
-    // tick rebuilds a fresh, reachable descriptor. resetHermesConnection only
+    // tick rebuilds a fresh, reachable descriptor. resetVIGILConnection only
     // nulls connectionPromise for a remote (no child to SIGTERM).
-    rememberLog('Cached remote Hermes backend failed liveness probe; dropping stale connection.')
-    resetHermesConnection()
+    rememberLog('Cached remote VIGIL backend failed liveness probe; dropping stale connection.')
+    resetVIGILConnection()
     return { ok: true, rebuilt: true }
   }
 })
@@ -5884,7 +5884,7 @@ ipcMain.on('hermes:pet-overlay:control', (_event, payload) => {
 })
 ipcMain.handle('hermes:bootstrap:reset', async () => {
   // Renderer's "Reload and retry" path. Clear the latched failure and
-  // reset connection state so the next startHermes() call restarts the
+  // reset connection state so the next startVIGIL() call restarts the
   // full backend flow (including a fresh runBootstrap pass).
   rememberLog('[bootstrap] reset requested by renderer; clearing latched failure')
   await teardownPrimaryBackendAndWait()
@@ -5903,7 +5903,7 @@ ipcMain.handle('hermes:bootstrap:reset', async () => {
 })
 ipcMain.handle('hermes:bootstrap:repair', async () => {
   // Forceful repair: drop the bootstrap-complete marker so the next
-  // startHermes() re-runs the full installer (refreshing a broken/partial
+  // startVIGIL() re-runs the full installer (refreshing a broken/partial
   // venv), and clear any latched failure + live connection. The renderer
   // reloads afterwards to re-drive the boot flow from scratch.
   rememberLog('[bootstrap] repair requested by renderer; clearing marker + latched failure')
@@ -5915,7 +5915,7 @@ ipcMain.handle('hermes:bootstrap:repair', async () => {
     rememberLog(`[bootstrap] failed to remove marker during repair: ${error.message}`)
   }
   bootstrapFailure = null
-  resetHermesConnection()
+  resetVIGILConnection()
   return { ok: true }
 })
 ipcMain.handle('hermes:bootstrap:cancel', async () => {
@@ -5988,7 +5988,7 @@ ipcMain.handle('hermes:profile:set', async (_event, name) => {
   const next = writeActiveDesktopProfile(name)
 
   // Switching profiles is a backend re-home: relaunch the dashboard under the
-  // new HERMES_HOME. Pool backends keep their own homes, so only the primary
+  // new VIGIL_HOME. Pool backends keep their own homes, so only the primary
   // is torn down.
   await teardownPrimaryBackendAndWait()
   mainWindow?.reload()
@@ -6183,7 +6183,7 @@ ipcMain.handle('hermes:notify', (_event, payload) => {
   // and the body click still works.
   const actions = Array.isArray(payload?.actions) ? payload.actions : []
   const notification = new Notification({
-    title: payload?.title || 'Hermes',
+    title: payload?.title || 'VIGIL',
     body: payload?.body || '',
     silent: Boolean(payload?.silent),
     actions: actions.map(action => ({ type: 'button', text: String(action?.text || '') }))
@@ -6353,12 +6353,12 @@ ipcMain.handle('hermes:openPreviewInBrowser', async (_event, url) => {
 
 // User-configurable default project directory. The renderer reads this on
 // settings mount and seeds the value into the picker; writing back persists
-// it via writeDefaultProjectDir so resolveHermesCwd picks it up on the next
+// it via writeDefaultProjectDir so resolveVIGILCwd picks it up on the next
 // session spawn (no app restart needed).
 ipcMain.handle('hermes:setting:defaultProjectDir:get', async () => ({
   dir: readDefaultProjectDir(),
   defaultLabel: app.getPath('home'),
-  resolvedCwd: resolveHermesCwd()
+  resolvedCwd: resolveVIGILCwd()
 }))
 
 ipcMain.handle('hermes:workspace:sanitize', async (_event, cwd) => sanitizeWorkspaceCwd(cwd))
@@ -6502,11 +6502,11 @@ function windowsShellSpec() {
 // Resolve the interactive shell for the embedded terminal: an explicit user
 // override wins, otherwise auto-detect the best one installed for the platform.
 function terminalShellCommand() {
-  // HERMES_DESKTOP_SHELL is the cross-platform escape hatch (a path or a bare
+  // VIGIL_DESKTOP_SHELL is the cross-platform escape hatch (a path or a bare
   // name on PATH); $SHELL is honored on POSIX, where it's the user's canonical
   // choice, but ignored on Windows, where it's usually a stray MSYS/Git path
   // node-pty can't spawn natively.
-  const override = (process.env.HERMES_DESKTOP_SHELL || (IS_WINDOWS ? '' : process.env.SHELL) || '').trim()
+  const override = (process.env.VIGIL_DESKTOP_SHELL || (IS_WINDOWS ? '' : process.env.SHELL) || '').trim()
 
   if (override) {
     const resolved = isExecutableFile(override) ? override : findOnPath(override)
@@ -6550,7 +6550,7 @@ function terminalShellEnv() {
 
   // Strip color/theme-detection vars that ride along when Electron is launched
   // from a non-tty agent shell (Cursor's runner sets NO_COLOR/FORCE_COLOR=0
-  // /TERM=dumb; some terminals set COLORFGBG which would flip Hermes' TUI into
+  // /TERM=dumb; some terminals set COLORFGBG which would flip VIGIL' TUI into
   // light-mode). Our PTY is a real xterm-compat terminal — force truecolor.
   delete env.NO_COLOR
   delete env.FORCE_COLOR
@@ -6559,13 +6559,13 @@ function terminalShellEnv() {
   env.COLORTERM = 'truecolor'
   env.LC_CTYPE = env.LC_CTYPE || 'UTF-8'
   env.TERM = 'xterm-256color'
-  env.TERM_PROGRAM = 'Hermes'
+  env.TERM_PROGRAM = 'VIGIL'
   env.TERM_PROGRAM_VERSION = app.getVersion()
 
   // Let a hermes/--tui launched in this pane know it's embedded in the desktop
-  // GUI (build_environment_hints surfaces this). Distinct from HERMES_DESKTOP,
+  // GUI (build_environment_hints surfaces this). Distinct from VIGIL_DESKTOP,
   // which marks the agent *backend* and gates cron/gateway behavior.
-  env.HERMES_DESKTOP_TERMINAL = '1'
+  env.VIGIL_DESKTOP_TERMINAL = '1'
 
   return env
 }
@@ -6600,7 +6600,7 @@ ipcMain.handle('hermes:fs:worktrees', async (_event, cwds) => worktreesForIpc(cw
 
 ipcMain.handle('hermes:terminal:start', async (event, payload = {}) => {
   if (!nodePty) {
-    throw new Error('PTY support is unavailable. Reinstall desktop dependencies and restart Hermes.')
+    throw new Error('PTY support is unavailable. Reinstall desktop dependencies and restart VIGIL.')
   }
 
   ensureSpawnHelperExecutable()
@@ -6692,12 +6692,12 @@ ipcMain.handle('hermes:updates:branch:set', async (_event, name) => {
   return { branch }
 })
 
-// Resolve the canonical Hermes version (the one `release.py` bumps in
+// Resolve the canonical VIGIL version (the one `release.py` bumps in
 // hermes_cli/__init__.py + pyproject.toml) so the desktop About panel shows the
-// real Hermes version instead of the Electron app's own package.json version,
+// real VIGIL version instead of the Electron app's own package.json version,
 // which historically drifted (stuck at 0.0.2). Falls back to app.getVersion()
 // when the source tree can't be read (e.g. a packaged build without the repo).
-function resolveHermesVersion() {
+function resolveVIGILVersion() {
   try {
     const root = resolveUpdateRoot()
     const initPath = path.join(root, 'hermes_cli', '__init__.py')
@@ -6714,21 +6714,21 @@ function resolveHermesVersion() {
   return app.getVersion()
 }
 
-// Re-resolve the live Hermes version and push it into the native About panel
+// Re-resolve the live VIGIL version and push it into the native About panel
 // just before showing it, so an in-place `hermes update` is reflected without
 // an app restart. macOS only — `showAboutPanel()` is a no-op elsewhere, and the
 // other platforms don't use this menu item.
 function showAboutPanelFresh() {
   app.setAboutPanelOptions({
     applicationName: APP_NAME,
-    applicationVersion: resolveHermesVersion(),
+    applicationVersion: resolveVIGILVersion(),
     copyright: 'Copyright © 2026 Nous Research'
   })
   app.showAboutPanel()
 }
 
 ipcMain.handle('hermes:version', async () => ({
-  appVersion: resolveHermesVersion(),
+  appVersion: resolveVIGILVersion(),
   electronVersion: process.versions.electron,
   nodeVersion: process.versions.node,
   platform: process.platform,
@@ -6756,12 +6756,12 @@ function uninstallVenvPython() {
 
 async function getUninstallSummary() {
   const py = uninstallVenvPython()
-  const agentRoot = ACTIVE_HERMES_ROOT
+  const agentRoot = ACTIVE_VIGIL_ROOT
   // Fast JS-side fallback used when the agent venv is gone (lite client) or the
   // probe fails — the renderer still needs *something* to render options from.
   const fallback = () => ({
-    hermes_home: HERMES_HOME,
-    agent_installed: isHermesSourceRoot(agentRoot) && fileExists(py),
+    hermes_home: VIGIL_HOME,
+    agent_installed: isVIGILSourceRoot(agentRoot) && fileExists(py),
     gui_installed: true,
     source_built_artifacts: [],
     packaged_app_paths: [],
@@ -6789,7 +6789,7 @@ async function getUninstallSummary() {
         ['-m', 'hermes_cli.main', 'uninstall', '--gui-summary'],
         hiddenWindowsChildOptions({
           cwd: agentRoot,
-          env: { ...process.env, HERMES_HOME, NO_COLOR: '1' },
+          env: { ...process.env, VIGIL_HOME, NO_COLOR: '1' },
           stdio: ['ignore', 'pipe', 'ignore']
         })
       )
@@ -6831,7 +6831,7 @@ async function runDesktopUninstall(mode) {
     return {
       ok: false,
       error: 'agent-missing',
-      message: `Can't run the uninstaller: no Hermes agent venv at ${VENV_ROOT}.`
+      message: `Can't run the uninstaller: no VIGIL agent venv at ${VENV_ROOT}.`
     }
   }
 
@@ -6849,7 +6849,7 @@ async function runDesktopUninstall(mode) {
     const sysPy = findSystemPython()
     if (sysPy) {
       py = sysPy
-      pythonPath = ACTIVE_HERMES_ROOT
+      pythonPath = ACTIVE_VIGIL_ROOT
     } else if (IS_WINDOWS) {
       rememberLog(
         '[uninstall] no system Python found for lite/full on Windows; falling back ' +
@@ -6869,7 +6869,7 @@ async function runDesktopUninstall(mode) {
   // lock would make the script's rmdir half-fail (#37532 for the update path).
   // Reuses the incident-hardened update teardown; no-op on macOS/Linux.
   try {
-    await releaseBackendLock(ACTIVE_HERMES_ROOT, 'uninstall')
+    await releaseBackendLock(ACTIVE_VIGIL_ROOT, 'uninstall')
   } catch (error) {
     rememberLog(`[uninstall] backend teardown errored (continuing): ${error.message}`)
   }
@@ -6878,10 +6878,10 @@ async function runDesktopUninstall(mode) {
     desktopPid: process.pid,
     pythonExe: py,
     pythonPath,
-    agentRoot: ACTIVE_HERMES_ROOT,
+    agentRoot: ACTIVE_VIGIL_ROOT,
     uninstallArgs,
     appPath: removeBundle,
-    hermesHome: HERMES_HOME
+    hermesHome: VIGIL_HOME
   }
 
   let scriptPath
@@ -6944,13 +6944,13 @@ ipcMain.handle('hermes:vscode-theme:search', async (_event, query) => searchMark
 // running app's chat composer. Three delivery paths: macOS 'open-url',
 // Win/Linux running-app 'second-instance' (argv), Win/Linux cold-start argv.
 // ---------------------------------------------------------------------------
-const HERMES_PROTOCOL = 'hermes'
+const VIGIL_PROTOCOL = 'hermes'
 let _pendingDeepLink = null
 let _rendererReadyForDeepLink = false
 
 function _extractDeepLink(argv) {
   if (!Array.isArray(argv)) return null
-  return argv.find(a => typeof a === 'string' && a.startsWith(`${HERMES_PROTOCOL}://`)) || null
+  return argv.find(a => typeof a === 'string' && a.startsWith(`${VIGIL_PROTOCOL}://`)) || null
 }
 
 function handleDeepLink(url) {
@@ -6993,7 +6993,7 @@ ipcMain.handle('hermes:deep-link-ready', () => {
     const queued = _pendingDeepLink
     _pendingDeepLink = null
     handleDeepLink(
-      `${HERMES_PROTOCOL}://${queued.kind}/${encodeURIComponent(queued.name)}` +
+      `${VIGIL_PROTOCOL}://${queued.kind}/${encodeURIComponent(queued.name)}` +
         (Object.keys(queued.params).length ? '?' + new URLSearchParams(queued.params).toString() : '')
     )
   }
@@ -7005,9 +7005,9 @@ function registerDeepLinkProtocol() {
     if (process.defaultApp && process.argv.length >= 2) {
       // Dev: register with the electron exec path + entry script so the OS can
       // relaunch us with the URL.
-      app.setAsDefaultProtocolClient(HERMES_PROTOCOL, process.execPath, [path.resolve(process.argv[1])])
+      app.setAsDefaultProtocolClient(VIGIL_PROTOCOL, process.execPath, [path.resolve(process.argv[1])])
     } else {
-      app.setAsDefaultProtocolClient(HERMES_PROTOCOL)
+      app.setAsDefaultProtocolClient(VIGIL_PROTOCOL)
     }
   } catch (err) {
     rememberLog(`[deeplink] protocol registration failed: ${err.message}`)

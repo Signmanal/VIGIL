@@ -1,8 +1,8 @@
 """
 Cron job storage and management.
 
-Jobs are stored in ~/.hermes/cron/jobs.json
-Output is saved to ~/.hermes/cron/output/{job_id}/{timestamp}.md
+Jobs are stored in ~/.vigil/cron/jobs.json
+Output is saved to ~/.vigil/cron/output/{job_id}/{timestamp}.md
 """
 
 import contextlib
@@ -49,8 +49,8 @@ except ImportError:
 # Configuration
 # =============================================================================
 
-HERMES_DIR = get_hermes_home().resolve()
-CRON_DIR = HERMES_DIR / "cron"
+VIGIL_DIR = get_hermes_home().resolve()
+CRON_DIR = VIGIL_DIR / "cron"
 JOBS_FILE = CRON_DIR / "jobs.json"
 # Heartbeat file the in-process ticker touches on every loop iteration. The
 # gateway process and the (separate) ``hermes cron status`` process share it
@@ -360,7 +360,7 @@ def parse_schedule(schedule: str) -> Dict[str, Any]:
             # Make naive timestamps timezone-aware at parse time so the stored
             # value doesn't depend on the system timezone matching at check time.
             #
-            # Anchor to the CONFIGURED Hermes timezone, not the server's local
+            # Anchor to the CONFIGURED VIGIL timezone, not the server's local
             # timezone. The due-check (`get_due_jobs`) compares `next_run_at`
             # against `hermes_time.now()`, which uses the configured zone. If a
             # naive "20:07" were interpreted as server-local (e.g. UTC) while
@@ -402,13 +402,13 @@ def parse_schedule(schedule: str) -> Dict[str, Any]:
 
 
 def _ensure_aware(dt: datetime) -> datetime:
-    """Return a timezone-aware datetime in Hermes configured timezone.
+    """Return a timezone-aware datetime in VIGIL configured timezone.
 
     Backward compatibility:
     - Older stored timestamps may be naive.
     - Naive values are interpreted as *system-local wall time* (the timezone
       `datetime.now()` used when they were created), then converted to the
-      configured Hermes timezone.
+      configured VIGIL timezone.
 
     This preserves relative ordering for legacy naive timestamps across
     timezone changes and avoids false not-due results.
@@ -435,7 +435,7 @@ def _timezone_offset_mismatch(stored: datetime, current: datetime) -> bool:
 def _stored_wall_clock_is_future(stored: datetime, current: datetime) -> bool:
     """Return True when the stored local wall-clock time has not arrived yet.
 
-    Cron schedules express local wall-clock intent. If Hermes/system local time
+    Cron schedules express local wall-clock intent. If VIGIL/system local time
     changes after next_run_at was persisted, an old offset can make a future
     wall-clock run look due at the converted absolute time (for example
     21:00+10 becomes 13:00+02). Comparing naive wall-clock values lets us
@@ -531,7 +531,7 @@ def compute_next_run(schedule: Dict[str, Any], last_run_at: Optional[str] = None
             logger.warning(
                 "Cannot compute next run for cron schedule %r: 'croniter' is "
                 "not installed. croniter is a core dependency as of v0.9.x; "
-                "reinstall hermes-agent or run 'pip install croniter' in your "
+                "reinstall vigil-agent or run 'pip install croniter' in your "
                 "runtime env.",
                 schedule.get("expr"),
             )
@@ -811,7 +811,7 @@ def create_job(
                 delivered verbatim. Without ``no_agent``, its stdout is
                 injected into the agent's prompt as context (data-collection /
                 change-detection pattern). Paths resolve under
-                ~/.hermes/scripts/; ``.sh`` / ``.bash`` files run via bash,
+                ~/.vigil/scripts/; ``.sh`` / ``.bash`` files run via bash,
                 anything else via Python.
         context_from: Optional job ID (or list of job IDs) whose most recent output
                       is injected into the prompt as context before each run.
@@ -1278,10 +1278,10 @@ def advance_next_run(job_id: str) -> bool:
 def _machine_id() -> str:
     """Stable-ish identifier for claim attribution/debugging (NOT correctness).
 
-    Uses ``HERMES_MACHINE_ID`` if set, else hostname + pid. The CAS correctness
+    Uses ``VIGIL_MACHINE_ID`` if set, else hostname + pid. The CAS correctness
     comes from the file lock + the fresh-claim check, not from this value.
     """
-    explicit = os.getenv("HERMES_MACHINE_ID", "").strip()
+    explicit = os.getenv("VIGIL_MACHINE_ID", "").strip()
     if explicit:
         return explicit
     try:

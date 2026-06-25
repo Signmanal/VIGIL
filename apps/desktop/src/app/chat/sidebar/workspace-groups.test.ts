@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import type { HermesWorktreeInfo } from '@/global'
+import type { VIGILWorktreeInfo } from '@/global'
 import type { SessionInfo } from '@/types/hermes'
 
 import { uniqueCwds, workspaceGroupsFor, workspaceTreeFor, type WorktreeResolver } from './workspace-groups'
@@ -33,7 +33,7 @@ const labels = (sessions: SessionInfo[]) => workspaceGroupsFor(sessions, 'No wor
 describe('workspaceGroupsFor', () => {
   it('groups by full cwd, not by basename — same-named folders are separate groups', () => {
     const groups = workspaceGroupsFor(
-      [makeSession('/a/hermes-agent/apps/desktop'), makeSession('/a/hermes-agent-wt-rtl/apps/desktop')],
+      [makeSession('/a/vigil-agent/apps/desktop'), makeSession('/a/vigil-agent-wt-rtl/apps/desktop')],
       'No workspace'
     )
 
@@ -42,12 +42,12 @@ describe('workspaceGroupsFor', () => {
 
   it('disambiguates colliding basenames by walking up the path', () => {
     expect(
-      labels([makeSession('/a/hermes-agent/apps/desktop'), makeSession('/a/hermes-agent-wt-rtl/apps/desktop')])
-    ).toEqual(['hermes-agent/apps/desktop', 'hermes-agent-wt-rtl/apps/desktop'])
+      labels([makeSession('/a/vigil-agent/apps/desktop'), makeSession('/a/vigil-agent-wt-rtl/apps/desktop')])
+    ).toEqual(['vigil-agent/apps/desktop', 'vigil-agent-wt-rtl/apps/desktop'])
   })
 
   it('leaves a unique basename as its short label', () => {
-    expect(labels([makeSession('/a/hermes-agent/apps/desktop'), makeSession('/b/heval-py')])).toEqual([
+    expect(labels([makeSession('/a/vigil-agent/apps/desktop'), makeSession('/b/heval-py')])).toEqual([
       'desktop',
       'heval-py'
     ])
@@ -68,7 +68,7 @@ describe('workspaceGroupsFor', () => {
   })
 })
 
-const info = (over: Partial<HermesWorktreeInfo> & Pick<HermesWorktreeInfo, 'repoRoot' | 'worktreeRoot'>): HermesWorktreeInfo => ({
+const info = (over: Partial<VIGILWorktreeInfo> & Pick<VIGILWorktreeInfo, 'repoRoot' | 'worktreeRoot'>): VIGILWorktreeInfo => ({
   branch: null,
   isMainWorktree: false,
   ...over
@@ -77,40 +77,40 @@ const info = (over: Partial<HermesWorktreeInfo> & Pick<HermesWorktreeInfo, 'repo
 describe('workspaceTreeFor', () => {
   it('heuristic nests `<repo>-wt-<branch>` under its sibling repo', () => {
     const tree = workspaceTreeFor(
-      [makeSession('/www/hermes-agent'), makeSession('/www/hermes-agent-wt-rtl')],
+      [makeSession('/www/vigil-agent'), makeSession('/www/vigil-agent-wt-rtl')],
       'No workspace'
     )
 
     expect(tree).toHaveLength(1)
-    expect(tree[0].label).toBe('hermes-agent')
-    expect(tree[0].groups.map(g => g.label).sort()).toEqual(['hermes-agent', 'rtl'])
+    expect(tree[0].label).toBe('vigil-agent')
+    expect(tree[0].groups.map(g => g.label).sort()).toEqual(['vigil-agent', 'rtl'])
   })
 
   it('git metadata is authoritative — worktrees group by repoRoot regardless of directory naming', () => {
     const resolver: WorktreeResolver = cwd => {
-      if (cwd === '/www/hermes-agent') {
-        return info({ repoRoot: '/www/hermes-agent', worktreeRoot: '/www/hermes-agent', isMainWorktree: true, branch: 'main' })
+      if (cwd === '/www/vigil-agent') {
+        return info({ repoRoot: '/www/vigil-agent', worktreeRoot: '/www/vigil-agent', isMainWorktree: true, branch: 'main' })
       }
 
       if (cwd === '/elsewhere/ha-rtl') {
-        return info({ repoRoot: '/www/hermes-agent', worktreeRoot: '/elsewhere/ha-rtl', branch: 'rtl' })
+        return info({ repoRoot: '/www/vigil-agent', worktreeRoot: '/elsewhere/ha-rtl', branch: 'rtl' })
       }
 
       return null
     }
 
     const tree = workspaceTreeFor(
-      [makeSession('/www/hermes-agent'), makeSession('/elsewhere/ha-rtl')],
+      [makeSession('/www/vigil-agent'), makeSession('/elsewhere/ha-rtl')],
       'No workspace',
       resolver
     )
 
     expect(tree).toHaveLength(1)
-    expect(tree[0].label).toBe('hermes-agent')
+    expect(tree[0].label).toBe('vigil-agent')
     // The main checkout labels by directory (its branch is transient — using it
     // would misattribute old sessions to the currently checked-out branch);
     // linked worktrees label by branch.
-    expect(tree[0].groups.map(g => g.label)).toEqual(['hermes-agent', 'rtl'])
+    expect(tree[0].groups.map(g => g.label)).toEqual(['vigil-agent', 'rtl'])
   })
 
   it('a standalone directory is its own parent (always parent → worktree → sessions)', () => {

@@ -23,10 +23,10 @@ class _Stub(CLICommandsMixin):
 
 
 def _seed(tmp_path, monkeypatch, value=False):
-    hh = tmp_path / ".hermes"
+    hh = tmp_path / ".vigil"
     hh.mkdir()
     (hh / "config.yaml").write_text(f"display:\n  timestamps: {str(value).lower()}\n")
-    monkeypatch.setenv("HERMES_HOME", str(hh))
+    monkeypatch.setenv("VIGIL_HOME", str(hh))
     import cli
 
     monkeypatch.setattr(cli, "_hermes_home", hh, raising=False)
@@ -58,9 +58,9 @@ def test_timestamps_status_is_noop(tmp_path, monkeypatch):
 
 
 def _render_history(history, show_ts):
-    from cli import HermesCLI
+    from cli import VIGILCLI
 
-    h = HermesCLI.__new__(HermesCLI)
+    h = VIGILCLI.__new__(VIGILCLI)
     h.show_timestamps = show_ts
     h.conversation_history = history
     h._show_recent_sessions = lambda reason="history", limit=10: True
@@ -84,7 +84,7 @@ def test_history_shows_timestamp_for_stored_turns():
     out = _render_history(hist, show_ts=True)
     hhmm = datetime.fromtimestamp(ts).strftime("%H:%M")
     assert f"[You #1]  [{hhmm}]" in out
-    assert "[Hermes #2]  [" in out
+    assert "[VIGIL #2]  [" in out
     # a turn with no stored timestamp must NOT get a fabricated time
     assert "[You #3]\n" in out
 

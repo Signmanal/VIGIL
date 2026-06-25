@@ -1,12 +1,12 @@
 """Derive ACP session-provenance metadata from the existing compression chain.
 
-This is an additive Hermes extension surfaced under ACP ``_meta.hermes`` so
+This is an additive VIGIL extension surfaced under ACP ``_meta.vigil`` so
 existing ACP clients ignore it. It carries no new persisted state: everything
 is derived on demand from the ``sessions`` table (``parent_session_id`` /
 ``end_reason``), which already models compression-continuation chains.
 
 The ACP/editor ``session_id`` stays the stable public handle. When context
-compression rotates the internal Hermes head, ``build_session_provenance`` lets
+compression rotates the internal VIGIL head, ``build_session_provenance`` lets
 a client see the previous/current internal ids and the lineage root without
 parsing status text, guessing from token drops, or reading ``state.db``.
 """
@@ -26,12 +26,12 @@ def build_session_provenance(
     *,
     previous_hermes_session_id: Optional[str] = None,
 ) -> Optional[Dict[str, Any]]:
-    """Build ``_meta.hermes.sessionProvenance`` for an ACP session.
+    """Build ``_meta.vigil.sessionProvenance`` for an ACP session.
 
     Args:
         db: A ``SessionDB`` (must expose ``get_session``).
         acp_session_id: The stable ACP/editor-facing session handle.
-        current_hermes_session_id: The live internal Hermes DB session id
+        current_hermes_session_id: The live internal VIGIL DB session id
             (``state.agent.session_id``).
         previous_hermes_session_id: The internal id from before the most recent
             turn, when known. Supplied by ``prompt()`` to flag a rotation.
@@ -91,14 +91,14 @@ def build_session_provenance(
 
     provenance: Dict[str, Any] = {
         "acpSessionId": acp_session_id,
-        "currentHermesSessionId": current_hermes_session_id,
-        "rootHermesSessionId": root_id,
-        "parentHermesSessionId": parent_id,
+        "currentVIGILSessionId": current_hermes_session_id,
+        "rootVIGILSessionId": root_id,
+        "parentVIGILSessionId": parent_id,
         "sessionKind": "continuation" if is_continuation else "root",
         "compressionDepth": compression_depth,
     }
     if previous_hermes_session_id:
-        provenance["previousHermesSessionId"] = previous_hermes_session_id
+        provenance["previousVIGILSessionId"] = previous_hermes_session_id
     if rotated:
         # The head moved during the last turn. The only mechanism that rotates
         # the internal id mid-turn is compression-driven session splitting.

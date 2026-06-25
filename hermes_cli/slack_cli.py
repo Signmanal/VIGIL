@@ -31,9 +31,9 @@ def _build_full_manifest(
     """Build a full Slack manifest merging display info + our slash list.
 
     The slash-command list is always generated from ``COMMAND_REGISTRY`` so
-    it stays in sync with the rest of Hermes. Other manifest sections
+    it stays in sync with the rest of VIGIL. Other manifest sections
     (display info, OAuth scopes, socket mode) are set to sensible defaults
-    for a Hermes deployment — users can tweak them in the Slack UI after
+    for a VIGIL deployment — users can tweak them in the Slack UI after
     pasting.
 
     When ``include_assistant`` is True (default) the manifest opts the app
@@ -88,7 +88,7 @@ def _build_full_manifest(
 
     if include_assistant:
         features["assistant_view"] = {
-            "assistant_description": "Chat with Hermes in threads and DMs.",
+            "assistant_description": "Chat with VIGIL in threads and DMs.",
         }
         bot_scopes.append("assistant:write")
         bot_events.extend(
@@ -107,7 +107,7 @@ def _build_full_manifest(
         },
         "display_information": {
             "name": bot_name[:35],
-            "description": (bot_description or "Your Hermes agent on Slack")[:140],
+            "description": (bot_description or "Your VIGIL agent on Slack")[:140],
             "background_color": "#1a1a2e",
         },
         "features": features,
@@ -135,8 +135,8 @@ def slack_manifest_command(args) -> int:
 
     Flags (all parsed in ``hermes_cli/main.py``):
       --write [PATH]  Write to file instead of stdout (default path:
-                      ``$HERMES_HOME/slack-manifest.json``)
-      --name NAME     Override the bot display name (default: "Hermes")
+                      ``$VIGIL_HOME/slack-manifest.json``)
+      --name NAME     Override the bot display name (default: "VIGIL")
       --description DESC  Override the bot description
       --slashes-only  Emit only the ``features.slash_commands`` array (for
                       merging into an existing manifest manually)
@@ -145,8 +145,8 @@ def slack_manifest_command(args) -> int:
                       DMs render as a flat chat where bare slash commands
                       work inline instead of the Assistant thread pane.
     """
-    name = getattr(args, "name", None) or "Hermes"
-    description = getattr(args, "description", None) or "Your Hermes agent on Slack"
+    name = getattr(args, "name", None) or "VIGIL"
+    description = getattr(args, "description", None) or "Your VIGIL agent on Slack"
     include_assistant = not getattr(args, "no_assistant", False)
 
     if getattr(args, "slashes_only", False):
@@ -167,7 +167,7 @@ def slack_manifest_command(args) -> int:
 
                 target = Path(get_hermes_home()) / "slack-manifest.json"
             except Exception:
-                target = Path(os.environ.get("HERMES_HOME") or str(Path.home() / ".hermes")) / "slack-manifest.json"
+                target = Path(os.environ.get("VIGIL_HOME") or str(Path.home() / ".vigil")) / "slack-manifest.json"
         else:
             target = Path(write_target).expanduser()
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -175,7 +175,7 @@ def slack_manifest_command(args) -> int:
         print(f"Slack manifest written to: {target}", file=sys.stderr)
         print(
             "\nNext steps:\n"
-            "  1. Open https://api.slack.com/apps and pick your Hermes app\n"
+            "  1. Open https://api.slack.com/apps and pick your VIGIL app\n"
             "     (or create a new one: Create New App → From an app manifest).\n"
             f"  2. Features → App Manifest → paste the contents of\n"
             f"     {target}\n"

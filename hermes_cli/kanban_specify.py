@@ -42,15 +42,15 @@ from hermes_cli import kanban_db as kb
 
 from utils import env_int
 
-HERMES_KANBAN_SPECIFY_MAX_TOKENS = max(
+VIGIL_KANBAN_SPECIFY_MAX_TOKENS = max(
     1500,
-    env_int("HERMES_KANBAN_SPECIFY_MAX_TOKENS", 6000),
+    env_int("VIGIL_KANBAN_SPECIFY_MAX_TOKENS", 6000),
 )
 
 logger = logging.getLogger(__name__)
 
 
-_SYSTEM_PROMPT = """You are the Kanban triage specifier for the Hermes Agent board.
+_SYSTEM_PROMPT = """You are the Kanban triage specifier for the VIGIL Agent board.
 A user dropped a rough idea into the Triage column. Your job is to turn it
 into a concrete, actionable task spec that an autonomous worker can pick up
 and execute without further clarification.
@@ -133,7 +133,7 @@ def _profile_author() -> str:
     """Mirror of ``hermes_cli.kanban._profile_author``. Kept local to
     avoid a circular import when kanban.py imports this module."""
     return (
-        os.environ.get("HERMES_PROFILE")
+        os.environ.get("VIGIL_PROFILE")
         or os.environ.get("USER")
         or "specifier"
     )
@@ -192,7 +192,7 @@ def specify_task(
                 {"role": "user", "content": user_msg},
             ],
             temperature=0.3,
-            max_tokens=HERMES_KANBAN_SPECIFY_MAX_TOKENS,
+            max_tokens=VIGIL_KANBAN_SPECIFY_MAX_TOKENS,
             timeout=timeout or 120,
             extra_body=get_auxiliary_extra_body() or None,
         )

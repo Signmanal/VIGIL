@@ -1,5 +1,5 @@
 """
-Security advisory checker for Hermes Agent.
+Security advisory checker for VIGIL Agent.
 
 Detects known-compromised Python packages installed in the active venv
 (supply-chain attacks like the Mini Shai-Hulud worm of May 2026 that
@@ -28,7 +28,7 @@ The check is invoked from three places:
    a one-line operator banner)
 
 This module is intentionally dependency-free beyond the stdlib so it can
-run in environments where the rest of Hermes failed to import.
+run in environments where the rest of VIGIL failed to import.
 """
 
 from __future__ import annotations
@@ -114,7 +114,7 @@ ADVISORIES: tuple[Advisory, ...] = (
         ),
         remediation=(
             "Run: pip uninstall -y mistralai  (or: uv pip uninstall mistralai)",
-            "Rotate API keys in ~/.hermes/.env (OpenRouter, Anthropic, OpenAI, "
+            "Rotate API keys in ~/.vigil/.env (OpenRouter, Anthropic, OpenAI, "
             "Nous, GitHub, AWS, Google, Mistral, etc.).",
             "Audit ~/.npmrc, ~/.pypirc, ~/.aws/credentials, ~/.config/gh/hosts.yml, "
             "and any other credential files for tokens that may have been read.",
@@ -151,7 +151,7 @@ def _installed_version(pkg_name: str) -> Optional[str]:
     """
     try:
         from importlib.metadata import PackageNotFoundError, version
-    except ImportError:  # py<3.8 — Hermes requires 3.10+ but defensive.
+    except ImportError:  # py<3.8 — VIGIL requires 3.10+ but defensive.
         return None
     try:
         return version(pkg_name)
@@ -312,7 +312,7 @@ def full_remediation_text(hit: AdvisoryHit) -> list[str]:
 #
 # We do NOT want to hammer the user with the banner on every command. Once
 # they've seen it inside a 24h window we cache that fact in
-# ``~/.hermes/cache/advisory_banner_seen`` (a single line per advisory ID:
+# ``~/.vigil/cache/advisory_banner_seen`` (a single line per advisory ID:
 # ``<id> <iso8601_timestamp>``).
 #
 # Acked advisories never re-banner. Cached-but-not-acked advisories

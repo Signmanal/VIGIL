@@ -56,24 +56,24 @@ def _resolve_hermes_home() -> Path:
 
 def register_credential_file(
     relative_path: str,
-    container_base: str = "/root/.hermes",
+    container_base: str = "/root/.vigil",
 ) -> bool:
     """Register a credential file for mounting into remote sandboxes.
 
-    *relative_path* is relative to ``HERMES_HOME`` (e.g. ``google_token.json``).
+    *relative_path* is relative to ``VIGIL_HOME`` (e.g. ``google_token.json``).
     Returns True if the file exists on the host and was registered.
 
     Security: rejects absolute paths and path traversal sequences (``..``).
-    The resolved host path must remain inside HERMES_HOME so that a malicious
+    The resolved host path must remain inside VIGIL_HOME so that a malicious
     skill cannot declare ``required_credential_files: ['../../.ssh/id_rsa']``
     and exfiltrate sensitive host files into a container sandbox.
     """
     hermes_home = _resolve_hermes_home()
 
-    # Reject absolute paths — they bypass the HERMES_HOME sandbox entirely.
+    # Reject absolute paths — they bypass the VIGIL_HOME sandbox entirely.
     if os.path.isabs(relative_path):
         logger.warning(
-            "credential_files: rejected absolute path %r (must be relative to HERMES_HOME)",
+            "credential_files: rejected absolute path %r (must be relative to VIGIL_HOME)",
             relative_path,
         )
         return False
@@ -81,7 +81,7 @@ def register_credential_file(
     host_path = hermes_home / relative_path
 
     # Resolve symlinks and normalise ``..`` before the containment check so
-    # that traversal like ``../. ssh/id_rsa`` cannot escape HERMES_HOME.
+    # that traversal like ``../. ssh/id_rsa`` cannot escape VIGIL_HOME.
     from tools.path_security import validate_within_dir
 
     containment_error = validate_within_dir(host_path, hermes_home)
@@ -106,7 +106,7 @@ def register_credential_file(
 
 def register_credential_files(
     entries: list,
-    container_base: str = "/root/.hermes",
+    container_base: str = "/root/.vigil",
 ) -> List[str]:
     """Register multiple credential files from skill frontmatter entries.
 
@@ -162,7 +162,7 @@ def _load_config_files() -> List[Dict[str, str]]:
                         continue
                     resolved_path = host_path.resolve()
                     if resolved_path.is_file():
-                        container_path = f"/root/.hermes/{rel}"
+                        container_path = f"/root/.vigil/{rel}"
                         result.append({
                             "host_path": str(resolved_path),
                             "container_path": container_path,
@@ -201,7 +201,7 @@ def get_credential_file_mounts() -> List[Dict[str, str]]:
 
 
 def get_skills_directory_mount(
-    container_base: str = "/root/.hermes",
+    container_base: str = "/root/.vigil",
 ) -> list[Dict[str, str]]:
     """Return mount info for all skill directories (local + external).
 
@@ -292,7 +292,7 @@ def _safe_skills_path(skills_dir: Path) -> str:
 
 
 def iter_skills_files(
-    container_base: str = "/root/.hermes",
+    container_base: str = "/root/.vigil",
 ) -> List[Dict[str, str]]:
     """Yield individual (host_path, container_path) entries for skills files.
 
@@ -353,7 +353,7 @@ _CACHE_DIRS: list[tuple[str, str]] = [
 
 
 def get_cache_directory_mounts(
-    container_base: str = "/root/.hermes",
+    container_base: str = "/root/.vigil",
 ) -> List[Dict[str, str]]:
     """Return mount entries for each cache directory that exists on disk.
 
@@ -378,14 +378,14 @@ def get_cache_directory_mounts(
 
 def map_cache_path_to_container(
     host_path: str,
-    container_base: str = "/root/.hermes",
+    container_base: str = "/root/.vigil",
 ) -> Optional[str]:
     """Map a host cache path to its mounted path under *container_base*.
 
     Returns the POSIX container path when *host_path* lives under one of the
     auto-mounted cache directories, otherwise ``None``.  Backend-agnostic: the
-    caller decides which ``container_base`` applies (Docker ``/root/.hermes``,
-    SSH ``<remote_home>/.hermes``, etc.) and whether translation is wanted.
+    caller decides which ``container_base`` applies (Docker ``/root/.vigil``,
+    SSH ``<remote_home>/.vigil``, etc.) and whether translation is wanted.
     Always joins with ``posixpath`` because container/remote paths are POSIX
     regardless of the host OS.
     """
@@ -402,7 +402,7 @@ def map_cache_path_to_container(
 
 def to_agent_visible_cache_path(
     host_path: str,
-    container_base: str = "/root/.hermes",
+    container_base: str = "/root/.vigil",
 ) -> str:
     """Translate a host cache path to its mounted path inside the sandbox.
 
@@ -422,7 +422,7 @@ def to_agent_visible_cache_path(
 
 
 def iter_cache_files(
-    container_base: str = "/root/.hermes",
+    container_base: str = "/root/.vigil",
 ) -> List[Dict[str, str]]:
     """Return individual (host_path, container_path) entries for cache files.
 

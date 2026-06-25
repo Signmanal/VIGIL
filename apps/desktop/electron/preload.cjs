@@ -1,6 +1,6 @@
 const { contextBridge, ipcRenderer, webUtils } = require('electron')
 
-contextBridge.exposeInMainWorld('hermesDesktop', {
+contextBridge.exposeInMainWorld('vigilDesktop', {
   getConnection: profile => ipcRenderer.invoke('hermes:connection', profile),
   revalidateConnection: () => ipcRenderer.invoke('hermes:connection:revalidate'),
   touchBackend: profile => ipcRenderer.invoke('hermes:backend:touch', profile),

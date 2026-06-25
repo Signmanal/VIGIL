@@ -1,4 +1,4 @@
-"""Slash command definitions and autocomplete for the Hermes CLI.
+"""Slash command definitions and autocomplete for the VIGIL CLI.
 
 Central registry for all slash commands. Every consumer -- CLI help, gateway
 dispatch, Telegram BotCommands, Slack subcommand mapping, autocomplete --
@@ -92,7 +92,7 @@ COMMAND_REGISTRY: list[CommandDef] = [
                args_hint="[here [N] | focus topic]"),
     CommandDef("rollback", "List or restore filesystem checkpoints", "Session",
                args_hint="[number]"),
-    CommandDef("snapshot", "Create or restore state snapshots of Hermes config/state", "Session",
+    CommandDef("snapshot", "Create or restore state snapshots of VIGIL config/state", "Session",
                cli_only=True, aliases=("snap",), args_hint="[create|restore <id>|prune]"),
     CommandDef("stop", "Kill all running background processes", "Session"),
     CommandDef("approve", "Approve a pending dangerous command", "Session",
@@ -107,7 +107,7 @@ COMMAND_REGISTRY: list[CommandDef] = [
                aliases=("q",), args_hint="<prompt>"),
     CommandDef("steer", "Inject a message after the next tool call without interrupting", "Session",
                args_hint="<prompt>"),
-    CommandDef("goal", "Set a standing goal Hermes works on across turns until achieved", "Session",
+    CommandDef("goal", "Set a standing goal VIGIL works on across turns until achieved", "Session",
                args_hint="[text | draft <text> | show | pause | resume | clear | status | wait <pid> | unwait]"),
     CommandDef("subgoal", "Add or manage extra criteria on the active goal", "Session",
                args_hint="[text | remove N | clear]"),
@@ -159,7 +159,7 @@ COMMAND_REGISTRY: list[CommandDef] = [
                subcommands=("kaomoji", "emoji", "unicode", "ascii")),
     CommandDef("voice", "Toggle voice mode", "Configuration",
                args_hint="[on|off|tts|status]", subcommands=("on", "off", "tts", "status")),
-    CommandDef("busy", "Control what Enter does while Hermes is working", "Configuration",
+    CommandDef("busy", "Control what Enter does while VIGIL is working", "Configuration",
                cli_only=True, args_hint="[queue|steer|interrupt|status]",
                subcommands=("queue", "steer", "interrupt", "status")),
 
@@ -208,7 +208,7 @@ COMMAND_REGISTRY: list[CommandDef] = [
                cli_only=True),
     CommandDef("reload-mcp", "Reload MCP servers from config", "Tools & Skills",
                aliases=("reload_mcp",)),
-    CommandDef("reload-skills", "Re-scan ~/.hermes/skills/ for newly installed or removed skills",
+    CommandDef("reload-skills", "Re-scan ~/.vigil/skills/ for newly installed or removed skills",
                "Tools & Skills", aliases=("reload_skills",)),
     CommandDef("browser", "Connect browser tools to your live Chromium-family browser via CDP", "Tools & Skills",
                cli_only=True, args_hint="[connect|disconnect|status]",
@@ -238,8 +238,8 @@ COMMAND_REGISTRY: list[CommandDef] = [
                cli_only=True),
     CommandDef("image", "Attach a local image file for your next prompt", "Info",
                cli_only=True, args_hint="<path>"),
-    CommandDef("update", "Update Hermes Agent to the latest version", "Info"),
-    CommandDef("version", "Show Hermes Agent version", "Info", aliases=("v",)),
+    CommandDef("update", "Update VIGIL Agent to the latest version", "Info"),
+    CommandDef("version", "Show VIGIL Agent version", "Info", aliases=("v",)),
     CommandDef("debug", "Upload debug report (system info + logs) and get shareable links", "Info"),
 
     # Exit
@@ -536,7 +536,7 @@ def telegram_bot_commands() -> list[tuple[str, str]]:
     return result
 
 
-# Telegram allows up to 100 BotCommands. Hermes ships ~50 built-in commands;
+# Telegram allows up to 100 BotCommands. VIGIL ships ~50 built-in commands;
 # a 60-slot default keeps every built-in plus common skill commands visible in
 # the `/` menu while staying comfortably under Telegram's ~4KB payload limit.
 # Users can tune this via platforms.telegram.extra.command_menu.max_commands.
@@ -575,7 +575,7 @@ _TELEGRAM_MENU_PRIORITY = (
 )
 """Built-in commands that should stay visible in Telegram's capped menu.
 
-Telegram only displays a small BotCommand menu in practice.  The full Hermes
+Telegram only displays a small BotCommand menu in practice.  The full VIGIL
 registry is still dispatchable when typed manually, but operational commands
 need to survive the visible menu cap ahead of lower-priority built-ins.
 """
@@ -1154,7 +1154,7 @@ _SLACK_PRIORITY_ALIASES = ("btw", "bg")
 #   - credits: the billing/top-up surface; reached via /hermes credits on Slack.
 #   - billing: the terminal-billing surface (buy/auto-reload/limit); /hermes billing.
 #   - debug: the log/report upload surface; reached via /hermes debug on Slack.
-_SLACK_VIA_HERMES_ONLY = frozenset({"credits", "billing", "debug"})
+_SLACK_VIA_VIGIL_ONLY = frozenset({"credits", "billing", "debug"})
 
 
 def _sanitize_slack_name(raw: str) -> str:
@@ -1195,8 +1195,8 @@ def slack_native_slashes() -> list[tuple[str, str, str]]:
     seen: set[str] = set()
 
     # Reserve /hermes as the catch-all top-level command.
-    entries.append(("hermes", "Talk to Hermes or run a subcommand", "[subcommand] [args]"))
-    seen.add("hermes")
+    entries.append(("vigil", "Talk to VIGIL or run a subcommand", "[subcommand] [args]"))
+    seen.add("vigil")
 
     def _add(name: str, desc: str, hint: str) -> None:
         slack_name = _sanitize_slack_name(name)
@@ -1204,8 +1204,8 @@ def slack_native_slashes() -> list[tuple[str, str, str]]:
             return
         if slack_name in _SLACK_RESERVED_COMMANDS:
             return
-        if slack_name in _SLACK_VIA_HERMES_ONLY:
-            # Intentionally Slack-via-/hermes only (see _SLACK_VIA_HERMES_ONLY).
+        if slack_name in _SLACK_VIA_VIGIL_ONLY:
+            # Intentionally Slack-via-/hermes only (see _SLACK_VIA_VIGIL_ONLY).
             return
         if len(entries) >= _SLACK_MAX_SLASH_COMMANDS:
             return
@@ -1250,7 +1250,7 @@ def slack_native_slashes() -> list[tuple[str, str, str]]:
     return entries
 
 
-def slack_app_manifest(request_url: str = "https://hermes-agent.local/slack/commands") -> dict[str, Any]:
+def slack_app_manifest(request_url: str = "https://vigil-agent.local/slack/commands") -> dict[str, Any]:
     """Generate a Slack app manifest with all gateway commands as slashes.
 
     ``request_url`` is required by Slack's manifest schema for every slash

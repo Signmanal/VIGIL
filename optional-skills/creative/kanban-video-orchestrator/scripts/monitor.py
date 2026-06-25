@@ -27,7 +27,7 @@ from datetime import datetime, timedelta
 
 
 def hermes_available() -> bool:
-    return shutil.which("hermes") is not None
+    return shutil.which("vigil") is not None
 
 
 def kanban_list(tenant: str) -> list[dict]:
@@ -35,7 +35,7 @@ def kanban_list(tenant: str) -> list[dict]:
     output isn't supported by the installed hermes CLI."""
     try:
         out = subprocess.run(
-            ["hermes", "kanban", "list", "--tenant", tenant, "--json"],
+            ["vigil", "kanban", "list", "--tenant", tenant, "--json"],
             capture_output=True, text=True, check=False,
         )
         if out.returncode == 0 and out.stdout.strip().startswith("["):
@@ -44,7 +44,7 @@ def kanban_list(tenant: str) -> list[dict]:
         pass
     # Fallback: textual parse of `hermes kanban list`
     out = subprocess.run(
-        ["hermes", "kanban", "list", "--tenant", tenant],
+        ["vigil", "kanban", "list", "--tenant", tenant],
         capture_output=True, text=True, check=False,
     )
     rows = []
@@ -68,7 +68,7 @@ def kanban_list(tenant: str) -> list[dict]:
 
 def kanban_show(task_id: str) -> dict | None:
     out = subprocess.run(
-        ["hermes", "kanban", "show", task_id, "--json"],
+        ["vigil", "kanban", "show", task_id, "--json"],
         capture_output=True, text=True, check=False,
     )
     if out.returncode != 0:

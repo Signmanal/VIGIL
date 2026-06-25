@@ -1,10 +1,10 @@
 from unittest.mock import MagicMock, patch
 
-from cli import HermesCLI
+from cli import VIGILCLI
 
 
 def _make_cli():
-    cli_obj = HermesCLI.__new__(HermesCLI)
+    cli_obj = VIGILCLI.__new__(VIGILCLI)
     cli_obj.session_id = "current_session"
     cli_obj._resumed = False
     cli_obj._pending_title = None
@@ -230,7 +230,7 @@ class TestRestoreSessionCwdMarkup:
     ``rich.errors.MarkupError: closing tag [/] at position N has nothing to
     close`` because ``_DIM`` is an ANSI escape (``\\x1b[2;3m``), not a valid
     Rich tag.  The fix replaces ``[{_DIM}]`` with Rich's native ``[dim]`` tag.
-    See: https://github.com/NousResearch/hermes-agent/issues/39469
+    See: https://github.com/NousResearch/vigil-agent/issues/39469
     """
 
     def test_missing_dir_does_not_raise_markup_error(self):

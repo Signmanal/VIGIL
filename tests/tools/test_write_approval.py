@@ -18,9 +18,9 @@ import pytest
 @pytest.fixture
 def hermes_home(monkeypatch):
     d = tempfile.mkdtemp(prefix="hermes_wa_test_")
-    home = os.path.join(d, ".hermes")
+    home = os.path.join(d, ".vigil")
     os.makedirs(home)
-    monkeypatch.setenv("HERMES_HOME", home)
+    monkeypatch.setenv("VIGIL_HOME", home)
     yield home
     shutil.rmtree(d, ignore_errors=True)
 
@@ -198,7 +198,7 @@ def test_skill_gate_on_always_stages(hermes_home):
 
 def test_skill_gate_on_then_apply_writes_file(hermes_home):
     # SKILLS_DIR is resolved at import time, so reload the skill module under
-    # this test's HERMES_HOME to exercise the real on-disk write path.
+    # this test's VIGIL_HOME to exercise the real on-disk write path.
     import importlib
     import tools.skill_manager_tool as smt
     importlib.reload(smt)
@@ -402,7 +402,7 @@ def test_gateway_context_stages_not_prompts(hermes_home, monkeypatch):
     from tools.memory_tool import memory_tool, MemoryStore
     from tools import write_approval as wa
     _set_approval("memory", True)
-    monkeypatch.setenv("HERMES_GATEWAY_SESSION", "1")
+    monkeypatch.setenv("VIGIL_GATEWAY_SESSION", "1")
 
     store = MemoryStore(); store.load_from_disk()
     r = json.loads(memory_tool("add", "memory", "gateway fact", store=store))

@@ -1,5 +1,5 @@
 """
-Hermes Agent — Web UI server.
+VIGIL Agent — Web UI server.
 
 Provides a FastAPI backend serving the Vite/React frontend and REST API
 endpoints for managing configuration, environment variables, and sessions.
@@ -109,7 +109,7 @@ except ImportError:
             f"Install with: {sys.executable} -m pip install 'fastapi' 'uvicorn[standard]'"
         )
 
-WEB_DIST = Path(os.environ["HERMES_WEB_DIST"]) if "HERMES_WEB_DIST" in os.environ else Path(__file__).parent / "web_dist"
+WEB_DIST = Path(os.environ["VIGIL_WEB_DIST"]) if "VIGIL_WEB_DIST" in os.environ else Path(__file__).parent / "web_dist"
 _log = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
@@ -135,7 +135,7 @@ def _start_desktop_cron_ticker(stop_event: "threading.Event", interval: int = 60
 
     Cross-process safe: the built-in provider's ``cron.scheduler.tick`` takes
     the ``cron/.tick.lock`` file lock, so this never double-fires alongside a
-    real gateway on the same HERMES_HOME — whichever process grabs the lock
+    real gateway on the same VIGIL_HOME — whichever process grabs the lock
     first wins the tick.
     """
     from cron.scheduler_provider import resolve_cron_scheduler
@@ -172,19 +172,19 @@ async def _lifespan(app: "FastAPI"):
     app.state.chat_argv_lock = asyncio.Lock()
 
     # Fire hermes_cli.gateway import into a background thread so the event
-    # loop is not blocked and HERMES_DASHBOARD_READY fires without delay.
+    # loop is not blocked and VIGIL_DASHBOARD_READY fires without delay.
     # On a cold Windows install the module chain triggers .pyc compilation
     # and Defender real-time scans that can stall the event loop for 15-30s.
     # Running in an executor means the cost is paid in a worker thread while
     # the server socket is already open and accepting probes.
     asyncio.get_event_loop().run_in_executor(None, _warm_gateway_module)
 
-    # Desktop-spawned backends (HERMES_DESKTOP=1) fire cron jobs themselves,
+    # Desktop-spawned backends (VIGIL_DESKTOP=1) fire cron jobs themselves,
     # since the app has no gateway running the scheduler. Server `hermes
     # dashboard` is unaffected — it relies on its own gateway.
     cron_stop: "threading.Event | None" = None
     cron_thread: "threading.Thread | None" = None
-    if os.getenv("HERMES_DESKTOP") == "1":
+    if os.getenv("VIGIL_DESKTOP") == "1":
         cron_stop = threading.Event()
         cron_thread = threading.Thread(
             target=_start_desktop_cron_ticker,
@@ -232,7 +232,7 @@ def _get_chat_argv_lock(app: "FastAPI") -> asyncio.Lock:
         return app.state.chat_argv_lock
 
 
-app = FastAPI(title="Hermes Agent", version=__version__, lifespan=_lifespan)
+app = FastAPI(title="VIGIL Agent", version=__version__, lifespan=_lifespan)
 
 # Memory-provider OAuth connect routes live in the memory layer, not here.
 from hermes_cli.memory_oauth import router as _memory_oauth_router  # noqa: E402
@@ -242,13 +242,13 @@ app.include_router(_memory_oauth_router)
 # ---------------------------------------------------------------------------
 # Session token for protecting sensitive endpoints (reveal).
 # The desktop shell mints the token and injects it via
-# HERMES_DASHBOARD_SESSION_TOKEN so its main process can authenticate the
+# VIGIL_DASHBOARD_SESSION_TOKEN so its main process can authenticate the
 # /api calls it makes on the user's behalf; otherwise we generate one fresh
 # on every server start. Either way it dies when the process exits and is
 # injected into the SPA HTML so only the legitimate web UI can use it.
 # ---------------------------------------------------------------------------
-_SESSION_TOKEN = os.environ.get("HERMES_DASHBOARD_SESSION_TOKEN") or secrets.token_urlsafe(32)
-_SESSION_HEADER_NAME = "X-Hermes-Session-Token"
+_SESSION_TOKEN = os.environ.get("VIGIL_DASHBOARD_SESSION_TOKEN") or secrets.token_urlsafe(32)
+_SESSION_HEADER_NAME = "X-VIGIL-Session-Token"
 
 # In-browser Chat tab (/chat, /api/pty, /api/ws, …).  Always enabled: the
 # desktop app and the dashboard's own Chat tab both drive the agent over the
@@ -332,7 +332,7 @@ def _require_token(request: Request) -> None:
 
     * **Loopback / ``--insecure`` mode** (``auth_required`` False): the
       ephemeral ``_SESSION_TOKEN`` is injected into the SPA HTML and echoed
-      back via ``X-Hermes-Session-Token`` (or the legacy ``Bearer`` header).
+      back via ``X-VIGIL-Session-Token`` (or the legacy ``Bearer`` header).
       Validate it here.
     * **Gated / OAuth mode** (``auth_required`` True): ``_SESSION_TOKEN`` is
       NOT injected (the SPA authenticates with a session cookie), so there is
@@ -596,7 +596,7 @@ _SCHEMA_OVERRIDES: Dict[str, Dict[str, Any]] = {
     "updates.non_interactive_local_changes": {
         "type": "select",
         "description": (
-            "When the chat app / gateway updates Hermes (no terminal prompt), "
+            "When the chat app / gateway updates VIGIL (no terminal prompt), "
             "what to do with uncommitted local source edits. 'stash' keeps them "
             "and re-applies them after the update; 'discard' throws them away. "
             "Terminal updates always ask, regardless of this setting."
@@ -836,7 +836,7 @@ def _normalize_main_model_assignment(provider: str, model: str) -> tuple[str, st
 
     The Models page has two assignment paths and only one of them was safe:
 
-    - The "Change" picker sends a real Hermes provider slug — fine.
+    - The "Change" picker sends a real VIGIL provider slug — fine.
     - The per-card "Use as → Main model" menu sends ``entry.provider``
       from the analytics rows, falling back to the model's VENDOR prefix
       (``modelVendor("anthropic/claude-opus-4.6") == "anthropic"``) when
@@ -849,8 +849,8 @@ def _normalize_main_model_assignment(provider: str, model: str) -> tuple[str, st
 
     Two repairs, both at this single chokepoint so every caller inherits:
 
-    1. Vendor-name → Hermes-provider mapping: when the provider string is
-       not a known Hermes provider/alias (e.g. ``moonshotai``, ``x-ai`` is
+    1. Vendor-name → VIGIL-provider mapping: when the provider string is
+       not a known VIGIL provider/alias (e.g. ``moonshotai``, ``x-ai`` is
        known but ``poolside`` isn't) but the model is a vendor-prefixed
        aggregator slug, keep the user's CURRENT aggregator if they're on
        one, else fall back to openrouter.
@@ -1027,7 +1027,7 @@ _MEDIA_CONTENT_TYPES = {
     ".ico": "image/x-icon",
 }
 _MEDIA_MAX_BYTES = 25 * 1024 * 1024
-_MANAGED_FILES_ROOT_ENV = "HERMES_DASHBOARD_FILES_ROOT"
+_MANAGED_FILES_ROOT_ENV = "VIGIL_DASHBOARD_FILES_ROOT"
 _MANAGED_FILE_MAX_BYTES = 100 * 1024 * 1024
 _HOSTED_MANAGED_FILES_ROOT = Path("/opt/data")
 
@@ -1308,7 +1308,7 @@ def _local_dashboard_request(request: Request) -> bool:
 
 
 def _default_hermes_root_is_opt_data() -> bool:
-    raw = os.environ.get("HERMES_HOME", "").strip()
+    raw = os.environ.get("VIGIL_HOME", "").strip()
     if not raw:
         return False
     try:
@@ -1329,7 +1329,7 @@ def _dashboard_local_update_managed_externally() -> bool:
     still behave like their actual install method in the CLI.
 
     However, when the install method is ``git`` (a bind-mounted checkout inside
-    a container — e.g. the hermes-webui image sharing the Hermes source tree),
+    a container — e.g. the hermes-webui image sharing the VIGIL source tree),
     the dashboard's ``hermes update`` button is the correct update path and
     should not be suppressed. Other containerized install methods remain
     externally managed unless their apply path is proven safe inside the
@@ -1367,8 +1367,8 @@ def _managed_files_policy(request: Request, *, create_root: bool = True) -> Mana
     # Remote/OAuth access does not imply a hosted container. Users can expose a
     # local dashboard through the auth gate (for example a macOS launchd install)
     # and still expect the Files page to browse their local home directory. Lock
-    # to /opt/data only when the installation's Hermes root is actually /opt/data
-    # (the container/hosted layout) or when HERMES_DASHBOARD_FILES_ROOT is set.
+    # to /opt/data only when the installation's VIGIL root is actually /opt/data
+    # (the container/hosted layout) or when VIGIL_DASHBOARD_FILES_ROOT is set.
     if _default_hermes_root_is_opt_data():
         root = _ensure_managed_root(_HOSTED_MANAGED_FILES_ROOT) if create_root else _HOSTED_MANAGED_FILES_ROOT
         return ManagedFilesPolicy(default_path=root, locked_root=root, can_change_path=False)
@@ -2304,7 +2304,7 @@ async def run_debug_share_endpoint(body: DebugShareRequest | None = None):
 # Both commands are spawned as detached subprocesses so the HTTP request
 # returns immediately.  stdin is closed (``DEVNULL``) so any stray ``input()``
 # calls fail fast with EOF rather than hanging forever.  stdout/stderr are
-# streamed to a per-action log file under ``~/.hermes/logs/<action>.log`` so
+# streamed to a per-action log file under ``~/.vigil/logs/<action>.log`` so
 # the dashboard can tail them back to the user.
 # ---------------------------------------------------------------------------
 
@@ -2379,7 +2379,7 @@ def _spawn_hermes_action(subcommand: List[str], name: str) -> subprocess.Popen:
         "stdin": subprocess.DEVNULL,
         "stdout": log_file,
         "stderr": subprocess.STDOUT,
-        "env": {**os.environ, "HERMES_NONINTERACTIVE": "1"},
+        "env": {**os.environ, "VIGIL_NONINTERACTIVE": "1"},
     }
     if sys.platform == "win32":
         popen_kwargs["creationflags"] = (
@@ -2419,7 +2419,7 @@ def _gateway_subcommand(profile: Optional[str], verb: str) -> List[str]:
 
 
 def _gateway_display_command(profile: Optional[str], verb: str) -> str:
-    return " ".join(["hermes", *_gateway_subcommand(profile, verb)])
+    return " ".join(["vigil", *_gateway_subcommand(profile, verb)])
 
 
 # Slack member IDs (users U..., Enterprise Grid W...). Kept in sync with the
@@ -2519,12 +2519,12 @@ async def restart_gateway(profile: Optional[str] = None):
     }
 
 
-@app.post("/api/hermes/update")
+@app.post("/api/vigil/update")
 async def update_hermes():
     """Kick off ``hermes update`` in the background."""
     if _dashboard_local_update_managed_externally():
         message = (
-            "Hermes updates are managed outside this dashboard in "
+            "VIGIL updates are managed outside this dashboard in "
             "containerized environments. The built-in local updater is "
             "disabled here."
         )
@@ -2611,17 +2611,17 @@ def _recent_upstream_commits(n: int = 20) -> List[Dict[str, Any]]:
         return []
 
 
-@app.get("/api/hermes/update/check")
+@app.get("/api/vigil/update/check")
 async def check_hermes_update(force: bool = False):
-    """Report whether a Hermes update is available, without applying it.
+    """Report whether a VIGIL update is available, without applying it.
 
     Powers the dashboard's "check before you update" flow: the System page
     shows the commit-behind count and asks the user to confirm before
-    ``POST /api/hermes/update`` actually runs ``hermes update``.
+    ``POST /api/vigil/update`` actually runs ``hermes update``.
 
     Returns:
         install_method: 'git' | 'pip' | 'docker' | 'nixos' | 'homebrew' | ...
-        current_version: installed Hermes version string
+        current_version: installed VIGIL version string
         behind: commits behind upstream (>=1), 0 if up to date,
                 -1 if behind by an unknown count (nix/pypi), or null if the
                 check could not run (offline, no remote, etc.)
@@ -2646,7 +2646,7 @@ async def check_hermes_update(force: bool = False):
             "can_apply": False,
             "update_command": "managed outside dashboard",
             "message": (
-                "Hermes updates are managed outside this dashboard in "
+                "VIGIL updates are managed outside this dashboard in "
                 "containerized environments."
             ),
         }
@@ -2843,7 +2843,7 @@ async def speak_text(payload: TTSSpeakRequest):
     Used by the desktop voice-conversation mode to play back assistant
     responses without exposing the on-disk file path. Reuses the
     existing TTS provider chain (Edge / OpenAI / ElevenLabs / etc.)
-    configured in ``~/.hermes/config.yaml`` under ``tts.``.
+    configured in ``~/.vigil/config.yaml`` under ``tts.``.
     """
     text = (payload.text or "").strip()
     if not text:
@@ -3251,7 +3251,7 @@ async def search_sessions(q: str = "", limit: int = 20, profile: Optional[str] =
                 seen[root] = payload
 
             # Direct ID matches first: users often paste a session id from CLI,
-            # logs, or another Hermes surface. FTS can't find those unless the
+            # logs, or another VIGIL surface. FTS can't find those unless the
             # id happens to appear in message text. search_sessions_by_id is
             # SQL-bounded, so this stays cheap even with thousands of sessions.
             for row in db.search_sessions_by_id(q, limit=safe_limit, include_archived=True):
@@ -3311,7 +3311,7 @@ async def search_sessions(q: str = "", limit: int = 20, profile: Optional[str] =
 def _normalize_config_for_web(config: Dict[str, Any]) -> Dict[str, Any]:
     """Normalize config for the web UI.
 
-    Hermes supports ``model`` as either a bare string (``"anthropic/claude-sonnet-4"``)
+    VIGIL supports ``model`` as either a bare string (``"anthropic/claude-sonnet-4"``)
     or a dict (``{default: ..., provider: ..., base_url: ...}``).  The schema is built
     from DEFAULT_CONFIG where ``model`` is a string, but user configs often have the
     dict form.  Normalize to the string form so the frontend schema matches.
@@ -3790,7 +3790,7 @@ def get_auxiliary_models(profile: Optional[str] = None):
 async def set_model_assignment(body: ModelAssignment, profile: Optional[str] = None):
     """Assign a model to the main slot or an auxiliary task slot.
 
-    Writes to ``~/.hermes/config.yaml`` — applies to **new** sessions only.
+    Writes to ``~/.vigil/config.yaml`` — applies to **new** sessions only.
     The currently running chat PTY (if any) is not affected; use the
     ``/model`` slash command inside a chat to hot-swap that specific session.
     """
@@ -4385,14 +4385,14 @@ async def reveal_env_var(
 _PLATFORM_OVERRIDES: dict[str, dict[str, Any]] = {
     "telegram": {
         "name": "Telegram",
-        "description": "Run Hermes from Telegram DMs, groups, and topics.",
+        "description": "Run VIGIL from Telegram DMs, groups, and topics.",
         "docs_url": "https://core.telegram.org/bots/features#botfather",
         "env_vars": ("TELEGRAM_BOT_TOKEN", "TELEGRAM_ALLOWED_USERS", "TELEGRAM_PROXY"),
         "required_env": ("TELEGRAM_BOT_TOKEN",),
     },
     "discord": {
         "name": "Discord",
-        "description": "Connect Hermes to Discord DMs, channels, and threads.",
+        "description": "Connect VIGIL to Discord DMs, channels, and threads.",
         "docs_url": "https://discord.com/developers/applications",
         "env_vars": (
             "DISCORD_BOT_TOKEN",
@@ -4403,21 +4403,21 @@ _PLATFORM_OVERRIDES: dict[str, dict[str, Any]] = {
     },
     "slack": {
         "name": "Slack",
-        "description": "Use Hermes from Slack via Socket Mode. Add allowed Slack member IDs so connected bots can respond.",
+        "description": "Use VIGIL from Slack via Socket Mode. Add allowed Slack member IDs so connected bots can respond.",
         "docs_url": "https://api.slack.com/apps",
         "env_vars": ("SLACK_BOT_TOKEN", "SLACK_APP_TOKEN", "SLACK_ALLOWED_USERS"),
         "required_env": ("SLACK_BOT_TOKEN", "SLACK_APP_TOKEN"),
     },
     "mattermost": {
         "name": "Mattermost",
-        "description": "Connect Hermes to Mattermost channels and direct messages.",
+        "description": "Connect VIGIL to Mattermost channels and direct messages.",
         "docs_url": "https://mattermost.com/deploy/",
         "env_vars": ("MATTERMOST_URL", "MATTERMOST_TOKEN", "MATTERMOST_ALLOWED_USERS"),
         "required_env": ("MATTERMOST_URL", "MATTERMOST_TOKEN"),
     },
     "matrix": {
         "name": "Matrix",
-        "description": "Use Hermes in Matrix rooms and direct messages.",
+        "description": "Use VIGIL in Matrix rooms and direct messages.",
         "docs_url": "https://matrix.org/ecosystem/servers/",
         "env_vars": (
             "MATRIX_HOMESERVER",
@@ -4436,22 +4436,22 @@ _PLATFORM_OVERRIDES: dict[str, dict[str, Any]] = {
     },
     "whatsapp": {
         "name": "WhatsApp",
-        "description": "Use Hermes through the bundled WhatsApp bridge with QR-based auth.",
+        "description": "Use VIGIL through the bundled WhatsApp bridge with QR-based auth.",
         "docs_url": "https://github.com/tulir/whatsmeow",
         "env_vars": ("WHATSAPP_ENABLED", "WHATSAPP_MODE", "WHATSAPP_ALLOWED_USERS"),
         "required_env": (),
     },
     "homeassistant": {
         "name": "Home Assistant",
-        "description": "Control your smart home from Hermes via Home Assistant.",
+        "description": "Control your smart home from VIGIL via Home Assistant.",
         "docs_url": "https://www.home-assistant.io/docs/authentication/",
         "env_vars": ("HASS_URL", "HASS_TOKEN"),
         "required_env": ("HASS_URL", "HASS_TOKEN"),
     },
     "email": {
         "name": "Email",
-        "description": "Talk to Hermes through an IMAP/SMTP mailbox.",
-        "docs_url": "https://hermes-agent.nousresearch.com/docs/user-guide/messaging/",
+        "description": "Talk to VIGIL through an IMAP/SMTP mailbox.",
+        "docs_url": "https://vigil-agent.nousresearch.com/docs/user-guide/messaging/",
         "env_vars": (
             "EMAIL_ADDRESS",
             "EMAIL_PASSWORD",
@@ -4474,14 +4474,14 @@ _PLATFORM_OVERRIDES: dict[str, dict[str, Any]] = {
     },
     "dingtalk": {
         "name": "DingTalk",
-        "description": "Connect Hermes to DingTalk groups (钉钉).",
+        "description": "Connect VIGIL to DingTalk groups (钉钉).",
         "docs_url": "https://open.dingtalk.com/document/orgapp/the-robot-development-process",
         "env_vars": ("DINGTALK_CLIENT_ID", "DINGTALK_CLIENT_SECRET"),
         "required_env": ("DINGTALK_CLIENT_ID", "DINGTALK_CLIENT_SECRET"),
     },
     "feishu": {
         "name": "Feishu / Lark",
-        "description": "Use Hermes inside Feishu / Lark.",
+        "description": "Use VIGIL inside Feishu / Lark.",
         "docs_url": "https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/im-v1/intro",
         "env_vars": (
             "FEISHU_APP_ID",
@@ -4518,13 +4518,13 @@ _PLATFORM_OVERRIDES: dict[str, dict[str, Any]] = {
     "weixin": {
         "name": "Weixin / WeChat (Personal)",
         "description": "Connect a personal WeChat account through Tencent's iLink Bot API.",
-        "docs_url": "https://hermes-agent.nousresearch.com/docs/user-guide/messaging/weixin/",
+        "docs_url": "https://vigil-agent.nousresearch.com/docs/user-guide/messaging/weixin/",
         "env_vars": ("WEIXIN_ACCOUNT_ID", "WEIXIN_TOKEN", "WEIXIN_BASE_URL"),
         "required_env": ("WEIXIN_ACCOUNT_ID", "WEIXIN_TOKEN"),
     },
     "bluebubbles": {
         "name": "BlueBubbles (iMessage)",
-        "description": "Use Hermes through iMessage via a BlueBubbles server.",
+        "description": "Use VIGIL through iMessage via a BlueBubbles server.",
         "docs_url": "https://bluebubbles.app/",
         "env_vars": (
             "BLUEBUBBLES_SERVER_URL",
@@ -4535,21 +4535,21 @@ _PLATFORM_OVERRIDES: dict[str, dict[str, Any]] = {
     },
     "qqbot": {
         "name": "QQ Bot",
-        "description": "Connect Hermes to a QQ Bot from the QQ Open Platform.",
+        "description": "Connect VIGIL to a QQ Bot from the QQ Open Platform.",
         "docs_url": "https://q.qq.com",
         "env_vars": ("QQ_APP_ID", "QQ_CLIENT_SECRET", "QQ_ALLOWED_USERS"),
         "required_env": ("QQ_APP_ID", "QQ_CLIENT_SECRET"),
     },
     "yuanbao": {
         "name": "Yuanbao (元宝)",
-        "description": "Connect Hermes to Tencent Yuanbao.",
+        "description": "Connect VIGIL to Tencent Yuanbao.",
         "docs_url": "",
         "required_env": (),
     },
     "api_server": {
         "name": "API server",
-        "description": "Expose Hermes as an OpenAI-compatible HTTP API for tools like Open WebUI.",
-        "docs_url": "https://hermes-agent.nousresearch.com/docs/user-guide/messaging/",
+        "description": "Expose VIGIL as an OpenAI-compatible HTTP API for tools like Open WebUI.",
+        "docs_url": "https://vigil-agent.nousresearch.com/docs/user-guide/messaging/",
         "env_vars": (
             "API_SERVER_ENABLED",
             "API_SERVER_KEY",
@@ -4562,7 +4562,7 @@ _PLATFORM_OVERRIDES: dict[str, dict[str, Any]] = {
     "webhook": {
         "name": "Webhooks",
         "description": "Receive events from GitHub, GitLab, and other webhook sources.",
-        "docs_url": "https://hermes-agent.nousresearch.com/docs/user-guide/messaging/webhooks/",
+        "docs_url": "https://vigil-agent.nousresearch.com/docs/user-guide/messaging/webhooks/",
         "env_vars": ("WEBHOOK_ENABLED", "WEBHOOK_PORT", "WEBHOOK_SECRET"),
         "required_env": (),
     },
@@ -5041,8 +5041,8 @@ def _write_platform_enabled(platform_id: str, enabled: bool) -> None:
     write_platform_config_field(platform_id, "enabled", enabled)
 
 
-_TELEGRAM_ONBOARDING_DEFAULT_URL = "https://setup.hermes-agent.nousresearch.com"
-_TELEGRAM_ONBOARDING_USER_AGENT = f"HermesDashboard/{__version__}"
+_TELEGRAM_ONBOARDING_DEFAULT_URL = "https://setup.vigil-agent.nousresearch.com"
+_TELEGRAM_ONBOARDING_USER_AGENT = f"VIGILDashboard/{__version__}"
 _TELEGRAM_USER_ID_RE = re.compile(r"^\d+$")
 
 
@@ -5196,7 +5196,7 @@ async def _telegram_onboarding_request(
 
 @app.post("/api/messaging/telegram/onboarding/start")
 async def start_telegram_onboarding(body: TelegramOnboardingStart):
-    bot_name = (body.bot_name or "Hermes Agent").strip() or "Hermes Agent"
+    bot_name = (body.bot_name or "VIGIL Agent").strip() or "VIGIL Agent"
     payload = await _telegram_onboarding_request(
         "POST",
         "/v1/telegram/pairings",
@@ -5310,7 +5310,7 @@ def _restart_gateway_after_telegram_onboarding(profile: Optional[str] = None) ->
     """Best-effort gateway restart after saving Telegram QR onboarding.
 
     The QR flow naturally pulls users into Telegram on another device. If the
-    saved token waits on a separate dashboard restart click, Hermes appears
+    saved token waits on a separate dashboard restart click, VIGIL appears
     broken from the chat side. Keep the config save authoritative, but report
     restart failures so the UI can fall back to the existing manual banner.
     """
@@ -5415,7 +5415,7 @@ async def get_messaging_platforms(profile: Optional[str] = None):
     # Profile-scoped so the dashboard's global profile switcher shows the
     # TARGET profile's channel credentials/state, not the root install's.
     # Inside _profile_scope, load_env()/read_runtime_status()/get_running_pid()
-    # all resolve against the requested profile's HERMES_HOME.
+    # all resolve against the requested profile's VIGIL_HOME.
     with _profile_scope(profile) as scoped_dir:
         env_on_disk = load_env()
         runtime = read_runtime_status()
@@ -5568,7 +5568,7 @@ def _anthropic_oauth_status() -> Dict[str, Any]:
     """Status for the "Anthropic API Key" catalog entry.
 
     Two sources, in priority order:
-    1. ``~/.hermes/.anthropic_oauth.json`` — Hermes-managed PKCE flow (what
+    1. ``~/.vigil/.anthropic_oauth.json`` — VIGIL-managed PKCE flow (what
        this entry's Connect button writes)
     2. ``ANTHROPIC_API_KEY`` → ``ANTHROPIC_TOKEN`` → ``CLAUDE_CODE_OAUTH_TOKEN``
        env vars (registry order) — from ``.env``, the shell, or an external
@@ -5583,11 +5583,11 @@ def _anthropic_oauth_status() -> Dict[str, Any]:
     try:
         from agent.anthropic_adapter import (
             read_hermes_oauth_credentials,
-            _HERMES_OAUTH_FILE,
+            _VIGIL_OAUTH_FILE,
         )
     except ImportError:
         read_hermes_oauth_credentials = None  # type: ignore
-        _HERMES_OAUTH_FILE = None  # type: ignore
+        _VIGIL_OAUTH_FILE = None  # type: ignore
 
     hermes_creds = None
     if read_hermes_oauth_credentials:
@@ -5599,7 +5599,7 @@ def _anthropic_oauth_status() -> Dict[str, Any]:
         return {
             "logged_in": True,
             "source": "hermes_pkce",
-            "source_label": f"Hermes PKCE ({_HERMES_OAUTH_FILE})",
+            "source_label": f"VIGIL PKCE ({_VIGIL_OAUTH_FILE})",
             "token_preview": _truncate_token(hermes_creds.get("accessToken")),
             "expires_at": hermes_creds.get("expiresAt"),
             "has_refresh_token": bool(hermes_creds.get("refreshToken")),
@@ -5642,8 +5642,8 @@ def _claude_code_only_status() -> Dict[str, Any]:
     """Surface Claude Code CLI credentials as their own provider entry.
 
     Independent of the Anthropic entry above so users can see whether their
-    Claude Code subscription tokens are actively flowing into Hermes even
-    when they also have a separate Hermes-managed PKCE login.
+    Claude Code subscription tokens are actively flowing into VIGIL even
+    when they also have a separate VIGIL-managed PKCE login.
     """
     try:
         from agent.anthropic_adapter import read_claude_code_credentials
@@ -5667,7 +5667,7 @@ def _copilot_acp_status() -> Dict[str, Any]:
 
     There is no cheap programmatic credential probe for the ACP subprocess, so
     this is a read-only "managed by the Copilot CLI" card (like claude-code):
-    Hermes never claims a login state it can't verify.
+    VIGIL never claims a login state it can't verify.
     """
     return {
         "logged_in": False,
@@ -5738,7 +5738,7 @@ _OAUTH_PROVIDER_CATALOG: tuple[Dict[str, Any], ...] = (
         # lands back on the loopback listener — no code to copy/paste.
         "flow": "loopback",
         "cli_command": "hermes auth add xai-oauth",
-        "docs_url": "https://hermes-agent.nousresearch.com/docs/guides/xai-grok-oauth",
+        "docs_url": "https://vigil-agent.nousresearch.com/docs/guides/xai-grok-oauth",
         "status_fn": None,  # dispatched via auth.get_xai_oauth_auth_status
     },
     {
@@ -5868,11 +5868,11 @@ def _resolve_provider_status(provider_id: str, status_fn) -> Dict[str, Any]:
 def _oauth_provider_disconnect_command(provider: Dict[str, Any]) -> Optional[str]:
     """Shell command that clears an external provider's credentials.
 
-    External providers store their credentials outside Hermes, so the disconnect
+    External providers store their credentials outside VIGIL, so the disconnect
     API deliberately refuses them (we never delete files another CLI owns on the
     user's behalf via a silent API call). For the ones we know how to clear we
     instead hand the GUI a command it can *run in the embedded terminal* — the
-    user sees exactly what executes, and Hermes then stops resolving the token.
+    user sees exactly what executes, and VIGIL then stops resolving the token.
 
     Claude Code has no scriptable logout (only the interactive ``/logout``), so
     we remove the credential the same way logout does: the macOS Keychain entry
@@ -5896,7 +5896,7 @@ def _oauth_provider_disconnect_hint(provider: Dict[str, Any], status: Dict[str, 
         if _oauth_provider_disconnect_command(provider):
             # The GUI offers a one-click "run in terminal" path; this hint is the
             # fallback wording for surfaces that only show text.
-            return "Managed outside Hermes — run the disconnect command to remove it."
+            return "Managed outside VIGIL — run the disconnect command to remove it."
         return "Managed by that provider's CLI; remove it there."
     if status.get("source") == "env_var":
         return "Remove the API key from Settings → Keys instead."
@@ -6030,15 +6030,15 @@ async def disconnect_oauth_provider(
                 detail=f"{provider['name']} cannot be disconnected automatically. {disconnect_hint}",
             )
 
-        # Anthropic clears only the Hermes-managed PKCE file and auth-store entry.
+        # Anthropic clears only the VIGIL-managed PKCE file and auth-store entry.
         # The separate claude-code catalog row is external/read-only and rejected
         # above so we never pretend to remove ~/.claude/* credentials owned by the CLI.
         if provider_id == "anthropic":
             cleared = False
             try:
-                from agent.anthropic_adapter import _HERMES_OAUTH_FILE
-                if _HERMES_OAUTH_FILE.exists():
-                    _HERMES_OAUTH_FILE.unlink()
+                from agent.anthropic_adapter import _VIGIL_OAUTH_FILE
+                if _VIGIL_OAUTH_FILE.exists():
+                    _VIGIL_OAUTH_FILE.unlink()
                     cleared = True
             except Exception:
                 pass
@@ -6077,7 +6077,7 @@ async def disconnect_oauth_provider(
 #     2. UI opens auth_url in a new tab. User authorizes, copies code.
 #     3. POST /api/providers/oauth/anthropic/submit { session_id, code }
 #          → server exchanges (code + verifier) → tokens at console.anthropic.com
-#          → persists to ~/.hermes/.anthropic_oauth.json AND credential pool
+#          → persists to ~/.vigil/.anthropic_oauth.json AND credential pool
 #          → returns { ok: true, status: "approved" }
 #
 #   Device code (Nous, OpenAI Codex):
@@ -6190,29 +6190,29 @@ def _oauth_session_profile(
 
 
 def _save_anthropic_oauth_creds(access_token: str, refresh_token: str, expires_at_ms: int) -> None:
-    """Persist Anthropic PKCE creds to both Hermes file AND credential pool.
+    """Persist Anthropic PKCE creds to both VIGIL file AND credential pool.
 
     Mirrors what auth_commands.add_command does so the dashboard flow leaves
     the system in the same state as ``hermes auth add anthropic``.
     """
-    from agent.anthropic_adapter import _HERMES_OAUTH_FILE
+    from agent.anthropic_adapter import _VIGIL_OAUTH_FILE
     payload = {
         "accessToken": access_token,
         "refreshToken": refresh_token,
         "expiresAt": expires_at_ms,
     }
-    _HERMES_OAUTH_FILE.parent.mkdir(parents=True, exist_ok=True)
-    tmp_path = _HERMES_OAUTH_FILE.with_name(
-        f"{_HERMES_OAUTH_FILE.name}.tmp.{os.getpid()}.{secrets.token_hex(8)}"
+    _VIGIL_OAUTH_FILE.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = _VIGIL_OAUTH_FILE.with_name(
+        f"{_VIGIL_OAUTH_FILE.name}.tmp.{os.getpid()}.{secrets.token_hex(8)}"
     )
     try:
         with tmp_path.open("w", encoding="utf-8") as handle:
             handle.write(json.dumps(payload, indent=2))
             handle.flush()
             os.fsync(handle.fileno())
-        os.replace(tmp_path, _HERMES_OAUTH_FILE)
+        os.replace(tmp_path, _VIGIL_OAUTH_FILE)
         try:
-            _HERMES_OAUTH_FILE.chmod(stat.S_IRUSR | stat.S_IWUSR)
+            _VIGIL_OAUTH_FILE.chmod(stat.S_IRUSR | stat.S_IWUSR)
         except OSError:
             pass
     finally:
@@ -6381,7 +6381,7 @@ async def _start_device_code_flow(
         import httpx
         pconfig = PROVIDER_REGISTRY["nous"]
         portal_base_url = (
-            os.getenv("HERMES_PORTAL_BASE_URL")
+            os.getenv("VIGIL_PORTAL_BASE_URL")
             or os.getenv("NOUS_PORTAL_BASE_URL")
             or pconfig.portal_base_url
         ).rstrip("/")
@@ -6676,7 +6676,7 @@ def _xai_loopback_worker(session_id: str) -> None:
             _fail("xAI token exchange did not return the expected tokens.")
             return
         base_url = hauth._xai_validate_inference_base_url(
-            os.getenv("HERMES_XAI_BASE_URL", "").strip().rstrip("/")
+            os.getenv("VIGIL_XAI_BASE_URL", "").strip().rstrip("/")
             or os.getenv("XAI_BASE_URL", "").strip().rstrip("/"),
             fallback=hauth.DEFAULT_XAI_OAUTH_BASE_URL,
         )
@@ -7629,7 +7629,7 @@ def _cron_profile_dicts() -> List[Dict[str, Any]]:
 
 
 def _cron_profile_home(profile: Optional[str]) -> Tuple[str, Path]:
-    """Resolve a profile query value to (profile_name, HERMES_HOME)."""
+    """Resolve a profile query value to (profile_name, VIGIL_HOME)."""
     from hermes_cli import profiles as profiles_mod
 
     raw = (profile or "default").strip() or "default"
@@ -7656,7 +7656,7 @@ def _call_cron_for_profile(profile: Optional[str], func_name: str, *args, **kwar
     """Run cron.jobs helpers against the selected profile's cron directory.
 
     cron.jobs keeps CRON_DIR/JOBS_FILE/OUTPUT_DIR as module globals resolved
-    from the process HERMES_HOME at import time. The dashboard is a single
+    from the process VIGIL_HOME at import time. The dashboard is a single
     process that can inspect many profiles, so temporarily retarget those
     globals while holding a lock and restore them immediately after the call.
     """
@@ -8169,7 +8169,7 @@ async def test_mcp_server(name: str, profile: Optional[str] = None):
         # keeps the lock-protected SKILLS_DIR swap balanced per-thread.)
         # The probe's dedicated MCP event-loop thread is covered too:
         # _run_on_mcp_loop wraps scheduled coroutines with the caller's
-        # HERMES_HOME override (see mcp_tool._wrap_with_home_override), so
+        # VIGIL_HOME override (see mcp_tool._wrap_with_home_override), so
         # OAuth token stores resolve against the selected profile as well.
         with _profile_scope(profile):
             return _probe_single_server(name, servers[name])
@@ -8329,7 +8329,7 @@ async def install_mcp_catalog_entry(body: MCPCatalogInstall, profile: Optional[s
 
     # Git-bootstrap entries can take a while to clone — run via the background
     # action path so the request returns immediately and the UI can tail logs.
-    # The -p subprocess rebinds HERMES_HOME-derived paths in the child.
+    # The -p subprocess rebinds VIGIL_HOME-derived paths in the child.
     if entry.install is not None:
         try:
             proc = _spawn_hermes_action(
@@ -9242,7 +9242,7 @@ async def update_skills_hub(
 # provenance).  Keep in sync with create_source_router()'s source list.
 _SKILL_HUB_SOURCE_LABELS = {
     "official": "Official (Nous)",
-    "hermes-index": "Hermes Index",
+    "hermes-index": "VIGIL Index",
     "skills-sh": "skills.sh",
     "well-known": "Well-Known",
     "url": "Direct URL",
@@ -9588,7 +9588,7 @@ class ProfileCreate(BaseModel):
     keep_skills: List[str] = []
     # Skills-hub identifiers to install into the new profile. Installed async
     # via a subprocess scoped to the profile (`hermes -p <name> skills install`)
-    # because skills_hub.SKILLS_DIR is import-time-bound and the HERMES_HOME
+    # because skills_hub.SKILLS_DIR is import-time-bound and the VIGIL_HOME
     # override can't redirect it. Returns spawned PIDs for the UI to poll.
     hub_skills: List[str] = []
 
@@ -9720,7 +9720,7 @@ def _write_profile_model(profile_dir: Path, provider: str, model: str) -> None:
     """Write the main model assignment into a specific profile's config.yaml.
 
     Scopes ``load_config``/``save_config`` to ``profile_dir`` via the
-    context-local HERMES_HOME override so the write lands in the target
+    context-local VIGIL_HOME override so the write lands in the target
     profile's config rather than the dashboard process's active profile.
     Clears any stale ``base_url`` / ``context_length`` the same way
     ``POST /api/model/set`` does, since the new model may differ.
@@ -9741,7 +9741,7 @@ def _write_profile_mcp_servers(profile_dir: Path, servers: List["MCPServerCreate
     """Write MCP server entries into a specific profile's config.yaml.
 
     Scopes ``load_config``/``save_config`` to ``profile_dir`` via the
-    context-local HERMES_HOME override (same mechanism as
+    context-local VIGIL_HOME override (same mechanism as
     ``_write_profile_model``) so the entries land in the target profile's
     config rather than the dashboard process's active profile.
 
@@ -9802,7 +9802,7 @@ def _disable_unselected_skills(profile_dir: Path, keep: List[str]) -> int:
     uses "replace" semantics: the user picks exactly which seeded built-in /
     optional skills stay active, and everything else gets added to the disabled
     list. (Hub skills are installed separately via subprocess and are active on
-    install.) Scoped to the profile via the HERMES_HOME override. Returns the
+    install.) Scoped to the profile via the VIGIL_HOME override. Returns the
     number of skills newly disabled.
     """
     from hermes_constants import set_hermes_home_override, reset_hermes_home_override
@@ -9922,7 +9922,7 @@ async def create_profile_endpoint(body: ProfileCreate):
 
     # Optional skills-hub installs. Spawned async, scoped to the new profile
     # via `-p <name>` (a fresh subprocess re-binds skills_hub.SKILLS_DIR to the
-    # profile's HERMES_HOME at import). Returns PIDs for the UI to poll.
+    # profile's VIGIL_HOME at import). Returns PIDs for the UI to poll.
     hub_installs: List[Dict[str, Any]] = []
     for identifier in body.hub_skills:
         ident = (identifier or "").strip()
@@ -9960,7 +9960,7 @@ async def get_active_profile_endpoint():
 
     ``active`` is the sticky default written by ``hermes profile use`` —
     the profile new CLI invocations pick up. ``current`` is the profile
-    the running dashboard/gateway is scoped to (derived from HERMES_HOME).
+    the running dashboard/gateway is scoped to (derived from VIGIL_HOME).
     """
     from hermes_cli import profiles as profiles_mod
     try:
@@ -10136,7 +10136,7 @@ async def update_profile_model_endpoint(name: str, body: ProfileModelUpdate):
     """Set the main model (``model.default`` + ``model.provider``) for a
     specific profile's config.yaml, without touching the dashboard's own
     active profile. Mirrors ``POST /api/model/set`` (main scope) but scoped
-    to the named profile via the HERMES_HOME override.
+    to the named profile via the VIGIL_HOME override.
     """
     profile_dir = _resolve_profile_dir(name)
     provider = (body.provider or "").strip()
@@ -10214,7 +10214,7 @@ def _profile_scope(profile: Optional[str]):
     config resolution is untouched, but the skill-module globals are still
     retargeted to the *current* ``get_hermes_home()`` so writes land in the
     live home even when the import-time binding is stale (e.g. the process
-    imported the modules before a HERMES_HOME override, or under test
+    imported the modules before a VIGIL_HOME override, or under test
     isolation).
     """
     requested = (profile or "").strip()
@@ -10235,20 +10235,20 @@ def _profile_scope(profile: Optional[str]):
         token = set_hermes_home_override(str(profile_dir))
 
     with _SKILLS_PROFILE_LOCK:
-        old_home = _skills_tool.HERMES_HOME
+        old_home = _skills_tool.VIGIL_HOME
         old_skills_dir = _skills_tool.SKILLS_DIR
-        old_mgr_home = _skill_mgr.HERMES_HOME
+        old_mgr_home = _skill_mgr.VIGIL_HOME
         old_mgr_skills_dir = _skill_mgr.SKILLS_DIR
-        _skills_tool.HERMES_HOME = profile_dir
+        _skills_tool.VIGIL_HOME = profile_dir
         _skills_tool.SKILLS_DIR = profile_dir / "skills"
-        _skill_mgr.HERMES_HOME = profile_dir
+        _skill_mgr.VIGIL_HOME = profile_dir
         _skill_mgr.SKILLS_DIR = profile_dir / "skills"
         try:
             yield profile_dir if token is not None else None
         finally:
-            _skills_tool.HERMES_HOME = old_home
+            _skills_tool.VIGIL_HOME = old_home
             _skills_tool.SKILLS_DIR = old_skills_dir
-            _skill_mgr.HERMES_HOME = old_mgr_home
+            _skill_mgr.VIGIL_HOME = old_mgr_home
             _skill_mgr.SKILLS_DIR = old_mgr_skills_dir
             if token is not None:
                 reset_hermes_home_override(token)
@@ -10581,7 +10581,7 @@ class ToolsetEnvUpdate(BaseModel):
 async def save_toolset_env(name: str, body: ToolsetEnvUpdate, profile: Optional[str] = None):
     """Persist API keys for a toolset's provider env vars.
 
-    Writes each ``key: value`` to ``~/.hermes/.env`` via ``save_env_value`` —
+    Writes each ``key: value`` to ``~/.vigil/.env`` via ``save_env_value`` —
     the same store ``hermes tools`` writes when it prompts for keys. Keys are
     validated against the env-var allowlist for the toolset's category (the
     union of every visible provider's ``env_vars``), so the GUI can't write an
@@ -10654,7 +10654,7 @@ async def run_toolset_post_setup(
     ``profile`` spawns the hook as ``hermes -p <profile> tools post-setup``.
     Most hooks install machine-level artifacts (repo node_modules, shared
     pip packages) where the scope is inert, but hooks that read config or
-    write per-profile state must see the same HERMES_HOME the rest of the
+    write per-profile state must see the same VIGIL_HOME the rest of the
     drawer's writes targeted — so the scope is threaded for consistency.
     """
     from hermes_cli.tools_config import (
@@ -10692,7 +10692,7 @@ async def run_toolset_post_setup(
 #
 # cua-driver runs on macOS, Windows, and Linux. The desktop card reflects
 # per-OS readiness: on macOS the Accessibility + Screen Recording TCC grants
-# (which attach to cua-driver's OWN identity, com.trycua.driver — not Hermes,
+# (which attach to cua-driver's OWN identity, com.trycua.driver — not VIGIL,
 # so no app entitlement is involved); elsewhere, driver health from
 # `cua-driver doctor`. The grant flow is macOS-only (no TCC toggles to request
 # on Windows/Linux).
@@ -11303,26 +11303,26 @@ def _resolve_chat_argv(
     function to inject a tiny fake command (``cat``, ``sh -c 'printf …'``)
     so nothing has to build Node or the TUI bundle.
 
-    Session resume is propagated via the ``HERMES_TUI_RESUME`` env var —
+    Session resume is propagated via the ``VIGIL_TUI_RESUME`` env var —
     matching what ``hermes_cli.main._launch_tui`` does for the CLI path.
     Appending ``--resume <id>`` to argv doesn't work because ``ui-tui`` does
     not parse its argv.
 
-    ``HERMES_TUI_GATEWAY_URL`` is injected so the PTY child can attach to
+    ``VIGIL_TUI_GATEWAY_URL`` is injected so the PTY child can attach to
     this process's in-memory ``tui_gateway`` instance instead of spawning
     its own Python gateway subprocess.
 
-    `sidecar_url` (when set) is forwarded as ``HERMES_TUI_SIDECAR_URL`` so
+    `sidecar_url` (when set) is forwarded as ``VIGIL_TUI_SIDECAR_URL`` so
     the spawned ``tui_gateway.entry`` can mirror dispatcher emits to the
     dashboard's ``/api/pub`` endpoint (see :func:`pub_ws`).
 
     `profile` (when set) scopes the ENTIRE chat to that profile by pointing
-    ``HERMES_HOME`` at the profile dir in the child env. Every spawned
+    ``VIGIL_HOME`` at the profile dir in the child env. Every spawned
     process (the TUI and the ``tui_gateway.entry`` it launches) resolves
     ``get_hermes_home()`` from that env var at its own import, so the child
     binds the profile's config, skills, memory, and state.db from the start
     — the same propagation ``hermes -p <name>`` performs. The in-process
-    ``HERMES_TUI_GATEWAY_URL`` attach is SKIPPED for scoped chats: the
+    ``VIGIL_TUI_GATEWAY_URL`` attach is SKIPPED for scoped chats: the
     dashboard's in-memory gateway runs under the dashboard's own profile,
     so a profile-scoped chat must spawn its own gateway subprocess.
     """
@@ -11347,29 +11347,29 @@ def _resolve_chat_argv(
     # makes browser-side transcript scrolling feel broken. Keep the terminal
     # build unchanged for native CLI usage; only disable mouse tracking for
     # the dashboard PTY path.
-    env.setdefault("HERMES_TUI_DISABLE_MOUSE", "1")
-    env.setdefault("HERMES_TUI_INLINE", "1")
-    env["HERMES_TUI_DASHBOARD"] = "1"
+    env.setdefault("VIGIL_TUI_DISABLE_MOUSE", "1")
+    env.setdefault("VIGIL_TUI_INLINE", "1")
+    env["VIGIL_TUI_DASHBOARD"] = "1"
 
     if profile_dir is not None:
-        env["HERMES_HOME"] = str(profile_dir)
+        env["VIGIL_HOME"] = str(profile_dir)
 
     if resume:
         latest_resume, _latest_path = _session_latest_descendant(resume)
         if latest_resume:
             resume = latest_resume
-        env["HERMES_TUI_RESUME"] = resume
+        env["VIGIL_TUI_RESUME"] = resume
 
     if sidecar_url:
-        env["HERMES_TUI_SIDECAR_URL"] = sidecar_url
+        env["VIGIL_TUI_SIDECAR_URL"] = sidecar_url
 
     # Profile-scoped chats must NOT attach to the dashboard's in-memory
     # gateway — it runs under the dashboard's own profile. Without the
     # attach URL, gatewayClient spawns its own `tui_gateway.entry`, which
-    # inherits the profile HERMES_HOME set above.
+    # inherits the profile VIGIL_HOME set above.
     if profile_dir is None:
         if gateway_ws_url := _build_gateway_ws_url():
-            env["HERMES_TUI_GATEWAY_URL"] = gateway_ws_url
+            env["VIGIL_TUI_GATEWAY_URL"] = gateway_ws_url
 
     return list(argv), str(cwd) if cwd else None, env
 
@@ -11548,7 +11548,7 @@ async def pty_ws(ws: WebSocket) -> None:
         await ws.send_text(
             "\r\n\x1b[31mChat unavailable: the embedded terminal requires a "
             "POSIX PTY, which native Windows Python doesn't provide.\x1b[0m\r\n"
-            "\x1b[33mInstall Hermes inside WSL2 to use the dashboard's /chat "
+            "\x1b[33mInstall VIGIL inside WSL2 to use the dashboard's /chat "
             "tab — the rest of the dashboard works here.\x1b[0m\r\n"
         )
         await ws.close(code=1011)
@@ -11675,7 +11675,7 @@ async def gateway_ws(ws: WebSocket) -> None:
 # /api/pub + /api/events — chat-tab event broadcast.
 #
 # The PTY-side ``tui_gateway.entry`` opens /api/pub at startup (driven by
-# HERMES_TUI_SIDECAR_URL set in /api/pty's PTY env) and writes every
+# VIGIL_TUI_SIDECAR_URL set in /api/pty's PTY env) and writes every
 # dispatcher emit through it.  The dashboard fans those frames out to any
 # subscriber that opened /api/events on the same channel id.  This is what
 # gives the React sidebar its tool-call feed without breaking the PTY
@@ -11775,10 +11775,10 @@ def mount_spa(application: FastAPI):
     separate (unauthenticated) token-dispensing endpoint.
 
     When served behind a path-prefix reverse proxy (e.g.
-    ``mission-control.tilos.com/hermes/*`` -> local Caddy -> :9119), the
+    ``mission-control.tilos.com/vigil/*`` -> local Caddy -> :9119), the
     proxy injects ``X-Forwarded-Prefix: /hermes`` on every request. We
     rewrite the served ``index.html`` so absolute asset URLs (``/assets/...``)
-    and the SPA's runtime ``__HERMES_BASE_PATH__`` honour that prefix
+    and the SPA's runtime ``__VIGIL_BASE_PATH__`` honour that prefix
     without rebuilding the bundle.
     """
     if not WEB_DIST.exists():
@@ -11801,7 +11801,7 @@ def mount_spa(application: FastAPI):
         When the OAuth auth gate is active (``app.state.auth_required``),
         the legacy ``_SESSION_TOKEN`` is NOT injected — the SPA reads
         identity from ``/api/auth/me`` over cookie auth instead.  The
-        ``__HERMES_AUTH_REQUIRED__`` flag lets the SPA pick the right
+        ``__VIGIL_AUTH_REQUIRED__`` flag lets the SPA pick the right
         auth scheme for /api/pty and /api/ws (ticket vs token).
         """
         html = _index_path.read_text(encoding="utf-8")
@@ -11811,17 +11811,17 @@ def mount_spa(application: FastAPI):
         if gated:
             bootstrap_script = (
                 f"<script>"
-                f"window.__HERMES_DASHBOARD_EMBEDDED_CHAT__={chat_js};"
-                f'window.__HERMES_BASE_PATH__="{prefix}";'
-                f"window.__HERMES_AUTH_REQUIRED__={gated_js};"
+                f"window.__VIGIL_DASHBOARD_EMBEDDED_CHAT__={chat_js};"
+                f'window.__VIGIL_BASE_PATH__="{prefix}";'
+                f"window.__VIGIL_AUTH_REQUIRED__={gated_js};"
                 f"</script>"
             )
         else:
             bootstrap_script = (
-                f'<script>window.__HERMES_SESSION_TOKEN__="{_SESSION_TOKEN}";'
-                f"window.__HERMES_DASHBOARD_EMBEDDED_CHAT__={chat_js};"
-                f'window.__HERMES_BASE_PATH__="{prefix}";'
-                f"window.__HERMES_AUTH_REQUIRED__={gated_js};"
+                f'<script>window.__VIGIL_SESSION_TOKEN__="{_SESSION_TOKEN}";'
+                f"window.__VIGIL_DASHBOARD_EMBEDDED_CHAT__={chat_js};"
+                f'window.__VIGIL_BASE_PATH__="{prefix}";'
+                f"window.__VIGIL_AUTH_REQUIRED__={gated_js};"
                 f"</script>"
             )
         if prefix:
@@ -11843,7 +11843,7 @@ def mount_spa(application: FastAPI):
     # absolute ``url(/fonts/...)`` and ``url(/ds-assets/...)`` references.
     # Browsers resolve those against the document origin, which means
     # under ``/hermes`` they'd hit ``mission-control.tilos.com/fonts/...``
-    # (the MC Pages app), not the Hermes backend. Intercept CSS asset
+    # (the MC Pages app), not the VIGIL backend. Intercept CSS asset
     # requests BEFORE the StaticFiles mount and rewrite the absolute paths
     # when a prefix is in play.
     @application.get("/assets/{filename}.css")
@@ -11897,8 +11897,8 @@ def mount_spa(application: FastAPI):
 # Built-in dashboard themes — label + description only.  The actual color
 # definitions live in the frontend (web/src/themes/presets.ts).
 _BUILTIN_DASHBOARD_THEMES = [
-    {"name": "default",       "label": "Hermes Teal",         "description": "Classic dark teal — the canonical Hermes look"},
-    {"name": "default-large", "label": "Hermes Teal (Large)", "description": "Hermes Teal with bigger fonts and roomier spacing"},
+    {"name": "default",       "label": "VIGIL Signal",         "description": "Classic dark teal — the canonical VIGIL look"},
+    {"name": "default-large", "label": "VIGIL Signal (Large)", "description": "VIGIL Signal with bigger fonts and roomier spacing"},
     {"name": "nous-blue",     "label": "Nous Blue",           "description": "Light mode — vivid Nous-blue accents on cream canvas"},
     {"name": "midnight",      "label": "Midnight",            "description": "Deep blue-violet with cool accents"},
     {"name": "ember",     "label": "Ember",          "description": "Warm crimson and bronze — forge vibes"},
@@ -12068,7 +12068,7 @@ def _normalise_theme_definition(data: Dict[str, Any]) -> Optional[Dict[str, Any]
     # tag on theme apply.  Clipped to _THEME_CUSTOM_CSS_MAX to keep the
     # payload bounded.  We intentionally do NOT parse/sanitise the CSS
     # here — the dashboard is localhost-only and themes are user-authored
-    # YAML in ~/.hermes/, same trust level as the config file itself.
+    # YAML in ~/.vigil/, same trust level as the config file itself.
     custom_css_val = data.get("customCSS")
     custom_css: Optional[str] = None
     if isinstance(custom_css_val, str) and custom_css_val.strip():
@@ -12123,7 +12123,7 @@ def _normalise_theme_definition(data: Dict[str, Any]) -> Optional[Dict[str, Any]
 
 
 def _discover_user_themes() -> list:
-    """Scan ~/.hermes/dashboard-themes/*.yaml for user-created themes.
+    """Scan ~/.vigil/dashboard-themes/*.yaml for user-created themes.
 
     Returns a list of fully-normalised theme definitions ready to ship
     to the frontend, so the client can apply them without a secondary
@@ -12150,7 +12150,7 @@ async def get_dashboard_themes():
 
     Built-in entries ship name/label/description only (the frontend owns
     their full definitions in `web/src/themes/presets.ts`).  User themes
-    from `~/.hermes/dashboard-themes/*.yaml` ship with their full
+    from `~/.vigil/dashboard-themes/*.yaml` ship with their full
     normalised definition under `definition`, so the client can apply
     them without a stub.
     """
@@ -12281,9 +12281,9 @@ def _discover_dashboard_plugins() -> list:
     """Scan plugins/*/dashboard/manifest.json for dashboard extensions.
 
     Checks three plugin sources (same as hermes_cli.plugins):
-    1. User plugins:    ~/.hermes/plugins/<name>/dashboard/manifest.json
+    1. User plugins:    ~/.vigil/plugins/<name>/dashboard/manifest.json
     2. Bundled plugins: <repo>/plugins/<name>/dashboard/manifest.json  (memory/, etc.)
-    3. Project plugins: ./.hermes/plugins/  (only if HERMES_ENABLE_PROJECT_PLUGINS)
+    3. Project plugins: ./.vigil/plugins/  (only if VIGIL_ENABLE_PROJECT_PLUGINS)
     """
     plugins = []
     seen_names: set = set()
@@ -12304,8 +12304,8 @@ def _discover_dashboard_plugins() -> list:
     # opt-in into a sticky always-on switch.  Use the shared truthy
     # semantics (``1`` / ``true`` / ``yes`` / ``on``) so the gate matches
     # ``hermes_cli/plugins.py`` and the documented user contract.
-    if env_var_enabled("HERMES_ENABLE_PROJECT_PLUGINS"):
-        search_dirs.append((Path.cwd() / ".hermes" / "plugins", "project"))
+    if env_var_enabled("VIGIL_ENABLE_PROJECT_PLUGINS"):
+        search_dirs.append((Path.cwd() / ".vigil" / "plugins", "project"))
 
     for plugins_root, source in search_dirs:
         if not plugins_root.is_dir():
@@ -12763,7 +12763,7 @@ def _mount_plugin_api_routes():
     ``/api/plugins/<name>/``.
 
     Backend import is restricted to ``bundled`` and ``user`` sources.
-    Project plugins (``./.hermes/plugins/``) ship with the CWD and are
+    Project plugins (``./.vigil/plugins/``) ship with the CWD and are
     therefore attacker-controlled in any threat model where the user
     opens a malicious repo; they can extend the dashboard UI via
     static JS/CSS but their Python ``api`` file is never auto-imported
@@ -12777,7 +12777,7 @@ def _mount_plugin_api_routes():
             _log.warning(
                 "Plugin %s: ignoring backend api=%s (project plugins may "
                 "not auto-import Python code; move the plugin to "
-                "~/.hermes/plugins/ if you trust it)",
+                "~/.vigil/plugins/ if you trust it)",
                 plugin["name"], api_file_name,
             )
             continue
@@ -12946,8 +12946,8 @@ def start_server(
         from hermes_cli.dashboard_auth import list_providers
         if not list_providers():
             # Surface the *specific* reason any bundled provider declined
-            # to register (e.g. missing HERMES_DASHBOARD_OAUTH_CLIENT_ID).
-            # Each provider plugin that ships with Hermes Agent exposes a
+            # to register (e.g. missing VIGIL_DASHBOARD_OAUTH_CLIENT_ID).
+            # Each provider plugin that ships with VIGIL Agent exposes a
             # module-level ``LAST_SKIP_REASON`` string for this purpose;
             # without it the operator would only see "no providers" which
             # is misleading when the provider IS installed but unconfigured.
@@ -13003,7 +13003,7 @@ def start_server(
     # We use uvicorn.Server directly (not uvicorn.run) so we can split
     # startup from the main loop.  After startup() the socket is actually
     # bound — we read the OS-assigned port from the live socket, print
-    # HERMES_DASHBOARD_READY, open the browser, *then* serve.
+    # VIGIL_DASHBOARD_READY, open the browser, *then* serve.
     #
     # This eliminates the TOCTOU of the old pre-bind-then-close approach
     # (bind port 0 → close → uvicorn rebind): the socket is held by
@@ -13045,8 +13045,8 @@ def start_server(
             actual_port = _read_bound_port(server, fallback=port)
             app.state.bound_port = actual_port
 
-            print(f"HERMES_DASHBOARD_READY port={actual_port}", flush=True)
-            print(f"  Hermes Web UI → http://{host}:{actual_port}")
+            print(f"VIGIL_DASHBOARD_READY port={actual_port}", flush=True)
+            print(f"  VIGIL Web UI → http://{host}:{actual_port}")
             _maybe_open_browser(host, actual_port, open_browser, initial_profile)
 
             await server.main_loop()

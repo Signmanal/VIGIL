@@ -51,7 +51,7 @@ def test_loopback_protected_route_accepts_session_token(client_loopback):
     """The injected SPA token unlocks protected /api/ routes."""
     r = client_loopback.get(
         "/api/sessions",
-        headers={"X-Hermes-Session-Token": web_server._SESSION_TOKEN},
+        headers={"X-VIGIL-Session-Token": web_server._SESSION_TOKEN},
     )
     # 200 or 404 (no sessions yet) both prove the auth layer let it through.
     # 500 is also acceptable if there's a downstream issue unrelated to auth.
@@ -69,7 +69,7 @@ def test_loopback_index_injects_session_token(client_loopback):
     r = client_loopback.get("/")
     if r.status_code == 404:
         pytest.skip("WEB_DIST not built in this env")
-    assert "__HERMES_SESSION_TOKEN__" in r.text
+    assert "__VIGIL_SESSION_TOKEN__" in r.text
 
 
 def test_loopback_host_header_validation_still_enforced(client_loopback):
@@ -95,7 +95,7 @@ def test_loopback_host_header_validation_still_enforced(client_loopback):
     ("192.168.1.5", False, True),
     ("10.0.0.1",  True,  True),     # allow_public ignored — LAN IP is public
     ("100.64.0.1", False, True),    # Tailscale CGNAT — treated as public
-    ("hermes-agent-prod-abc.fly.dev", False, True),
+    ("vigil-agent-prod-abc.fly.dev", False, True),
 ])
 def test_should_require_auth_truth_table(host, allow_public, expected):
     from hermes_cli.web_server import should_require_auth
@@ -228,7 +228,7 @@ def test_start_server_gate_with_provider_proceeds_and_sets_proxy_headers(monkeyp
     from Fly's TLS terminator is honoured for cookie Secure-flag decisions.
     """
     from hermes_cli.dashboard_auth import clear_providers, register_provider
-    from tests.hermes_cli.conftest_dashboard_auth import StubAuthProvider
+    from tests.vigil_cli.conftest_dashboard_auth import StubAuthProvider
 
     clear_providers()
     register_provider(StubAuthProvider())
@@ -264,18 +264,18 @@ def test_start_server_surfaces_nous_skip_reason_when_unconfigured(monkeypatch):
     """When the bundled Nous plugin loaded but skipped registration (no
     env vars set), the gate's fail-closed message should surface the
     plugin's LAST_SKIP_REASON so the operator knows the config fix is
-    'set HERMES_DASHBOARD_OAUTH_CLIENT_ID', not 'install a plugin'."""
+    'set VIGIL_DASHBOARD_OAUTH_CLIENT_ID', not 'install a plugin'."""
     from hermes_cli.dashboard_auth import clear_providers
     from plugins.dashboard_auth import nous as nous_plugin
 
     # Simulate the plugin running and skipping for "no client_id".
     clear_providers()
     _stub_uvicorn_run(monkeypatch)
-    monkeypatch.delenv("HERMES_DASHBOARD_OAUTH_CLIENT_ID", raising=False)
-    monkeypatch.delenv("HERMES_DASHBOARD_PORTAL_URL", raising=False)
+    monkeypatch.delenv("VIGIL_DASHBOARD_OAUTH_CLIENT_ID", raising=False)
+    monkeypatch.delenv("VIGIL_DASHBOARD_PORTAL_URL", raising=False)
     from unittest.mock import MagicMock
     nous_plugin.register(MagicMock())  # populates LAST_SKIP_REASON
-    assert "HERMES_DASHBOARD_OAUTH_CLIENT_ID" in nous_plugin.LAST_SKIP_REASON
+    assert "VIGIL_DASHBOARD_OAUTH_CLIENT_ID" in nous_plugin.LAST_SKIP_REASON
 
     web_server.app.state.auth_required = None
     with pytest.raises(SystemExit) as exc_info:
@@ -286,7 +286,7 @@ def test_start_server_surfaces_nous_skip_reason_when_unconfigured(monkeypatch):
     # The error message embeds the plugin's specific skip reason rather
     # than the generic "Install the default Nous provider" boilerplate.
     msg = str(exc_info.value)
-    assert "HERMES_DASHBOARD_OAUTH_CLIENT_ID" in msg
+    assert "VIGIL_DASHBOARD_OAUTH_CLIENT_ID" in msg
     assert "nous:" in msg
 
 

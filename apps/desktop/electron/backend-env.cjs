@@ -67,7 +67,7 @@ function buildDesktopBackendPath({
   )
 }
 
-function normalizeHermesHomeRoot(hermesHome, { pathModule = pathModuleForPlatform(process.platform) } = {}) {
+function normalizeVIGILHomeRoot(hermesHome, { pathModule = pathModuleForPlatform(process.platform) } = {}) {
   if (!hermesHome) return hermesHome
   const resolved = pathModule.resolve(String(hermesHome))
   const parent = pathModule.dirname(resolved)
@@ -107,6 +107,6 @@ module.exports = {
   buildDesktopBackendEnv,
   buildDesktopBackendPath,
   delimiterForPlatform,
-  normalizeHermesHomeRoot,
+  normalizeVIGILHomeRoot,
   pathEnvKey
 }

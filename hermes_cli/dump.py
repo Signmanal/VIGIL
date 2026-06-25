@@ -1,7 +1,7 @@
 """
 Dump command for hermes CLI.
 
-Outputs a compact, plain-text summary of the user's Hermes setup
+Outputs a compact, plain-text summary of the user's VIGIL setup
 that can be copy-pasted into Discord/GitHub/Telegram for support context.
 No ANSI colors, no checkmarks — just data.
 """
@@ -25,8 +25,8 @@ def _get_git_commit(project_root: Path) -> str:
     Source installs and dev images resolve this live via ``git rev-parse``.
     The published Docker image excludes ``.git`` from the build context, so
     that lookup always fails — we fall back to the baked-in build SHA written
-    to ``<project_root>/.hermes_build_sha`` by the Dockerfile's
-    ``HERMES_GIT_SHA`` build-arg (see ``hermes_cli/build_info.py``).
+    to ``<project_root>/.vigil_build_sha`` by the Dockerfile's
+    ``VIGIL_GIT_SHA`` build-arg (see ``hermes_cli/build_info.py``).
     The output format is identical regardless of source.
     """
     try:

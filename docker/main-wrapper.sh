@@ -1,12 +1,12 @@
 #!/command/with-contenv sh
 # shellcheck shell=sh
-# /opt/hermes/docker/main-wrapper.sh — wraps the container's CMD with
+# /opt/vigil/docker/main-wrapper.sh — wraps the container's CMD with
 # the same argument-routing logic the pre-s6 entrypoint.sh used. Runs
 # as /init's "main program" (Docker CMD) so it inherits stdin/stdout/
 # stderr from the container.
 #
 # Shebang note: /init scrubs env before invoking CMD, so a plain
-# `#!/bin/sh` wrapper sees an empty environ and `ENV HERMES_HOME=/opt/data`
+# `#!/bin/sh` wrapper sees an empty environ and `ENV VIGIL_HOME=/opt/data`
 # from the Dockerfile never reaches `hermes`. with-contenv repopulates
 # the env from /run/s6/container_environment before exec'ing, which is
 # what s6-supervised services use too (see main-hermes/run).
@@ -36,7 +36,7 @@ if [ "$cur_uid" != 0 ] && [ "$cur_uid" != "$(id -u hermes)" ]; then
 To make container-written files match your HOST user, don't use --user.
 Start as root (the default) and pass your host UID/GID instead:
 
-    docker run -e HERMES_UID=\$(id -u) -e HERMES_GID=\$(id -g) ...
+    docker run -e VIGIL_UID=\$(id -u) -e VIGIL_GID=\$(id -g) ...
 
 NAS users (Synology / unRAID / UGOS) can use the PUID/PGID aliases:
 
@@ -58,11 +58,11 @@ export HOME=/opt/data
 # Save the Docker -w (or default) working directory before init
 # scripts cd to /opt/data, so the container starts in the
 # directory the user requested.
-_hermes_orig_cwd="${HERMES_ORIG_CWD:-$PWD}"
+_hermes_orig_cwd="${VIGIL_ORIG_CWD:-$PWD}"
 
 cd /opt/data
 # shellcheck disable=SC1091
-. /opt/hermes/.venv/bin/activate
+. /opt/vigil/.venv/bin/activate
 
 # Restore the original working directory before handing off to
 # the user's command so `hermes chat` starts in the Docker -w
@@ -78,5 +78,5 @@ if command -v "$1" >/dev/null 2>&1; then
     drop "$@"
 fi
 
-# Hermes subcommand pass-through.
+# VIGIL subcommand pass-through.
 drop hermes "$@"

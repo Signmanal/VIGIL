@@ -73,12 +73,12 @@ def _resolve_safe_cwd(cwd: str) -> str:
     return tempfile.gettempdir()
 
 
-# Hermes-internal env vars that should NOT leak into terminal subprocesses.
-_HERMES_PROVIDER_ENV_FORCE_PREFIX = "_HERMES_FORCE_"
+# VIGIL-internal env vars that should NOT leak into terminal subprocesses.
+_VIGIL_PROVIDER_ENV_FORCE_PREFIX = "_VIGIL_FORCE_"
 
-# Hermes-managed AWS *inference* credentials for ``auth_type="aws_sdk"``
+# VIGIL-managed AWS *inference* credentials for ``auth_type="aws_sdk"``
 # providers (Bedrock).  Scoped DELIBERATELY NARROW: this lists only the
-# Bedrock-specific bearer token, which is a Hermes inference secret exactly
+# Bedrock-specific bearer token, which is a VIGIL inference secret exactly
 # analogous to ``OPENAI_API_KEY`` — nobody drives the ``aws``/``terraform``/
 # ``boto3`` toolchain off it, so stripping it from terminal/execute_code
 # subprocesses costs no user capability.
@@ -177,7 +177,7 @@ def _build_provider_env_blocklist() -> frozenset:
         "EMAIL_SMTP_HOST",
         "EMAIL_HOME_ADDRESS",
         "EMAIL_HOME_ADDRESS_NAME",
-        "HERMES_DASHBOARD_SESSION_TOKEN",
+        "VIGIL_DASHBOARD_SESSION_TOKEN",
         "GATEWAY_ALLOWED_USERS",
         "GH_TOKEN",
         "GITHUB_APP_ID",
@@ -190,23 +190,23 @@ def _build_provider_env_blocklist() -> frozenset:
     return frozenset(blocked)
 
 
-_HERMES_PROVIDER_ENV_BLOCKLIST = _build_provider_env_blocklist()
+_VIGIL_PROVIDER_ENV_BLOCKLIST = _build_provider_env_blocklist()
 
 
 def _inject_context_hermes_home(env: dict) -> None:
-    """Bridge the context-local Hermes home override into subprocess env."""
+    """Bridge the context-local VIGIL home override into subprocess env."""
     try:
         from hermes_constants import get_hermes_home_override
 
         value = get_hermes_home_override()
         if value:
-            env["HERMES_HOME"] = value
+            env["VIGIL_HOME"] = value
     except Exception:
         pass
 
 
 def _sanitize_subprocess_env(base_env: dict | None, extra_env: dict | None = None) -> dict:
-    """Filter Hermes-managed secrets from a subprocess environment."""
+    """Filter VIGIL-managed secrets from a subprocess environment."""
     try:
         from tools.env_passthrough import is_env_passthrough as _is_passthrough
     except Exception:
@@ -215,16 +215,16 @@ def _sanitize_subprocess_env(base_env: dict | None, extra_env: dict | None = Non
     sanitized: dict[str, str] = {}
 
     for key, value in (base_env or {}).items():
-        if key.startswith(_HERMES_PROVIDER_ENV_FORCE_PREFIX):
+        if key.startswith(_VIGIL_PROVIDER_ENV_FORCE_PREFIX):
             continue
-        if key not in _HERMES_PROVIDER_ENV_BLOCKLIST or _is_passthrough(key):
+        if key not in _VIGIL_PROVIDER_ENV_BLOCKLIST or _is_passthrough(key):
             sanitized[key] = value
 
     for key, value in (extra_env or {}).items():
-        if key.startswith(_HERMES_PROVIDER_ENV_FORCE_PREFIX):
-            real_key = key[len(_HERMES_PROVIDER_ENV_FORCE_PREFIX):]
+        if key.startswith(_VIGIL_PROVIDER_ENV_FORCE_PREFIX):
+            real_key = key[len(_VIGIL_PROVIDER_ENV_FORCE_PREFIX):]
             sanitized[real_key] = value
-        elif key not in _HERMES_PROVIDER_ENV_BLOCKLIST or _is_passthrough(key):
+        elif key not in _VIGIL_PROVIDER_ENV_BLOCKLIST or _is_passthrough(key):
             sanitized[key] = value
 
     _inject_context_hermes_home(sanitized)
@@ -246,7 +246,7 @@ def _find_bash() -> str:
             or "/bin/sh"
         )
 
-    custom = os.environ.get("HERMES_GIT_BASH_PATH")
+    custom = os.environ.get("VIGIL_GIT_BASH_PATH")
     if custom and os.path.isfile(custom):
         return custom
 
@@ -257,8 +257,8 @@ def _find_bash() -> str:
     #
     # Layouts (both checked so upgrades between MinGit and PortableGit
     # installs work transparently):
-    #   PortableGit: %LOCALAPPDATA%\hermes\git\bin\bash.exe   (primary)
-    #   MinGit:      %LOCALAPPDATA%\hermes\git\usr\bin\bash.exe (legacy/32-bit fallback)
+    #   PortableGit: %LOCALAPPDATA%\vigil\git\bin\bash.exe   (primary)
+    #   MinGit:      %LOCALAPPDATA%\vigil\git\usr\bin\bash.exe (legacy/32-bit fallback)
     _local_appdata = os.environ.get("LOCALAPPDATA", "")
     _hermes_portable_git = os.path.join(_local_appdata, "hermes", "git") if _local_appdata else ""
     if _hermes_portable_git:
@@ -282,9 +282,9 @@ def _find_bash() -> str:
             return candidate
 
     raise RuntimeError(
-        "Git Bash not found. Hermes Agent requires Git for Windows on Windows.\n"
+        "Git Bash not found. VIGIL Agent requires Git for Windows on Windows.\n"
         "Install it from: https://git-scm.com/download/win\n"
-        "Or set HERMES_GIT_BASH_PATH to your bash.exe location."
+        "Or set VIGIL_GIT_BASH_PATH to your bash.exe location."
     )
 
 
@@ -301,7 +301,7 @@ _SANE_PATH = (
 # Cached directory containing the ``hermes`` console-script.
 # ``_SENTINEL`` distinguishes "not resolved yet" from a resolved ``None``.
 _SENTINEL = object()
-_HERMES_BIN_DIR: "str | None | object" = _SENTINEL
+_VIGIL_BIN_DIR: "str | None | object" = _SENTINEL
 
 
 def _resolve_hermes_bin_dir() -> str | None:
@@ -321,19 +321,19 @@ def _resolve_hermes_bin_dir() -> str | None:
     regardless of how the gateway was started.
 
     Resolution order (cheap, no heavy imports):
-      1. ``shutil.which("hermes")`` — normal PATH-installed shim.
+      1. ``shutil.which("vigil")`` — normal PATH-installed shim.
       2. The directory of ``sys.argv[0]`` when it's an absolute path to a
          real ``hermes`` executable (covers nix-store / venv wrappers).
       3. The directory of ``sys.executable`` — the running interpreter's
          venv ``bin``/``Scripts`` is where its console-scripts live.
     """
-    global _HERMES_BIN_DIR
-    if _HERMES_BIN_DIR is not _SENTINEL:
-        return _HERMES_BIN_DIR  # type: ignore[return-value]
+    global _VIGIL_BIN_DIR
+    if _VIGIL_BIN_DIR is not _SENTINEL:
+        return _VIGIL_BIN_DIR  # type: ignore[return-value]
 
     candidate: str | None = None
 
-    which = shutil.which("hermes")
+    which = shutil.which("vigil")
     if which:
         candidate = os.path.dirname(which)
 
@@ -357,7 +357,7 @@ def _resolve_hermes_bin_dir() -> str | None:
     if candidate and not os.path.isdir(candidate):
         candidate = None
 
-    _HERMES_BIN_DIR = candidate
+    _VIGIL_BIN_DIR = candidate
     return candidate
 
 
@@ -454,10 +454,10 @@ def _make_run_env(env: dict) -> dict:
     merged = dict(os.environ | env)
     run_env = {}
     for k, v in merged.items():
-        if k.startswith(_HERMES_PROVIDER_ENV_FORCE_PREFIX):
-            real_key = k[len(_HERMES_PROVIDER_ENV_FORCE_PREFIX):]
+        if k.startswith(_VIGIL_PROVIDER_ENV_FORCE_PREFIX):
+            real_key = k[len(_VIGIL_PROVIDER_ENV_FORCE_PREFIX):]
             run_env[real_key] = v
-        elif k not in _HERMES_PROVIDER_ENV_BLOCKLIST or _is_passthrough(k):
+        elif k not in _VIGIL_PROVIDER_ENV_BLOCKLIST or _is_passthrough(k):
             run_env[k] = v
     path_key = _path_env_key(run_env)
     if path_key is not None:
@@ -512,7 +512,7 @@ def _resolve_shell_init_files() -> list[str]:
     Expands ``~`` and ``${VAR}`` references and drops anything that doesn't
     exist on disk, so a missing ``~/.bashrc`` never breaks the snapshot.
     The ``auto_source_bashrc`` path runs only when the user hasn't supplied
-    an explicit list — once they have, Hermes trusts them.
+    an explicit list — once they have, VIGIL trusts them.
     """
     explicit, auto_bashrc = _read_terminal_shell_init_config()
 
@@ -599,11 +599,11 @@ class LocalEnvironment(BaseEnvironment):
         can't open the path, and the Windows default temp (``%TEMP%``) often
         contains spaces (``C:\\Users\\Some Name\\AppData\\Local\\Temp``) that
         break unquoted bash interpolations.  Use a dedicated cache dir under
-        ``HERMES_HOME`` instead — single-word path, guaranteed to exist, same
+        ``VIGIL_HOME`` instead — single-word path, guaranteed to exist, same
         string resolves in both Git Bash and native Python.
         """
         if _IS_WINDOWS:
-            # Derive a Windows-safe temp dir under HERMES_HOME.  Using
+            # Derive a Windows-safe temp dir under VIGIL_HOME.  Using
             # forward slashes makes the same string work unchanged in bash
             # command interpolations AND in Python ``open()`` — Windows
             # accepts forward slashes in filesystem paths, and we control

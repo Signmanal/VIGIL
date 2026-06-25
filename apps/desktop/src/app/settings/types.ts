@@ -1,6 +1,6 @@
 import type { Dispatch, SetStateAction } from 'react'
 
-import type { HermesGateway } from '@/hermes'
+import type { VIGILGateway } from '@/hermes'
 import type { IconComponent } from '@/lib/icons'
 import type { EnvVarInfo } from '@/types/hermes'
 
@@ -16,7 +16,7 @@ export type SettingsView =
 export type EnvPatch = Partial<Pick<EnvVarInfo, 'is_set' | 'redacted_value'>>
 
 export interface SettingsPageProps {
-  gateway?: HermesGateway | null
+  gateway?: VIGILGateway | null
   onClose: () => void
   onConfigSaved?: () => void
   onMainModelChanged?: (provider: string, model: string) => void

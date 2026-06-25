@@ -7,8 +7,8 @@ Usage::
     hermes hooks revoke <command>
     hermes hooks doctor
 
-Consent records live under ``~/.hermes/shell-hooks-allowlist.json`` and
-hook definitions come from the ``hooks:`` block in ``~/.hermes/config.yaml``
+Consent records live under ``~/.vigil/shell-hooks-allowlist.json`` and
+hook definitions come from the ``hooks:`` block in ``~/.vigil/config.yaml``
 (the same config read by the CLI / gateway at startup).
 
 This module is a thin CLI shell over :mod:`agent.shell_hooks`; every
@@ -55,7 +55,7 @@ def _cmd_list(_args) -> None:
     specs = shell_hooks.iter_configured_hooks(load_config())
 
     if not specs:
-        print("No shell hooks configured in ~/.hermes/config.yaml.")
+        print("No shell hooks configured in ~/.vigil/config.yaml.")
         print("See `hermes hooks --help` or")
         print("    website/docs/user-guide/features/hooks.md")
         print("for the config schema and worked examples.")
@@ -259,7 +259,7 @@ def _print_run_result(result: Dict[str, Any]) -> None:
 
     parsed = result.get("parsed")
     if parsed:
-        print(f"      parsed (Hermes wire shape): {json.dumps(parsed)}")
+        print(f"      parsed (VIGIL wire shape): {json.dumps(parsed)}")
     else:
         print("      parsed: <none — hook contributed nothing to the dispatcher>")
 

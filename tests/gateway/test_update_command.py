@@ -49,7 +49,7 @@ class TestHandleUpdateCommand:
     async def test_managed_install_returns_package_manager_guidance(self, monkeypatch):
         runner = _make_runner()
         event = _make_event()
-        monkeypatch.setenv("HERMES_MANAGED", "homebrew")
+        monkeypatch.setenv("VIGIL_MANAGED", "homebrew")
 
         # Guard: prevent any accidental fall-through from spawning a real
         # `hermes update --gateway` against the CI checkout. The managed-install
@@ -59,7 +59,7 @@ class TestHandleUpdateCommand:
             result = await runner._handle_update_command(event)
 
         assert "managed by Homebrew" in result
-        assert "brew upgrade hermes-agent" in result
+        assert "brew upgrade vigil-agent" in result
         mock_popen.assert_not_called()  # must return before reaching Popen
 
     @pytest.mark.asyncio
@@ -85,7 +85,7 @@ class TestHandleUpdateCommand:
             # The handler does Path(__file__).parent.parent.resolve()
             # We need to make project_root / '.git' not exist.
             # Since Path(__file__) resolves to the real gateway/run.py,
-            # project_root will be the real hermes-agent dir (which HAS .git).
+            # project_root will be the real vigil-agent dir (which HAS .git).
             # Patch Path to control this.
             original_path = Path
 
@@ -140,7 +140,7 @@ class TestHandleUpdateCommand:
         (fake_root / "gateway").mkdir()
         (fake_root / "gateway" / "run.py").touch()
         fake_file = str(fake_root / "gateway" / "run.py")
-        hermes_home = tmp_path / "hermes"
+        hermes_home = tmp_path / "vigil"
         hermes_home.mkdir()
 
         mock_popen = MagicMock()
@@ -153,7 +153,7 @@ class TestHandleUpdateCommand:
              patch("subprocess.Popen", mock_popen):
             result = await runner._handle_update_command(event)
 
-        assert "Starting Hermes update" in result
+        assert "Starting VIGIL update" in result
         call_args = mock_popen.call_args[0][0]
         # The update_cmd uses sys.executable -m hermes_cli.main
         joined = " ".join(call_args) if isinstance(call_args, list) else call_args
@@ -206,7 +206,7 @@ class TestHandleUpdateCommand:
         (fake_root / "gateway").mkdir()
         (fake_root / "gateway" / "run.py").touch()
         fake_file = str(fake_root / "gateway" / "run.py")
-        hermes_home = tmp_path / "hermes"
+        hermes_home = tmp_path / "vigil"
         hermes_home.mkdir()
 
         with patch("gateway.run._hermes_home", hermes_home), \
@@ -242,7 +242,7 @@ class TestHandleUpdateCommand:
         (fake_root / "gateway").mkdir()
         (fake_root / "gateway" / "run.py").touch()
         fake_file = str(fake_root / "gateway" / "run.py")
-        hermes_home = tmp_path / "hermes"
+        hermes_home = tmp_path / "vigil"
         hermes_home.mkdir()
 
         with patch("gateway.run._hermes_home", hermes_home), \
@@ -267,7 +267,7 @@ class TestHandleUpdateCommand:
         (fake_root / "gateway").mkdir()
         (fake_root / "gateway" / "run.py").touch()
         fake_file = str(fake_root / "gateway" / "run.py")
-        hermes_home = tmp_path / "hermes"
+        hermes_home = tmp_path / "vigil"
         hermes_home.mkdir()
 
         mock_popen = MagicMock()
@@ -282,7 +282,7 @@ class TestHandleUpdateCommand:
         assert call_args[0] == "/usr/bin/setsid"
         assert call_args[1] == "bash"
         assert ".update_exit_code" in call_args[-1]
-        assert "Starting Hermes update" in result
+        assert "Starting VIGIL update" in result
 
     @pytest.mark.asyncio
     async def test_fallback_when_no_setsid(self, tmp_path):
@@ -296,7 +296,7 @@ class TestHandleUpdateCommand:
         (fake_root / "gateway").mkdir()
         (fake_root / "gateway" / "run.py").touch()
         fake_file = str(fake_root / "gateway" / "run.py")
-        hermes_home = tmp_path / "hermes"
+        hermes_home = tmp_path / "vigil"
         hermes_home.mkdir()
 
         mock_popen = MagicMock()
@@ -322,7 +322,7 @@ class TestHandleUpdateCommand:
         # start_new_session=True should be in kwargs
         call_kwargs = mock_popen.call_args[1]
         assert call_kwargs.get("start_new_session") is True
-        assert "Starting Hermes update" in result
+        assert "Starting VIGIL update" in result
 
     @pytest.mark.asyncio
     async def test_popen_failure_cleans_up(self, tmp_path):
@@ -336,7 +336,7 @@ class TestHandleUpdateCommand:
         (fake_root / "gateway").mkdir()
         (fake_root / "gateway" / "run.py").touch()
         fake_file = str(fake_root / "gateway" / "run.py")
-        hermes_home = tmp_path / "hermes"
+        hermes_home = tmp_path / "vigil"
         hermes_home.mkdir()
 
         with patch("gateway.run._hermes_home", hermes_home), \
@@ -362,7 +362,7 @@ class TestHandleUpdateCommand:
         (fake_root / "gateway").mkdir()
         (fake_root / "gateway" / "run.py").touch()
         fake_file = str(fake_root / "gateway" / "run.py")
-        hermes_home = tmp_path / "hermes"
+        hermes_home = tmp_path / "vigil"
         hermes_home.mkdir()
 
         with patch("gateway.run._hermes_home", hermes_home), \
@@ -394,7 +394,7 @@ class TestUpdateCommandPlatformGate:
         blocked by the allowlist gate before any side effects fire."""
         runner = _make_runner()
         event = _make_event(platform=Platform.WEBHOOK)
-        monkeypatch.setenv("HERMES_MANAGED", "")
+        monkeypatch.setenv("VIGIL_MANAGED", "")
 
         # Guard: platform gate must fire before any real subprocess spawn.
         with patch("subprocess.Popen") as mock_popen:
@@ -412,7 +412,7 @@ class TestUpdateCommandPlatformGate:
         """
         runner = _make_runner()
         event = _make_event(platform=Platform.API_SERVER)
-        monkeypatch.setenv("HERMES_MANAGED", "")
+        monkeypatch.setenv("VIGIL_MANAGED", "")
 
         with patch("subprocess.Popen") as mock_popen:
             result = await runner._handle_update_command(event)
@@ -445,14 +445,14 @@ class TestUpdateCommandPlatformGate:
 
         runner = _make_runner()
         event = _make_event(platform=Platform.DISCORD)
-        monkeypatch.setenv("HERMES_MANAGED", "")
+        monkeypatch.setenv("VIGIL_MANAGED", "")
 
         with patch("subprocess.Popen"):
             result = await runner._handle_update_command(event)
 
         # The gate must NOT have rejected us — anything other than the
         # ``platform_not_messaging`` rejection string is acceptable here.
-        # Later steps may legitimately return success ("Starting Hermes
+        # Later steps may legitimately return success ("Starting VIGIL
         # update…") or fail for environment reasons.
         assert "only available from messaging platforms" not in result
 
@@ -474,7 +474,7 @@ class TestUpdateCommandPlatformGate:
 
         runner = _make_runner()
         event = _make_event(platform=Platform.MATTERMOST)
-        monkeypatch.setenv("HERMES_MANAGED", "")
+        monkeypatch.setenv("VIGIL_MANAGED", "")
 
         with patch("subprocess.Popen"):
             result = await runner._handle_update_command(event)
@@ -500,7 +500,7 @@ class TestUpdateCommandPlatformGate:
 
         runner = _make_runner()
         event = _make_event(platform=Platform.HOMEASSISTANT)
-        monkeypatch.setenv("HERMES_MANAGED", "")
+        monkeypatch.setenv("VIGIL_MANAGED", "")
 
         with patch("subprocess.Popen"):
             result = await runner._handle_update_command(event)
@@ -518,7 +518,7 @@ class TestUpdateCommandPlatformGate:
 
         runner = _make_runner()
         event = _make_event(platform=Platform.TELEGRAM)
-        monkeypatch.setenv("HERMES_MANAGED", "")
+        monkeypatch.setenv("VIGIL_MANAGED", "")
 
         with patch("subprocess.Popen"):
             result = await runner._handle_update_command(event)
@@ -538,7 +538,7 @@ class TestSendUpdateNotification:
     async def test_no_pending_file_is_noop(self, tmp_path):
         """Does nothing when no pending file exists."""
         runner = _make_runner()
-        hermes_home = tmp_path / "hermes"
+        hermes_home = tmp_path / "vigil"
         hermes_home.mkdir()
 
         with patch("gateway.run._hermes_home", hermes_home):
@@ -549,7 +549,7 @@ class TestSendUpdateNotification:
     async def test_defers_notification_while_update_still_running(self, tmp_path):
         """Returns False and keeps marker files when the update has not exited yet."""
         runner = _make_runner()
-        hermes_home = tmp_path / "hermes"
+        hermes_home = tmp_path / "vigil"
         hermes_home.mkdir()
 
         pending_path = hermes_home / ".update_pending.json"
@@ -572,7 +572,7 @@ class TestSendUpdateNotification:
     async def test_recovers_from_claimed_pending_file(self, tmp_path):
         """A claimed pending file from a crashed notifier is still deliverable."""
         runner = _make_runner()
-        hermes_home = tmp_path / "hermes"
+        hermes_home = tmp_path / "vigil"
         hermes_home.mkdir()
 
         claimed_path = hermes_home / ".update_pending.claimed.json"
@@ -596,7 +596,7 @@ class TestSendUpdateNotification:
     async def test_sends_notification_with_output(self, tmp_path):
         """Sends update output to the correct platform and chat."""
         runner = _make_runner()
-        hermes_home = tmp_path / "hermes"
+        hermes_home = tmp_path / "vigil"
         hermes_home.mkdir()
 
         # Write pending marker
@@ -629,7 +629,7 @@ class TestSendUpdateNotification:
     async def test_sends_notification_with_thread_metadata(self, tmp_path):
         """Final update notification preserves thread metadata when present."""
         runner = _make_runner()
-        hermes_home = tmp_path / "hermes"
+        hermes_home = tmp_path / "vigil"
         hermes_home.mkdir()
 
         pending = {
@@ -661,7 +661,7 @@ class TestSendUpdateNotification:
     async def test_strips_ansi_codes(self, tmp_path):
         """ANSI escape codes are removed from output."""
         runner = _make_runner()
-        hermes_home = tmp_path / "hermes"
+        hermes_home = tmp_path / "vigil"
         hermes_home.mkdir()
 
         pending = {"platform": "telegram", "chat_id": "111", "user_id": "222"}
@@ -685,7 +685,7 @@ class TestSendUpdateNotification:
     async def test_truncates_long_output(self, tmp_path):
         """Output longer than 3500 chars is truncated."""
         runner = _make_runner()
-        hermes_home = tmp_path / "hermes"
+        hermes_home = tmp_path / "vigil"
         hermes_home.mkdir()
 
         pending = {"platform": "telegram", "chat_id": "111", "user_id": "222"}
@@ -709,7 +709,7 @@ class TestSendUpdateNotification:
     async def test_sends_failure_message_when_update_fails(self, tmp_path):
         """Non-zero exit codes produce a failure notification with captured output."""
         runner = _make_runner()
-        hermes_home = tmp_path / "hermes"
+        hermes_home = tmp_path / "vigil"
         hermes_home.mkdir()
 
         pending = {"platform": "telegram", "chat_id": "111", "user_id": "222"}
@@ -732,7 +732,7 @@ class TestSendUpdateNotification:
     async def test_sends_generic_message_when_no_output(self, tmp_path):
         """Sends a success message even if the output file is missing."""
         runner = _make_runner()
-        hermes_home = tmp_path / "hermes"
+        hermes_home = tmp_path / "vigil"
         hermes_home.mkdir()
 
         pending = {"platform": "telegram", "chat_id": "111", "user_id": "222"}
@@ -753,7 +753,7 @@ class TestSendUpdateNotification:
     async def test_cleans_up_files_after_notification(self, tmp_path):
         """Both marker and output files are deleted after notification."""
         runner = _make_runner()
-        hermes_home = tmp_path / "hermes"
+        hermes_home = tmp_path / "vigil"
         hermes_home.mkdir()
 
         pending_path = hermes_home / ".update_pending.json"
@@ -779,7 +779,7 @@ class TestSendUpdateNotification:
     async def test_cleans_up_on_error(self, tmp_path):
         """Files are cleaned up even if notification fails."""
         runner = _make_runner()
-        hermes_home = tmp_path / "hermes"
+        hermes_home = tmp_path / "vigil"
         hermes_home.mkdir()
 
         pending_path = hermes_home / ".update_pending.json"
@@ -808,7 +808,7 @@ class TestSendUpdateNotification:
     async def test_handles_corrupt_pending_file(self, tmp_path):
         """Gracefully handles a malformed pending JSON file."""
         runner = _make_runner()
-        hermes_home = tmp_path / "hermes"
+        hermes_home = tmp_path / "vigil"
         hermes_home.mkdir()
 
         pending_path = hermes_home / ".update_pending.json"
@@ -831,7 +831,7 @@ class TestSendUpdateNotification:
         retry can deliver once the platform is back.
         """
         runner = _make_runner()
-        hermes_home = tmp_path / "hermes"
+        hermes_home = tmp_path / "vigil"
         hermes_home.mkdir()
 
         pending = {"platform": "discord", "chat_id": "111", "user_id": "222"}
@@ -869,7 +869,7 @@ class TestSendUpdateNotification:
         cleans up — exactly once.
         """
         runner = _make_runner()
-        hermes_home = tmp_path / "hermes"
+        hermes_home = tmp_path / "vigil"
         hermes_home.mkdir()
 
         pending = {"platform": "discord", "chat_id": "111", "user_id": "222"}

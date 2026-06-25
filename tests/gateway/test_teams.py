@@ -379,8 +379,8 @@ class TestTeamsInteractiveSetup:
         from hermes_cli.cli_output (not hermes_cli.config) and persist
         credentials to .env without crashing.
         """
-        hermes_home = tmp_path / "hermes"
-        monkeypatch.setenv("HERMES_HOME", str(hermes_home))
+        hermes_home = tmp_path / "vigil"
+        monkeypatch.setenv("VIGIL_HOME", str(hermes_home))
 
         import hermes_cli.cli_output as cli_output_mod
 
@@ -724,7 +724,7 @@ class TestTeamsMessageHandling:
         adapter.handle_message = AsyncMock()
 
         activity = self._make_activity(
-            text="<at>Hermes</at> what is the weather?",
+            text="<at>VIGIL</at> what is the weather?",
             from_id="user-id",
         )
         await adapter._on_message(self._make_ctx(activity))

@@ -20,12 +20,12 @@ import pytest
 
 @pytest.fixture()
 def hermes_home(tmp_path, monkeypatch):
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".vigil"
     home.mkdir()
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("VIGIL_HOME", str(home))
 
-    # Bust the goal-module DB cache so it re-resolves HERMES_HOME.
+    # Bust the goal-module DB cache so it re-resolves VIGIL_HOME.
     from hermes_cli import goals
 
     goals._DB_CACHE.clear()

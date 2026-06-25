@@ -13,7 +13,7 @@ import type {
   DesktopUpdateStatus,
   DesktopVersionInfo
 } from '@/global'
-import { checkHermesUpdate, getActionStatus, updateHermes } from '@/hermes'
+import { checkVIGILUpdate, getActionStatus, updateVIGIL } from '@/hermes'
 import { translateNow } from '@/i18n'
 import { persistString, storedString } from '@/lib/storage'
 import { dismissNotification, notify } from '@/store/notifications'
@@ -134,7 +134,7 @@ export function reportBackendContract(contract: number | undefined): void {
 
   notify({
     action: {
-      label: translateNow('notifications.updateHermes'),
+      label: translateNow('notifications.updateVIGIL'),
       onClick: () => {
         snoozeSkewToast()
         void applyBackendUpdate()
@@ -225,7 +225,7 @@ export async function refreshDesktopVersion(): Promise<DesktopVersionInfo | null
   // mid-reload, or the bridge not yet ready on first paint) would surface
   // as an unhandled promise rejection in the renderer. Swallow it.
   try {
-    const next = await window.hermesDesktop?.getVersion?.()
+    const next = await window.vigilDesktop?.getVersion?.()
 
     if (next) {
       $desktopVersion.set(next)
@@ -262,7 +262,7 @@ export async function checkBackendUpdates(): Promise<DesktopUpdateStatus | null>
   $backendUpdateChecking.set(true)
 
   try {
-    const status = mapBackendCheck(await checkHermesUpdate(true))
+    const status = mapBackendCheck(await checkVIGILUpdate(true))
     $backendUpdateStatus.set(status)
     maybeNotifyUpdateAvailable(status)
 
@@ -284,7 +284,7 @@ export async function checkBackendUpdates(): Promise<DesktopUpdateStatus | null>
 }
 
 export async function checkUpdates(): Promise<DesktopUpdateStatus | null> {
-  const bridge = window.hermesDesktop?.updates
+  const bridge = window.vigilDesktop?.updates
 
   if (!bridge || $updateChecking.get()) {
     return $updateStatus.get()
@@ -319,7 +319,7 @@ export async function checkUpdates(): Promise<DesktopUpdateStatus | null> {
 }
 
 export async function applyUpdates(opts: DesktopUpdateApplyOptions = {}): Promise<DesktopUpdateApplyResult> {
-  const bridge = window.hermesDesktop?.updates
+  const bridge = window.vigilDesktop?.updates
 
   if (!bridge) {
     return { ok: false, error: 'unavailable', message: 'Desktop bridge unavailable.' }
@@ -424,7 +424,7 @@ async function waitForBackendReturn(): Promise<boolean> {
   for (let attempt = 0; attempt < BACKEND_RETURN_MAX_ATTEMPTS; attempt += 1) {
     await new Promise(resolve => globalThis.setTimeout(resolve, BACKEND_RETURN_POLL_MS))
     try {
-      await checkHermesUpdate()
+      await checkVIGILUpdate()
 
       return true
     } catch {
@@ -479,7 +479,7 @@ export async function applyBackendUpdate(): Promise<DesktopUpdateApplyResult> {
   $backendUpdateApply.set({ ...IDLE, applying: true, stage: 'prepare', message: translateNow('updates.applyStatus.preparing') })
 
   try {
-    const started = await updateHermes()
+    const started = await updateVIGIL()
 
     if (!started.ok) {
       const message = (started as { message?: string }).message || translateNow('updates.applyStatus.notAvailable')
@@ -573,7 +573,7 @@ export function startUpdatePoller(): void {
     return
   }
 
-  const bridge = window.hermesDesktop?.updates
+  const bridge = window.vigilDesktop?.updates
 
   if (!bridge) {
     return

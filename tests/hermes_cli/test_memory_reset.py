@@ -5,7 +5,7 @@ Covers:
 - Reset individual stores (--target memory / --target user)
 - Skip confirmation with --yes
 - Graceful handling when no memory files exist
-- Profile-scoped reset (uses HERMES_HOME)
+- Profile-scoped reset (uses VIGIL_HOME)
 """
 
 import pytest
@@ -13,15 +13,15 @@ import pytest
 
 @pytest.fixture
 def memory_env(tmp_path, monkeypatch):
-    """Set up a fake HERMES_HOME with memory files."""
-    hermes_home = tmp_path / ".hermes"
+    """Set up a fake VIGIL_HOME with memory files."""
+    hermes_home = tmp_path / ".vigil"
     memories = hermes_home / "memories"
     memories.mkdir(parents=True)
-    monkeypatch.setenv("HERMES_HOME", str(hermes_home))
+    monkeypatch.setenv("VIGIL_HOME", str(hermes_home))
 
     # Create sample memory files
     (memories / "MEMORY.md").write_text(
-        "§\nHermes repo is at ~/.hermes/hermes-agent\n§\nUser prefers dark themes",
+        "§\nVIGIL repo is at ~/.vigil/vigil-agent\n§\nUser prefers dark themes",
         encoding="utf-8",
     )
     (memories / "USER.md").write_text(
@@ -93,9 +93,9 @@ class TestMemoryReset:
 
     def test_reset_no_files_exist(self, tmp_path, monkeypatch):
         """Should return 'nothing' when no memory files exist."""
-        hermes_home = tmp_path / ".hermes"
+        hermes_home = tmp_path / ".vigil"
         (hermes_home / "memories").mkdir(parents=True)
-        monkeypatch.setenv("HERMES_HOME", str(hermes_home))
+        monkeypatch.setenv("VIGIL_HOME", str(hermes_home))
 
         result = _run_memory_reset(target="all", yes=True)
         assert result == "nothing"
@@ -120,13 +120,13 @@ class TestMemoryReset:
         assert not (memories / "USER.md").exists()
 
     def test_reset_profile_scoped(self, tmp_path, monkeypatch):
-        """Reset should work on the active profile's HERMES_HOME."""
+        """Reset should work on the active profile's VIGIL_HOME."""
         profile_home = tmp_path / "profiles" / "myprofile"
         memories = profile_home / "memories"
         memories.mkdir(parents=True)
         (memories / "MEMORY.md").write_text("profile memory", encoding="utf-8")
         (memories / "USER.md").write_text("profile user", encoding="utf-8")
-        monkeypatch.setenv("HERMES_HOME", str(profile_home))
+        monkeypatch.setenv("VIGIL_HOME", str(profile_home))
 
         result = _run_memory_reset(target="all", yes=True)
         assert result == "deleted"
@@ -144,10 +144,10 @@ class TestMemoryReset:
 
     def test_reset_empty_memories_dir(self, tmp_path, monkeypatch):
         """No memories dir at all should report nothing."""
-        hermes_home = tmp_path / ".hermes"
+        hermes_home = tmp_path / ".vigil"
         hermes_home.mkdir(parents=True)
         # No memories dir
-        monkeypatch.setenv("HERMES_HOME", str(hermes_home))
+        monkeypatch.setenv("VIGIL_HOME", str(hermes_home))
 
         # The memories dir won't exist; get_hermes_home() / "memories" won't have files
         result = _run_memory_reset(target="all", yes=True)

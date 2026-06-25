@@ -50,8 +50,8 @@ _FALLBACK_PATTERNS = re.compile(
 )
 _ACCESS_DENIED_PATTERN = re.compile(r"(access is denied|acceso denegado)", re.IGNORECASE)
 
-_TASK_NAME_DEFAULT = "Hermes_Gateway"
-_TASK_DESCRIPTION = "Hermes Agent Gateway - Messaging Platform Integration"
+_TASK_NAME_DEFAULT = "VIGIL_Gateway"
+_TASK_DESCRIPTION = "VIGIL Agent Gateway - Messaging Platform Integration"
 _TASK_LOGON_DELAY = "PT30S"
 _TASK_RESTART_INTERVAL = "PT1M"
 _TASK_RESTART_COUNT = 999
@@ -168,7 +168,7 @@ def _is_running_as_admin() -> bool:
 
 
 def _current_profile_cli_args() -> list[str]:
-    """Return CLI args that preserve the current Hermes profile."""
+    """Return CLI args that preserve the current VIGIL profile."""
     from hermes_cli.gateway import _profile_arg
 
     profile_arg = _profile_arg()
@@ -214,15 +214,15 @@ def _launch_elevated_install(
     start_on_login: bool | None = None,
 ) -> bool:
     """Launch an elevated gateway install via UAC and return True on handoff."""
-    old_start_now = os.environ.get("HERMES_GATEWAY_INSTALL_START_NOW")
-    old_start_on_login = os.environ.get("HERMES_GATEWAY_INSTALL_START_ON_LOGIN")
-    old_handoff = os.environ.get("HERMES_GATEWAY_ELEVATED_HANDOFF")
+    old_start_now = os.environ.get("VIGIL_GATEWAY_INSTALL_START_NOW")
+    old_start_on_login = os.environ.get("VIGIL_GATEWAY_INSTALL_START_ON_LOGIN")
+    old_handoff = os.environ.get("VIGIL_GATEWAY_ELEVATED_HANDOFF")
     try:
         if start_now is not None:
-            os.environ["HERMES_GATEWAY_INSTALL_START_NOW"] = "1" if start_now else "0"
+            os.environ["VIGIL_GATEWAY_INSTALL_START_NOW"] = "1" if start_now else "0"
         if start_on_login is not None:
-            os.environ["HERMES_GATEWAY_INSTALL_START_ON_LOGIN"] = "1" if start_on_login else "0"
-        os.environ["HERMES_GATEWAY_ELEVATED_HANDOFF"] = "1"
+            os.environ["VIGIL_GATEWAY_INSTALL_START_ON_LOGIN"] = "1" if start_on_login else "0"
+        os.environ["VIGIL_GATEWAY_ELEVATED_HANDOFF"] = "1"
         extra_args = ["--elevated-handoff"]
         if force:
             extra_args.append("--force")
@@ -233,9 +233,9 @@ def _launch_elevated_install(
         return _launch_elevated_gateway_command("install", extra_args)
     finally:
         for key, old in (
-            ("HERMES_GATEWAY_INSTALL_START_NOW", old_start_now),
-            ("HERMES_GATEWAY_INSTALL_START_ON_LOGIN", old_start_on_login),
-            ("HERMES_GATEWAY_ELEVATED_HANDOFF", old_handoff),
+            ("VIGIL_GATEWAY_INSTALL_START_NOW", old_start_now),
+            ("VIGIL_GATEWAY_INSTALL_START_ON_LOGIN", old_start_on_login),
+            ("VIGIL_GATEWAY_ELEVATED_HANDOFF", old_handoff),
         ):
             if old is None:
                 os.environ.pop(key, None)
@@ -255,8 +255,8 @@ def _launch_elevated_uninstall() -> bool:
 def get_task_name() -> str:
     """Scheduled Task name, scoped per profile.
 
-    Default profile: ``Hermes_Gateway``
-    Named profile X: ``Hermes_Gateway_<X>``
+    Default profile: ``VIGIL_Gateway``
+    Named profile X: ``VIGIL_Gateway_<X>``
     """
     _assert_windows()
     # Local import to avoid circular module initialization during hermes_cli boot.
@@ -276,9 +276,9 @@ def _sanitize_filename(value: str) -> str:
 def get_task_script_path() -> Path:
     """The generated ``gateway.cmd`` wrapper that the schtasks entry invokes.
 
-    Lives under ``%LOCALAPPDATA%\\hermes\\gateway-service\\<task_name>.cmd``
-    (or ``<HERMES_HOME>/gateway-service/<task_name>.cmd`` so per-profile
-    Hermes installs stay self-contained).
+    Lives under ``%LOCALAPPDATA%\\vigil\\gateway-service\\<task_name>.cmd``
+    (or ``<VIGIL_HOME>/gateway-service/<task_name>.cmd`` so per-profile
+    VIGIL installs stay self-contained).
     """
     _assert_windows()
     from hermes_cli.config import get_hermes_home
@@ -319,10 +319,10 @@ def get_startup_entry_path() -> Path:
 def _stable_gateway_working_dir(project_root: Path) -> str:
     """Return a stable cwd for detached/startup gateway runs.
 
-    Mirror the POSIX service invariant: anchor at ``HERMES_HOME`` whenever it
+    Mirror the POSIX service invariant: anchor at ``VIGIL_HOME`` whenever it
     exists so Scheduled Task / Startup launches do not fail at the ``cd`` step
     after a transient checkout or worktree is moved away. Fall back to the
-    source checkout only if ``HERMES_HOME`` cannot be resolved yet.
+    source checkout only if ``VIGIL_HOME`` cannot be resolved yet.
     """
     from hermes_cli.config import get_hermes_home
 
@@ -349,7 +349,7 @@ def _build_gateway_cmd_script(
 
     The script:
       - cd's into a stable working directory
-      - exports HERMES_HOME, PYTHONIOENCODING, VIRTUAL_ENV
+      - exports VIGIL_HOME, PYTHONIOENCODING, VIRTUAL_ENV
       - invokes ``pythonw -m hermes_cli.main [--profile X] gateway run``
         directly so the wrapper cmd.exe exits without a visible gateway console
 
@@ -359,9 +359,9 @@ def _build_gateway_cmd_script(
     """
     lines = ["@echo off", f"rem {_TASK_DESCRIPTION}"]
     lines.append(f"cd /d {_quote_cmd_script_arg(working_dir)}")
-    lines.append(f'set "HERMES_HOME={hermes_home}"')
+    lines.append(f'set "VIGIL_HOME={hermes_home}"')
     lines.append('set "PYTHONIOENCODING=utf-8"')
-    lines.append('set "HERMES_GATEWAY_DETACHED=1"')
+    lines.append('set "VIGIL_GATEWAY_DETACHED=1"')
     pythonw_path, venv_dir, extra_pythonpath = _resolve_detached_python(python_path)
     # VIRTUAL_ENV lets the gateway's own python detection find the venv
     # if someone imports hermes_constants-based logic during startup.
@@ -436,9 +436,9 @@ def _build_gateway_vbs_script(
         "Dim sh, env, existing_pp",
         'Set sh = CreateObject("WScript.Shell")',
         'Set env = sh.Environment("PROCESS")',
-        f"env.Item({_quote_vbs_string('HERMES_HOME')}) = {_quote_vbs_string(hermes_home)}",
+        f"env.Item({_quote_vbs_string('VIGIL_HOME')}) = {_quote_vbs_string(hermes_home)}",
         f"env.Item({_quote_vbs_string('PYTHONIOENCODING')}) = {_quote_vbs_string('utf-8')}",
-        f"env.Item({_quote_vbs_string('HERMES_GATEWAY_DETACHED')}) = {_quote_vbs_string('1')}",
+        f"env.Item({_quote_vbs_string('VIGIL_GATEWAY_DETACHED')}) = {_quote_vbs_string('1')}",
         f"env.Item({_quote_vbs_string('VIRTUAL_ENV')}) = {_quote_vbs_string(str(venv_dir))}",
         # Mirror the cmd wrapper's ``PYTHONPATH=<static>;%PYTHONPATH%``: chain onto
         # whatever PYTHONPATH the task environment already carries, at runtime.
@@ -600,7 +600,7 @@ def _write_scheduled_task_xml(task_name: str, launcher_path: Path, user: str | N
 def _install_scheduled_task(task_name: str, script_path: Path) -> tuple[bool, str]:
     """Create or replace the Scheduled Task. Returns (success, detail).
 
-    Always recreate instead of ``/Change``. Older Hermes builds and failed
+    Always recreate instead of ``/Change``. Older VIGIL builds and failed
     experiments may have left repeat/restart settings on the task; ``/Change``
     preserves those stale triggers and can make the gateway relaunch every
     minute. Delete+create gives us a clean ONLOGON task every install.
@@ -744,9 +744,9 @@ def _build_gateway_argv() -> tuple[list[str], str, dict[str, str]]:
     argv.extend(["gateway", "run"])
 
     env_overlay = {
-        "HERMES_HOME": hermes_home,
+        "VIGIL_HOME": hermes_home,
         "PYTHONIOENCODING": "utf-8",
-        "HERMES_GATEWAY_DETACHED": "1",
+        "VIGIL_GATEWAY_DETACHED": "1",
         "VIRTUAL_ENV": str(venv_dir),
     }
     _prepend_pythonpath(env_overlay, [project_root, *extra_pythonpath] if extra_pythonpath else [project_root])
@@ -846,8 +846,8 @@ def _prompt_install_choices(
     start_on_login: bool | None = None,
 ) -> tuple[bool, bool]:
     """Return (start_now, start_on_login), asking before any UAC escalation."""
-    env_start_now = _install_choice_from_env("HERMES_GATEWAY_INSTALL_START_NOW")
-    env_start_on_login = _install_choice_from_env("HERMES_GATEWAY_INSTALL_START_ON_LOGIN")
+    env_start_now = _install_choice_from_env("VIGIL_GATEWAY_INSTALL_START_NOW")
+    env_start_on_login = _install_choice_from_env("VIGIL_GATEWAY_INSTALL_START_ON_LOGIN")
     if start_now is None:
         start_now = env_start_now
     if start_on_login is None:
@@ -938,7 +938,7 @@ def install(
         print("  UAC is Windows' admin approval prompt; it is needed to create/update the Scheduled Task.")
         if prompt_yes_no("  Open the UAC prompt now?", False):
             if _launch_elevated_install(force=force, start_now=start_now, start_on_login=start_on_login):
-                print("✓ Launched elevated Hermes gateway install prompt.")
+                print("✓ Launched elevated VIGIL gateway install prompt.")
                 if start_now:
                     print("  Approve the Windows UAC prompt; the elevated install will start the gateway afterwards.")
                 else:
@@ -979,7 +979,7 @@ def install(
         print("  UAC is Windows' admin approval prompt; it is needed to create/update the Scheduled Task.")
         if prompt_yes_no("  Open the UAC prompt now?", False):
             if _launch_elevated_install(force=force, start_now=start_now, start_on_login=start_on_login):
-                print("✓ Launched elevated Hermes gateway install prompt.")
+                print("✓ Launched elevated VIGIL gateway install prompt.")
                 if start_now:
                     print("  Approve the Windows UAC prompt; the elevated install will start the gateway afterwards.")
                 else:
@@ -1080,7 +1080,7 @@ def uninstall() -> None:
             print("  UAC is Windows' admin approval prompt; it is needed to remove the Scheduled Task.")
             if prompt_yes_no("  Open the UAC prompt now?", False):
                 if _launch_elevated_uninstall():
-                    print("✓ Launched elevated Hermes gateway uninstall prompt.")
+                    print("✓ Launched elevated VIGIL gateway uninstall prompt.")
                     print("  Approve the Windows UAC prompt, then run: hermes gateway status")
                     return
                 print("⚠ Elevated uninstall prompt was unavailable or cancelled.")

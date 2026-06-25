@@ -2,7 +2,7 @@ import { atom, computed } from 'nanostores'
 
 import { lastVisibleMessageIsUser } from '@/app/chat/thread-loading'
 import type { ContextSuggestion } from '@/app/types'
-import type { HermesConnection } from '@/global'
+import type { VIGILConnection } from '@/global'
 import type { ChatMessage } from '@/lib/chat-messages'
 import { persistBoolean, persistString, storedBoolean, storedString } from '@/lib/storage'
 import type { SessionInfo, UsageStats } from '@/types/hermes'
@@ -23,7 +23,7 @@ const COMPOSER_FAST_KEY = 'hermes.desktop.composer.fast'
 
 let configuredDefaultProjectDir = ''
 
-function workspaceCwdKey(connection: HermesConnection | null = $connection.get()): string {
+function workspaceCwdKey(connection: VIGILConnection | null = $connection.get()): string {
   if (connection?.mode !== 'remote') {
     return WORKSPACE_CWD_KEY
   }
@@ -38,7 +38,7 @@ export const getRememberedWorkspaceCwd = (): string => storedString(workspaceCwd
 export const getConfiguredDefaultProjectDir = (): string => configuredDefaultProjectDir
 
 export async function syncConfiguredDefaultProjectDir(): Promise<string> {
-  const settings = window.hermesDesktop?.settings?.getDefaultProjectDir
+  const settings = window.vigilDesktop?.settings?.getDefaultProjectDir
 
   if (!settings) {
     configuredDefaultProjectDir = ''
@@ -56,7 +56,7 @@ export async function syncConfiguredDefaultProjectDir(): Promise<string> {
  *  packaged, optional Settings override). Clears stale install-dir paths that
  *  PR #37586's localStorage stickiness can preserve across the #37536 fix. */
 export async function ensureDefaultWorkspaceCwd(): Promise<void> {
-  const sanitize = window.hermesDesktop?.sanitizeWorkspaceCwd
+  const sanitize = window.vigilDesktop?.sanitizeWorkspaceCwd
 
   if (!sanitize) {
     return
@@ -169,7 +169,7 @@ export function mergeSessionPage(
   return survivors.length ? [...survivors, ...incoming] : incoming
 }
 
-export const $connection = atom<HermesConnection | null>(null)
+export const $connection = atom<VIGILConnection | null>(null)
 export const $gatewayState = atom('idle')
 export const $sessions = atom<SessionInfo[]>([])
 export const $sessionsTotal = atom<number>(0)
@@ -262,7 +262,7 @@ export const $contextSuggestions = atom<ContextSuggestion[]>([])
 export const $modelPickerOpen = atom(false)
 export const $sessionPickerOpen = atom(false)
 
-export const setConnection = (next: Updater<HermesConnection | null>) => updateAtom($connection, next)
+export const setConnection = (next: Updater<VIGILConnection | null>) => updateAtom($connection, next)
 export const setGatewayState = (next: Updater<string>) => updateAtom($gatewayState, next)
 export const setSessions = (next: Updater<SessionInfo[]>) => updateAtom($sessions, next)
 export const setSessionsTotal = (next: Updater<number>) => updateAtom($sessionsTotal, next)

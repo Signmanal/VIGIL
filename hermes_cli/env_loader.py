@@ -1,4 +1,4 @@
-"""Helpers for loading Hermes .env files consistently across entrypoints."""
+"""Helpers for loading VIGIL .env files consistently across entrypoints."""
 
 from __future__ import annotations
 
@@ -29,7 +29,7 @@ _WARNED_KEYS: set[str] = set()
 # the .env case and they don't know Bitwarden is wired up).
 _SECRET_SOURCES: dict[str, str] = {}
 
-# HERMES_HOME paths we've already pulled external secrets for during this
+# VIGIL_HOME paths we've already pulled external secrets for during this
 # process.  ``load_hermes_dotenv()`` is called at module-import time from
 # several hot modules (cli.py, hermes_cli/main.py, run_agent.py,
 # trajectory_compressor.py, gateway/run.py, ...), so without this guard the
@@ -53,7 +53,7 @@ def get_secret_source(env_var: str) -> str | None:
 
 
 def reset_secret_source_cache() -> None:
-    """Forget which HERMES_HOME paths have already had external secrets applied.
+    """Forget which VIGIL_HOME paths have already had external secrets applied.
 
     The first call to ``_apply_external_secret_sources(home_path)`` in a
     process pulls from Bitwarden (or other configured backend), records the
@@ -169,7 +169,7 @@ def _sanitize_env_file_if_needed(path: Path) -> None:
     copy-pasting API keys from terminals or rich-text editors.
 
     We delegate to ``hermes_cli.config._sanitize_env_lines`` which
-    already knows all valid Hermes env-var names and can split
+    already knows all valid VIGIL env-var names and can split
     concatenated lines correctly.
     """
     if not path.exists():
@@ -214,17 +214,17 @@ def load_hermes_dotenv(
     hermes_home: str | os.PathLike | None = None,
     project_env: str | os.PathLike | None = None,
 ) -> list[Path]:
-    """Load Hermes environment files with user config taking precedence.
+    """Load VIGIL environment files with user config taking precedence.
 
     Behavior:
-    - `~/.hermes/.env` overrides stale shell-exported values when present.
+    - `~/.vigil/.env` overrides stale shell-exported values when present.
     - project `.env` acts as a dev fallback and only fills missing values when
       the user env exists.
     - if no user env exists, the project `.env` also overrides stale shell vars.
     """
     loaded: list[Path] = []
 
-    home_path = Path(hermes_home or os.getenv("HERMES_HOME", Path.home() / ".hermes"))
+    home_path = Path(hermes_home or os.getenv("VIGIL_HOME", Path.home() / ".vigil"))
     user_env = home_path / ".env"
     project_env_path = Path(project_env) if project_env else None
 
@@ -251,7 +251,7 @@ def load_hermes_dotenv(
 def _apply_managed_env() -> None:
     """Apply the managed-scope .env last, with override, so it beats user/shell.
 
-    Managed scope is machine-global (independent of HERMES_HOME / profile). v1
+    Managed scope is machine-global (independent of VIGIL_HOME / profile). v1
     enforcement is "applied last with override=True" — at the end of startup load
     ``os.environ`` holds the managed value for every managed key, beating both the
     user ``.env`` and any pre-existing shell export. This deliberately inverts the
@@ -284,7 +284,7 @@ def _apply_external_secret_sources(home_path: Path) -> None:
     """Pull secrets from external sources (currently Bitwarden) into env.
 
     Runs AFTER dotenv loads so .env values are visible (we use them to
-    locate the access token) but BEFORE the rest of Hermes reads
+    locate the access token) but BEFORE the rest of VIGIL reads
     ``os.environ`` for credentials.  Any failure here is logged and
     swallowed — external secret sources must never block startup.
 

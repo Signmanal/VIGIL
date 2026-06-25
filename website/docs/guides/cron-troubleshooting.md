@@ -1,7 +1,7 @@
 ---
 sidebar_position: 12
 title: "Cron Troubleshooting"
-description: "Diagnose and fix common Hermes cron issues — jobs not firing, delivery failures, skill loading errors, and performance problems"
+description: "Diagnose and fix common VIGIL cron issues — jobs not firing, delivery failures, skill loading errors, and performance problems"
 ---
 
 # Cron Troubleshooting
@@ -59,15 +59,15 @@ Delivery targets are case-sensitive and require the correct platform to be confi
 
 | Target | Requires |
 |--------|----------|
-| `telegram` | `TELEGRAM_BOT_TOKEN` in `~/.hermes/.env` |
-| `discord` | `DISCORD_BOT_TOKEN` in `~/.hermes/.env` |
-| `slack` | `SLACK_BOT_TOKEN` in `~/.hermes/.env` |
+| `telegram` | `TELEGRAM_BOT_TOKEN` in `~/.vigil/.env` |
+| `discord` | `DISCORD_BOT_TOKEN` in `~/.vigil/.env` |
+| `slack` | `SLACK_BOT_TOKEN` in `~/.vigil/.env` |
 | `whatsapp` | WhatsApp gateway configured |
 | `signal` | Signal gateway configured |
 | `matrix` | Matrix homeserver configured |
 | `email` | SMTP configured in `config.yaml` |
 | `sms` | SMS provider configured |
-| `local` | Write access to `~/.hermes/cron/output/` |
+| `local` | Write access to `~/.vigil/cron/output/` |
 | `origin` | Delivers to the chat where the job was created |
 
 Other supported platforms include `mattermost`, `homeassistant`, `dingtalk`, `feishu`, `wecom`, `weixin`, `bluebubbles`, `qqbot`, and `webhook`. You can also target a specific chat with `platform:chat_id` syntax (e.g., `telegram:-1001234567890`).
@@ -138,16 +138,16 @@ In this example, `context-skill` loads before `target-skill`.
 If a job ran and failed, you may see error context in:
 
 1. The chat where the job delivers (if delivery succeeded)
-2. `~/.hermes/logs/agent.log` for scheduler messages (or `errors.log` for warnings)
+2. `~/.vigil/logs/agent.log` for scheduler messages (or `errors.log` for warnings)
 3. The job's `last_run` metadata via `hermes cron list`
 
 ### Check 2: Common error patterns
 
 **"No such file or directory" for scripts**
-The `script` path must be an absolute path (or relative to the Hermes config directory). Verify:
+The `script` path must be an absolute path (or relative to the VIGIL config directory). Verify:
 ```bash
-ls ~/.hermes/scripts/your-script.py   # Must exist
-hermes cron edit <job_id> --script ~/.hermes/scripts/your-script.py
+ls ~/.vigil/scripts/your-script.py   # Must exist
+hermes cron edit <job_id> --script ~/.vigil/scripts/your-script.py
 ```
 
 **"Skill not found" at job execution**
@@ -157,7 +157,7 @@ The skill must be installed on the machine running the scheduler. If you move be
 Likely a delivery target issue (see Delivery Failures above), no output, or a response containing the cron quiet marker `[SILENT]`.
 
 **Job hangs or times out**
-The scheduler uses an inactivity-based timeout (default 600s, configurable via `HERMES_CRON_TIMEOUT` env var, `0` for unlimited). The agent can run as long as it's actively calling tools — the timer only fires after sustained inactivity. Long-running jobs should use scripts to handle data collection and deliver only the result.
+The scheduler uses an inactivity-based timeout (default 600s, configurable via `VIGIL_CRON_TIMEOUT` env var, `0` for unlimited). The agent can run as long as it's actively calling tools — the timer only fires after sustained inactivity. Long-running jobs should use scripts to handle data collection and deliver only the result.
 
 ### Check 3: Lock contention
 
@@ -171,11 +171,11 @@ ps aux | grep hermes
 
 ### Check 4: Permissions on jobs.json
 
-Jobs are stored in `~/.hermes/cron/jobs.json`. If this file is not readable/writable by your user, the scheduler will fail silently:
+Jobs are stored in `~/.vigil/cron/jobs.json`. If this file is not readable/writable by your user, the scheduler will fail silently:
 
 ```bash
-ls -la ~/.hermes/cron/jobs.json
-chmod 600 ~/.hermes/cron/jobs.json   # Your user should own it
+ls -la ~/.vigil/cron/jobs.json
+chmod 600 ~/.vigil/cron/jobs.json   # Your user should own it
 ```
 
 ---
@@ -202,7 +202,7 @@ Scripts that dump megabytes of output will slow down the agent and may hit token
 hermes cron list                    # Show all jobs, states, next_run times
 hermes cron run <job_id>            # Schedule for next tick (for testing)
 hermes cron edit <job_id>           # Fix configuration issues
-hermes logs                         # View recent Hermes logs
+hermes logs                         # View recent VIGIL logs
 hermes skills list                  # Verify installed skills
 ```
 
@@ -213,8 +213,8 @@ hermes skills list                  # Verify installed skills
 If you've worked through this guide and the issue persists:
 
 1. Run the job with `hermes cron run <job_id>` (fires on next gateway tick) and watch for errors in the chat output
-2. Check `~/.hermes/logs/agent.log` for scheduler messages and `~/.hermes/logs/errors.log` for warnings
-3. Open an issue at [github.com/NousResearch/hermes-agent](https://github.com/NousResearch/hermes-agent) with:
+2. Check `~/.vigil/logs/agent.log` for scheduler messages and `~/.vigil/logs/errors.log` for warnings
+3. Open an issue at [github.com/NousResearch/vigil-agent](https://github.com/NousResearch/vigil-agent) with:
    - The job ID and schedule
    - The delivery target
    - What you expected vs. what happened

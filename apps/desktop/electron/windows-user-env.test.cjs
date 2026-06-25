@@ -13,27 +13,27 @@ test('parseRegQueryValue extracts a REG_SZ value', () => {
   const out = [
     '',
     'HKEY_CURRENT_USER\\Environment',
-    '    HERMES_HOME    REG_SZ    F:\\Hermes\\data',
+    '    VIGIL_HOME    REG_SZ    F:\\VIGIL\\data',
     ''
   ].join('\r\n')
-  assert.equal(parseRegQueryValue(out, 'HERMES_HOME'), 'F:\\Hermes\\data')
+  assert.equal(parseRegQueryValue(out, 'VIGIL_HOME'), 'F:\\VIGIL\\data')
 })
 
 test('parseRegQueryValue matches the name case-insensitively', () => {
-  const out = 'HKEY_CURRENT_USER\\Environment\r\n    Hermes_Home    REG_EXPAND_SZ    %USERPROFILE%\\h\r\n'
-  assert.equal(parseRegQueryValue(out, 'HERMES_HOME'), '%USERPROFILE%\\h')
+  const out = 'HKEY_CURRENT_USER\\Environment\r\n    VIGIL_Home    REG_EXPAND_SZ    %USERPROFILE%\\h\r\n'
+  assert.equal(parseRegQueryValue(out, 'VIGIL_HOME'), '%USERPROFILE%\\h')
 })
 
 test('parseRegQueryValue preserves spaces inside the value', () => {
-  const out = '    HERMES_HOME    REG_SZ    C:\\Program Files\\Hermes\r\n'
-  assert.equal(parseRegQueryValue(out, 'HERMES_HOME'), 'C:\\Program Files\\Hermes')
+  const out = '    VIGIL_HOME    REG_SZ    C:\\Program Files\\VIGIL\r\n'
+  assert.equal(parseRegQueryValue(out, 'VIGIL_HOME'), 'C:\\Program Files\\VIGIL')
 })
 
 test('parseRegQueryValue returns null when the value line is absent', () => {
   const out = 'HKEY_CURRENT_USER\\Environment\r\n    Path    REG_SZ    C:\\x\r\n'
-  assert.equal(parseRegQueryValue(out, 'HERMES_HOME'), null)
-  assert.equal(parseRegQueryValue('', 'HERMES_HOME'), null)
-  assert.equal(parseRegQueryValue('garbage', 'HERMES_HOME'), null)
+  assert.equal(parseRegQueryValue(out, 'VIGIL_HOME'), null)
+  assert.equal(parseRegQueryValue('', 'VIGIL_HOME'), null)
+  assert.equal(parseRegQueryValue('garbage', 'VIGIL_HOME'), null)
 })
 
 // ── expandWindowsEnvRefs ───────────────────────────────────────────────────
@@ -46,7 +46,7 @@ test('expandWindowsEnvRefs expands %VAR% case-insensitively', () => {
 })
 
 test('expandWindowsEnvRefs leaves literal paths and unknown refs intact', () => {
-  assert.equal(expandWindowsEnvRefs('F:\\Hermes\\data', {}), 'F:\\Hermes\\data')
+  assert.equal(expandWindowsEnvRefs('F:\\VIGIL\\data', {}), 'F:\\VIGIL\\data')
   assert.equal(expandWindowsEnvRefs('%NOPE%\\x', {}), '%NOPE%\\x')
 })
 
@@ -58,7 +58,7 @@ test('readWindowsUserEnvVar returns null off Windows without spawning', () => {
     spawned = true
     return ''
   }
-  assert.equal(readWindowsUserEnvVar('HERMES_HOME', { platform: 'linux', exec }), null)
+  assert.equal(readWindowsUserEnvVar('VIGIL_HOME', { platform: 'linux', exec }), null)
   assert.equal(spawned, false)
 })
 
@@ -66,25 +66,25 @@ test('readWindowsUserEnvVar queries HKCU\\Environment and expands the value', ()
   const calls = []
   const exec = (cmd, args) => {
     calls.push([cmd, args])
-    return 'HKEY_CURRENT_USER\\Environment\r\n    HERMES_HOME    REG_EXPAND_SZ    %DRIVE%\\Hermes\r\n'
+    return 'HKEY_CURRENT_USER\\Environment\r\n    VIGIL_HOME    REG_EXPAND_SZ    %DRIVE%\\VIGIL\r\n'
   }
-  const value = readWindowsUserEnvVar('HERMES_HOME', {
+  const value = readWindowsUserEnvVar('VIGIL_HOME', {
     platform: 'win32',
     env: { DRIVE: 'F:' },
     exec
   })
-  assert.equal(value, 'F:\\Hermes')
-  assert.deepEqual(calls, [['reg', ['query', 'HKCU\\Environment', '/v', 'HERMES_HOME']]])
+  assert.equal(value, 'F:\\VIGIL')
+  assert.deepEqual(calls, [['reg', ['query', 'HKCU\\Environment', '/v', 'VIGIL_HOME']]])
 })
 
 test('readWindowsUserEnvVar returns null when reg exits non-zero (value missing)', () => {
   const exec = () => {
     throw new Error('reg exited 1')
   }
-  assert.equal(readWindowsUserEnvVar('HERMES_HOME', { platform: 'win32', exec }), null)
+  assert.equal(readWindowsUserEnvVar('VIGIL_HOME', { platform: 'win32', exec }), null)
 })
 
 test('readWindowsUserEnvVar returns null for an empty value', () => {
-  const exec = () => '    HERMES_HOME    REG_SZ    \r\n'
-  assert.equal(readWindowsUserEnvVar('HERMES_HOME', { platform: 'win32', exec }), null)
+  const exec = () => '    VIGIL_HOME    REG_SZ    \r\n'
+  assert.equal(readWindowsUserEnvVar('VIGIL_HOME', { platform: 'win32', exec }), null)
 })

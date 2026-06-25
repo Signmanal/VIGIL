@@ -1,5 +1,5 @@
 """
-LINE Messaging API platform adapter for Hermes Agent.
+LINE Messaging API platform adapter for VIGIL Agent.
 
 A bundled platform plugin that runs an aiohttp webhook server, accepts LINE
 webhook events (signature-verified), and relays messages to/from the agent
@@ -41,7 +41,7 @@ Synthesis credits
 -----------------
 
 This file is a synthesis of seven open community PRs adding LINE support
-to Hermes Agent. It deliberately ports the *strongest* idea from each into
+to VIGIL Agent. It deliberately ports the *strongest* idea from each into
 a single plugin-form module that requires zero core edits:
 
 * PR #18153 (leepoweii)   — Template Buttons postback cache state machine,
@@ -1277,7 +1277,7 @@ class LineAdapter(BasePlatformAdapter):
         from trusted internal code, we recheck the resolved path against
         an allowed-roots set before serving. Sources allowed:
         ``tempfile.gettempdir()``, ``/tmp`` (which resolves to
-        ``/private/tmp`` on macOS), and ``HERMES_HOME``. PR #8398.
+        ``/private/tmp`` on macOS), and ``VIGIL_HOME``. PR #8398.
         """
         from aiohttp import web
 
@@ -1299,7 +1299,7 @@ class LineAdapter(BasePlatformAdapter):
             from hermes_constants import get_hermes_home
             hermes_home = Path(get_hermes_home()).resolve()
         except Exception:
-            hermes_home = Path.home().joinpath(".hermes").resolve()
+            hermes_home = Path.home().joinpath(".vigil").resolve()
 
         allowed_roots = {
             Path(tempfile.gettempdir()).resolve(),
@@ -1579,7 +1579,7 @@ def interactive_setup() -> None:
     """Minimal stdin wizard for ``hermes setup line``.
 
     Mirrors the irc/teams style: prompts for the two required vars, plus
-    one optional public URL. Writes to ``~/.hermes/.env`` via ``hermes_cli.config``.
+    one optional public URL. Writes to ``~/.vigil/.env`` via ``hermes_cli.config``.
     """
     print()
     print("LINE Messaging API setup")
@@ -1591,7 +1591,7 @@ def interactive_setup() -> None:
     try:
         from hermes_cli.config import get_env_var, set_env_var
     except ImportError:
-        print("hermes_cli.config not available; set LINE_* vars manually in ~/.hermes/.env")
+        print("hermes_cli.config not available; set LINE_* vars manually in ~/.vigil/.env")
         return
 
     def _prompt(var: str, prompt: str, *, secret: bool = False) -> None:
@@ -1618,7 +1618,7 @@ def interactive_setup() -> None:
 
 
 def register(ctx) -> None:
-    """Plugin entry point — called by the Hermes plugin system at startup."""
+    """Plugin entry point — called by the VIGIL plugin system at startup."""
     ctx.register_platform(
         name="line",
         label="LINE",

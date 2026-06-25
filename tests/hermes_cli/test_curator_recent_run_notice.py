@@ -20,11 +20,11 @@ import pytest
 
 @pytest.fixture
 def curator_env(tmp_path, monkeypatch, capsys):
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".vigil"
     home.mkdir()
     (home / "skills").mkdir()
     (home / "logs").mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("VIGIL_HOME", str(home))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
     import hermes_constants

@@ -12,9 +12,10 @@ import { Streamdown } from 'streamdown'
 
 import { requestComposerFocus, requestComposerInsertRefs } from '@/app/chat/composer/focus'
 import { droppedFileInlineRef } from '@/app/chat/composer/inline-refs'
-import { HERMES_PATHS_MIME } from '@/app/chat/hooks/use-composer-actions'
+import { VIGIL_PATHS_MIME } from '@/app/chat/hooks/use-composer-actions'
 import { isAddSelectionShortcut } from '@/app/right-sidebar/terminal/selection'
 import { PageLoader } from '@/components/page-loader'
+import type { VIGILReadFileTextResult } from '@/global'
 import { translateNow, useI18n } from '@/i18n'
 import { readDesktopFileDataUrl, readDesktopFileText } from '@/lib/desktop-fs'
 import { cn } from '@/lib/utils'
@@ -184,7 +185,7 @@ function looksBinaryBytes(bytes: Uint8Array) {
   return suspicious / Math.min(bytes.length, 4096) > 0.12
 }
 
-async function readTextPreview(filePath: string) {
+async function readTextPreview(filePath: string): Promise<VIGILReadFileTextResult> {
   try {
     return await readDesktopFileText(filePath)
   } catch (error) {
@@ -197,7 +198,7 @@ async function readTextPreview(filePath: string) {
 
   // Back-compat for a running Electron process whose preload hasn't been
   // restarted since readFileText was added. readFileDataUrl already existed.
-  const dataUrl = await window.hermesDesktop.readFileDataUrl(filePath)
+  const dataUrl = await window.vigilDesktop.readFileDataUrl(filePath)
   const [, metadata = '', data = ''] = dataUrl.match(/^data:([^,]*),(.*)$/) || []
   const base64 = metadata.includes(';base64')
   const mimeType = metadata.replace(/;base64$/, '') || undefined
@@ -207,9 +208,11 @@ async function readTextPreview(filePath: string) {
   return {
     binary: looksBinaryBytes(bytes),
     byteSize: bytes.byteLength,
+    language: undefined,
     mimeType,
     path: filePath,
-    text: new TextDecoder().decode(bytes)
+    text: new TextDecoder().decode(bytes),
+    truncated: false
   }
 }
 
@@ -330,7 +333,7 @@ function startLineDrag(event: ReactDragEvent<HTMLElement>, filePath: string, { e
   const lineEnd = end > start ? end : undefined
   const label = lineEnd ? `${filePath}:${start}-${end}` : `${filePath}:${start}`
 
-  event.dataTransfer.setData(HERMES_PATHS_MIME, JSON.stringify([{ line: start, lineEnd, path: filePath }]))
+  event.dataTransfer.setData(VIGIL_PATHS_MIME, JSON.stringify([{ line: start, lineEnd, path: filePath }]))
   event.dataTransfer.setData('text/plain', label)
   event.dataTransfer.effectAllowed = 'copy'
 }

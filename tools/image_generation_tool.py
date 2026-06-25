@@ -763,21 +763,21 @@ def _agent_cache_base_for_env(env: Any) -> str | None:
 
         remote_home = getattr(env, "_remote_home", None)
         if remote_home:
-            return f"{str(remote_home).rstrip('/')}/.hermes"
+            return f"{str(remote_home).rstrip('/')}/.vigil"
 
         env_name = env.__class__.__name__
         if env_name in {"DockerEnvironment", "SingularityEnvironment", "ModalEnvironment"}:
-            return "/root/.hermes"
+            return "/root/.vigil"
 
     # If no environment has been created yet, only backends with deterministic
-    # Hermes cache roots can be translated without side effects. SSH can still
+    # VIGIL cache roots can be translated without side effects. SSH can still
     # use a shell-visible tilde path; its first environment sync will upload
     # the cache file before the first command runs.
     backend = (os.getenv("TERMINAL_ENV") or "local").strip().lower()
     if backend in {"docker", "singularity", "modal"}:
-        return "/root/.hermes"
+        return "/root/.vigil"
     if backend == "ssh":
-        return "~/.hermes"
+        return "~/.vigil"
     return None
 
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Skills Hub CLI — Unified interface for the Hermes Skills Hub.
+Skills Hub CLI — Unified interface for the VIGIL Skills Hub.
 
 Powers both:
   - `hermes skills <subcommand>` (CLI argparse entry point)
@@ -164,7 +164,7 @@ def _is_valid_installed_skill_name(name: str) -> bool:
 
 
 def _existing_categories() -> List[str]:
-    """Return sorted subdirectory names under ``~/.hermes/skills/`` that look
+    """Return sorted subdirectory names under ``~/.vigil/skills/`` that look
     like category buckets (contain at least one ``SKILL.md`` somewhere below).
 
     Used to suggest reusable categories when interactively installing from a
@@ -231,7 +231,7 @@ def _prompt_for_category(c: Console, existing: List[str]) -> str:
         c.print(f"[dim]Existing: {', '.join(existing)}[/]")
     else:
         c.print(
-            "[bold]Category[/] [dim](optional — press Enter to install flat at ~/.hermes/skills/<name>/)[/]"
+            "[bold]Category[/] [dim](optional — press Enter to install flat at ~/.vigil/skills/<name>/)[/]"
         )
     try:
         answer = input("Category: ").strip()
@@ -651,7 +651,7 @@ def do_install(identifier: str, category: str = "", force: bool = False,
         if bundle.source == "official":
             c.print(Panel(
                 "[bold bright_cyan]This is an official optional skill maintained by Nous Research.[/]\n\n"
-                "It ships with hermes-agent but is not activated by default.\n"
+                "It ships with vigil-agent but is not activated by default.\n"
                 "Installing will copy it to your skills directory where the agent can use it.\n\n"
                 f"Files will be at: [cyan]{display_hermes_home()}/skills/{category + '/' if category else ''}{bundle.name}/[/]",
                 title="Official Skill",
@@ -692,7 +692,7 @@ def do_install(identifier: str, category: str = "", force: bool = False,
     c.print(f"[dim]Files: {', '.join(bundle.files.keys())}[/]\n")
 
     # Blueprint detection: if the installed skill declares a
-    # metadata.hermes.blueprint block, it is a runnable automation. Register it as
+    # metadata.vigil.blueprint block, it is a runnable automation. Register it as
     # a Suggested Cron Job rather than auto-scheduling — installing never
     # silently creates a recurring job; the user accepts it via /suggestions.
     # This is the single surface every automation proposal flows through.
@@ -892,7 +892,7 @@ def do_list(source_filter: str = "all",
 
     Enabled/disabled state is resolved against the currently active profile's
     config — ``hermes -p <profile> skills list`` reads that profile's
-    ``skills.disabled`` list because ``-p`` swaps ``HERMES_HOME`` at process
+    ``skills.disabled`` list because ``-p`` swaps ``VIGIL_HOME`` at process
     start.  No explicit profile flag needed here.
     """
     from tools.skills_hub import HubLockFile, ensure_hub_dirs
@@ -1553,8 +1553,8 @@ def _github_publish(skill_path: Path, skill_name: str, target_repo: str,
             headers=headers, timeout=15,
             json={
                 "title": f"Add skill: {skill_name}",
-                "body": f"Submitting the `{skill_name}` skill via Hermes Skills Hub.\n\n"
-                        f"This skill was scanned by the Hermes Skills Guard before submission.",
+                "body": f"Submitting the `{skill_name}` skill via VIGIL Skills Hub.\n\n"
+                        f"This skill was scanned by the VIGIL Skills Guard before submission.",
                 "head": f"{fork_repo.split('/')[0]}:{branch_name}",
                 "base": default_branch,
             },

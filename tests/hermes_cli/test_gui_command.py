@@ -29,7 +29,7 @@ def _ns(**kw):
 
 
 def _make_desktop_tree(tmp_path: Path) -> Path:
-    root = tmp_path / "hermes-agent"
+    root = tmp_path / "vigil-agent"
     desktop_dir = root / "apps" / "desktop"
     desktop_dir.mkdir(parents=True)
     (desktop_dir / "package.json").write_text("{}", encoding="utf-8")
@@ -40,11 +40,11 @@ def _make_packaged_executable(root: Path, monkeypatch, platform: str = "darwin")
     monkeypatch.setattr(cli_main.sys, "platform", platform)
     desktop_dir = root / "apps" / "desktop"
     if platform == "darwin":
-        exe = desktop_dir / "release" / "mac-arm64" / "Hermes.app" / "Contents" / "MacOS" / "Hermes"
+        exe = desktop_dir / "release" / "mac-arm64" / "VIGIL.app" / "Contents" / "MacOS" / "VIGIL"
     elif platform == "win32":
-        exe = desktop_dir / "release" / "win-unpacked" / "Hermes.exe"
+        exe = desktop_dir / "release" / "win-unpacked" / "VIGIL.exe"
     else:
-        exe = desktop_dir / "release" / "linux-unpacked" / "hermes"
+        exe = desktop_dir / "release" / "linux-unpacked" / "vigil"
     exe.parent.mkdir(parents=True)
     exe.write_text("", encoding="utf-8")
     return exe
@@ -103,10 +103,10 @@ def test_gui_forwards_desktop_environment_overrides(tmp_path, monkeypatch):
         ))
 
     launch_env = mock_run.call_args_list[1].kwargs["env"]
-    assert launch_env["HERMES_DESKTOP_BOOT_FAKE"] == "1"
-    assert launch_env["HERMES_DESKTOP_IGNORE_EXISTING"] == "1"
-    assert launch_env["HERMES_DESKTOP_HERMES_ROOT"] == str(hermes_root)
-    assert launch_env["HERMES_DESKTOP_CWD"] == str(cwd)
+    assert launch_env["VIGIL_DESKTOP_BOOT_FAKE"] == "1"
+    assert launch_env["VIGIL_DESKTOP_IGNORE_EXISTING"] == "1"
+    assert launch_env["VIGIL_DESKTOP_VIGIL_ROOT"] == str(hermes_root)
+    assert launch_env["VIGIL_DESKTOP_CWD"] == str(cwd)
 
 
 def test_gui_exits_when_npm_missing(tmp_path, monkeypatch, capsys):
@@ -249,8 +249,8 @@ def test_gui_source_mode_uses_renderer_build_and_electron(tmp_path, monkeypatch)
 @pytest.mark.parametrize(
     "argv",
     [
-        ["hermes", "gui"],
-        ["hermes", "-m", "gpt5", "gui"],
+        ["vigil", "gui"],
+        ["vigil", "-m", "gpt5", "gui"],
     ],
 )
 def test_gui_is_known_builtin_for_plugin_gating(argv):
@@ -823,7 +823,7 @@ class _FakeProc:
 def test_stop_desktop_build_lock_noop_off_windows(tmp_path, monkeypatch):
     """POSIX can unlink a running binary, so the helper is a no-op there."""
     desktop_dir = tmp_path / "apps" / "desktop"
-    exe = desktop_dir / "release" / "linux-unpacked" / "hermes"
+    exe = desktop_dir / "release" / "linux-unpacked" / "vigil"
     exe.parent.mkdir(parents=True)
     exe.write_text("", encoding="utf-8")
     monkeypatch.setattr(cli_main.sys, "platform", "linux")
@@ -839,9 +839,9 @@ def test_stop_desktop_build_lock_terminates_only_release_procs(tmp_path, monkeyp
     desktop_dir = tmp_path / "apps" / "desktop"
     release = desktop_dir / "release" / "win-unpacked"
     release.mkdir(parents=True)
-    locker_exe = release / "Hermes.exe"
+    locker_exe = release / "VIGIL.exe"
     locker_exe.write_text("", encoding="utf-8")
-    other_exe = tmp_path / "elsewhere" / "Hermes.exe"
+    other_exe = tmp_path / "elsewhere" / "VIGIL.exe"
     other_exe.parent.mkdir(parents=True)
     other_exe.write_text("", encoding="utf-8")
 

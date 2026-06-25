@@ -7,7 +7,7 @@ import pytest
 from hermes_cli import relaunch as relaunch_mod
 
 
-class TestResolveHermesBin:
+class TestResolveVIGILBin:
     def test_prefers_absolute_argv0_when_executable(self, monkeypatch):
         fake = "/nix/store/abc/bin/hermes"
         monkeypatch.setattr(sys, "argv", [fake])
@@ -16,7 +16,7 @@ class TestResolveHermesBin:
         assert relaunch_mod.resolve_hermes_bin() == fake
 
     def test_resolves_relative_argv0(self, monkeypatch, tmp_path):
-        fake = tmp_path / "hermes"
+        fake = tmp_path / "vigil"
         fake.write_text("#!/bin/sh\n")
         fake.chmod(0o755)
         monkeypatch.setattr(sys, "argv", [str(fake.name)])
@@ -232,7 +232,7 @@ class TestRelaunch:
         assert "open a new terminal" in err.lower() or "path" in err.lower()
 
 
-class TestResolveHermesBinWindowsPyGuard:
+class TestResolveVIGILBinWindowsPyGuard:
     """On Windows, resolve_hermes_bin MUST NOT return a .py path.
     os.access(x, os.X_OK) returns True for .py files on Windows because
     PATHEXT includes .py when the Python launcher is installed — but
@@ -266,7 +266,7 @@ class TestResolveHermesBinWindowsPyGuard:
         because POSIX exec can route through the shebang line."""
         if sys.platform == "win32":
             pytest.skip("POSIX semantics")
-        script = tmp_path / "hermes"
+        script = tmp_path / "vigil"
         script.write_text("#!/usr/bin/env python3\n")
         script.chmod(0o755)
         monkeypatch.setattr(relaunch_mod.sys, "argv", [str(script), "chat"])

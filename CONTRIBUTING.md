@@ -1,6 +1,6 @@
-# Contributing to Hermes Agent
+# Contributing to VIGIL Agent
 
-Thank you for contributing to Hermes Agent! This guide covers everything you need: setting up your dev environment, understanding the architecture, deciding what to build, and getting your PR merged.
+Thank you for contributing to VIGIL Agent! This guide covers everything you need: setting up your dev environment, understanding the architecture, deciding what to build, and getting your PR merged.
 
 ---
 
@@ -9,7 +9,7 @@ Thank you for contributing to Hermes Agent! This guide covers everything you nee
 We value contributions in this order:
 
 1. **Bug fixes** — crashes, incorrect behavior, data loss. Always top priority.
-2. **Cross-platform compatibility** — macOS, different Linux distros, and WSL2 on Windows. We want Hermes to work everywhere.
+2. **Cross-platform compatibility** — macOS, different Linux distros, and WSL2 on Windows. We want VIGIL to work everywhere.
 3. **Security hardening** — shell injection, prompt injection, path traversal, privilege escalation. See [Security](#security-considerations).
 4. **Performance and robustness** — retry logic, error handling, graceful degradation.
 5. **New skills** — but only broadly useful ones. See [Should it be a Skill or a Tool?](#should-it-be-a-skill-or-a-tool)
@@ -24,15 +24,15 @@ A quick search before you build saves your time and keeps the PR queue clean —
 
 - **Search both open *and* merged PRs and issues** for your topic or error symptom — the duplicate-check in the PR template fires at review time, after you've already done the work:
   ```bash
-  gh search issues --repo NousResearch/hermes-agent "<your terms>"
-  gh search prs --repo NousResearch/hermes-agent --state all "<your terms>"
+  gh search issues --repo NousResearch/vigil-agent "<your terms>"
+  gh search prs --repo NousResearch/vigil-agent --state all "<your terms>"
   ```
-  Or use the web UI: [issues](https://github.com/NousResearch/hermes-agent/issues?q=) · [PRs (all states)](https://github.com/NousResearch/hermes-agent/pulls?q=is%3Apr).
+  Or use the web UI: [issues](https://github.com/NousResearch/vigil-agent/issues?q=) · [PRs (all states)](https://github.com/NousResearch/vigil-agent/pulls?q=is%3Apr).
 - **The issue tracker can lag the code.** Many requested features are already implemented in-tree, so also search the source (`search_files`, or your editor's grep) for the capability before proposing it.
 - **If an open PR already addresses it**, consider reviewing or improving that one instead of opening a competing duplicate.
 - **For larger work**, comment on the issue to signal you're working on it, so others don't start the same thing.
 
-Related: #38284 covers the agent-side analog — Hermes itself checking existing issues and PRs before deep self-troubleshooting. This section is the human-contributor complement.
+Related: #38284 covers the agent-side analog — VIGIL itself checking existing issues and PRs before deep self-troubleshooting. This section is the human-contributor complement.
 
 ---
 
@@ -56,7 +56,7 @@ This is the most common question for new contributors. The answer is almost alwa
 
 ### Should the Skill be bundled?
 
-Bundled skills (in `skills/`) ship with every Hermes install. They should be **broadly useful to most users**:
+Bundled skills (in `skills/`) ship with every VIGIL install. They should be **broadly useful to most users**:
 
 - Document handling, web research, common dev workflows, system administration
 - Used regularly by a wide range of people
@@ -69,7 +69,7 @@ If your skill is specialized, community-contributed, or niche, it's better suite
 
 ## Memory Providers: Ship as a Standalone Plugin
 
-**We are no longer accepting new memory providers into this repo.** The set of built-in providers under `plugins/memory/` (honcho, mem0, supermemory, byterover, hindsight, holographic, openviking, retaindb) is closed. If you want to add a new memory backend, publish it as a **standalone plugin repo** that users install into `~/.hermes/plugins/` (or via a pip entry point).
+**We are no longer accepting new memory providers into this repo.** The set of built-in providers under `plugins/memory/` (honcho, mem0, supermemory, byterover, hindsight, holographic, openviking, retaindb) is closed. If you want to add a new memory backend, publish it as a **standalone plugin repo** that users install into `~/.vigil/plugins/` (or via a pip entry point).
 
 Standalone memory plugins:
 
@@ -100,15 +100,15 @@ This isn't a quality bar — it's a coupling-and-maintenance decision. Memory pr
 
 For most contributors, the best development bootstrap is the same path users
 take: run the standard installer, then work inside the repository it cloned.
-The installer creates the Hermes venv, wires the `hermes` command, stamps the
+The installer creates the VIGIL venv, wires the `hermes` command, stamps the
 install method for `hermes update`, and clones the full git project into
-`$HERMES_HOME/hermes-agent` (usually `~/.hermes/hermes-agent`). That keeps your
+`$VIGIL_HOME/vigil-agent` (usually `~/.vigil/vigil-agent`). That keeps your
 development environment on the same layout the CLI, updater, lazy dependency
 installer, gateway, and docs assume.
 
 ```bash
-curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
-cd "${HERMES_HOME:-$HOME/.hermes}/hermes-agent"
+curl -fsSL https://vigil-agent.nousresearch.com/install.sh | bash
+cd "${VIGIL_HOME:-$HOME/.vigil}/vigil-agent"
 
 # Add dev/test extras on top of the standard install.
 uv pip install -e ".[all,dev]"
@@ -126,15 +126,15 @@ scripts/run_tests.sh
 
 ### Manual clone fallback
 
-Use this only if you intentionally do not want Hermes' managed install layout
+Use this only if you intentionally do not want VIGIL' managed install layout
 (for example, a throwaway clone inside a container or CI job). If you install
 this way, make sure you run the `hermes` entrypoint from this venv; running the
 system `python3 -m hermes_cli.main` can pick up unrelated system Python
 packages.
 
 ```bash
-git clone https://github.com/NousResearch/hermes-agent.git
-cd hermes-agent
+git clone https://github.com/NousResearch/vigil-agent.git
+cd vigil-agent
 
 # Create venv with Python 3.11
 uv venv venv --python 3.11
@@ -150,12 +150,12 @@ npm install
 ### Configure for development
 
 ```bash
-mkdir -p ~/.hermes/{cron,sessions,logs,memories,skills}
-cp cli-config.yaml.example ~/.hermes/config.yaml
-touch ~/.hermes/.env
+mkdir -p ~/.vigil/{cron,sessions,logs,memories,skills}
+cp cli-config.yaml.example ~/.vigil/config.yaml
+touch ~/.vigil/.env
 
 # Add at minimum an LLM provider key:
-echo "OPENROUTER_API_KEY=***" >> ~/.hermes/.env
+echo "OPENROUTER_API_KEY=***" >> ~/.vigil/.env
 ```
 
 ### Run
@@ -190,9 +190,9 @@ pytest tests/ -v
 ## Project Structure
 
 ```
-hermes-agent/
+vigil-agent/
 ├── run_agent.py              # AIAgent class — core conversation loop, tool dispatch, session persistence
-├── cli.py                    # HermesCLI class — interactive TUI, prompt_toolkit integration
+├── cli.py                    # VIGILCLI class — interactive TUI, prompt_toolkit integration
 ├── model_tools.py            # Tool orchestration (thin layer over tools/registry.py)
 ├── toolsets.py               # Tool groupings and presets (hermes-cli, hermes-telegram, etc.)
 ├── hermes_state.py           # SQLite session database with FTS5 full-text search, session titles
@@ -247,28 +247,28 @@ hermes-agent/
 │   ├── install.ps1               # Windows PowerShell installer
 │   └── whatsapp-bridge/          # Node.js WhatsApp bridge (Baileys)
 │
-├── skills/                   # Bundled skills (copied to ~/.hermes/skills/ on install)
+├── skills/                   # Bundled skills (copied to ~/.vigil/skills/ on install)
 ├── optional-skills/          # Official optional skills (discoverable via hub, not activated by default)
 ├── tests/                    # Test suite
-├── website/                  # Documentation site (hermes-agent.nousresearch.com)
+├── website/                  # Documentation site (vigil-agent.nousresearch.com)
 │
-├── cli-config.yaml.example   # Example configuration (copied to ~/.hermes/config.yaml)
+├── cli-config.yaml.example   # Example configuration (copied to ~/.vigil/config.yaml)
 └── AGENTS.md                 # Development guide for AI coding assistants
 ```
 
-### User configuration (stored in `~/.hermes/`)
+### User configuration (stored in `~/.vigil/`)
 
 | Path | Purpose |
 |------|---------|
-| `~/.hermes/config.yaml` | Settings (model, terminal, toolsets, compression, etc.) |
-| `~/.hermes/.env` | API keys and secrets |
-| `~/.hermes/auth.json` | OAuth credentials (Nous Portal) |
-| `~/.hermes/skills/` | All active skills (bundled + hub-installed + agent-created) |
-| `~/.hermes/memories/` | Persistent memory (MEMORY.md, USER.md) |
-| `~/.hermes/state.db` | SQLite session database |
-| `~/.hermes/sessions/` | Gateway routing index (`sessions.json`), request-dump breadcrumbs, gateway `*.jsonl` transcripts, and (optionally) per-session JSON snapshots when `sessions.write_json_snapshots: true` is set. The per-session snapshots are off by default; state.db is canonical. |
-| `~/.hermes/cron/` | Scheduled job data |
-| `~/.hermes/whatsapp/session/` | WhatsApp bridge credentials |
+| `~/.vigil/config.yaml` | Settings (model, terminal, toolsets, compression, etc.) |
+| `~/.vigil/.env` | API keys and secrets |
+| `~/.vigil/auth.json` | OAuth credentials (Nous Portal) |
+| `~/.vigil/skills/` | All active skills (bundled + hub-installed + agent-created) |
+| `~/.vigil/memories/` | Persistent memory (MEMORY.md, USER.md) |
+| `~/.vigil/state.db` | SQLite session database |
+| `~/.vigil/sessions/` | Gateway routing index (`sessions.json`), request-dump breadcrumbs, gateway `*.jsonl` transcripts, and (optionally) per-session JSON snapshots when `sessions.write_json_snapshots: true` is set. The per-session snapshots are off by default; state.db is canonical. |
+| `~/.vigil/cron/` | Scheduled job data |
+| `~/.vigil/whatsapp/session/` | WhatsApp bridge credentials |
 
 ---
 
@@ -295,7 +295,7 @@ User message → AIAgent._run_agent_loop()
 
 - **Self-registering tools**: Each tool file calls `registry.register()` at import time. `model_tools.py` triggers discovery by importing all tool modules.
 - **Toolset grouping**: Tools are grouped into toolsets (`web`, `terminal`, `file`, `browser`, etc.) that can be enabled/disabled per platform.
-- **Session persistence**: All conversations are stored in SQLite (`hermes_state.py`) with full-text search and unique session titles. Per-session JSON snapshots in `~/.hermes/sessions/` were superseded by the SQLite store and are off by default; opt back in with `sessions.write_json_snapshots: true` if you have external tooling that consumes the JSON files directly.
+- **Session persistence**: All conversations are stored in SQLite (`hermes_state.py`) with full-text search and unique session titles. Per-session JSON snapshots in `~/.vigil/sessions/` were superseded by the SQLite store and are off by default; opt back in with `sessions.write_json_snapshots: true` if you have external tooling that consumes the JSON files directly.
 - **Ephemeral injection**: System prompts and prefill messages are injected at API call time, never persisted to the database or logs.
 - **Provider abstraction**: The agent works with any OpenAI-compatible API. Provider resolution happens at init time (Nous Portal OAuth, OpenRouter API key, or custom endpoint).
 - **Provider routing**: When using OpenRouter, `provider_routing` in config.yaml controls provider selection (sort by throughput/latency/price, allow/ignore specific providers, data retention policies). These are injected as `extra_body.provider` in API requests.
@@ -367,7 +367,7 @@ imported by `discover_builtin_tools()` in `tools/registry.py` when `model_tools`
 loads. There is **no** manual import list in `model_tools.py` to maintain.
 
 You must still add the tool name to the appropriate list in `toolsets.py`
-(for example `_HERMES_CORE_TOOLS` or a dedicated toolset); otherwise the tool
+(for example `_VIGIL_CORE_TOOLS` or a dedicated toolset); otherwise the tool
 registers but is never exposed to the agent. If you introduce a new toolset,
 add it in `toolsets.py` and wire it into the relevant platform presets.
 
@@ -465,7 +465,7 @@ If the field is omitted or empty, the skill loads on all platforms (backward com
 
 Skills can declare conditions that control when they appear in the system prompt, based on which tools and toolsets are available in the current session. This is primarily used for **fallback skills** — alternatives that should only be shown when a primary tool is unavailable.
 
-Four fields are supported under `metadata.hermes`:
+Four fields are supported under `metadata.vigil`:
 
 ```yaml
 metadata:
@@ -515,7 +515,7 @@ required_environment_variables:
     required_for: full functionality
 ```
 
-The user may skip setup and keep loading the skill. Hermes only exposes metadata (`stored_as`, `skipped`, `validated`) to the model — never the secret value.
+The user may skip setup and keep loading the skill. VIGIL only exposes metadata (`stored_as`, `skipped`, `validated`) to the model — never the secret value.
 
 Legacy `prerequisites.env_vars` remains supported and is normalized into the new representation.
 
@@ -525,7 +525,7 @@ prerequisites:
   commands: [curl, jq]            # Advisory CLI checks
 ```
 
-Gateway and messaging sessions never collect secrets in-band; they instruct the user to run `hermes setup` or update `~/.hermes/.env` locally.
+Gateway and messaging sessions never collect secrets in-band; they instruct the user to run `hermes setup` or update `~/.vigil/.env` locally.
 
 **When to declare required environment variables:**
 - The skill uses an API key or token that should be collected securely at load time
@@ -553,7 +553,7 @@ Every new or modernized skill — bundled, optional, or contributed — must mee
    Good: `Search arXiv papers by keyword, author, category, or ID.`
    Bad: `A powerful and comprehensive skill that allows the agent to search arXiv for relevant academic papers using various criteria including keywords, authors, and categories.`
 
-2. **Tools referenced in SKILL.md prose must be native Hermes tools or MCP servers the skill explicitly expects.** When the skill needs a capability, point at the proper tool by name in backticks: `` `terminal` ``, `` `web_extract` ``, `` `web_search` ``, `` `read_file` ``, `` `write_file` ``, `` `patch` ``, `` `search_files` ``, `` `vision_analyze` ``, `` `browser_navigate` ``, `` `delegate_task` ``, `` `image_generate` ``, `` `text_to_speech` ``, `` `cronjob` ``, `` `memory` ``, `` `skill_view` ``, `` `todo` ``, `` `execute_code` ``.
+2. **Tools referenced in SKILL.md prose must be native VIGIL tools or MCP servers the skill explicitly expects.** When the skill needs a capability, point at the proper tool by name in backticks: `` `terminal` ``, `` `web_extract` ``, `` `web_search` ``, `` `read_file` ``, `` `write_file` ``, `` `patch` ``, `` `search_files` ``, `` `vision_analyze` ``, `` `browser_navigate` ``, `` `delegate_task` ``, `` `image_generate` ``, `` `text_to_speech` ``, `` `cronjob` ``, `` `memory` ``, `` `skill_view` ``, `` `todo` ``, `` `execute_code` ``.
 
    Do NOT name shell utilities the agent already has wrapped:
 
@@ -570,7 +570,7 @@ Every new or modernized skill — bundled, optional, or contributed — must mee
 
 3. **`platforms:` gating audited against actual script imports.** Skills that use POSIX-only primitives (`fcntl`, `termios`, `os.setsid`, `os.kill(pid, 0)` for liveness, `/proc`, hardcoded `/tmp` paths, `signal.SIGKILL`, bash heredocs, `osascript`, `apt`, `systemctl`) must declare their supported platforms via the `platforms:` frontmatter. Default posture is to fix it cross-platform first — `tempfile.gettempdir()`, `pathlib.Path`, `psutil.pid_exists()`, Python-level filtering instead of `grep`. Gate to a narrower set only when the dependency is genuinely platform-bound (e.g. `osascript` is macOS-only, `/proc` is Linux-only).
 
-4. **`author` credits the human contributor first.** For external contributions, the contributor's real name + GitHub handle goes first (`Jane Doe (jane-doe)`); "Hermes Agent" is the secondary collaborator. If the contributor's commit shows "Hermes Agent" as author because they used Hermes to draft the skill, replace it with their actual name — credit the human, not the tool.
+4. **`author` credits the human contributor first.** For external contributions, the contributor's real name + GitHub handle goes first (`Jane Doe (jane-doe)`); "VIGIL Agent" is the secondary collaborator. If the contributor's commit shows "VIGIL Agent" as author because they used VIGIL to draft the skill, replace it with their actual name — credit the human, not the tool.
 
 5. **SKILL.md body uses the modern section order.** `# <Skill> Skill` title, 2-3 sentence intro stating what it does and what it doesn't do, then:
    - `## When to Use` — trigger conditions
@@ -591,7 +591,7 @@ Every new or modernized skill — bundled, optional, or contributed — must mee
 
 ### Skill guidelines
 
-- **No external dependencies unless absolutely necessary.** Prefer stdlib Python, curl, and existing Hermes tools (`web_extract`, `terminal`, `read_file`).
+- **No external dependencies unless absolutely necessary.** Prefer stdlib Python, curl, and existing VIGIL tools (`web_extract`, `terminal`, `read_file`).
 - **Progressive disclosure.** Put the most common workflow first. Edge cases and advanced usage go at the bottom.
 - **Include helper scripts** for XML/JSON parsing or complex logic — don't expect the LLM to write parsers inline every time.
 - **Test it.** Run `hermes --toolsets skills -q "Use the X skill to do Y"` and verify the agent follows the instructions correctly.
@@ -600,11 +600,11 @@ Every new or modernized skill — bundled, optional, or contributed — must mee
 
 ## Adding a Skin / Theme
 
-Hermes uses a data-driven skin system — no code changes needed to add a new skin.
+VIGIL uses a data-driven skin system — no code changes needed to add a new skin.
 
 **Option A: User skin (YAML file)**
 
-Create `~/.hermes/skins/<name>.yaml`:
+Create `~/.vigil/skins/<name>.yaml`:
 
 ```yaml
 name: mytheme
@@ -650,7 +650,7 @@ See `hermes_cli/skin_engine.py` for the full schema and existing skins as exampl
 
 ## Cross-Platform Compatibility
 
-Hermes runs on Linux, macOS, and native Windows (plus WSL2). When writing code
+VIGIL runs on Linux, macOS, and native Windows (plus WSL2). When writing code
 that touches the OS, assume *any* platform can hit your code path.
 
 > **Before you PR:** run `scripts/check-windows-footguns.py` to catch the
@@ -838,7 +838,7 @@ through the wrong branch on a Windows runner.
 
 ## Security Considerations
 
-Hermes has terminal access. Security matters.
+VIGIL has terminal access. Security matters.
 
 ### Existing protections
 
@@ -963,8 +963,8 @@ test(tools): add unit tests for file_operations
 
 ## Reporting Issues
 
-- Use [GitHub Issues](https://github.com/NousResearch/hermes-agent/issues)
-- Include: OS, Python version, Hermes version (`hermes version`), full error traceback
+- Use [GitHub Issues](https://github.com/NousResearch/vigil-agent/issues)
+- Include: OS, Python version, VIGIL version (`hermes version`), full error traceback
 - Include steps to reproduce
 - Check existing issues before creating duplicates
 - For security vulnerabilities, please report privately

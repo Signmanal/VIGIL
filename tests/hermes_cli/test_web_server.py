@@ -37,7 +37,7 @@ _EXAMPLE_PLUGIN_FIXTURE = (
 
 @pytest.fixture
 def _install_example_plugin(_isolate_hermes_home):
-    """Drop the example-dashboard fixture into the per-test HERMES_HOME
+    """Drop the example-dashboard fixture into the per-test VIGIL_HOME
     user-plugins directory and force the web_server's dashboard plugin
     cache + API mount to rediscover it.
 
@@ -46,10 +46,10 @@ def _install_example_plugin(_isolate_hermes_home):
     user's sidebar. It is now a tests-only fixture: any test that needs
     ``/api/plugins/example/hello`` or ``/dashboard-plugins/example/...``
     requests this fixture so the plugin appears only for that test's
-    isolated ``HERMES_HOME``.
+    isolated ``VIGIL_HOME``.
 
     The user-plugin source is preferred over a transient
-    ``HERMES_BUNDLED_PLUGINS`` override because the bundled dir is
+    ``VIGIL_BUNDLED_PLUGINS`` override because the bundled dir is
     resolved per-call (other tests in the suite implicitly rely on the
     real bundled plugins — kanban, hermes-achievements, model providers
     — being available, and globally swapping that root would yank them
@@ -70,7 +70,7 @@ def _install_example_plugin(_isolate_hermes_home):
     #   1. Identify the routes the mount call appends.
     #   2. Restore the original list on teardown — otherwise leftover
     #      ``/api/plugins/example/*`` routes leak into subsequent tests
-    #      and start serving requests against a torn-down HERMES_HOME.
+    #      and start serving requests against a torn-down VIGIL_HOME.
     app = web_server.app
     original_routes = list(app.router.routes)
 
@@ -144,7 +144,7 @@ class TestReloadEnv:
         os.environ.pop("TEST_RELOAD_VAR", None)
 
     def test_removes_deleted_known_vars(self, tmp_path):
-        """reload_env() removes known Hermes vars not present in .env."""
+        """reload_env() removes known VIGIL vars not present in .env."""
         env_file = tmp_path / ".env"
         env_file.write_text("")  # empty .env
         # Pick a known key from OPTIONAL_ENV_VARS
@@ -156,7 +156,7 @@ class TestReloadEnv:
             assert count >= 1
 
     def test_does_not_remove_unknown_vars(self, tmp_path):
-        """reload_env() preserves non-Hermes env vars even when absent from .env."""
+        """reload_env() preserves non-VIGIL env vars even when absent from .env."""
         env_file = tmp_path / ".env"
         env_file.write_text("")
         with patch.dict(reload_env.__globals__, {"get_env_path": lambda: env_file}):
@@ -187,7 +187,7 @@ class TestRedactKey:
 
 
 class TestSessionTokenInjection:
-    """The desktop shell mints HERMES_DASHBOARD_SESSION_TOKEN and signs its
+    """The desktop shell mints VIGIL_DASHBOARD_SESSION_TOKEN and signs its
     /api + /api/ws calls with it. The backend must adopt that token, else every
     desktop request 401s ("gateway is offline"). A main-merge once silently
     dropped this read — this guards the contract, not a literal value.
@@ -197,19 +197,19 @@ class TestSessionTokenInjection:
         import importlib
         import hermes_cli.web_server as ws
 
-        monkeypatch.setenv("HERMES_DASHBOARD_SESSION_TOKEN", "desktop-seeded-token")
+        monkeypatch.setenv("VIGIL_DASHBOARD_SESSION_TOKEN", "desktop-seeded-token")
         try:
             importlib.reload(ws)
             assert ws._SESSION_TOKEN == "desktop-seeded-token"
         finally:
-            monkeypatch.delenv("HERMES_DASHBOARD_SESSION_TOKEN", raising=False)
+            monkeypatch.delenv("VIGIL_DASHBOARD_SESSION_TOKEN", raising=False)
             importlib.reload(ws)
 
     def test_falls_back_to_random_token(self, monkeypatch):
         import importlib
         import hermes_cli.web_server as ws
 
-        monkeypatch.delenv("HERMES_DASHBOARD_SESSION_TOKEN", raising=False)
+        monkeypatch.delenv("VIGIL_DASHBOARD_SESSION_TOKEN", raising=False)
         importlib.reload(ws)
 
         assert ws._SESSION_TOKEN and len(ws._SESSION_TOKEN) >= 32
@@ -225,7 +225,7 @@ class TestWebServerEndpoints:
 
     @pytest.fixture(autouse=True)
     def _setup_test_client(self, monkeypatch, _isolate_hermes_home):
-        """Create a TestClient and isolate the state DB under the test HERMES_HOME."""
+        """Create a TestClient and isolate the state DB under the test VIGIL_HOME."""
         try:
             from starlette.testclient import TestClient
         except ImportError:
@@ -1041,7 +1041,7 @@ class TestWebServerEndpoints:
         web_server._ACTION_PROCS.pop("hermes-update", None)
         web_server._ACTION_RESULTS.pop("hermes-update", None)
 
-        resp = self.client.post("/api/hermes/update")
+        resp = self.client.post("/api/vigil/update")
 
         assert resp.status_code == 200
         data = resp.json()
@@ -1049,7 +1049,7 @@ class TestWebServerEndpoints:
         assert data["name"] == "hermes-update"
         assert data["pid"] is None
         assert data["error"] == "docker_update_unsupported"
-        assert "docker pull nousresearch/hermes-agent:latest" in data["message"]
+        assert "docker pull nousresearch/vigil-agent:latest" in data["message"]
         assert spawned is False
 
         status = self.client.get("/api/actions/hermes-update/status")
@@ -1058,7 +1058,7 @@ class TestWebServerEndpoints:
         assert status_data["running"] is False
         assert status_data["exit_code"] == 1
         assert status_data["pid"] is None
-        assert any("docker pull nousresearch/hermes-agent:latest" in line for line in status_data["lines"])
+        assert any("docker pull nousresearch/vigil-agent:latest" in line for line in status_data["lines"])
 
     def test_update_hermes_returns_managed_runtime_guidance_without_spawning(self, monkeypatch):
         import hermes_cli.web_server as web_server
@@ -1082,7 +1082,7 @@ class TestWebServerEndpoints:
         web_server._ACTION_PROCS.pop("hermes-update", None)
         web_server._ACTION_RESULTS.pop("hermes-update", None)
 
-        resp = self.client.post("/api/hermes/update")
+        resp = self.client.post("/api/vigil/update")
 
         assert resp.status_code == 200
         data = resp.json()
@@ -1122,7 +1122,7 @@ class TestWebServerEndpoints:
         web_server._ACTION_PROCS.pop("hermes-update", None)
         web_server._ACTION_RESULTS.pop("hermes-update", None)
 
-        resp = self.client.post("/api/hermes/update")
+        resp = self.client.post("/api/vigil/update")
 
         assert resp.status_code == 200
         assert resp.json() == {"ok": True, "pid": 12345, "name": "hermes-update"}
@@ -1458,7 +1458,7 @@ class TestWebServerEndpoints:
 
     def test_model_set_maps_unknown_vendor_to_aggregator(self, monkeypatch):
         """A bare vendor name from analytics rows (no billing_provider) is not
-        a Hermes provider — keep the user's aggregator instead of writing a
+        a VIGIL provider — keep the user's aggregator instead of writing a
         provider that can never resolve credentials."""
         monkeypatch.setattr(
             "hermes_cli.model_cost_guard.expensive_model_warning",
@@ -1663,7 +1663,7 @@ class TestWebServerEndpoints:
         assert "personal WeChat" in weixin["description"]
         assert "Official Account" not in f"{weixin['name']} {weixin['description']}"
         assert weixin["docs_url"] == (
-            "https://hermes-agent.nousresearch.com/docs/user-guide/messaging/weixin/"
+            "https://vigil-agent.nousresearch.com/docs/user-guide/messaging/weixin/"
         )
 
         fields = {field["key"]: field for field in weixin["env_vars"]}
@@ -1836,7 +1836,7 @@ class TestWebServerEndpoints:
         payload = ws._telegram_onboarding_request_sync(
             "POST",
             "/v1/telegram/pairings",
-            body={"bot_name": "Hermes Agent"},
+            body={"bot_name": "VIGIL Agent"},
             bearer_token="poll-secret",
         )
 
@@ -1844,11 +1844,11 @@ class TestWebServerEndpoints:
         method, url, kwargs = calls["request"]
         assert method == "POST"
         assert url == "https://worker.example/v1/telegram/pairings"
-        assert kwargs["json"] == {"bot_name": "Hermes Agent"}
+        assert kwargs["json"] == {"bot_name": "VIGIL Agent"}
         assert kwargs["headers"]["Accept"] == "application/json"
         assert kwargs["headers"]["Authorization"] == "Bearer poll-secret"
         assert kwargs["headers"]["Content-Type"] == "application/json"
-        assert kwargs["headers"]["User-Agent"].startswith("HermesDashboard/")
+        assert kwargs["headers"]["User-Agent"].startswith("VIGILDashboard/")
 
     def test_telegram_onboarding_worker_request_maps_unexpected_errors(
         self, monkeypatch
@@ -1861,7 +1861,7 @@ class TestWebServerEndpoints:
             ws._telegram_onboarding_request_sync(
                 "POST",
                 "/v1/telegram/pairings",
-                body={"bot_name": "Hermes Agent"},
+                body={"bot_name": "VIGIL Agent"},
             )
 
         assert exc.value.status_code == 502
@@ -1884,8 +1884,8 @@ class TestWebServerEndpoints:
                 "pairing_id": "pair123",
                 "poll_token": "poll-secret",
                 "suggested_username": "hermes_pair123_bot",
-                "deep_link": "https://t.me/newbot/HermesSetupBot/hermes_pair123_bot",
-                "qr_payload": "https://t.me/newbot/HermesSetupBot/hermes_pair123_bot",
+                "deep_link": "https://t.me/newbot/VIGILSetupBot/hermes_pair123_bot",
+                "qr_payload": "https://t.me/newbot/VIGILSetupBot/hermes_pair123_bot",
                 "expires_at": "2027-05-18T00:00:00.000Z",
             }
 
@@ -1893,7 +1893,7 @@ class TestWebServerEndpoints:
 
         resp = self.client.post(
             "/api/messaging/telegram/onboarding/start",
-            json={"bot_name": "Hosted Hermes"},
+            json={"bot_name": "Hosted VIGIL"},
         )
 
         assert resp.status_code == 200
@@ -1904,7 +1904,7 @@ class TestWebServerEndpoints:
             (
                 "POST",
                 "/v1/telegram/pairings",
-                {"bot_name": "Hosted Hermes"},
+                {"bot_name": "Hosted VIGIL"},
                 None,
             )
         ]
@@ -1922,8 +1922,8 @@ class TestWebServerEndpoints:
                     "pairing_id": "pair-ready",
                     "poll_token": "poll-secret",
                     "suggested_username": "hermes_pair_ready_bot",
-                    "deep_link": "https://t.me/newbot/HermesSetupBot/hermes_pair_ready_bot",
-                    "qr_payload": "https://t.me/newbot/HermesSetupBot/hermes_pair_ready_bot",
+                    "deep_link": "https://t.me/newbot/VIGILSetupBot/hermes_pair_ready_bot",
+                    "qr_payload": "https://t.me/newbot/VIGILSetupBot/hermes_pair_ready_bot",
                     "expires_at": "2027-05-18T00:00:00.000Z",
                 }
             assert method == "GET"
@@ -1995,8 +1995,8 @@ class TestWebServerEndpoints:
                     "pairing_id": "pair-restart-fails",
                     "poll_token": "poll-secret",
                     "suggested_username": "hermes_pair_restart_fails_bot",
-                    "deep_link": "https://t.me/newbot/HermesSetupBot/hermes_pair_restart_fails_bot",
-                    "qr_payload": "https://t.me/newbot/HermesSetupBot/hermes_pair_restart_fails_bot",
+                    "deep_link": "https://t.me/newbot/VIGILSetupBot/hermes_pair_restart_fails_bot",
+                    "qr_payload": "https://t.me/newbot/VIGILSetupBot/hermes_pair_restart_fails_bot",
                     "expires_at": "2027-05-18T00:00:00.000Z",
                 }
             assert method == "GET"
@@ -2059,8 +2059,8 @@ class TestWebServerEndpoints:
                     "pairing_id": "pair-reuse",
                     "poll_token": "poll-secret",
                     "suggested_username": "hermes_pair_reuse_bot",
-                    "deep_link": "https://t.me/newbot/HermesSetupBot/hermes_pair_reuse_bot",
-                    "qr_payload": "https://t.me/newbot/HermesSetupBot/hermes_pair_reuse_bot",
+                    "deep_link": "https://t.me/newbot/VIGILSetupBot/hermes_pair_reuse_bot",
+                    "qr_payload": "https://t.me/newbot/VIGILSetupBot/hermes_pair_reuse_bot",
                     "expires_at": "2027-05-18T00:00:00.000Z",
                 }
             return {
@@ -2112,8 +2112,8 @@ class TestWebServerEndpoints:
                 "pairing_id": "pair-waiting",
                 "poll_token": "poll-secret",
                 "suggested_username": "hermes_pair_waiting_bot",
-                "deep_link": "https://t.me/newbot/HermesSetupBot/hermes_pair_waiting_bot",
-                "qr_payload": "https://t.me/newbot/HermesSetupBot/hermes_pair_waiting_bot",
+                "deep_link": "https://t.me/newbot/VIGILSetupBot/hermes_pair_waiting_bot",
+                "qr_payload": "https://t.me/newbot/VIGILSetupBot/hermes_pair_waiting_bot",
                 "expires_at": "2027-05-18T00:00:00.000Z",
             }
 
@@ -2141,8 +2141,8 @@ class TestWebServerEndpoints:
                 "pairing_id": "pair-cancel",
                 "poll_token": "poll-secret",
                 "suggested_username": "hermes_pair_cancel_bot",
-                "deep_link": "https://t.me/newbot/HermesSetupBot/hermes_pair_cancel_bot",
-                "qr_payload": "https://t.me/newbot/HermesSetupBot/hermes_pair_cancel_bot",
+                "deep_link": "https://t.me/newbot/VIGILSetupBot/hermes_pair_cancel_bot",
+                "qr_payload": "https://t.me/newbot/VIGILSetupBot/hermes_pair_cancel_bot",
                 "expires_at": "2027-05-18T00:00:00.000Z",
             }
 
@@ -3023,7 +3023,7 @@ class TestNewEndpoints:
         wrapper_dir = tmp_path / "bin"
         wrapper_dir.mkdir()
         monkeypatch.setattr(profiles_mod, "_get_wrapper_dir", lambda: wrapper_dir)
-        monkeypatch.setattr(profiles_mod.shutil, "which", lambda name: "/opt/hermes/bin/hermes")
+        monkeypatch.setattr(profiles_mod.shutil, "which", lambda name: "/opt/vigil/bin/hermes")
 
         resp = self.client.post(
             "/api/profiles",
@@ -3038,7 +3038,7 @@ class TestNewEndpoints:
         if is_windows:
             assert lines == ["@echo off", "hermes -p writer %*"]
         else:
-            assert lines == ["#!/bin/sh", 'exec /opt/hermes/bin/hermes -p writer "$@"']
+            assert lines == ["#!/bin/sh", 'exec /opt/vigil/bin/hermes -p writer "$@"']
 
     def test_profiles_create_with_clone_from_copies_source_skills(self, monkeypatch):
         from hermes_constants import get_hermes_home
@@ -4415,7 +4415,7 @@ class TestGatewayBusyReadout:
             "platforms": {},
             "active_agents": 0,
         })
-        monkeypatch.setenv("HERMES_RESTART_DRAIN_TIMEOUT", "90")
+        monkeypatch.setenv("VIGIL_RESTART_DRAIN_TIMEOUT", "90")
 
         data = self.client.get("/api/status").json()
         assert "restart_drain_timeout" in data
@@ -4577,15 +4577,15 @@ class TestNormaliseThemeDefinition:
 
 
 class TestDiscoverUserThemes:
-    """Tests for _discover_user_themes() — scans ~/.hermes/dashboard-themes/."""
+    """Tests for _discover_user_themes() — scans ~/.vigil/dashboard-themes/."""
 
     def test_returns_empty_when_dir_missing(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("VIGIL_HOME", str(tmp_path))
         from hermes_cli import web_server
         assert web_server._discover_user_themes() == []
 
     def test_loads_and_normalises_yaml(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("VIGIL_HOME", str(tmp_path))
         themes_dir = tmp_path / "dashboard-themes"
         themes_dir.mkdir()
         (themes_dir / "ocean.yaml").write_text(
@@ -4609,7 +4609,7 @@ class TestDiscoverUserThemes:
         assert "fontSans" in results[0]["typography"]
 
     def test_malformed_yaml_skipped(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("VIGIL_HOME", str(tmp_path))
         themes_dir = tmp_path / "dashboard-themes"
         themes_dir.mkdir()
         (themes_dir / "bad.yaml").write_text("::: not valid yaml :::\n\tindent wrong")
@@ -4976,7 +4976,7 @@ class TestDeleteEmptySessionsEndpoint:
         from hermes_constants import get_hermes_home
         from hermes_cli.web_server import app, _SESSION_HEADER_NAME, _SESSION_TOKEN
 
-        # Pin the SessionDB to the isolated HERMES_HOME so each test
+        # Pin the SessionDB to the isolated VIGIL_HOME so each test
         # starts with a clean state.db.
         monkeypatch.setattr(
             hermes_state, "DEFAULT_DB_PATH", get_hermes_home() / "state.db"
@@ -5101,7 +5101,7 @@ class TestPluginAPIAuth:
         Pulls in ``_install_example_plugin`` so ``test_plugin_route_allows_auth``
         has the ``/api/plugins/example/hello`` endpoint available — the
         example plugin is no longer a bundled plugin, so the fixture
-        installs it into the per-test ``HERMES_HOME``.
+        installs it into the per-test ``VIGIL_HOME``.
         """
         try:
             from starlette.testclient import TestClient
@@ -5128,7 +5128,7 @@ class TestPluginAPIAuth:
         """Plugin API routes should work with a valid session token.
 
         Uses ``/api/plugins/example/hello`` from the example-dashboard
-        test fixture (installed into HERMES_HOME by the class-level
+        test fixture (installed into VIGIL_HOME by the class-level
         ``_install_example_plugin`` fixture) — a stable, side-effect-free
         GET that's only loaded for tests. With a valid token the handler
         should run (200); without one the middleware should 401 before
@@ -5221,7 +5221,7 @@ class TestDashboardPluginManifestExtensions:
         return plug_dir
 
     def test_override_and_hidden_carried_through(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("VIGIL_HOME", str(tmp_path))
         self._write_plugin(tmp_path, "skin-home", {
             "name": "skin-home",
             "label": "Skin Home",
@@ -5239,7 +5239,7 @@ class TestDashboardPluginManifestExtensions:
         assert entry["slots"] == ["sidebar", "header-left"]
 
     def test_override_requires_leading_slash(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("VIGIL_HOME", str(tmp_path))
         self._write_plugin(tmp_path, "bad-override", {
             "name": "bad-override",
             "label": "Bad",
@@ -5253,7 +5253,7 @@ class TestDashboardPluginManifestExtensions:
         assert "override" not in entry["tab"]
 
     def test_slots_default_empty(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("VIGIL_HOME", str(tmp_path))
         self._write_plugin(tmp_path, "no-slots", {
             "name": "no-slots",
             "label": "No Slots",
@@ -5269,7 +5269,7 @@ class TestDashboardPluginManifestExtensions:
         assert "override" not in entry["tab"]
 
     def test_slots_filters_non_string_entries(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("VIGIL_HOME", str(tmp_path))
         self._write_plugin(tmp_path, "mixed-slots", {
             "name": "mixed-slots",
             "label": "Mixed",
@@ -5288,7 +5288,7 @@ class TestDashboardPluginManifestExtensions:
         the manifest loader untouched.  The backend has no allowlist — the
         frontend ``<PluginSlot name="...">`` placements decide what actually
         renders — but the loader must not mangle colons in slot names."""
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("VIGIL_HOME", str(tmp_path))
         self._write_plugin(tmp_path, "page-slots", {
             "name": "page-slots",
             "label": "Page Slots",
@@ -5376,16 +5376,16 @@ class TestPtyWebSocket:
 
         _argv, _cwd, env = self.ws_module._resolve_chat_argv()
 
-        assert env["HERMES_TUI_DASHBOARD"] == "1"
-        assert env["HERMES_TUI_INLINE"] == "1"
-        assert env["HERMES_TUI_DISABLE_MOUSE"] == "1"
+        assert env["VIGIL_TUI_DASHBOARD"] == "1"
+        assert env["VIGIL_TUI_INLINE"] == "1"
+        assert env["VIGIL_TUI_DISABLE_MOUSE"] == "1"
 
     def test_resolve_chat_argv_applies_terminal_backend_config(
         self, monkeypatch, _isolate_hermes_home
     ):
         import hermes_cli.main as main_mod
 
-        config_path = Path(os.environ["HERMES_HOME"]) / "config.yaml"
+        config_path = Path(os.environ["VIGIL_HOME"]) / "config.yaml"
         config_path.write_text(
             "\n".join(
                 [
@@ -5683,7 +5683,7 @@ class TestPtyWebSocket:
 
     def test_channel_param_propagates_sidecar_url(self, monkeypatch):
         """When /api/pty is opened with ?channel=, the PTY child gets a
-        HERMES_TUI_SIDECAR_URL env var pointing back at /api/pub on the
+        VIGIL_TUI_SIDECAR_URL env var pointing back at /api/pub on the
         same channel — which is how tool events reach the dashboard sidebar."""
         captured: dict = {}
 
@@ -5796,7 +5796,7 @@ def test_resolve_chat_argv_injects_gateway_ws_url(monkeypatch):
     _argv, _cwd, env = ws._resolve_chat_argv()
 
     assert env is not None
-    gateway_url = env.get("HERMES_TUI_GATEWAY_URL", "")
+    gateway_url = env.get("VIGIL_TUI_GATEWAY_URL", "")
     assert gateway_url.startswith("ws://127.0.0.1:9119/api/ws?")
     assert "token=" in gateway_url
 
@@ -5823,7 +5823,7 @@ class TestDashboardPluginStaticAssetAllowlist:
         is served while ``plugin_api.py`` and ``__pycache__/*.pyc``
         from the same directory are not. Since the example plugin is
         no longer bundled, ``_install_example_plugin`` lays it down in
-        the per-test ``HERMES_HOME`` user-plugins dir.
+        the per-test ``VIGIL_HOME`` user-plugins dir.
         """
         try:
             from starlette.testclient import TestClient
@@ -6057,10 +6057,10 @@ class TestDesktopCronTicker:
 
         called = threading.Event()
         monkeypatch.setattr(sched, "tick", lambda *a, **k: called.set())
-        monkeypatch.setenv("HERMES_DESKTOP", "1")
+        monkeypatch.setenv("VIGIL_DESKTOP", "1")
 
         with self._client():
-            assert called.wait(3.0), "expected cron tick under HERMES_DESKTOP=1"
+            assert called.wait(3.0), "expected cron tick under VIGIL_DESKTOP=1"
 
     def test_ticker_skipped_without_desktop(self, monkeypatch, _isolate_hermes_home):
         import threading
@@ -6068,7 +6068,7 @@ class TestDesktopCronTicker:
 
         called = threading.Event()
         monkeypatch.setattr(sched, "tick", lambda *a, **k: called.set())
-        monkeypatch.delenv("HERMES_DESKTOP", raising=False)
+        monkeypatch.delenv("VIGIL_DESKTOP", raising=False)
 
         with self._client():
             assert not called.wait(0.5), "ticker must not run outside the desktop app"

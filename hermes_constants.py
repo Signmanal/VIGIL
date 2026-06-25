@@ -1,4 +1,4 @@
-"""Shared constants for Hermes Agent.
+"""Shared constants for VIGIL Agent.
 
 Import-safe module with no dependencies — can be imported from anywhere
 without risk of circular imports.
@@ -14,64 +14,64 @@ from pathlib import Path
 
 _profile_fallback_warned: bool = False
 _UNSET = object()
-_HERMES_HOME_OVERRIDE: ContextVar[str | object] = ContextVar(
-    "_HERMES_HOME_OVERRIDE", default=_UNSET
+_VIGIL_HOME_OVERRIDE: ContextVar[str | object] = ContextVar(
+    "_VIGIL_HOME_OVERRIDE", default=_UNSET
 )
 
 
 def set_hermes_home_override(path: str | Path | None) -> Token:
-    """Set a context-local Hermes home override and return its reset token.
+    """Set a context-local VIGIL home override and return its reset token.
 
     This is for in-process, per-task scoping.  It deliberately does not mutate
     ``os.environ`` because that is shared by every thread in the process.
     """
     value: str | object = _UNSET if path is None else str(path)
-    return _HERMES_HOME_OVERRIDE.set(value)
+    return _VIGIL_HOME_OVERRIDE.set(value)
 
 
 def reset_hermes_home_override(token: Token) -> None:
-    """Restore the previous context-local Hermes home override."""
-    _HERMES_HOME_OVERRIDE.reset(token)
+    """Restore the previous context-local VIGIL home override."""
+    _VIGIL_HOME_OVERRIDE.reset(token)
 
 
 def get_hermes_home_override() -> str | None:
-    """Return the active context-local Hermes home override, if any."""
-    override = _HERMES_HOME_OVERRIDE.get()
+    """Return the active context-local VIGIL home override, if any."""
+    override = _VIGIL_HOME_OVERRIDE.get()
     if override is _UNSET or not override:
         return None
     return str(override)
 
 
 def _get_platform_default_hermes_home() -> Path:
-    """Return the platform-native default Hermes home path."""
+    """Return the platform-native default VIGIL home path."""
     if sys.platform == "win32":
         local_appdata = os.environ.get("LOCALAPPDATA", "").strip()
         base = Path(local_appdata) if local_appdata else Path.home() / "AppData" / "Local"
-        return base / "hermes"
-    return Path.home() / ".hermes"
+        return base / "vigil"
+    return Path.home() / ".vigil"
 
 
 def get_hermes_home() -> Path:
-    """Return the Hermes home directory (default: platform-native path).
+    """Return the VIGIL home directory (default: platform-native path).
 
-    Reads HERMES_HOME env var, falls back to the platform-native default.
+    Reads VIGIL_HOME env var, falls back to the platform-native default.
     This is the single source of truth — all other copies should import this.
 
-    When ``HERMES_HOME`` is unset but an ``active_profile`` file indicates
+    When ``VIGIL_HOME`` is unset but an ``active_profile`` file indicates
     a non-default profile is active, logs a loud one-shot warning to
     ``errors.log`` so cross-profile data corruption is diagnosable instead
     of silent.  Behavior is unchanged otherwise — we still return
     the platform-native default — because raising here would brick 30+ module-level
     callers that import this at load time.  Subprocess spawners are
-    expected to propagate ``HERMES_HOME`` explicitly (see the systemd
+    expected to propagate ``VIGIL_HOME`` explicitly (see the systemd
     template in ``hermes_cli/gateway.py`` and the kanban dispatcher in
-    ``hermes_cli/kanban_db.py``).  See https://github.com/NousResearch/hermes-agent/issues/18594.
+    ``hermes_cli/kanban_db.py``).
     """
     override = get_hermes_home_override()
     if override:
         return Path(override)
 
-    val = os.environ.get("HERMES_HOME", "").strip()
+    val = os.environ.get("VIGIL_HOME", "").strip()
     if val:
         return Path(val)
 
@@ -93,11 +93,11 @@ def get_hermes_home() -> Path:
             # configured, and (b) root-logger propagation would double-emit
             # on consoles where a StreamHandler is already attached.
             msg = (
-                f"[HERMES_HOME fallback] HERMES_HOME is unset but active "
+                f"[VIGIL_HOME fallback] VIGIL_HOME is unset but active "
                 f"profile is {active!r}. Falling back to {fallback_home}, which "
                 f"is the DEFAULT profile — not {active!r}. Any data this "
                 f"process writes will land in the wrong profile. The "
-                f"subprocess spawner should pass HERMES_HOME explicitly "
+                f"subprocess spawner should pass VIGIL_HOME explicitly "
                 f"(see issue #18594)."
             )
             try:
@@ -110,30 +110,30 @@ def get_hermes_home() -> Path:
 
 
 def get_default_hermes_root() -> Path:
-    """Return the root Hermes directory for profile-level operations.
+    """Return the root VIGIL directory for profile-level operations.
 
-    In standard deployments this is the platform-native Hermes home
-    (``~/.hermes`` on POSIX, ``%LOCALAPPDATA%\\hermes`` on native Windows).
+    In standard deployments this is the platform-native VIGIL home
+    (``~/.vigil`` on POSIX, ``%LOCALAPPDATA%\\vigil`` on native Windows).
 
-    In Docker or custom deployments where ``HERMES_HOME`` points outside
-    ``~/.hermes`` (e.g. ``/opt/data``), returns ``HERMES_HOME`` directly
+    In Docker or custom deployments where ``VIGIL_HOME`` points outside
+    ``~/.vigil`` (e.g. ``/opt/data``), returns ``VIGIL_HOME`` directly
     — that IS the root.
 
-    In profile mode where ``HERMES_HOME`` is ``<root>/profiles/<name>``,
+    In profile mode where ``VIGIL_HOME`` is ``<root>/profiles/<name>``,
     returns ``<root>`` so that ``profile list`` can see all profiles.
-    Works both for standard (``~/.hermes/profiles/coder``) and Docker
+    Works both for standard (``~/.vigil/profiles/coder``) and Docker
     (``/opt/data/profiles/coder``) layouts.
 
     Import-safe — no dependencies beyond stdlib.
     """
     native_home = _get_platform_default_hermes_home()
-    env_home = os.environ.get("HERMES_HOME", "")
+    env_home = os.environ.get("VIGIL_HOME", "")
     if not env_home:
         return native_home
     env_path = Path(env_home)
     try:
         env_path.resolve().relative_to(native_home.resolve())
-        # HERMES_HOME is under ~/.hermes (normal or profile mode)
+        # VIGIL_HOME is under ~/.vigil (normal or profile mode)
         return native_home
     except ValueError:
         pass
@@ -145,14 +145,14 @@ def get_default_hermes_root() -> Path:
     if env_path.parent.name == "profiles":
         return env_path.parent.parent
 
-    # Not a profile path — HERMES_HOME itself is the root
+    # Not a profile path — VIGIL_HOME itself is the root
     return env_path
 
 
 def _get_packaged_data_dir(name: str) -> Path | None:
     """Return an installed data-files directory if one exists.
 
-    Used to discover bundled skills/optional-skills when Hermes is installed
+    Used to discover bundled skills/optional-skills when VIGIL is installed
     from a wheel that emitted them via setuptools data_files.
     """
     candidates = []
@@ -170,9 +170,9 @@ def get_optional_skills_dir(default: Path | None = None) -> Path:
     """Return the optional-skills directory, honoring package-manager wrappers.
 
     Packaged installs may ship ``optional-skills`` outside the Python package
-    tree and expose it via ``HERMES_OPTIONAL_SKILLS``.
+    tree and expose it via ``VIGIL_OPTIONAL_SKILLS``.
     """
-    override = os.getenv("HERMES_OPTIONAL_SKILLS", "").strip()
+    override = os.getenv("VIGIL_OPTIONAL_SKILLS", "").strip()
     if override:
         return Path(override)
     packaged = _get_packaged_data_dir("optional-skills")
@@ -189,9 +189,9 @@ def get_optional_mcps_dir(default: Path | None = None) -> Path:
     Mirrors :func:`get_optional_skills_dir` for the MCP catalog (Nous-approved
     Model Context Protocol servers shipped with the repo but disabled by
     default). Packaged installs may ship ``optional-mcps`` outside the Python
-    package tree and expose it via ``HERMES_OPTIONAL_MCPS``.
+    package tree and expose it via ``VIGIL_OPTIONAL_MCPS``.
     """
-    override = os.getenv("HERMES_OPTIONAL_MCPS", "").strip()
+    override = os.getenv("VIGIL_OPTIONAL_MCPS", "").strip()
     if override:
         return Path(override)
     packaged = _get_packaged_data_dir("optional-mcps")
@@ -206,12 +206,12 @@ def get_bundled_skills_dir(default: Path | None = None) -> Path:
     """Return the bundled skills directory for source and packaged installs.
 
     Resolution order:
-        1. ``HERMES_BUNDLED_SKILLS`` env var (Nix wrapper / explicit override)
+        1. ``VIGIL_BUNDLED_SKILLS`` env var (Nix wrapper / explicit override)
         2. Wheel-installed ``<sysconfig data>/skills`` (pip install path)
         3. Caller-supplied ``default`` (typically the source-checkout path)
-        4. ``<HERMES_HOME>/skills`` last-resort
+        4. ``<VIGIL_HOME>/skills`` last-resort
     """
-    override = os.getenv("HERMES_BUNDLED_SKILLS", "").strip()
+    override = os.getenv("VIGIL_BUNDLED_SKILLS", "").strip()
     if override:
         return Path(override)
     packaged = _get_packaged_data_dir("skills")
@@ -223,15 +223,15 @@ def get_bundled_skills_dir(default: Path | None = None) -> Path:
 
 
 def get_hermes_dir(new_subpath: str, old_name: str) -> Path:
-    """Resolve a Hermes subdirectory with backward compatibility.
+    """Resolve a VIGIL subdirectory with backward compatibility.
 
     New installs get the consolidated layout (e.g. ``cache/images``).
     Existing installs that already have the old path (e.g. ``image_cache``)
     keep using it — no migration required.
 
     Args:
-        new_subpath: Preferred path relative to HERMES_HOME (e.g. ``"cache/images"``).
-        old_name: Legacy path relative to HERMES_HOME (e.g. ``"image_cache"``).
+        new_subpath: Preferred path relative to VIGIL_HOME (e.g. ``"cache/images"``).
+        old_name: Legacy path relative to VIGIL_HOME (e.g. ``"image_cache"``).
 
     Returns:
         Absolute ``Path`` — old location if it exists on disk, otherwise the new one.
@@ -244,11 +244,11 @@ def get_hermes_dir(new_subpath: str, old_name: str) -> Path:
 
 
 def iter_hermes_node_dirs(home: Path | None = None) -> list[Path]:
-    """Return Hermes-managed Node.js directories in preferred lookup order.
+    """Return VIGIL-managed Node.js directories in preferred lookup order.
 
     Windows installs from ``scripts/install.ps1`` unpack portable Node directly
-    into ``%LOCALAPPDATA%\\hermes\\node``. POSIX installs use
-    ``$HERMES_HOME/node/bin``. Include both shapes on every platform so mixed
+    into ``%LOCALAPPDATA%\\vigil\\node``. POSIX installs use
+    ``$VIGIL_HOME/node/bin``. Include both shapes on every platform so mixed
     or migrated installs still work.
     """
     root = home or get_hermes_home()
@@ -278,7 +278,7 @@ def _candidate_node_command_names(command: str) -> list[str]:
 
 
 def find_hermes_node_executable(command: str) -> str | None:
-    """Return a Hermes-managed Node/npm executable path, if installed."""
+    """Return a VIGIL-managed Node/npm executable path, if installed."""
     names = _candidate_node_command_names(command)
     for directory in iter_hermes_node_dirs():
         for name in names:
@@ -295,7 +295,7 @@ def find_node_executable_on_path(command: str) -> str | None:
 
     ``shutil.which("npm")`` can resolve an extensionless npm shim before the
     ``.cmd`` shim on Windows. Python's CreateProcess cannot execute that shim
-    directly, so prefer the launchable variants explicitly for Hermes-owned
+    directly, so prefer the launchable variants explicitly for VIGIL-owned
     subprocesses.
     """
     if sys.platform != "win32":
@@ -319,16 +319,16 @@ def find_node_executable_on_path(command: str) -> str | None:
 
 
 def find_node_executable(command: str) -> str | None:
-    """Resolve a Node.js command, preferring Hermes-managed installs.
+    """Resolve a Node.js command, preferring VIGIL-managed installs.
 
-    This is for Hermes-owned subprocesses that should not be broken by a bad,
+    This is for VIGIL-owned subprocesses that should not be broken by a bad,
     missing, or elevation-triggering system Node/npm on PATH.
     """
     return find_hermes_node_executable(command) or find_node_executable_on_path(command)
 
 
 def with_hermes_node_path(env: dict[str, str] | None = None) -> dict[str, str]:
-    """Return *env* with Hermes-managed Node directories prepended to PATH."""
+    """Return *env* with VIGIL-managed Node directories prepended to PATH."""
     merged = dict(os.environ if env is None else env)
     existing = merged.get("PATH", "")
     parts = [p for p in existing.split(os.pathsep) if p]
@@ -386,16 +386,16 @@ def agent_browser_runnable(path: str | None) -> bool:
 
 
 def display_hermes_home() -> str:
-    """Return a user-friendly display string for the current HERMES_HOME.
+    """Return a user-friendly display string for the current VIGIL_HOME.
 
     Uses ``~/`` shorthand for readability::
 
-        default:  ``~/.hermes``
-        profile:  ``~/.hermes/profiles/coder``
+        default:  ``~/.vigil``
+        profile:  ``~/.vigil/profiles/coder``
         custom:   ``/opt/hermes-custom``
 
     Use this in **user-facing** print/log messages instead of hardcoding
-    ``~/.hermes``.  For code that needs a real ``Path``, use
+    ``~/.vigil``.  For code that needs a real ``Path``, use
     :func:`get_hermes_home` instead.
     """
     home = get_hermes_home()
@@ -410,10 +410,10 @@ def secure_parent_dir(path: Path) -> None:
 
     Refuses to chmod ``/`` or any top-level directory (resolved parent with
     fewer than 3 parts, i.e. ``/`` or any direct child like ``/usr``) to
-    prevent catastrophic host bricking when ``HERMES_HOME`` or other path
+    prevent catastrophic host bricking when ``VIGIL_HOME`` or other path
     env vars resolve to an unexpected location.
 
-    See https://github.com/NousResearch/hermes-agent/issues/25821.
+    See https://github.com/Signmanal/VIGIL/issues/25821.
     """
     parent = path.parent.resolve()
     # Refuse root and its direct children (/usr, /home, /var, /tmp, …).
@@ -437,8 +437,8 @@ def _norm_home_path(path: str | None) -> str:
 
 
 def _profile_home_path(env: dict[str, str] | None = None) -> str | None:
-    """Return ``{HERMES_HOME}/home`` when the profile-home directory exists."""
-    hermes_home = get_hermes_home_override() or (env or {}).get("HERMES_HOME") or os.getenv("HERMES_HOME")
+    """Return ``{VIGIL_HOME}/home`` when the profile-home directory exists."""
+    hermes_home = get_hermes_home_override() or (env or {}).get("VIGIL_HOME") or os.getenv("VIGIL_HOME")
     if not hermes_home:
         return None
     profile_home = os.path.join(hermes_home, "home")
@@ -455,7 +455,7 @@ def _iter_real_home_candidates(env: dict[str, str] | None = None) -> list[str]:
     """Return likely OS-user home candidates in trust order."""
     env = env or {}
     candidates: list[str] = []
-    explicit = str(env.get("HERMES_REAL_HOME") or os.getenv("HERMES_REAL_HOME", "")).strip()
+    explicit = str(env.get("VIGIL_REAL_HOME") or os.getenv("VIGIL_REAL_HOME", "")).strip()
     if explicit:
         candidates.append(explicit)
     home = str(env.get("HOME") or os.getenv("HOME", "")).strip()
@@ -483,11 +483,11 @@ def _iter_real_home_candidates(env: dict[str, str] | None = None) -> list[str]:
 
 
 def get_real_home(env: dict[str, str] | None = None) -> str:
-    """Return the OS user's real home directory, avoiding Hermes profile HOME.
+    """Return the OS user's real home directory, avoiding VIGIL profile HOME.
 
-    ``HERMES_HOME`` scopes Hermes state. ``HOME`` is reserved for the OS/user
+    ``VIGIL_HOME`` scopes VIGIL state. ``HOME`` is reserved for the OS/user
     account and the many external CLIs that store credentials under ``~``.
-    If a parent process is already running with ``HOME={HERMES_HOME}/home``,
+    If a parent process is already running with ``HOME={VIGIL_HOME}/home``,
     this helper repairs back to the account home when possible.
     """
     profile_home = _profile_home_path(env)
@@ -509,10 +509,10 @@ def get_subprocess_home(env: dict[str, str] | None = None) -> str | None:
     ``TERMINAL_HOME_MODE``):
 
     * ``auto`` (default): host installs keep the real user HOME; containers use
-      ``{HERMES_HOME}/home`` for persistent state. If a host parent already has
+      ``{VIGIL_HOME}/home`` for persistent state. If a host parent already has
       HOME pointed at the profile home, repair subprocesses back to real HOME.
     * ``real``: always prefer the real OS-user HOME.
-    * ``profile``: use ``{HERMES_HOME}/home`` when it exists, preserving the
+    * ``profile``: use ``{VIGIL_HOME}/home`` when it exists, preserving the
       older strict per-profile tool-config isolation.
     """
     env = env or {}
@@ -539,10 +539,10 @@ def get_subprocess_home(env: dict[str, str] | None = None) -> str | None:
 
 
 def apply_subprocess_home_env(env: dict[str, str]) -> None:
-    """Apply Hermes' subprocess HOME contract to *env* in-place."""
+    """Apply VIGIL' subprocess HOME contract to *env* in-place."""
     real_home = get_real_home(env)
     if real_home:
-        env["HERMES_REAL_HOME"] = real_home
+        env["VIGIL_REAL_HOME"] = real_home
     home = get_subprocess_home(env)
     if home:
         env["HOME"] = home
@@ -618,7 +618,7 @@ def is_container() -> bool:
 
     Result is cached for the process lifetime.  Import-safe — no heavy deps.
 
-    See: NousResearch/hermes-agent#47111
+    See: Signmanal/VIGIL#47111
     """
     global _container_detected
     if _container_detected is not None:
@@ -661,7 +661,7 @@ def is_container() -> bool:
 
 
 def get_config_path() -> Path:
-    """Return the path to ``config.yaml`` under HERMES_HOME.
+    """Return the path to ``config.yaml`` under VIGIL_HOME.
 
     Replaces the ``get_hermes_home() / "config.yaml"`` pattern repeated
     in 7+ files (skill_utils.py, hermes_logging.py, hermes_time.py, etc.).
@@ -670,13 +670,13 @@ def get_config_path() -> Path:
 
 
 def get_skills_dir() -> Path:
-    """Return the path to the skills directory under HERMES_HOME."""
+    """Return the path to the skills directory under VIGIL_HOME."""
     return get_hermes_home() / "skills"
 
 
 
 def get_env_path() -> Path:
-    """Return the path to the ``.env`` file under HERMES_HOME."""
+    """Return the path to the ``.env`` file under VIGIL_HOME."""
     return get_hermes_home() / ".env"
 
 

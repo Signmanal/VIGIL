@@ -77,7 +77,7 @@ class _ProviderEntry:
 
 
 # ---------------------------------------------------------------------------
-# HermesMCPOAuthProvider — OAuthClientProvider subclass with disk-watch
+# VIGILMCPOAuthProvider — OAuthClientProvider subclass with disk-watch
 # ---------------------------------------------------------------------------
 
 
@@ -92,7 +92,7 @@ def _make_hermes_provider_class() -> Optional[type]:
     except ImportError:  # pragma: no cover — SDK required in CI
         return None
 
-    class HermesMCPOAuthProvider(OAuthClientProvider):
+    class VIGILMCPOAuthProvider(OAuthClientProvider):
         """OAuthClientProvider with pre-flow disk-mtime reload.
 
         Before every ``async_auth_flow`` invocation, asks the manager to
@@ -139,7 +139,7 @@ def _make_hermes_provider_class() -> Optional[type]:
             ``async_auth_flow`` takes the ``can_refresh_token()`` branch,
             and the SDK quietly refreshes before the first real request.
 
-            Paired with :class:`HermesTokenStorage` persisting an absolute
+            Paired with :class:`VIGILTokenStorage` persisting an absolute
             ``expires_at`` timestamp (``mcp_oauth.py:set_tokens``) so the
             remaining TTL we compute here reflects real wall-clock age.
             """
@@ -154,9 +154,9 @@ def _make_hermes_provider_class() -> Optional[type]:
             # guessed ``{server_url}/token`` path (returns 404 on most real
             # providers) and require a full browser re-authorization.
             storage = self.context.storage
-            from tools.mcp_oauth import HermesTokenStorage
+            from tools.mcp_oauth import VIGILTokenStorage
             if (
-                isinstance(storage, HermesTokenStorage)
+                isinstance(storage, VIGILTokenStorage)
                 and self.context.oauth_metadata is None
             ):
                 meta = storage.load_oauth_metadata()
@@ -253,8 +253,8 @@ def _make_hermes_provider_class() -> Optional[type]:
                         # Persist immediately so a subsequent cold-load can
                         # skip discovery entirely.
                         storage = self.context.storage
-                        from tools.mcp_oauth import HermesTokenStorage
-                        if isinstance(storage, HermesTokenStorage):
+                        from tools.mcp_oauth import VIGILTokenStorage
+                        if isinstance(storage, VIGILTokenStorage):
                             storage.save_oauth_metadata(asm)
                         logger.debug(
                             "MCP OAuth '%s': pre-flight ASM discovered "
@@ -274,8 +274,8 @@ def _make_hermes_provider_class() -> Optional[type]:
             if meta is None:
                 return
             storage = self.context.storage
-            from tools.mcp_oauth import HermesTokenStorage
-            if not isinstance(storage, HermesTokenStorage):
+            from tools.mcp_oauth import VIGILTokenStorage
+            if not isinstance(storage, VIGILTokenStorage):
                 return
             existing = storage.load_oauth_metadata()
             if (
@@ -324,11 +324,11 @@ def _make_hermes_provider_class() -> Optional[type]:
                 self._persist_oauth_metadata_if_changed()
                 return
 
-    return HermesMCPOAuthProvider
+    return VIGILMCPOAuthProvider
 
 
 # Cached at import time. Tested and used by :class:`MCPOAuthManager`.
-_HERMES_PROVIDER_CLS: Optional[type] = _make_hermes_provider_class()
+_VIGIL_PROVIDER_CLS: Optional[type] = _make_hermes_provider_class()
 
 
 # ---------------------------------------------------------------------------
@@ -392,14 +392,14 @@ class MCPOAuthManager:
     ) -> Optional[Any]:
         """Build the underlying OAuth provider.
 
-        Constructs :class:`HermesMCPOAuthProvider` directly using the helpers
+        Constructs :class:`VIGILMCPOAuthProvider` directly using the helpers
         extracted from ``tools.mcp_oauth``. The subclass injects a pre-flow
         disk-watch hook so external token refreshes (cron, other CLI
         instances) are visible to running MCP sessions.
 
         Returns None if the MCP SDK's OAuth support is unavailable.
         """
-        if _HERMES_PROVIDER_CLS is None:
+        if _VIGIL_PROVIDER_CLS is None:
             logger.warning(
                 "MCP OAuth '%s': SDK auth module unavailable", server_name,
             )
@@ -407,7 +407,7 @@ class MCPOAuthManager:
 
         # Local imports avoid circular deps at module import time.
         from tools.mcp_oauth import (
-            HermesTokenStorage,
+            VIGILTokenStorage,
             OAuthNonInteractiveError,
             _OAUTH_AVAILABLE,
             _build_client_metadata,
@@ -422,7 +422,7 @@ class MCPOAuthManager:
             return None
 
         cfg = dict(entry.oauth_config or {})
-        storage = HermesTokenStorage(server_name)
+        storage = VIGILTokenStorage(server_name)
 
         if not _is_interactive() and not storage.has_cached_tokens():
             raise OAuthNonInteractiveError(
@@ -437,7 +437,7 @@ class MCPOAuthManager:
         client_metadata = _build_client_metadata(cfg)
         _maybe_preregister_client(storage, cfg, client_metadata)
 
-        return _HERMES_PROVIDER_CLS(
+        return _VIGIL_PROVIDER_CLS(
             server_name=server_name,
             server_url=entry.server_url,
             client_metadata=client_metadata,

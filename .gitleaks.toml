@@ -1,0 +1,25 @@
+title = "VIGIL gitleaks configuration"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Known upstream fixtures, public client identifiers, and secret-redaction patterns."
+regexTarget = "match"
+paths = [
+  '''(^|/)tests?/.*$''',
+  '''(^|/)(optional-)?skills/.*/references/llms-(full|txt)\.md$''',
+  '''(^|/)skills/gifs/gif-search/SKILL\.md$''',
+  '''(^|/)website/(docs|i18n)/.*\.md$''',
+  '''(^|/)docs/.*\.md$''',
+  '''(^|/)exprted\.jsonl$''',
+  '''(^|/)README\.md$''',
+  '''(^|/)AGENTS\.md$''',
+  '''(^|/)evals/terminal-bench-2/evaluate_config\.yaml$''',
+  '''(^|/)mixture_of_agents_tool\.py$''',
+  '''(^|/)agent/redact\.py$''',
+]
+regexes = [
+  '''(?i)(?:OAUTH_CLIENT_ID|DEFAULT_NOUS_CLIENT_ID|VAPI_DEFAULT_VOICE_ID|_PUBLIC_CLIENT_SECRET_SUFFIX)\s*=\s*["'][^"']+["']''',
+  '''-----BEGIN[A-Z ]*PRIVATE KEY-----\[\\s\\S\]\*\?-----END[A-Z ]*PRIVATE KEY-----''',
+]

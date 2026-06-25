@@ -1,12 +1,12 @@
 #!/bin/bash
 # ============================================================================
-# Hermes Agent Installer
+# VIGIL Agent Installer
 # ============================================================================
 # Installation script for Linux, macOS, and Android/Termux.
 # Uses uv for desktop/server installs and Python's stdlib venv + pip on Termux.
 #
 # Usage:
-#   curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
+#   curl -fsSL https://vigil-agent.nousresearch.com/install.sh | bash
 #
 # Or with options:
 #   curl -fsSL ... | bash -s -- --no-venv --skip-setup
@@ -16,7 +16,7 @@
 set -e
 
 # Guard against environment leakage when the installer is launched from another
-# Python-driven tool session (e.g. Hermes terminal tool). A pre-set PYTHONPATH
+# Python-driven tool session (e.g. VIGIL terminal tool). A pre-set PYTHONPATH
 # can force pip/entrypoints to import a different checkout than the one being
 # installed, which makes fresh installs appear broken or stale.
 if [ -n "${PYTHONPATH:-}" ]; then
@@ -43,14 +43,14 @@ NC='\033[0m' # No Color
 BOLD='\033[1m'
 
 # Configuration
-REPO_URL_SSH="git@github.com:NousResearch/hermes-agent.git"
-REPO_URL_HTTPS="https://github.com/NousResearch/hermes-agent.git"
-HERMES_HOME="${HERMES_HOME:-$HOME/.hermes}"
+REPO_URL_SSH="git@github.com:NousResearch/vigil-agent.git"
+REPO_URL_HTTPS="https://github.com/NousResearch/vigil-agent.git"
+VIGIL_HOME="${VIGIL_HOME:-$HOME/.vigil}"
 # INSTALL_DIR is resolved AFTER arg parsing and OS detection so we can pick an
 # FHS-style layout for root installs.  Track whether the user gave us an
 # explicit directory — if so we never override it.
-if [ -n "${HERMES_INSTALL_DIR:-}" ]; then
-    INSTALL_DIR="$HERMES_INSTALL_DIR"
+if [ -n "${VIGIL_INSTALL_DIR:-}" ]; then
+    INSTALL_DIR="$VIGIL_INSTALL_DIR"
     INSTALL_DIR_EXPLICIT=true
 else
     INSTALL_DIR=""
@@ -60,8 +60,8 @@ PYTHON_VERSION="3.11"
 NODE_VERSION="22"
 
 # FHS-style root install layout (set by resolve_install_layout when applicable):
-#   code at /usr/local/lib/hermes-agent, command at /usr/local/bin/hermes,
-#   data still at /root/.hermes (HERMES_HOME).  Matches Claude Code / Codex CLI
+#   code at /usr/local/lib/vigil-agent, command at /usr/local/bin/vigil,
+#   data still at /root/.vigil (VIGIL_HOME).  Matches Claude Code / Codex CLI
 #   and keeps Docker bind-mounted /root/ volumes lean.
 ROOT_FHS_LAYOUT=false
 DETECTED_BROWSER_EXECUTABLE=""
@@ -143,7 +143,7 @@ while [[ $# -gt 0 ]]; do
             shift 2
             ;;
         --hermes-home)
-            HERMES_HOME="$2"
+            VIGIL_HOME="$2"
             shift 2
             ;;
         --ensure)
@@ -155,7 +155,7 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         -h|--help)
-            echo "Hermes Agent Installer"
+            echo "VIGIL Agent Installer"
             echo ""
             echo "Usage: install.sh [OPTIONS]"
             echo ""
@@ -164,7 +164,7 @@ while [[ $# -gt 0 ]]; do
             echo "  --skip-setup   Skip interactive setup wizard"
             echo "  --skip-browser Skip Playwright/Chromium install (browser tools won't work)"
             echo "  --no-skills    Start with a blank slate — seed no bundled skills, and"
-            echo "                   write \$HERMES_HOME/.no-bundled-skills so future"
+            echo "                   write \$VIGIL_HOME/.no-bundled-skills so future"
             echo "                   'hermes update' runs never inject bundled skills either"
             echo "  --branch NAME  Git branch to install (default: main)"
             echo "  --commit SHA   Pin checkout to a specific commit after clone/update"
@@ -172,21 +172,21 @@ while [[ $# -gt 0 ]]; do
             echo "  --stage NAME   Run one desktop bootstrap stage"
             echo "  --json         Print a JSON result frame for --stage"
             echo "  --non-interactive  Skip stages that require user input"
-            echo "  --include-desktop  Also build the desktop app (apps/desktop -> Hermes.app)"
+            echo "  --include-desktop  Also build the desktop app (apps/desktop -> VIGIL.app)"
             echo "  --dir PATH     Installation directory"
-            echo "                   default (non-root):  ~/.hermes/hermes-agent"
-            echo "                   default (root, Linux): /usr/local/lib/hermes-agent"
-            echo "  --hermes-home PATH  Data directory (default: ~/.hermes, or \$HERMES_HOME)"
+            echo "                   default (non-root):  ~/.vigil/vigil-agent"
+            echo "                   default (root, Linux): /usr/local/lib/vigil-agent"
+            echo "  --hermes-home PATH  Data directory (default: ~/.vigil, or \$VIGIL_HOME)"
             echo "  -h, --help     Show this help"
             echo ""
             echo "Notes:"
-            echo "  When running as root on Linux, Hermes installs the code under"
-            echo "  /usr/local/lib/hermes-agent and links the command into"
-            echo "  /usr/local/bin/hermes (FHS layout — matches Claude Code / Codex CLI)."
-            echo "  Data, config, sessions, and logs still live in \$HERMES_HOME"
-            echo "  (default /root/.hermes).  This keeps Docker bind-mounted volumes"
+            echo "  When running as root on Linux, VIGIL installs the code under"
+            echo "  /usr/local/lib/vigil-agent and links the command into"
+            echo "  /usr/local/bin/vigil (FHS layout — matches Claude Code / Codex CLI)."
+            echo "  Data, config, sessions, and logs still live in \$VIGIL_HOME"
+            echo "  (default /root/.vigil).  This keeps Docker bind-mounted volumes"
             echo "  small and ensures the command is on PATH for all shells."
-            echo "  Existing installs at \$HERMES_HOME/hermes-agent are preserved in-place."
+            echo "  Existing installs at \$VIGIL_HOME/vigil-agent are preserved in-place."
             echo "  --ensure DEPS  Install only specified deps (comma-separated)"
             echo "                   Supported: node, browser, ripgrep, ffmpeg"
             echo "                   Does NOT clone repo or create venv"
@@ -210,7 +210,7 @@ print_banner() {
     echo ""
     echo -e "${MAGENTA}${BOLD}"
     echo "┌─────────────────────────────────────────────────────────┐"
-    echo "│             ⚕ Hermes Agent Installer                    │"
+    echo "│             ⚕ VIGIL Agent Installer                    │"
     echo "├─────────────────────────────────────────────────────────┤"
     echo "│  An open source AI agent by Nous Research.              │"
     echo "└─────────────────────────────────────────────────────────┘"
@@ -260,7 +260,7 @@ restore_dirty_lockfiles() {
 
 emit_manifest() {
     # Stage-Desktop is included only with --include-desktop, mirroring
-    # install.ps1: the signed bootstrap installer (Hermes-Setup) passes it so
+    # install.ps1: the signed bootstrap installer (VIGIL-Setup) passes it so
     # a GUI install ends up with a launchable app; the Electron app's own
     # first-launch bootstrap and the CLI one-liner omit it (building the
     # desktop from inside the already-running app would clobber it).
@@ -268,7 +268,7 @@ emit_manifest() {
     if [ "$INCLUDE_DESKTOP" = true ]; then
         desktop_stage='{"name":"desktop","title":"Build desktop app","category":"runtime","needs_user_input":false},'
     fi
-    printf '%s' '{"protocol_version":1,"stages":[{"name":"prerequisites","title":"System prerequisites","category":"runtime","needs_user_input":false},{"name":"repository","title":"Download Hermes Agent","category":"runtime","needs_user_input":false},{"name":"venv","title":"Create Python virtual environment","category":"runtime","needs_user_input":false},{"name":"python-deps","title":"Install Python dependencies","category":"runtime","needs_user_input":false},{"name":"node-deps","title":"Install browser-tool dependencies","category":"runtime","needs_user_input":false},{"name":"path","title":"Install hermes command","category":"runtime","needs_user_input":false},{"name":"config","title":"Prepare config and skills","category":"configuration","needs_user_input":false},{"name":"setup","title":"Configure API keys and settings","category":"configuration","needs_user_input":true},{"name":"gateway","title":"Configure gateway service","category":"configuration","needs_user_input":true},'"$desktop_stage"'{"name":"complete","title":"Finish install","category":"runtime","needs_user_input":false}]}'
+    printf '%s' '{"protocol_version":1,"stages":[{"name":"prerequisites","title":"System prerequisites","category":"runtime","needs_user_input":false},{"name":"repository","title":"Download VIGIL Agent","category":"runtime","needs_user_input":false},{"name":"venv","title":"Create Python virtual environment","category":"runtime","needs_user_input":false},{"name":"python-deps","title":"Install Python dependencies","category":"runtime","needs_user_input":false},{"name":"node-deps","title":"Install browser-tool dependencies","category":"runtime","needs_user_input":false},{"name":"path","title":"Install hermes command","category":"runtime","needs_user_input":false},{"name":"config","title":"Prepare config and skills","category":"configuration","needs_user_input":false},{"name":"setup","title":"Configure API keys and settings","category":"configuration","needs_user_input":true},{"name":"gateway","title":"Configure gateway service","category":"configuration","needs_user_input":true},'"$desktop_stage"'{"name":"complete","title":"Finish install","category":"runtime","needs_user_input":false}]}'
     printf '\n'
 }
 
@@ -340,25 +340,25 @@ is_termux() {
 # symlink goes.  Called after detect_os so $OS/$DISTRO are known.
 #
 # Defaults:
-#   - Non-root, any OS:       INSTALL_DIR = $HERMES_HOME/hermes-agent
+#   - Non-root, any OS:       INSTALL_DIR = $VIGIL_HOME/vigil-agent
 #                             command link in $HOME/.local/bin
-#   - Termux (any uid):       INSTALL_DIR = $HERMES_HOME/hermes-agent
+#   - Termux (any uid):       INSTALL_DIR = $VIGIL_HOME/vigil-agent
 #                             command link in $PREFIX/bin (already on PATH)
-#   - Root on Linux (new):    INSTALL_DIR = /usr/local/lib/hermes-agent
+#   - Root on Linux (new):    INSTALL_DIR = /usr/local/lib/vigil-agent
 #                             command link in /usr/local/bin
 #                             (unless a legacy install already exists at
-#                              $HERMES_HOME/hermes-agent — then preserve it)
+#                              $VIGIL_HOME/vigil-agent — then preserve it)
 #
-# Always no-op when the user set --dir or $HERMES_INSTALL_DIR.
+# Always no-op when the user set --dir or $VIGIL_INSTALL_DIR.
 resolve_install_layout() {
     if [ "$INSTALL_DIR_EXPLICIT" = true ]; then
         log_info "Install directory: $INSTALL_DIR (explicit)"
         return 0
     fi
 
-    # Termux: package manager manages /data/data/..., keep code in HERMES_HOME.
+    # Termux: package manager manages /data/data/..., keep code in VIGIL_HOME.
     if is_termux; then
-        INSTALL_DIR="$HERMES_HOME/hermes-agent"
+        INSTALL_DIR="$VIGIL_HOME/vigil-agent"
         return 0
     fi
 
@@ -366,31 +366,31 @@ resolve_install_layout() {
     # macOS root installs keep the legacy layout because /usr/local/ on macOS
     # is Homebrew territory and we don't want to fight that.
     if [ "$OS" = "linux" ] && [ "$(id -u)" -eq 0 ]; then
-        if [ -d "$HERMES_HOME/hermes-agent/.git" ]; then
-            INSTALL_DIR="$HERMES_HOME/hermes-agent"
+        if [ -d "$VIGIL_HOME/vigil-agent/.git" ]; then
+            INSTALL_DIR="$VIGIL_HOME/vigil-agent"
             log_info "Existing install detected at $INSTALL_DIR — keeping legacy layout"
-            log_info "  (new root installs use /usr/local/lib/hermes-agent)"
+            log_info "  (new root installs use /usr/local/lib/vigil-agent)"
             return 0
         fi
-        INSTALL_DIR="/usr/local/lib/hermes-agent"
+        INSTALL_DIR="/usr/local/lib/vigil-agent"
         ROOT_FHS_LAYOUT=true
         # Place uv-managed Python under /usr/local/share so the venv interpreter
         # is world-readable.  Default uv paths land in /root/.local/share/uv,
         # which non-root users can't traverse — leaving the shared
-        # /usr/local/bin/hermes wrapper unable to exec the bad-interpreter venv
+        # /usr/local/bin/vigil wrapper unable to exec the bad-interpreter venv
         # python.  See #21457.
         export UV_PYTHON_INSTALL_DIR="${UV_PYTHON_INSTALL_DIR:-/usr/local/share/uv/python}"
         export UV_PYTHON_BIN_DIR="${UV_PYTHON_BIN_DIR:-/usr/local/share/uv/bin}"
         log_info "Root install on Linux — using FHS layout"
         log_info "  Code:    $INSTALL_DIR"
-        log_info "  Command: /usr/local/bin/hermes"
-        log_info "  Data:    $HERMES_HOME (unchanged)"
+        log_info "  Command: /usr/local/bin/vigil"
+        log_info "  Data:    $VIGIL_HOME (unchanged)"
         log_info "  uv Python: $UV_PYTHON_INSTALL_DIR (world-readable)"
         return 0
     fi
 
     # Default: non-root, non-Termux → legacy user-scoped layout.
-    INSTALL_DIR="$HERMES_HOME/hermes-agent"
+    INSTALL_DIR="$VIGIL_HOME/vigil-agent"
 }
 
 get_command_link_dir() {
@@ -413,23 +413,23 @@ get_command_link_display_dir() {
     fi
 }
 
-# Point a Hermes-managed Node's `npm install -g` at a directory that is on
+# Point a VIGIL-managed Node's `npm install -g` at a directory that is on
 # PATH. npm's default global prefix for a bundled Node is the Node dir itself,
-# so global package binaries land in $HERMES_HOME/node/bin — which is NOT on
+# so global package binaries land in $VIGIL_HOME/node/bin — which is NOT on
 # PATH (only the command link dir is) and is wiped on every Node upgrade.
 # Redirecting the prefix to the link dir's parent makes global bins resolve to
 # the command link dir (node/npm/npx live there too, already on PATH) and
 # survive upgrades. Scoped to the managed Node via its prefix-local global
 # npmrc, so the user's other Node installs and their ~/.npmrc are untouched.
-# Hermes's own global installs pass an explicit --prefix and are unaffected.
-# Idempotent and a no-op when there is no Hermes-managed npm, so calling it on
+# VIGIL's own global installs pass an explicit --prefix and are unaffected.
+# Idempotent and a no-op when there is no VIGIL-managed npm, so calling it on
 # every install run repairs pre-existing installs, not just fresh ones.
 configure_managed_node_npm_prefix() {
-    [ -x "$HERMES_HOME/node/bin/npm" ] || return 0
+    [ -x "$VIGIL_HOME/node/bin/npm" ] || return 0
     local link_dir
     link_dir="$(get_command_link_dir)"
-    mkdir -p "$HERMES_HOME/node/etc"
-    printf 'prefix=%s\n' "$(dirname "$link_dir")" > "$HERMES_HOME/node/etc/npmrc"
+    mkdir -p "$VIGIL_HOME/node/etc"
+    printf 'prefix=%s\n' "$(dirname "$link_dir")" > "$VIGIL_HOME/node/etc/npmrc"
 }
 
 get_hermes_command_path() {
@@ -470,7 +470,7 @@ detect_os() {
             OS="windows"
             DISTRO="windows"
             log_error "Windows detected. Please use the PowerShell installer:"
-            log_info "  iex (irm https://hermes-agent.nousresearch.com/install.ps1)"
+            log_info "  iex (irm https://vigil-agent.nousresearch.com/install.ps1)"
             exit 1
             ;;
         *)
@@ -494,11 +494,11 @@ install_uv() {
         return 0
     fi
 
-    # Hermes owns its own uv at $HERMES_HOME/bin/uv.  Always install there —
+    # VIGIL owns its own uv at $VIGIL_HOME/bin/uv.  Always install there —
     # no PATH probing, no conda guards, no multi-location resolution chains.
     # The runtime update path (hermes_cli/managed_uv.py) looks in the same
     # place, so install.sh and `hermes update` stay in sync.
-    local _managed_uv="$HERMES_HOME/bin/uv"
+    local _managed_uv="$VIGIL_HOME/bin/uv"
 
     if [ -x "$_managed_uv" ]; then
         UV_CMD="$_managed_uv"
@@ -507,8 +507,8 @@ install_uv() {
         return 0
     fi
 
-    log_info "Installing managed uv into $HERMES_HOME/bin ..."
-    mkdir -p "$HERMES_HOME/bin"
+    log_info "Installing managed uv into $VIGIL_HOME/bin ..."
+    mkdir -p "$VIGIL_HOME/bin"
 
     # Two-stage: download the installer, then run it.  Piping
     # `curl | sh` masks curl failures (sh exits 0 on empty stdin)
@@ -525,8 +525,8 @@ install_uv() {
         exit 1
     fi
     # UV_UNMANAGED_INSTALL tells the astral installer to place the binary
-    # directly into $HERMES_HOME/bin instead of ~/.local/bin.
-    if UV_UNMANAGED_INSTALL="$HERMES_HOME/bin" sh "$_uv_installer" >>"$_uv_install_log" 2>&1; then
+    # directly into $VIGIL_HOME/bin instead of ~/.local/bin.
+    if UV_UNMANAGED_INSTALL="$VIGIL_HOME/bin" sh "$_uv_installer" >>"$_uv_install_log" 2>&1; then
         rm -f "$_uv_installer"
         if [ -x "$_managed_uv" ]; then
             UV_CMD="$_managed_uv"
@@ -725,7 +725,7 @@ check_git() {
 # `^20.19 || >=22.12` — older Node lacks `node:util.styleText`, so `vite build`
 # crashes with a SyntaxError that surfaces only as the opaque "Build desktop
 # app … exit code 1" install failure. Returns 0 when the given `node --version`
-# string clears that floor; anything below it is replaced with the Hermes-
+# string clears that floor; anything below it is replaced with the VIGIL-
 # managed Node $NODE_VERSION LTS.
 node_satisfies_build() {
     local ver="${1#v}"
@@ -741,7 +741,7 @@ node_satisfies_build() {
 check_node() {
     log_info "Checking Node.js (for browser tools)..."
 
-    # Repair pre-existing Hermes-managed installs where `npm install -g` lands
+    # Repair pre-existing VIGIL-managed installs where `npm install -g` lands
     # off PATH. No-op when there's no managed Node, so this is safe to run on
     # every install — including re-runs that skip the Node (re)install below.
     configure_managed_node_npm_prefix
@@ -752,16 +752,16 @@ check_node() {
         return 0
     fi
 
-    # Prefer a Hermes-managed Node from a previous run over a too-old system one.
-    if [ -x "$HERMES_HOME/node/bin/node" ] && node_satisfies_build "$("$HERMES_HOME/node/bin/node" --version)"; then
-        export PATH="$HERMES_HOME/node/bin:$PATH"
-        log_success "Node.js $("$HERMES_HOME/node/bin/node" --version) found (Hermes-managed)"
+    # Prefer a VIGIL-managed Node from a previous run over a too-old system one.
+    if [ -x "$VIGIL_HOME/node/bin/node" ] && node_satisfies_build "$("$VIGIL_HOME/node/bin/node" --version)"; then
+        export PATH="$VIGIL_HOME/node/bin:$PATH"
+        log_success "Node.js $("$VIGIL_HOME/node/bin/node" --version) found (VIGIL-managed)"
         HAS_NODE=true
         return 0
     fi
 
     if command -v node &> /dev/null; then
-        log_warn "Node.js $(node --version) is too old for the desktop build (need ^20.19 or >=22.12) — installing Hermes-managed Node $NODE_VERSION LTS..."
+        log_warn "Node.js $(node --version) is too old for the desktop build (need ^20.19 or >=22.12) — installing VIGIL-managed Node $NODE_VERSION LTS..."
     elif [ "$DISTRO" = "termux" ]; then
         log_info "Node.js not found — installing Node.js via pkg..."
     else
@@ -843,7 +843,7 @@ install_node() {
         return 0
     fi
 
-    log_info "Extracting to ~/.hermes/node/..."
+    log_info "Extracting to ~/.vigil/node/..."
     if [[ "$tarball_name" == *.tar.xz ]]; then
         tar xf "$tmp_dir/$tarball_name" -C "$tmp_dir"
     else
@@ -860,28 +860,28 @@ install_node() {
         return 0
     fi
 
-    # Place into ~/.hermes/node/ and symlink binaries into the same bin dir
+    # Place into ~/.vigil/node/ and symlink binaries into the same bin dir
     # the hermes command uses (get_command_link_dir): /usr/local/bin for root
     # FHS installs, $PREFIX/bin on Termux, ~/.local/bin otherwise.
-    rm -rf "$HERMES_HOME/node"
-    mkdir -p "$HERMES_HOME"
-    mv "$extracted_dir" "$HERMES_HOME/node"
+    rm -rf "$VIGIL_HOME/node"
+    mkdir -p "$VIGIL_HOME"
+    mv "$extracted_dir" "$VIGIL_HOME/node"
     rm -rf "$tmp_dir"
 
     local node_link_dir
     node_link_dir="$(get_command_link_dir)"
     mkdir -p "$node_link_dir"
-    ln -sf "$HERMES_HOME/node/bin/node" "$node_link_dir/node"
-    ln -sf "$HERMES_HOME/node/bin/npm"  "$node_link_dir/npm"
-    ln -sf "$HERMES_HOME/node/bin/npx"  "$node_link_dir/npx"
+    ln -sf "$VIGIL_HOME/node/bin/node" "$node_link_dir/node"
+    ln -sf "$VIGIL_HOME/node/bin/npm"  "$node_link_dir/npm"
+    ln -sf "$VIGIL_HOME/node/bin/npx"  "$node_link_dir/npx"
 
     configure_managed_node_npm_prefix
 
-    export PATH="$HERMES_HOME/node/bin:$PATH"
+    export PATH="$VIGIL_HOME/node/bin:$PATH"
 
     local installed_ver
-    installed_ver=$("$HERMES_HOME/node/bin/node" --version 2>/dev/null)
-    log_success "Node.js $installed_ver installed to ~/.hermes/node/"
+    installed_ver=$("$VIGIL_HOME/node/bin/node" --version 2>/dev/null)
+    log_success "Node.js $installed_ver installed to ~/.vigil/node/"
     HAS_NODE=true
 }
 
@@ -915,7 +915,7 @@ check_network_prerequisites() {
         log_info "If mirrors are stale: termux-change-repo"
         log_info "Then test: curl -I https://pypi.org/simple/ && curl -I https://duckduckgo.com/"
     else
-        log_warn "Network checks failed. Hermes install may complete, but web search and dependency downloads can fail."
+        log_warn "Network checks failed. VIGIL install may complete, but web search and dependency downloads can fail."
         log_info "Verify internet/DNS and retry if pip install fails."
     fi
 }
@@ -1039,7 +1039,7 @@ install_system_packages() {
             if [ "$IS_INTERACTIVE" = true ]; then
                 echo ""
                 log_info "sudo is needed ONLY to install optional system packages (${pkgs[*]}) via your package manager."
-                log_info "Hermes Agent itself does not require or retain root access."
+                log_info "VIGIL Agent itself does not require or retain root access."
                 if prompt_yes_no "Install ${description}? (requires sudo)" "no"; then
                     if sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a $install_cmd; then
                         [ "$need_ripgrep" = true ] && HAS_RIPGREP=true && log_success "ripgrep installed"
@@ -1055,7 +1055,7 @@ install_system_packages() {
                 # but opening fails with ENXIO. See #16746.
                 echo ""
                 log_info "sudo is needed ONLY to install optional system packages (${pkgs[*]}) via your package manager."
-                log_info "Hermes Agent itself does not require or retain root access."
+                log_info "VIGIL Agent itself does not require or retain root access."
                 if prompt_yes_no "Install ${description}?" "yes"; then
                     if sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a $install_cmd < /dev/tty; then
                         [ "$need_ripgrep" = true ] && HAS_RIPGREP=true && log_success "ripgrep installed"
@@ -1185,7 +1185,7 @@ clone_repo() {
                     if git stash apply "$autostash_ref"; then
                         git stash drop "$autostash_ref" >/dev/null
                         log_warn "Local changes were restored on top of the updated codebase."
-                        log_warn "Review git diff / git status if Hermes behaves unexpectedly."
+                        log_warn "Review git diff / git status if VIGIL behaves unexpectedly."
                     else
                         log_error "Update succeeded, but restoring local changes failed. Your changes are still preserved in git stash."
                         log_info "Resolve manually with: git stash apply $autostash_ref"
@@ -1369,7 +1369,7 @@ install_deps() {
                     log_success "Build tools installed"
                 else
                     log_info "sudo is needed ONLY to install build tools (build-essential, python3-dev, libffi-dev) via apt."
-                    log_info "Hermes Agent itself does not require or retain root access."
+                    log_info "VIGIL Agent itself does not require or retain root access."
                     if prompt_yes_no "Install build tools?" "yes"; then
                         sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get update -qq && sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get install -y -qq build-essential python3-dev libffi-dev >/dev/null 2>&1 || true
                         log_success "Build tools installed"
@@ -1460,7 +1460,7 @@ try:
     specs = data["project"]["optional-dependencies"]["all"]
     extras = []
     for s in specs:
-        m = re.search(r"hermes-agent\[([\w-]+)\]", s)
+        m = re.search(r"vigil-agent\[([\w-]+)\]", s)
         if m:
             extras.append(m.group(1))
     print(",".join(extras))
@@ -1536,18 +1536,18 @@ setup_path() {
     log_info "Setting up hermes command..."
 
     if [ "$USE_VENV" = true ]; then
-        HERMES_BIN="$INSTALL_DIR/venv/bin/hermes"
+        VIGIL_BIN="$INSTALL_DIR/venv/bin/hermes"
     else
-        HERMES_BIN="$(which hermes 2>/dev/null || echo "")"
-        if [ -z "$HERMES_BIN" ]; then
+        VIGIL_BIN="$(which hermes 2>/dev/null || echo "")"
+        if [ -z "$VIGIL_BIN" ]; then
             log_warn "hermes not found on PATH after install"
             return 0
         fi
     fi
 
     # Verify the entry point script was actually generated
-    if [ ! -x "$HERMES_BIN" ]; then
-        log_warn "hermes entry point not found at $HERMES_BIN"
+    if [ ! -x "$VIGIL_BIN" ]; then
+        log_warn "hermes entry point not found at $VIGIL_BIN"
         log_info "This usually means the pip install didn't complete successfully."
         if [ "$DISTRO" = "termux" ]; then
             log_info "Try: cd $INSTALL_DIR && python -m pip install -e '.[termux-all]' -c constraints-termux.txt"
@@ -1566,15 +1566,15 @@ setup_path() {
     # We intentionally clear PYTHONPATH/PYTHONHOME here so inherited env vars
     # can't make this launcher import modules from another checkout.
     mkdir -p "$command_link_dir"
-    # Older installs created this path as a symlink to $HERMES_BIN. Without
+    # Older installs created this path as a symlink to $VIGIL_BIN. Without
     # the rm, `cat >` follows the symlink and overwrites the venv pip entry
-    # point with this shim — making `exec "$HERMES_BIN"` self-recurse. (#21454)
+    # point with this shim — making `exec "$VIGIL_BIN"` self-recurse. (#21454)
     rm -f "$command_link_dir/hermes"
     cat > "$command_link_dir/hermes" <<EOF
 #!/usr/bin/env bash
 unset PYTHONPATH
 unset PYTHONHOME
-exec "$HERMES_BIN" "\$@"
+exec "$VIGIL_BIN" "\$@"
 EOF
     chmod +x "$command_link_dir/hermes"
     log_success "Installed hermes launcher → $command_link_display_dir/hermes"
@@ -1606,7 +1606,7 @@ EOF
 
         log_info "hermes not on PATH in non-login shells (common on RHEL-family)"
         PATH_LINE='export PATH="/usr/local/bin:$PATH"'
-        PATH_COMMENT='# Hermes Agent — ensure /usr/local/bin is on PATH (RHEL non-login shells)'
+        PATH_COMMENT='# VIGIL Agent — ensure /usr/local/bin is on PATH (RHEL non-login shells)'
         for SHELL_CONFIG in "$HOME/.bashrc" "$HOME/.bash_profile"; do
             [ -f "$SHELL_CONFIG" ] || continue
             if ! grep -v '^[[:space:]]*#' "$SHELL_CONFIG" 2>/dev/null \
@@ -1663,7 +1663,7 @@ EOF
         for SHELL_CONFIG in "${SHELL_CONFIGS[@]}"; do
             if ! grep -v '^[[:space:]]*#' "$SHELL_CONFIG" 2>/dev/null | grep -qE 'PATH=.*\.local/bin'; then
                 echo "" >> "$SHELL_CONFIG"
-                echo "# Hermes Agent — ensure ~/.local/bin is on PATH" >> "$SHELL_CONFIG"
+                echo "# VIGIL Agent — ensure ~/.local/bin is on PATH" >> "$SHELL_CONFIG"
                 echo "$PATH_LINE" >> "$SHELL_CONFIG"
                 log_success "Added ~/.local/bin to PATH in $SHELL_CONFIG"
             fi
@@ -1673,7 +1673,7 @@ EOF
         if [ "$IS_FISH" = "true" ]; then
             if ! grep -q 'fish_add_path.*\.local/bin' "$FISH_CONFIG" 2>/dev/null; then
                 echo "" >> "$FISH_CONFIG"
-                echo "# Hermes Agent — ensure ~/.local/bin is on PATH" >> "$FISH_CONFIG"
+                echo "# VIGIL Agent — ensure ~/.local/bin is on PATH" >> "$FISH_CONFIG"
                 echo 'fish_add_path "$HOME/.local/bin"' >> "$FISH_CONFIG"
                 log_success "Added ~/.local/bin to PATH in $FISH_CONFIG"
             fi
@@ -1696,35 +1696,35 @@ EOF
 copy_config_templates() {
     log_info "Setting up configuration files..."
 
-    # Create ~/.hermes directory structure (config at top level, code in subdir)
-    mkdir -p "$HERMES_HOME"/{cron,sessions,logs,pairing,hooks,image_cache,audio_cache,memories,skills}
+    # Create ~/.vigil directory structure (config at top level, code in subdir)
+    mkdir -p "$VIGIL_HOME"/{cron,sessions,logs,pairing,hooks,image_cache,audio_cache,memories,skills}
 
-    # Create .env at ~/.hermes/.env (top level, easy to find)
-    if [ ! -f "$HERMES_HOME/.env" ]; then
+    # Create .env at ~/.vigil/.env (top level, easy to find)
+    if [ ! -f "$VIGIL_HOME/.env" ]; then
         if [ -f "$INSTALL_DIR/.env.example" ]; then
-            cp "$INSTALL_DIR/.env.example" "$HERMES_HOME/.env"
-            log_success "Created ~/.hermes/.env from template"
+            cp "$INSTALL_DIR/.env.example" "$VIGIL_HOME/.env"
+            log_success "Created ~/.vigil/.env from template"
         else
-            touch "$HERMES_HOME/.env"
-            log_success "Created ~/.hermes/.env"
+            touch "$VIGIL_HOME/.env"
+            log_success "Created ~/.vigil/.env"
         fi
     else
-        log_info "~/.hermes/.env already exists, keeping it"
+        log_info "~/.vigil/.env already exists, keeping it"
     fi
     # Restrict .env permissions — this file holds API keys and tokens.
     # 0600 ensures only the file owner can read/write, matching standard
     # practice for credential files (.netrc, .aws/credentials, .ssh/config).
-    chmod 600 "$HERMES_HOME/.env"
+    chmod 600 "$VIGIL_HOME/.env"
     configure_browser_env_from_system_browser
 
-    # Create config.yaml at ~/.hermes/config.yaml (top level, easy to find)
-    if [ ! -f "$HERMES_HOME/config.yaml" ]; then
+    # Create config.yaml at ~/.vigil/config.yaml (top level, easy to find)
+    if [ ! -f "$VIGIL_HOME/config.yaml" ]; then
         if [ -f "$INSTALL_DIR/cli-config.yaml.example" ]; then
-            cp "$INSTALL_DIR/cli-config.yaml.example" "$HERMES_HOME/config.yaml"
-            log_success "Created ~/.hermes/config.yaml from template"
+            cp "$INSTALL_DIR/cli-config.yaml.example" "$VIGIL_HOME/config.yaml"
+            log_success "Created ~/.vigil/config.yaml from template"
         fi
     else
-        log_info "~/.hermes/config.yaml already exists, keeping it"
+        log_info "~/.vigil/config.yaml already exists, keeping it"
     fi
 
     # Create SOUL.md if it doesn't exist (global persona file).
@@ -1732,16 +1732,16 @@ copy_config_templates() {
     # runtime (_ensure_default_soul_md) treats the old comment-only scaffold as
     # "never customized" and upgrades it to this text on next run, so any drift
     # here is self-healing, but keep them in sync to avoid a churn on first run.
-    if [ ! -f "$HERMES_HOME/SOUL.md" ]; then
-        cat > "$HERMES_HOME/SOUL.md" << 'SOUL_EOF'
-You are Hermes Agent, an intelligent AI assistant created by Nous Research. You are helpful, knowledgeable, and direct. You assist users with a wide range of tasks including answering questions, writing and editing code, analyzing information, creative work, and executing actions via your tools. You communicate clearly, admit uncertainty when appropriate, and prioritize being genuinely useful over being verbose unless otherwise directed below. Be targeted and efficient in your exploration and investigations.
+    if [ ! -f "$VIGIL_HOME/SOUL.md" ]; then
+        cat > "$VIGIL_HOME/SOUL.md" << 'SOUL_EOF'
+You are VIGIL Agent, an intelligent AI assistant created by Nous Research. You are helpful, knowledgeable, and direct. You assist users with a wide range of tasks including answering questions, writing and editing code, analyzing information, creative work, and executing actions via your tools. You communicate clearly, admit uncertainty when appropriate, and prioritize being genuinely useful over being verbose unless otherwise directed below. Be targeted and efficient in your exploration and investigations.
 SOUL_EOF
-        log_success "Created ~/.hermes/SOUL.md (edit to customize personality)"
+        log_success "Created ~/.vigil/SOUL.md (edit to customize personality)"
     fi
 
-    log_success "Configuration directory ready: ~/.hermes/"
+    log_success "Configuration directory ready: ~/.vigil/"
 
-    # Seed bundled skills into ~/.hermes/skills/ (manifest-based, one-time per skill)
+    # Seed bundled skills into ~/.vigil/skills/ (manifest-based, one-time per skill)
     if [ "$NO_SKILLS" = true ]; then
         # Blank-slate install: write the opt-out marker and skip seeding.
         # skills_sync.py and `hermes update` both honor this marker, so the
@@ -1749,18 +1749,18 @@ SOUL_EOF
         printf '%s\n' \
             "This profile opted out of bundled-skill seeding (installed with --no-skills)." \
             "Delete this file to re-enable sync on the next 'hermes update'." \
-            > "$HERMES_HOME/.no-bundled-skills" 2>/dev/null || true
-        log_info "Skipping bundled skills (--no-skills). Wrote $HERMES_HOME/.no-bundled-skills"
+            > "$VIGIL_HOME/.no-bundled-skills" 2>/dev/null || true
+        log_info "Skipping bundled skills (--no-skills). Wrote $VIGIL_HOME/.no-bundled-skills"
         log_info "  Future 'hermes update' runs will not inject bundled skills. Delete the marker to opt back in."
     else
-        log_info "Syncing bundled skills to ~/.hermes/skills/ ..."
+        log_info "Syncing bundled skills to ~/.vigil/skills/ ..."
         if "$INSTALL_DIR/venv/bin/python" "$INSTALL_DIR/tools/skills_sync.py" 2>/dev/null; then
-            log_success "Skills synced to ~/.hermes/skills/"
+            log_success "Skills synced to ~/.vigil/skills/"
         else
             # Fallback: simple directory copy if Python sync fails
-            if [ -d "$INSTALL_DIR/skills" ] && [ ! "$(ls -A "$HERMES_HOME/skills/" 2>/dev/null | grep -v '.bundled_manifest')" ]; then
-                cp -r "$INSTALL_DIR/skills/"* "$HERMES_HOME/skills/" 2>/dev/null || true
-                log_success "Skills copied to ~/.hermes/skills/"
+            if [ -d "$INSTALL_DIR/skills" ] && [ ! "$(ls -A "$VIGIL_HOME/skills/" 2>/dev/null | grep -v '.bundled_manifest')" ]; then
+                cp -r "$INSTALL_DIR/skills/"* "$VIGIL_HOME/skills/" 2>/dev/null || true
+                log_success "Skills copied to ~/.vigil/skills/"
             fi
         fi
     fi
@@ -1809,17 +1809,17 @@ strip_snap_browser_override() {
     # snap-pointing override here (and its auto-written comment) so the bundled
     # Chromium download runs and the agent stops using the broken binary. A
     # deliberately-set non-snap override is left untouched.
-    local env_file="$HERMES_HOME/.env"
+    local env_file="$VIGIL_HOME/.env"
 
     [ -f "$env_file" ] || return 0
     grep -Eq '^AGENT_BROWSER_EXECUTABLE_PATH=/snap/' "$env_file" 2>/dev/null || return 0
 
     local tmp
     tmp="$(mktemp)" || return 0
-    if grep -Ev '^AGENT_BROWSER_EXECUTABLE_PATH=/snap/|^# Hermes Agent browser tools' "$env_file" > "$tmp"; then
+    if grep -Ev '^AGENT_BROWSER_EXECUTABLE_PATH=/snap/|^# VIGIL Agent browser tools' "$env_file" > "$tmp"; then
         mv "$tmp" "$env_file"
         log_warn "Removed stale Snap browser override (AGENT_BROWSER_EXECUTABLE_PATH=/snap/...) from $env_file"
-        log_info "Hermes will use the bundled Chromium instead."
+        log_info "VIGIL will use the bundled Chromium instead."
         # Drop it from this process too so the rest of the run doesn't re-detect it.
         unset AGENT_BROWSER_EXECUTABLE_PATH
     else
@@ -1839,7 +1839,7 @@ run_browser_install_with_timeout() {
 }
 
 configure_browser_env_from_system_browser() {
-    local env_file="$HERMES_HOME/.env"
+    local env_file="$VIGIL_HOME/.env"
     local browser_path="${DETECTED_BROWSER_EXECUTABLE:-}"
 
     if [ -z "$browser_path" ]; then
@@ -1850,7 +1850,7 @@ configure_browser_env_from_system_browser() {
         return 0
     fi
 
-    mkdir -p "$HERMES_HOME"
+    mkdir -p "$VIGIL_HOME"
     if [ ! -f "$env_file" ]; then
         touch "$env_file"
     fi
@@ -1862,7 +1862,7 @@ configure_browser_env_from_system_browser() {
 
     {
         echo ""
-        echo "# Hermes Agent browser tools — explicit browser override."
+        echo "# VIGIL Agent browser tools — explicit browser override."
         echo "AGENT_BROWSER_EXECUTABLE_PATH=$browser_path"
     } >> "$env_file"
     log_success "Configured browser tools to use $browser_path"
@@ -2031,7 +2031,7 @@ run_setup_wizard() {
 
 maybe_start_gateway() {
     # Check if any messaging platform tokens were configured
-    ENV_FILE="$HERMES_HOME/.env"
+    ENV_FILE="$VIGIL_HOME/.env"
     if [ ! -f "$ENV_FILE" ]; then
         return 0
     fi
@@ -2051,11 +2051,11 @@ maybe_start_gateway() {
 
     echo ""
     log_info "Messaging platform token detected!"
-    log_info "The gateway needs to be running for Hermes to send/receive messages."
+    log_info "The gateway needs to be running for VIGIL to send/receive messages."
 
     # If WhatsApp is enabled and no session exists yet, run foreground first for QR scan
     WHATSAPP_VAL=$(grep "^WHATSAPP_ENABLED=" "$ENV_FILE" 2>/dev/null | cut -d'=' -f2-)
-    WHATSAPP_SESSION="$HERMES_HOME/whatsapp/session/creds.json"
+    WHATSAPP_SESSION="$VIGIL_HOME/whatsapp/session/creds.json"
     if [ "$WHATSAPP_VAL" = "true" ] && [ ! -f "$WHATSAPP_SESSION" ]; then
         if [ "$IS_INTERACTIVE" = true ]; then
             echo ""
@@ -2063,8 +2063,8 @@ maybe_start_gateway() {
             log_info "Running 'hermes whatsapp' to pair via QR code..."
             echo ""
             if prompt_yes_no "Pair WhatsApp now?" "yes"; then
-                HERMES_CMD="$(get_hermes_command_path)"
-                $HERMES_CMD whatsapp || true
+                VIGIL_CMD="$(get_hermes_command_path)"
+                $VIGIL_CMD whatsapp || true
             fi
         else
             log_info "WhatsApp pairing skipped (non-interactive). Run 'hermes whatsapp' to pair."
@@ -2092,13 +2092,13 @@ maybe_start_gateway() {
     fi
 
     if [ "$should_install_gateway" = true ]; then
-        HERMES_CMD="$(get_hermes_command_path)"
+        VIGIL_CMD="$(get_hermes_command_path)"
 
         if [ "$DISTRO" != "termux" ] && command -v systemctl &> /dev/null; then
             log_info "Installing systemd service..."
-            if $HERMES_CMD gateway install 2>/dev/null; then
+            if $VIGIL_CMD gateway install 2>/dev/null; then
                 log_success "Gateway service installed"
-                if $HERMES_CMD gateway start 2>/dev/null; then
+                if $VIGIL_CMD gateway start 2>/dev/null; then
                     log_success "Gateway started! Your bot is now online."
                 else
                     log_warn "Service installed but failed to start. Try: hermes gateway start"
@@ -2112,9 +2112,9 @@ maybe_start_gateway() {
             else
                 log_info "systemd not available — starting gateway in background..."
             fi
-            nohup $HERMES_CMD gateway > "$HERMES_HOME/logs/gateway.log" 2>&1 &
+            nohup $VIGIL_CMD gateway > "$VIGIL_HOME/logs/gateway.log" 2>&1 &
             GATEWAY_PID=$!
-            log_success "Gateway started (PID $GATEWAY_PID). Logs: ~/.hermes/logs/gateway.log"
+            log_success "Gateway started (PID $GATEWAY_PID). Logs: ~/.vigil/logs/gateway.log"
             log_info "To stop: kill $GATEWAY_PID"
             log_info "To restart later: hermes gateway"
             if [ "$DISTRO" = "termux" ]; then
@@ -2138,9 +2138,9 @@ print_success() {
     # Show file locations
     echo -e "${CYAN}${BOLD}📁 Your files:${NC}"
     echo ""
-    echo -e "   ${YELLOW}Config:${NC}    $HERMES_HOME/config.yaml"
-    echo -e "   ${YELLOW}API Keys:${NC}  $HERMES_HOME/.env"
-    echo -e "   ${YELLOW}Data:${NC}      $HERMES_HOME/cron/, sessions/, logs/"
+    echo -e "   ${YELLOW}Config:${NC}    $VIGIL_HOME/config.yaml"
+    echo -e "   ${YELLOW}API Keys:${NC}  $VIGIL_HOME/.env"
+    echo -e "   ${YELLOW}Data:${NC}      $VIGIL_HOME/cron/, sessions/, logs/"
     echo -e "   ${YELLOW}Code:${NC}      $INSTALL_DIR"
     echo ""
 
@@ -2209,9 +2209,9 @@ print_success() {
 
 ensure_browser() {
     if ! command -v node >/dev/null 2>&1; then
-        local node_bin="$HERMES_HOME/node/bin/node"
+        local node_bin="$VIGIL_HOME/node/bin/node"
         if [ -x "$node_bin" ]; then
-            export PATH="$HERMES_HOME/node/bin:$PATH"
+            export PATH="$VIGIL_HOME/node/bin:$PATH"
         else
             log_error "Node.js not found. Run with --ensure node first."
             return 1
@@ -2219,7 +2219,7 @@ ensure_browser() {
     fi
 
     local npm_bin
-    npm_bin="$(command -v npm 2>/dev/null || echo "$HERMES_HOME/node/bin/npm")"
+    npm_bin="$(command -v npm 2>/dev/null || echo "$VIGIL_HOME/node/bin/npm")"
     if [ ! -x "$npm_bin" ]; then
         log_error "npm not found"
         return 1
@@ -2228,7 +2228,7 @@ ensure_browser() {
     log_info "Installing agent-browser..."
     local log_file
     log_file="$(mktemp)"
-    if ! "$npm_bin" install -g --prefix "$HERMES_HOME/node" --silent --ignore-scripts \
+    if ! "$npm_bin" install -g --prefix "$VIGIL_HOME/node" --silent --ignore-scripts \
         "agent-browser@^0.26.0" \
         "@askjo/camofox-browser@^1.5.2" \
         >"$log_file" 2>&1; then
@@ -2238,7 +2238,7 @@ ensure_browser() {
         return 1
     fi
     rm -f "$log_file"
-    export PATH="$HERMES_HOME/node/bin:$PATH"
+    export PATH="$VIGIL_HOME/node/bin:$PATH"
 
     strip_snap_browser_override
     local sys_browser
@@ -2250,7 +2250,7 @@ ensure_browser() {
     fi
 
     log_info "Installing Chromium via agent-browser install..."
-    local ab_bin="$HERMES_HOME/node/bin/agent-browser"
+    local ab_bin="$VIGIL_HOME/node/bin/agent-browser"
     if [ -x "$ab_bin" ]; then
         "$ab_bin" install 2>/dev/null || {
             log_warn "Chromium install failed. Browser tools may not work without a system browser."
@@ -2316,7 +2316,7 @@ postinstall_mode() {
     print_banner
     detect_os
 
-    log_info "Post-install mode: setting up Hermes for pip install"
+    log_info "Post-install mode: setting up VIGIL for pip install"
 
     check_node
     check_network_prerequisites
@@ -2326,10 +2326,10 @@ postinstall_mode() {
         ensure_browser
     fi
 
-    HERMES_CMD="$(command -v hermes 2>/dev/null || echo "")"
-    if [ -n "$HERMES_CMD" ]; then
+    VIGIL_CMD="$(command -v hermes 2>/dev/null || echo "")"
+    if [ -n "$VIGIL_CMD" ]; then
         log_info "Running hermes setup..."
-        "$HERMES_CMD" setup
+        "$VIGIL_CMD" setup
     else
         log_warn "hermes command not found on PATH"
         log_info "Try: python -m hermes_cli.main setup"
@@ -2340,7 +2340,7 @@ postinstall_mode() {
 # next `npm run pack` re-downloads and re-stages from scratch. A corrupt zip in
 # the per-user Electron download cache - most often a partial/resumed download
 # that leaves concatenated junk - makes electron-builder's `unpack-electron`
-# extract a tree MISSING the electron binary, so the `electron`->`Hermes` rename
+# extract a tree MISSING the electron binary, so the `electron`->`VIGIL` rename
 # dies with ENOENT and every re-run repeats the broken extraction forever. This
 # is the bash sibling of install.ps1's Clear-ElectronBuildCache and the Python
 # _purge_electron_build_cache() used by `hermes desktop`; install.sh was the only
@@ -2489,7 +2489,7 @@ install_desktop() {
     # with no app and a confusing "couldn't find a built desktop" at launch.
     # Always re-resolve Node here. Stages run in separate processes, so we can't
     # trust an earlier check; more importantly check_node now enforces the build
-    # floor (^20.19 || >=22.12) and prepends the Hermes-managed Node to PATH, so
+    # floor (^20.19 || >=22.12) and prepends the VIGIL-managed Node to PATH, so
     # the build never runs on a too-old system Node — the cause of the opaque
     # "Build desktop app … exit code 1" failure (Vite crashes on old Node).
     check_node
@@ -2587,16 +2587,16 @@ install_desktop() {
 
     local app=""
     if [ "$OS" = "linux" ]; then
-        if [ -x "$desktop_dir/release/linux-unpacked/Hermes" ]; then
-            app="$desktop_dir/release/linux-unpacked/Hermes"
+        if [ -x "$desktop_dir/release/linux-unpacked/VIGIL" ]; then
+            app="$desktop_dir/release/linux-unpacked/VIGIL"
         elif [ -x "$desktop_dir/release/linux-unpacked/hermes" ]; then
             app="$desktop_dir/release/linux-unpacked/hermes"
         fi
     else
         local cand
         for cand in \
-            "$desktop_dir/release/mac-arm64/Hermes.app" \
-            "$desktop_dir/release/mac/Hermes.app"; do
+            "$desktop_dir/release/mac-arm64/VIGIL.app" \
+            "$desktop_dir/release/mac/VIGIL.app"; do
             if [ -d "$cand" ]; then
                 app="$cand"
                 break
@@ -2636,7 +2636,7 @@ install_desktop() {
     # macOS: make the locally-built (ad-hoc) app relaunchable after an in-place
     # self-update. An ad-hoc bundle has no stable Designated Requirement, so a
     # later in-place rebuild (new cdhash) plus the inherited quarantine flag
-    # trips Gatekeeper's tamper check ("Hermes is damaged and can't be opened").
+    # trips Gatekeeper's tamper check ("VIGIL is damaged and can't be opened").
     # Strip quarantine + re-apply a clean deep ad-hoc signature (no
     # hardened-runtime flag, which an ad-hoc build can't satisfy). Skipped when a
     # real signing identity is configured so a signed build isn't clobbered.
@@ -2737,8 +2737,8 @@ run_stage_body() {
             detect_os
             resolve_install_layout
             require_install_dir
-            # Each stage runs in its own process, so the Hermes-managed Node
-            # provisioned during prerequisites/node-deps (at $HERMES_HOME/node/bin)
+            # Each stage runs in its own process, so the VIGIL-managed Node
+            # provisioned during prerequisites/node-deps (at $VIGIL_HOME/node/bin)
             # isn't on PATH here. check_node re-adds it (or installs if missing)
             # so install_desktop can find npm instead of silently skipping.
             check_node
@@ -2749,7 +2749,7 @@ run_stage_body() {
             resolve_install_layout
             print_success
             # Code-scoped stamp: write next to the install tree, not into
-            # $HERMES_HOME. $HERMES_HOME is a shared data dir (it can be
+            # $VIGIL_HOME. $VIGIL_HOME is a shared data dir (it can be
             # bind-mounted into a Docker gateway too), so a stamp there gets
             # clobbered by the container's 'docker' stamp and wrongly blocks
             # 'hermes update' on this host install. See detect_install_method().
@@ -2832,8 +2832,8 @@ main() {
 
     print_success
 
-    # Code-scoped stamp: write next to the install tree, not into $HERMES_HOME.
-    # $HERMES_HOME is a shared data dir (it can be bind-mounted into a Docker
+    # Code-scoped stamp: write next to the install tree, not into $VIGIL_HOME.
+    # $VIGIL_HOME is a shared data dir (it can be bind-mounted into a Docker
     # gateway too), so a stamp there gets clobbered by the container's 'docker'
     # stamp and wrongly blocks 'hermes update' on this host install.
     # See detect_install_method().

@@ -15,7 +15,7 @@ across sessions like a typed one.
 These tests drive the real ``_handle_model_command`` with a fake picker-capable
 adapter that captures the ``on_model_selected`` callback, then invoke that
 callback and assert ``config.yaml`` is (or isn't) updated — exercising the exact
-closure the PR changed, against a real temp ``HERMES_HOME``.
+closure the PR changed, against a real temp ``VIGIL_HOME``.
 """
 
 import types
@@ -84,7 +84,7 @@ def _setup_isolated_home(tmp_path, monkeypatch, model_yaml_value):
     """Write a config.yaml with the given ``model:`` value and stub heavy bits."""
     import gateway.run as gateway_run
 
-    hermes_home = tmp_path / ".hermes"
+    hermes_home = tmp_path / ".vigil"
     hermes_home.mkdir()
     cfg_path = hermes_home / "config.yaml"
     cfg_path.write_text(

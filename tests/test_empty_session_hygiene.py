@@ -106,12 +106,12 @@ class TestDeleteSessionIfEmpty:
 
 
 class TestCLIDiscardSessionIfEmpty:
-    """Wiring tests for HermesCLI._discard_session_if_empty."""
+    """Wiring tests for VIGILCLI._discard_session_if_empty."""
 
     def _make_cli(self, db):
-        from cli import HermesCLI
+        from cli import VIGILCLI
 
-        cli = HermesCLI.__new__(HermesCLI)
+        cli = VIGILCLI.__new__(VIGILCLI)
         cli._session_db = db
         cli.conversation_history = []
         return cli

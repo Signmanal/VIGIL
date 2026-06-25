@@ -27,7 +27,7 @@ from fastapi.testclient import TestClient
 from hermes_cli import web_server
 from hermes_cli.dashboard_auth import clear_providers, register_provider
 from hermes_cli.dashboard_auth.cookies import SESSION_AT_COOKIE
-from tests.hermes_cli.conftest_dashboard_auth import StubAuthProvider
+from tests.vigil_cli.conftest_dashboard_auth import StubAuthProvider
 
 
 @pytest.fixture

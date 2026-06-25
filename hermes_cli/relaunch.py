@@ -1,5 +1,5 @@
 """
-Unified self-relaunch for Hermes CLI.
+Unified self-relaunch for VIGIL CLI.
 
 Preserves critical flags (--tui, --dev, --profile, --model, etc.) across
 process replacement so that ``hermes sessions browse`` or post-setup relaunch
@@ -82,7 +82,7 @@ def resolve_hermes_bin() -> Optional[str]:
 
     Priority:
       1. ``sys.argv[0]`` if it resolves to a real executable.
-      2. ``shutil.which("hermes")`` on PATH.
+      2. ``shutil.which("vigil")`` on PATH.
       3. ``None`` → caller should fall back to ``python -m hermes_cli.main``.
 
     Windows note: ``os.access(path, os.X_OK)`` returns True for ``.py`` and
@@ -114,7 +114,7 @@ def resolve_hermes_bin() -> Optional[str]:
                 return abs_path
 
     # PATH lookup
-    path_bin = shutil.which("hermes")
+    path_bin = shutil.which("vigil")
     if path_bin:
         return path_bin
 
@@ -195,7 +195,7 @@ def relaunch(
             # cryptic.  Common causes: ``hermes`` not on PATH yet (install
             # hasn't propagated User PATH into this shell) or a stale shim.
             print(
-                f"\nHermes relaunch failed: {exc}\n"
+                f"\nVIGIL relaunch failed: {exc}\n"
                 f"Command: {' '.join(new_argv)}\n"
                 f"Fix: open a new terminal so PATH picks up, then re-run hermes.",
                 file=sys.stderr,

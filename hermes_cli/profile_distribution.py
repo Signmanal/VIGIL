@@ -1,6 +1,6 @@
-"""Profile distributions — shareable, packaged Hermes profiles via git.
+"""Profile distributions — shareable, packaged VIGIL profiles via git.
 
-A distribution is a Hermes profile published as a git repository (or
+A distribution is a VIGIL profile published as a git repository (or
 installed from a local directory for development). Install with one command
 from a git URL, update in place, and keep your local memories / sessions /
 credentials untouched.
@@ -106,14 +106,14 @@ USER_OWNED_EXCLUDE: frozenset = frozenset({
     "response_store.db-shm", "response_store.db-wal",
     "gateway.pid", "gateway_state.json", "processes.json",
     "auth.lock", "active_profile", ".update_check",
-    "errors.log", ".hermes_history",
+    "errors.log", ".vigil_history",
     # User data
     "memories", "sessions", "logs", "plans", "workspace", "home",
     "image_cache", "audio_cache", "document_cache",
     "browser_screenshots", "checkpoints", "sandboxes",
     "backups", "cache",
     # Infrastructure
-    "hermes-agent", ".worktrees", "profiles", "bin", "node_modules",
+    "vigil-agent", ".worktrees", "profiles", "bin", "node_modules",
     # User customization namespace
     "local",
 })
@@ -219,8 +219,8 @@ class DistributionManifest:
         }
         if self.description:
             out["description"] = self.description
-        if self.hermes_requires:
-            out["hermes_requires"] = self.hermes_requires
+        if self.vigil_requires:
+            out["hermes_requires"] = self.vigil_requires
         if self.author:
             out["author"] = self.author
         if self.license:
@@ -322,7 +322,7 @@ def check_hermes_requires(spec: str, current_version: str) -> None:
     }[op]
     if not ok:
         raise DistributionError(
-            f"This distribution requires Hermes {op}{target}, "
+            f"This distribution requires VIGIL {op}{target}, "
             f"but you have {current_version}."
         )
 
@@ -335,7 +335,7 @@ def check_hermes_requires(spec: str, current_version: str) -> None:
 def _env_template_from_manifest(manifest: DistributionManifest) -> str:
     """Generate a ``.env.template`` body from env_requires."""
     lines = [
-        "# Environment variables required by this Hermes distribution.",
+        "# Environment variables required by this VIGIL distribution.",
         "# Copy to `.env` and fill in your own values before running.",
         "",
     ]
@@ -412,7 +412,7 @@ def _stage_source(source: str, workdir: Path) -> Tuple[Path, str]:
         if not (cloned / MANIFEST_FILENAME).is_file():
             raise DistributionError(
                 f"No {MANIFEST_FILENAME} at the root of {src_str!r}. "
-                "This repository is not a Hermes profile distribution."
+                "This repository is not a VIGIL profile distribution."
             )
         return cloned, src_str
 
@@ -503,11 +503,11 @@ def plan_install(
     if manifest is None:
         raise DistributionError(
             f"No {MANIFEST_FILENAME} found at the distribution root — "
-            "this source is not a Hermes distribution."
+            "this source is not a VIGIL distribution."
         )
 
     # Version check up-front so we fail fast
-    check_hermes_requires(manifest.hermes_requires, hermes_version)
+    check_hermes_requires(manifest.vigil_requires, hermes_version)
 
     # Resolve target profile name
     target_name = override_name or manifest.name
@@ -516,7 +516,7 @@ def plan_install(
     if canon == "default":
         raise DistributionError(
             "Cannot install a distribution as 'default' — that is the built-in "
-            "root profile (~/.hermes).  Pass --name <name> to install under a "
+            "root profile (~/.vigil).  Pass --name <name> to install under a "
             "new profile."
         )
     manifest.name = canon

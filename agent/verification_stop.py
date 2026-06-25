@@ -18,7 +18,7 @@ _MAX_CHANGED_PATHS_IN_NUDGE = 8
 
 def verify_on_stop_enabled(config: dict[str, Any] | None = None) -> bool:
     """Return whether edit -> verify-before-finish behavior is enabled."""
-    env = os.environ.get("HERMES_VERIFY_ON_STOP")
+    env = os.environ.get("VIGIL_VERIFY_ON_STOP")
     if env is not None:
         return env.strip().lower() not in {"0", "false", "no", "off"}
     if config is None:

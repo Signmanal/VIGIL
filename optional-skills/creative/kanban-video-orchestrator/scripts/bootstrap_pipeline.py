@@ -3,7 +3,7 @@
 Bootstrap a video production kanban from a structured plan JSON.
 
 Reads a plan.json describing the team + brief, expands templates from
-../assets/, and writes a setup.sh that creates Hermes profiles and fires the
+../assets/, and writes a setup.sh that creates VIGIL profiles and fires the
 initial kanban task.
 
 Profile-config patching, SOUL.md-per-profile, TEAM.md task-graph convention,
@@ -98,13 +98,13 @@ def validate_plan(plan: dict) -> list[str]:
                           "responsibilities"]:
                     if k not in t:
                         errors.append(f"team[{i}] missing {k}")
-                # Profile name must match Hermes's regex (lowercase
+                # Profile name must match VIGIL's regex (lowercase
                 # alphanumeric + hyphens + underscores, up to 64 chars).
                 if "profile" in t:
                     if not PROFILE_NAME_RE.match(t["profile"]):
                         errors.append(
                             f"team[{i}].profile {t['profile']!r} must match "
-                            f"[a-z0-9][a-z0-9_-]{{0,63}} per Hermes profile rules"
+                            f"[a-z0-9][a-z0-9_-]{{0,63}} per VIGIL profile rules"
                         )
                     if t["profile"] in seen_profiles:
                         errors.append(
@@ -361,7 +361,7 @@ def render_setup_sh(plan: dict, brief_md: str, team_md: str) -> str:
     soul_writes = []
     for t in plan["team"]:
         soul_writes.append(
-            f'cat > "$HOME/.hermes/profiles/{t["profile"]}/SOUL.md" <<\'SOUL_EOF\'\n'
+            f'cat > "$HOME/.vigil/profiles/{t["profile"]}/SOUL.md" <<\'SOUL_EOF\'\n'
             f"{render_soul_md(t, plan)}\n"
             f"SOUL_EOF\n"
             f'echo "  ✓ SOUL.md for {t["profile"]}"'

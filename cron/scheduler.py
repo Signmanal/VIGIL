@@ -4,7 +4,7 @@ Cron job scheduler - executes due jobs.
 Provides tick() which checks for due jobs and runs them. The gateway
 calls this every 60 seconds from a background thread.
 
-Uses a file-based lock (~/.hermes/cron/.tick.lock) so only one tick
+Uses a file-based lock (~/.vigil/cron/.tick.lock) so only one tick
 runs at a time if multiple processes overlap.
 """
 
@@ -311,7 +311,7 @@ _hermes_home: Path | None = None
 
 
 def _get_hermes_home() -> Path:
-    """Resolve Hermes home dynamically while preserving test monkeypatch hooks."""
+    """Resolve VIGIL home dynamically while preserving test monkeypatch hooks."""
     return _hermes_home or get_hermes_home()
 
 
@@ -497,7 +497,7 @@ def _open_continuable_cron_thread(
     if not callable(create_thread) or loop is None:
         return None
     task_name = job.get("name") or job.get("id", "cron")
-    thread_name = f"Hermes — {task_name}"
+    thread_name = f"VIGIL — {task_name}"
     try:
         from agent.async_utils import safe_schedule_threadsafe
 
@@ -1471,14 +1471,14 @@ def _get_script_timeout() -> int:
         except Exception:
             logger.warning("Invalid patched _SCRIPT_TIMEOUT=%r; using env/config/default", _SCRIPT_TIMEOUT)
 
-    env_value = os.getenv("HERMES_CRON_SCRIPT_TIMEOUT", "").strip()
+    env_value = os.getenv("VIGIL_CRON_SCRIPT_TIMEOUT", "").strip()
     if env_value:
         try:
             timeout = int(float(env_value))
             if timeout > 0:
                 return timeout
         except Exception:
-            logger.warning("Invalid HERMES_CRON_SCRIPT_TIMEOUT=%r; using config/default", env_value)
+            logger.warning("Invalid VIGIL_CRON_SCRIPT_TIMEOUT=%r; using config/default", env_value)
 
     try:
         cfg = load_config() or {}
@@ -1497,7 +1497,7 @@ def _get_script_timeout() -> int:
 def _run_job_script(script_path: str) -> tuple[bool, str]:
     """Execute a cron job's data-collection script and capture its output.
 
-    Scripts must reside within HERMES_HOME/scripts/.  Both relative and
+    Scripts must reside within VIGIL_HOME/scripts/.  Both relative and
     absolute paths are resolved and validated against this directory to
     prevent arbitrary script execution via path traversal or absolute
     path injection.
@@ -1513,12 +1513,12 @@ def _run_job_script(script_path: str) -> tuple[bool, str]:
     (the `memory-watchdog.sh` pattern) without wrapping them in Python.
 
     Subprocess environment is passed through ``_sanitize_subprocess_env`` so
-    provider credentials and other Hermes-managed secrets are not inherited
+    provider credentials and other VIGIL-managed secrets are not inherited
     (SECURITY.md §2.3), matching terminal and MCP child processes.
 
     Args:
         script_path: Path to the script.  Relative paths are resolved
-            against HERMES_HOME/scripts/.  Absolute and ~-prefixed paths
+            against VIGIL_HOME/scripts/.  Absolute and ~-prefixed paths
             are also validated to ensure they stay within the scripts dir.
 
     Returns:
@@ -1536,7 +1536,7 @@ def _run_job_script(script_path: str) -> tuple[bool, str]:
         path = (scripts_dir / raw).resolve()
 
     # Guard against path traversal, absolute path injection, and symlink
-    # escape — scripts MUST reside within HERMES_HOME/scripts/.
+    # escape — scripts MUST reside within VIGIL_HOME/scripts/.
     try:
         path.relative_to(scripts_dir_resolved)
     except ValueError:
@@ -2106,42 +2106,42 @@ def run_job(job: dict) -> tuple[bool, str, str, Optional[str]]:
     # Mark this as a cron session so the approval system can apply cron_mode.
     # This env var is process-wide and persists for the lifetime of the
     # scheduler process — every job this process runs is a cron job.
-    os.environ["HERMES_CRON_SESSION"] = "1"
+    os.environ["VIGIL_CRON_SESSION"] = "1"
 
     # Use ContextVars for per-job session/delivery state so parallel jobs
     # don't clobber each other's targets (os.environ is process-global).
     from gateway.session_context import set_session_vars, clear_session_vars, _VAR_MAP
 
     # Cron execution is an internal scheduler context, not a live inbound
-    # gateway message. Do not seed HERMES_SESSION_* contextvars from the
+    # gateway message. Do not seed VIGIL_SESSION_* contextvars from the
     # stored ``origin`` (which is delivery routing metadata, not a sender
     # identity). Several tool consumers branch on these vars during job
     # execution and would otherwise behave as if a real user from the
     # origin chat was driving the agent:
     #   - tools/terminal_tool.py: background-process notification routing
-    #     (notify_on_complete / watch_patterns) reads HERMES_SESSION_PLATFORM
-    #     and HERMES_SESSION_CHAT_ID to populate watcher_platform / chat_id,
+    #     (notify_on_complete / watch_patterns) reads VIGIL_SESSION_PLATFORM
+    #     and VIGIL_SESSION_CHAT_ID to populate watcher_platform / chat_id,
     #     which would route completion notifications to the origin chat
-    #     instead of via HERMES_CRON_AUTO_DELIVER_* below.
+    #     instead of via VIGIL_CRON_AUTO_DELIVER_* below.
     #   - tools/tts_tool.py: picks Opus vs MP3 based on
-    #     HERMES_SESSION_PLATFORM == "telegram".
+    #     VIGIL_SESSION_PLATFORM == "telegram".
     #   - tools/skills_tool.py + agent/prompt_builder.py: per-platform
     #     skill-disable lists and the system-prompt cache key both consume
-    #     HERMES_SESSION_PLATFORM.
+    #     VIGIL_SESSION_PLATFORM.
     #   - tools/send_message_tool.py: mirror source labelling and the
-    #     send_message gate read HERMES_SESSION_PLATFORM.
+    #     send_message gate read VIGIL_SESSION_PLATFORM.
     # Cron output delivery itself reads job["origin"] directly via
-    # _resolve_origin(job) and the HERMES_CRON_AUTO_DELIVER_* vars set
-    # below, so clearing HERMES_SESSION_* here does not affect delivery.
+    # _resolve_origin(job) and the VIGIL_CRON_AUTO_DELIVER_* vars set
+    # below, so clearing VIGIL_SESSION_* here does not affect delivery.
     _ctx_tokens = set_session_vars(
         platform="",
         chat_id="",
         chat_name="",
     )
     _cron_delivery_vars = (
-        "HERMES_CRON_AUTO_DELIVER_PLATFORM",
-        "HERMES_CRON_AUTO_DELIVER_CHAT_ID",
-        "HERMES_CRON_AUTO_DELIVER_THREAD_ID",
+        "VIGIL_CRON_AUTO_DELIVER_PLATFORM",
+        "VIGIL_CRON_AUTO_DELIVER_CHAT_ID",
+        "VIGIL_CRON_AUTO_DELIVER_THREAD_ID",
     )
     for _var_name in _cron_delivery_vars:
         _VAR_MAP[_var_name].set("")
@@ -2181,20 +2181,20 @@ def run_job(job: dict) -> tuple[bool, str, str, Optional[str]]:
 
         delivery_target = _resolve_delivery_target(job)
         if delivery_target:
-            _VAR_MAP["HERMES_CRON_AUTO_DELIVER_PLATFORM"].set(delivery_target["platform"])
-            _VAR_MAP["HERMES_CRON_AUTO_DELIVER_CHAT_ID"].set(str(delivery_target["chat_id"]))
-            _VAR_MAP["HERMES_CRON_AUTO_DELIVER_THREAD_ID"].set(
+            _VAR_MAP["VIGIL_CRON_AUTO_DELIVER_PLATFORM"].set(delivery_target["platform"])
+            _VAR_MAP["VIGIL_CRON_AUTO_DELIVER_CHAT_ID"].set(str(delivery_target["chat_id"]))
+            _VAR_MAP["VIGIL_CRON_AUTO_DELIVER_THREAD_ID"].set(
                 ""
                 if delivery_target.get("thread_id") is None
                 else str(delivery_target["thread_id"])
             )
 
-        # Model resolution precedence: per-job override > HERMES_MODEL env >
+        # Model resolution precedence: per-job override > VIGIL_MODEL env >
         # config.yaml ``model:`` (string or ``{default: ...}``). The per-job
         # value is intentionally re-read from storage every tick so a
         # ``cronjob action=update model=...`` after a failed run takes effect
         # on the next tick — there is no in-memory cache.
-        model = job.get("model") or os.getenv("HERMES_MODEL") or ""
+        model = job.get("model") or os.getenv("VIGIL_MODEL") or ""
 
         # Load config.yaml for model, reasoning, prefill, toolsets, provider routing
         _cfg = {}
@@ -2235,7 +2235,7 @@ def run_job(job: dict) -> tuple[bool, str, str, Optional[str]]:
             raise RuntimeError(
                 f"Cron job '{job_name}' has no model configured "
                 f"(job.model={job.get('model')!r}, "
-                f"HERMES_MODEL={os.getenv('HERMES_MODEL', '')!r}, "
+                f"VIGIL_MODEL={os.getenv('VIGIL_MODEL', '')!r}, "
                 "config.yaml model.default missing or empty). "
                 f"Set a per-job model via "
                 f"`cronjob action=update job_id={job_id} model=<name>` or set a "
@@ -2262,7 +2262,7 @@ def run_job(job: dict) -> tuple[bool, str, str, Optional[str]]:
         prefill_messages = None
         agent_cfg = _cfg.get("agent", {}) if isinstance(_cfg.get("agent", {}), dict) else {}
         prefill_file = (
-            os.getenv("HERMES_PREFILL_MESSAGES_FILE", "")
+            os.getenv("VIGIL_PREFILL_MESSAGES_FILE", "")
             or _cfg.get("prefill_messages_file", "")
             or agent_cfg.get("prefill_messages_file", "")
         )
@@ -2292,7 +2292,7 @@ def run_job(job: dict) -> tuple[bool, str, str, Optional[str]]:
         )
         from hermes_cli.auth import AuthError
         try:
-            # Do not inject HERMES_INFERENCE_PROVIDER here. resolve_runtime_provider()
+            # Do not inject VIGIL_INFERENCE_PROVIDER here. resolve_runtime_provider()
             # already prefers persisted config over stale shell/env overrides when
             # no explicit provider is requested. Passing the env var here short-
             # circuits that precedence and can resurrect old providers (for
@@ -2444,7 +2444,7 @@ def run_job(job: dict) -> tuple[bool, str, str, Optional[str]]:
             disabled_toolsets=_resolve_cron_disabled_toolsets(_cfg),
             quiet_mode=True,
             # Cron jobs should always inherit the user's SOUL.md identity from
-            # HERMES_HOME. When a workdir is configured, also inject project
+            # VIGIL_HOME. When a workdir is configured, also inject project
             # context files (AGENTS.md / CLAUDE.md / .cursorrules) from there.
             # Without a workdir, keep cwd context discovery disabled.
             skip_context_files=not bool(_job_workdir),
@@ -2459,17 +2459,17 @@ def run_job(job: dict) -> tuple[bool, str, str, Optional[str]]:
         # for hours if it's actively calling tools / receiving stream tokens,
         # but a hung API call or stuck tool with no activity for the configured
         # duration is caught and killed.  Default 600s (10 min inactivity);
-        # override via HERMES_CRON_TIMEOUT env var.  0 = unlimited.
+        # override via VIGIL_CRON_TIMEOUT env var.  0 = unlimited.
         #
         # Uses the agent's built-in activity tracker (updated by
         # _touch_activity() on every tool call, API call, and stream delta).
-        _raw_cron_timeout = os.getenv("HERMES_CRON_TIMEOUT", "").strip()
+        _raw_cron_timeout = os.getenv("VIGIL_CRON_TIMEOUT", "").strip()
         if _raw_cron_timeout:
             try:
                 _cron_timeout = float(_raw_cron_timeout)
             except (ValueError, TypeError):
                 logger.warning(
-                    "Invalid HERMES_CRON_TIMEOUT=%r; using default 600s",
+                    "Invalid VIGIL_CRON_TIMEOUT=%r; using default 600s",
                     _raw_cron_timeout,
                 )
                 _cron_timeout = 600.0
@@ -2807,14 +2807,14 @@ def tick(verbose: bool = True, adapters=None, loop=None, sync: bool = True) -> i
             advance_next_run(job["id"])
 
         # Resolve max parallel workers: env var > config.yaml > unbounded.
-        # Set HERMES_CRON_MAX_PARALLEL=1 to restore old serial behaviour.
+        # Set VIGIL_CRON_MAX_PARALLEL=1 to restore old serial behaviour.
         _max_workers: Optional[int] = None
         try:
-            _env_par = os.getenv("HERMES_CRON_MAX_PARALLEL", "").strip()
+            _env_par = os.getenv("VIGIL_CRON_MAX_PARALLEL", "").strip()
             if _env_par:
                 _max_workers = int(_env_par) or None
         except (ValueError, TypeError):
-            logger.warning("Invalid HERMES_CRON_MAX_PARALLEL value; defaulting to unbounded")
+            logger.warning("Invalid VIGIL_CRON_MAX_PARALLEL value; defaulting to unbounded")
         if _max_workers is None:
             try:
                 _ucfg = load_config() or {}

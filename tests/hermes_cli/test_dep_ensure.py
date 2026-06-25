@@ -128,7 +128,7 @@ def test_has_hermes_agent_browser_posix_path(tmp_path):
 
 
 def test_has_hermes_agent_browser_legacy_node_modules_path(tmp_path):
-    """Legacy git-clone installs put agent-browser in $HERMES_HOME/node_modules/.bin/."""
+    """Legacy git-clone installs put agent-browser in $VIGIL_HOME/node_modules/.bin/."""
     bin_dir = tmp_path / "node_modules" / ".bin"
     bin_dir.mkdir(parents=True)
     (bin_dir / "agent-browser").write_text("#!/bin/sh")
@@ -158,5 +158,5 @@ def test_ensure_dependency_uses_powershell_on_windows(tmp_path):
         assert "powershell" in cmd[0].lower()
         assert "-Ensure" in cmd
         assert cmd[cmd.index("-Ensure") + 1] == "node"
-        assert "-HermesHome" in cmd
+        assert "-VIGILHome" in cmd
         assert str(tmp_path / "fakehome") in cmd

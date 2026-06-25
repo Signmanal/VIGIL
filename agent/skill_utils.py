@@ -231,12 +231,12 @@ def _detect_environment(env: str) -> bool:
     result = True
     if env == "kanban":
         # Kanban is "active" either as a dispatcher-spawned worker (the
-        # dispatcher sets ``HERMES_KANBAN_TASK`` / ``HERMES_KANBAN_BOARD`` in the
+        # dispatcher sets ``VIGIL_KANBAN_TASK`` / ``VIGIL_KANBAN_BOARD`` in the
         # worker env) or as an orchestrator profile that has opted into the
         # kanban toolset. Mirror the same signals the kanban tools themselves
         # gate on (``tools/kanban_tools.py``) so the offer filter agrees with
         # tool availability.
-        if os.getenv("HERMES_KANBAN_TASK") or os.getenv("HERMES_KANBAN_BOARD"):
+        if os.getenv("VIGIL_KANBAN_TASK") or os.getenv("VIGIL_KANBAN_BOARD"):
             result = True
         else:
             try:
@@ -253,7 +253,7 @@ def _detect_environment(env: str) -> bool:
         except Exception:
             result = False
     elif env == "s6":
-        # The Hermes Docker image runs s6-overlay as PID 1 (/init). s6 plants
+        # The VIGIL Docker image runs s6-overlay as PID 1 (/init). s6 plants
         # its runtime scaffolding under /run/s6 and ships its admin tree under
         # /package/admin/s6-overlay. Either marker means we're inside an
         # s6-supervised container.
@@ -355,8 +355,8 @@ def get_disabled_skill_names(platform: str | None = None) -> Set[str]:
 
     Args:
         platform: Explicit platform name (e.g. ``"telegram"``).  When
-            *None*, resolves from ``HERMES_PLATFORM`` or
-            ``HERMES_SESSION_PLATFORM`` env vars.  Returns the global
+            *None*, resolves from ``VIGIL_PLATFORM`` or
+            ``VIGIL_SESSION_PLATFORM`` env vars.  Returns the global
             disabled list, unioned with the platform-specific list when a
             platform is resolved (a globally-disabled skill stays disabled
             on every platform).
@@ -375,8 +375,8 @@ def get_disabled_skill_names(platform: str | None = None) -> Set[str]:
     from gateway.session_context import get_session_env
     resolved_platform = (
         platform
-        or os.getenv("HERMES_PLATFORM")
-        or get_session_env("HERMES_SESSION_PLATFORM")
+        or os.getenv("VIGIL_PLATFORM")
+        or get_session_env("VIGIL_SESSION_PLATFORM")
     )
     global_disabled = _normalize_string_set(skills_cfg.get("disabled"))
     if resolved_platform:
@@ -418,7 +418,7 @@ def get_external_skills_dirs() -> List[Path]:
 
     Each entry is expanded (``~`` and ``${VAR}``) and resolved to an absolute
     path.  Only directories that actually exist are returned.  Duplicates and
-    paths that resolve to the local ``~/.hermes/skills/`` are silently skipped.
+    paths that resolve to the local ``~/.vigil/skills/`` are silently skipped.
 
     Cached in-process, keyed on ``config.yaml`` mtime — the function is
     called once per skill during banner / tool-registry scans, and YAML
@@ -476,7 +476,7 @@ def get_external_skills_dirs() -> List[Path]:
         # Expand ~ and environment variables
         expanded = os.path.expanduser(os.path.expandvars(entry))
         p = Path(expanded)
-        # Resolve relative paths against HERMES_HOME, not cwd
+        # Resolve relative paths against VIGIL_HOME, not cwd
         if not p.is_absolute():
             p = (hermes_home / p).resolve()
         else:
@@ -497,7 +497,7 @@ def get_external_skills_dirs() -> List[Path]:
 
 
 def get_all_skills_dirs() -> List[Path]:
-    """Return all skill directories: local ``~/.hermes/skills/`` first, then external.
+    """Return all skill directories: local ``~/.vigil/skills/`` first, then external.
 
     The local dir is always first (and always included even if it doesn't exist
     yet — callers handle that).  External dirs follow in config order.
@@ -696,7 +696,7 @@ def extract_skill_description(frontmatter: Dict[str, Any]) -> str:
 def iter_skill_index_files(skills_dir: Path, filename: str):
     """Walk skills_dir yielding sorted paths matching *filename*.
 
-    Excludes Hermes metadata, VCS, virtualenv/dependency, cache, and skill
+    Excludes VIGIL metadata, VCS, virtualenv/dependency, cache, and skill
     support directories. Support directories (references/templates/assets/
     scripts) can contain arbitrary markdown and even archived package
     ``SKILL.md`` files, but they are progressive-disclosure data loaded through

@@ -86,8 +86,8 @@ def test_valid_jwt_with_paid_access_true(monkeypatch):
             "sub": "user_123",
             "org_id": "org_123",
             "client_id": "hermes-cli",
-            "product_id": "nous-hermes-agent",
-            "nous_client": "hermes-agent",
+            "product_id": "nous-vigil-agent",
+            "nous_client": "vigil-agent",
             "exp": int(time.time()) + 900,
             "paid_access": True,
             "subscription_tier": 2,
@@ -102,7 +102,7 @@ def test_valid_jwt_with_paid_access_true(monkeypatch):
     assert info.logged_in is True
     assert info.user_id == "user_123"
     assert info.org_id == "org_123"
-    assert info.product_id == "nous-hermes-agent"
+    assert info.product_id == "nous-vigil-agent"
     assert info.paid_service_access is True
     assert info.is_paid is True
     assert info.is_free_tier is False

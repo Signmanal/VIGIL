@@ -241,11 +241,11 @@ class TestSystemdServiceRefresh:
         """Defense in depth: ``refresh_systemd_unit_if_needed()`` runs every
         time ``run_gateway()`` starts. The user-scope unit path resolves
         under ``Path.home()`` (NOT sandboxed by conftest), and
-        ``generate_systemd_unit()`` bakes ``HERMES_HOME`` into the unit's
+        ``generate_systemd_unit()`` bakes ``VIGIL_HOME`` into the unit's
         ``Environment=`` line. Without this guard, any test that drives
         ``run_gateway()`` end-to-end on a real Linux dev box silently
         rewrites the developer's installed gateway unit with a
-        ``/tmp/pytest-of-.../hermes_test`` HERMES_HOME — silently breaking
+        ``/tmp/pytest-of-.../hermes_test`` VIGIL_HOME — silently breaking
         their gateway on the next boot. The guard sniffs the generated
         unit body for tmpdir markers and refuses the write. Tests that
         legitimately exercise the refresh flow patch
@@ -258,10 +258,10 @@ class TestSystemdServiceRefresh:
         monkeypatch.setattr(
             gateway_cli, "get_systemd_unit_path", lambda system=False: unit_path
         )
-        # Realistic generated unit referencing a pytest tmpdir HERMES_HOME
+        # Realistic generated unit referencing a pytest tmpdir VIGIL_HOME
         polluted_unit = (
             "[Service]\n"
-            'Environment="HERMES_HOME=/tmp/pytest-of-alice/pytest-42/'
+            'Environment="VIGIL_HOME=/tmp/pytest-of-alice/pytest-42/'
             'popen-gw0/test_x/hermes_test"\n'
         )
         monkeypatch.setattr(
@@ -292,13 +292,13 @@ class TestSystemdServiceRefresh:
     def test_refresh_refuses_to_bake_any_tempdir_home_into_real_user_unit(
         self, tmp_path, monkeypatch
     ):
-        """Structural guard: a manual E2E HERMES_HOME like
+        """Structural guard: a manual E2E VIGIL_HOME like
         ``/tmp/hermes-e2e-41264`` carries none of the pytest markers but
         poisons the unit identically (seen live 2026-06-11 — an E2E probe ran
-        ``hermes gateway restart`` with a /tmp HERMES_HOME exported; the
+        ``hermes gateway restart`` with a /tmp VIGIL_HOME exported; the
         restart's unit refresh baked it into the production unit and the
         post-update restart produced a 7-hour zombie gateway). The refresh
-        must refuse ANY temp-dir HERMES_HOME, not just pytest-shaped ones.
+        must refuse ANY temp-dir VIGIL_HOME, not just pytest-shaped ones.
         """
         unit_path = tmp_path / "hermes-gateway.service"
         unit_path.write_text("old unit\n", encoding="utf-8")
@@ -308,7 +308,7 @@ class TestSystemdServiceRefresh:
         )
         polluted_unit = (
             "[Service]\n"
-            'Environment="HERMES_HOME=/tmp/hermes-e2e-41264"\n'
+            'Environment="VIGIL_HOME=/tmp/hermes-e2e-41264"\n'
             "WorkingDirectory=/tmp/hermes-e2e-41264\n"
         )
         monkeypatch.setattr(
@@ -340,26 +340,26 @@ class TestTempHomeServiceDefinitionGuard:
     """_temp_home_in_service_definition() — structural temp-dir detection."""
 
     def test_detects_tmp_home_in_systemd_unit(self):
-        unit = '[Service]\nEnvironment="HERMES_HOME=/tmp/hermes-e2e-41264"\n'
+        unit = '[Service]\nEnvironment="VIGIL_HOME=/tmp/hermes-e2e-41264"\n'
         assert (
             gateway_cli._temp_home_in_service_definition(unit)
             == "/tmp/hermes-e2e-41264"
         )
 
     def test_detects_var_tmp_home(self):
-        unit = '[Service]\nEnvironment="HERMES_HOME=/var/tmp/hermes-x"\n'
+        unit = '[Service]\nEnvironment="VIGIL_HOME=/var/tmp/hermes-x"\n'
         assert gateway_cli._temp_home_in_service_definition(unit) is not None
 
     def test_detects_tempdir_env_home(self, monkeypatch, tmp_path):
         import tempfile as _tempfile
 
         monkeypatch.setattr(_tempfile, "gettempdir", lambda: str(tmp_path))
-        unit = f'[Service]\nEnvironment="HERMES_HOME={tmp_path}/hermes-home"\n'
+        unit = f'[Service]\nEnvironment="VIGIL_HOME={tmp_path}/hermes-home"\n'
         assert gateway_cli._temp_home_in_service_definition(unit) is not None
 
     def test_detects_tmp_home_in_launchd_plist(self):
         plist = (
-            "<dict>\n  <key>HERMES_HOME</key>\n"
+            "<dict>\n  <key>VIGIL_HOME</key>\n"
             "  <string>/tmp/hermes-e2e-99999</string>\n</dict>\n"
         )
         assert (
@@ -368,13 +368,13 @@ class TestTempHomeServiceDefinitionGuard:
         )
 
     def test_accepts_real_home(self):
-        unit = '[Service]\nEnvironment="HERMES_HOME=/home/alice/.hermes"\n'
+        unit = '[Service]\nEnvironment="VIGIL_HOME=/home/alice/.vigil"\n'
         assert gateway_cli._temp_home_in_service_definition(unit) is None
 
     def test_accepts_macos_real_home_plist(self):
         plist = (
-            "<dict>\n  <key>HERMES_HOME</key>\n"
-            "  <string>/Users/alice/.hermes</string>\n</dict>\n"
+            "<dict>\n  <key>VIGIL_HOME</key>\n"
+            "  <string>/Users/alice/.vigil</string>\n</dict>\n"
         )
         assert gateway_cli._temp_home_in_service_definition(plist) is None
 
@@ -385,7 +385,7 @@ class TestTempHomeServiceDefinitionGuard:
     def test_tmp_prefixed_non_temp_path_is_accepted(self):
         # /tmpfs-data is NOT under /tmp — prefix matching must be
         # component-wise, not string startswith.
-        unit = '[Service]\nEnvironment="HERMES_HOME=/tmpfs-data/.hermes"\n'
+        unit = '[Service]\nEnvironment="VIGIL_HOME=/tmpfs-data/.vigil"\n'
         assert gateway_cli._temp_home_in_service_definition(unit) is None
 
 
@@ -468,7 +468,7 @@ class TestGeneratedSystemdUnits:
             "_system_service_identity",
             lambda run_as_user=None: ("alice", "alice", "/home/alice"),
         )
-        monkeypatch.setattr(gateway_cli, "_hermes_home_for_target_user", lambda home: "/home/alice/.hermes")
+        monkeypatch.setattr(gateway_cli, "_hermes_home_for_target_user", lambda home: "/home/alice/.vigil")
         monkeypatch.setenv("PATH", "/usr/local/bin:/mnt/c/WINDOWS/system32")
         monkeypatch.setattr(gateway_cli.shutil, "which", lambda cmd: None)
 
@@ -551,7 +551,7 @@ class TestGatewayStopCleanup:
 
 class TestLaunchdServiceRecovery:
     def test_get_restart_drain_timeout_prefers_env_then_config_then_default(self, monkeypatch):
-        monkeypatch.delenv("HERMES_RESTART_DRAIN_TIMEOUT", raising=False)
+        monkeypatch.delenv("VIGIL_RESTART_DRAIN_TIMEOUT", raising=False)
         monkeypatch.setattr(gateway_cli, "read_raw_config", lambda: {})
 
         assert (
@@ -566,29 +566,29 @@ class TestLaunchdServiceRecovery:
         )
         assert gateway_cli._get_restart_drain_timeout() == 14.0
 
-        monkeypatch.setenv("HERMES_RESTART_DRAIN_TIMEOUT", "9")
+        monkeypatch.setenv("VIGIL_RESTART_DRAIN_TIMEOUT", "9")
         assert gateway_cli._get_restart_drain_timeout() == 9.0
 
-        monkeypatch.setenv("HERMES_RESTART_DRAIN_TIMEOUT", "invalid")
+        monkeypatch.setenv("VIGIL_RESTART_DRAIN_TIMEOUT", "invalid")
         assert (
             gateway_cli._get_restart_drain_timeout()
             == DEFAULT_GATEWAY_RESTART_DRAIN_TIMEOUT
         )
 
     def test_launchd_install_repairs_outdated_plist_without_force(self, tmp_path, monkeypatch):
-        plist_path = tmp_path / "ai.hermes.gateway.plist"
+        plist_path = tmp_path / "ai.vigil.gateway.plist"
         plist_path.write_text("<plist>old content</plist>", encoding="utf-8")
 
         monkeypatch.setattr(gateway_cli, "get_launchd_plist_path", lambda: plist_path)
         # Patch the generator with synthetic content carrying a real-looking
         # home — the temp-home guard refuses to write plists whose
-        # HERMES_HOME resolves under the (pytest tmp) test HERMES_HOME.
+        # VIGIL_HOME resolves under the (pytest tmp) test VIGIL_HOME.
         monkeypatch.setattr(
             gateway_cli,
             "generate_launchd_plist",
             lambda: (
-                "<plist>--replace\n<key>HERMES_HOME</key>"
-                "<string>/Users/alice/.hermes</string></plist>"
+                "<plist>--replace\n<key>VIGIL_HOME</key>"
+                "<string>/Users/alice/.vigil</string></plist>"
             ),
         )
 
@@ -619,7 +619,7 @@ class TestLaunchdServiceRecovery:
         """#43842: when the refresh runs inside the gateway's own process tree,
         a direct bootout would kill this CLI before bootstrap. The reload must
         be delegated to a detached helper instead."""
-        plist_path = tmp_path / "ai.hermes.gateway.plist"
+        plist_path = tmp_path / "ai.vigil.gateway.plist"
         plist_path.write_text("<plist>old content</plist>", encoding="utf-8")
 
         monkeypatch.setattr(gateway_cli, "get_launchd_plist_path", lambda: plist_path)
@@ -628,8 +628,8 @@ class TestLaunchdServiceRecovery:
             gateway_cli,
             "generate_launchd_plist",
             lambda: (
-                "<plist>--replace\n<key>HERMES_HOME</key>"
-                "<string>/Users/alice/.hermes</string></plist>"
+                "<plist>--replace\n<key>VIGIL_HOME</key>"
+                "<string>/Users/alice/.vigil</string></plist>"
             ),
         )
         # Pretend the gateway is running and that we ARE inside its tree.
@@ -673,7 +673,7 @@ class TestLaunchdServiceRecovery:
     def test_refresh_uses_direct_reload_when_not_inside_gateway_tree(self, tmp_path, monkeypatch):
         """Normal CLI-initiated refresh (outside the service tree) keeps the
         direct synchronous bootout/bootstrap path."""
-        plist_path = tmp_path / "ai.hermes.gateway.plist"
+        plist_path = tmp_path / "ai.vigil.gateway.plist"
         plist_path.write_text("<plist>old content</plist>", encoding="utf-8")
 
         monkeypatch.setattr(gateway_cli, "get_launchd_plist_path", lambda: plist_path)
@@ -682,8 +682,8 @@ class TestLaunchdServiceRecovery:
             gateway_cli,
             "generate_launchd_plist",
             lambda: (
-                "<plist>--replace\n<key>HERMES_HOME</key>"
-                "<string>/Users/alice/.hermes</string></plist>"
+                "<plist>--replace\n<key>VIGIL_HOME</key>"
+                "<string>/Users/alice/.vigil</string></plist>"
             ),
         )
         # Gateway running, but we are NOT inside its tree.
@@ -720,7 +720,7 @@ class TestLaunchdServiceRecovery:
         ]
 
     def test_launchd_start_reloads_unloaded_job_and_retries(self, tmp_path, monkeypatch):
-        plist_path = tmp_path / "ai.hermes.gateway.plist"
+        plist_path = tmp_path / "ai.vigil.gateway.plist"
         plist_path.write_text(gateway_cli.generate_launchd_plist(), encoding="utf-8")
         label = gateway_cli.get_launchd_label()
 
@@ -748,7 +748,7 @@ class TestLaunchdServiceRecovery:
 
     def test_launchd_start_reloads_on_kickstart_exit_code_113(self, tmp_path, monkeypatch):
         """Exit code 113 (\"Could not find service\") should also trigger bootstrap recovery."""
-        plist_path = tmp_path / "ai.hermes.gateway.plist"
+        plist_path = tmp_path / "ai.vigil.gateway.plist"
         plist_path.write_text(gateway_cli.generate_launchd_plist(), encoding="utf-8")
         label = gateway_cli.get_launchd_label()
 
@@ -887,7 +887,7 @@ class TestLaunchdServiceRecovery:
         assert wait_called[0] == {"timeout": 10.0, "force_after": 5.0}
 
     def test_launchd_status_reports_local_stale_plist_when_unloaded(self, tmp_path, monkeypatch, capsys):
-        plist_path = tmp_path / "ai.hermes.gateway.plist"
+        plist_path = tmp_path / "ai.vigil.gateway.plist"
         plist_path.write_text("<plist>old content</plist>", encoding="utf-8")
 
         monkeypatch.setattr(gateway_cli, "get_launchd_plist_path", lambda: plist_path)
@@ -931,7 +931,7 @@ class TestLaunchdServiceRecovery:
 
     def test_launchd_start_reloads_on_kickstart_exit_code_125(self, tmp_path, monkeypatch):
         """Exit code 125 means the job is absent from the domain → bootstrap recovery."""
-        plist_path = tmp_path / "ai.hermes.gateway.plist"
+        plist_path = tmp_path / "ai.vigil.gateway.plist"
         plist_path.write_text(gateway_cli.generate_launchd_plist(), encoding="utf-8")
         label = gateway_cli.get_launchd_label()
 
@@ -961,7 +961,7 @@ class TestLaunchdServiceRecovery:
 
     def test_launchd_start_falls_back_to_detached_when_rebootstrap_fails(self, tmp_path, monkeypatch, capsys):
         """If even a fresh bootstrap can't manage the domain, spawn detached."""
-        plist_path = tmp_path / "ai.hermes.gateway.plist"
+        plist_path = tmp_path / "ai.vigil.gateway.plist"
         plist_path.write_text(gateway_cli.generate_launchd_plist(), encoding="utf-8")
         label = gateway_cli.get_launchd_label()
         target = f"{gateway_cli._launchd_domain()}/{label}"
@@ -996,17 +996,17 @@ class TestLaunchdServiceRecovery:
 
     def test_launchd_install_falls_back_to_detached_on_bootstrap_5(self, tmp_path, monkeypatch, capsys):
         """macOS bootstrap error 5 should spawn a detached gateway, not crash."""
-        plist_path = tmp_path / "ai.hermes.gateway.plist"
+        plist_path = tmp_path / "ai.vigil.gateway.plist"
         monkeypatch.setattr(gateway_cli, "get_launchd_plist_path", lambda: plist_path)
         # Synthetic plist with a non-temp home so the temp-home write guard
-        # (which would trip on the pytest-tmp test HERMES_HOME) stays out of
+        # (which would trip on the pytest-tmp test VIGIL_HOME) stays out of
         # the way — this test exercises the bootstrap-error fallback.
         monkeypatch.setattr(
             gateway_cli,
             "generate_launchd_plist",
             lambda: (
-                "<plist><key>HERMES_HOME</key>"
-                "<string>/Users/alice/.hermes</string></plist>"
+                "<plist><key>VIGIL_HOME</key>"
+                "<string>/Users/alice/.vigil</string></plist>"
             ),
         )
 
@@ -1605,7 +1605,7 @@ class TestGatewaySystemServiceRouting:
         assert "install as user service" not in out
 
     def test_gateway_restart_does_not_fallback_to_foreground_when_launchd_restart_fails(self, tmp_path, monkeypatch):
-        plist_path = tmp_path / "ai.hermes.gateway.plist"
+        plist_path = tmp_path / "ai.vigil.gateway.plist"
         plist_path.write_text("plist\n", encoding="utf-8")
 
         monkeypatch.setattr(gateway_cli, "is_linux", lambda: False)
@@ -1615,7 +1615,7 @@ class TestGatewaySystemServiceRouting:
             gateway_cli,
             "launchd_restart",
             lambda: (_ for _ in ()).throw(
-                gateway_cli.subprocess.CalledProcessError(5, ["launchctl", "kickstart", "-k", "gui/501/ai.hermes.gateway"])
+                gateway_cli.subprocess.CalledProcessError(5, ["launchctl", "kickstart", "-k", "gui/501/ai.vigil.gateway"])
             ),
         )
 
@@ -1692,13 +1692,13 @@ class TestDetectVenvDir:
         assert result is None
 
 
-class TestSystemUnitHermesHome:
-    """HERMES_HOME in system units must reference the target user, not root."""
+class TestSystemUnitVIGILHome:
+    """VIGIL_HOME in system units must reference the target user, not root."""
 
     def test_system_unit_uses_target_user_home_not_calling_user(self, monkeypatch):
         # Simulate sudo: Path.home() returns /root, target user is alice
         monkeypatch.setattr(Path, "home", staticmethod(lambda: Path("/root")))
-        monkeypatch.delenv("HERMES_HOME", raising=False)
+        monkeypatch.delenv("VIGIL_HOME", raising=False)
         monkeypatch.setattr(
             gateway_cli, "_system_service_identity",
             lambda run_as_user=None: ("alice", "alice", "/home/alice"),
@@ -1710,13 +1710,13 @@ class TestSystemUnitHermesHome:
 
         unit = gateway_cli.generate_systemd_unit(system=True, run_as_user="alice")
 
-        assert 'HERMES_HOME=/home/alice/.hermes' in unit
-        assert '/root/.hermes' not in unit
+        assert 'VIGIL_HOME=/home/alice/.vigil' in unit
+        assert '/root/.vigil' not in unit
 
     def test_system_unit_remaps_profile_to_target_user(self, monkeypatch):
-        # Simulate sudo with a profile: HERMES_HOME was resolved under root
+        # Simulate sudo with a profile: VIGIL_HOME was resolved under root
         monkeypatch.setattr(Path, "home", staticmethod(lambda: Path("/root")))
-        monkeypatch.setenv("HERMES_HOME", "/root/.hermes/profiles/coder")
+        monkeypatch.setenv("VIGIL_HOME", "/root/.vigil/profiles/coder")
         monkeypatch.setattr(
             gateway_cli, "_system_service_identity",
             lambda run_as_user=None: ("alice", "alice", "/home/alice"),
@@ -1728,13 +1728,13 @@ class TestSystemUnitHermesHome:
 
         unit = gateway_cli.generate_systemd_unit(system=True, run_as_user="alice")
 
-        assert 'HERMES_HOME=/home/alice/.hermes/profiles/coder' in unit
+        assert 'VIGIL_HOME=/home/alice/.vigil/profiles/coder' in unit
         assert '/root/' not in unit
 
     def test_system_unit_preserves_custom_hermes_home(self, monkeypatch):
-        # Custom HERMES_HOME not under any user's home — keep as-is
+        # Custom VIGIL_HOME not under any user's home — keep as-is
         monkeypatch.setattr(Path, "home", staticmethod(lambda: Path("/root")))
-        monkeypatch.setenv("HERMES_HOME", "/opt/hermes-shared")
+        monkeypatch.setenv("VIGIL_HOME", "/opt/hermes-shared")
         monkeypatch.setattr(
             gateway_cli, "_system_service_identity",
             lambda run_as_user=None: ("alice", "alice", "/home/alice"),
@@ -1746,46 +1746,46 @@ class TestSystemUnitHermesHome:
 
         unit = gateway_cli.generate_systemd_unit(system=True, run_as_user="alice")
 
-        assert 'HERMES_HOME=/opt/hermes-shared' in unit
+        assert 'VIGIL_HOME=/opt/hermes-shared' in unit
 
     def test_user_unit_unaffected_by_change(self):
-        # User-scope units should still use the calling user's HERMES_HOME
+        # User-scope units should still use the calling user's VIGIL_HOME
         unit = gateway_cli.generate_systemd_unit(system=False)
 
         hermes_home = str(gateway_cli.get_hermes_home().resolve())
-        assert f'HERMES_HOME={hermes_home}' in unit
+        assert f'VIGIL_HOME={hermes_home}' in unit
 
 
-class TestHermesHomeForTargetUser:
+class TestVIGILHomeForTargetUser:
     """Unit tests for _hermes_home_for_target_user()."""
 
     def test_remaps_default_home(self, monkeypatch):
         monkeypatch.setattr(Path, "home", staticmethod(lambda: Path("/root")))
-        monkeypatch.delenv("HERMES_HOME", raising=False)
+        monkeypatch.delenv("VIGIL_HOME", raising=False)
 
         result = gateway_cli._hermes_home_for_target_user("/home/alice")
-        assert result == "/home/alice/.hermes"
+        assert result == "/home/alice/.vigil"
 
     def test_remaps_profile_path(self, monkeypatch):
         monkeypatch.setattr(Path, "home", staticmethod(lambda: Path("/root")))
-        monkeypatch.setenv("HERMES_HOME", "/root/.hermes/profiles/coder")
+        monkeypatch.setenv("VIGIL_HOME", "/root/.vigil/profiles/coder")
 
         result = gateway_cli._hermes_home_for_target_user("/home/alice")
-        assert result == "/home/alice/.hermes/profiles/coder"
+        assert result == "/home/alice/.vigil/profiles/coder"
 
     def test_keeps_custom_path(self, monkeypatch):
         monkeypatch.setattr(Path, "home", staticmethod(lambda: Path("/root")))
-        monkeypatch.setenv("HERMES_HOME", "/opt/hermes")
+        monkeypatch.setenv("VIGIL_HOME", "/opt/hermes")
 
         result = gateway_cli._hermes_home_for_target_user("/home/alice")
         assert result == "/opt/hermes"
 
     def test_noop_when_same_user(self, monkeypatch):
         monkeypatch.setattr(Path, "home", staticmethod(lambda: Path("/home/alice")))
-        monkeypatch.delenv("HERMES_HOME", raising=False)
+        monkeypatch.delenv("VIGIL_HOME", raising=False)
 
         result = gateway_cli._hermes_home_for_target_user("/home/alice")
-        assert result == "/home/alice/.hermes"
+        assert result == "/home/alice/.vigil"
 
 
 class TestGeneratedUnitUsesDetectedVenv:
@@ -2075,26 +2075,26 @@ class TestProfileArg:
     """Tests for _profile_arg — returns '--profile <name>' for named profiles."""
 
     def test_default_hermes_home_returns_empty(self, tmp_path, monkeypatch):
-        """Default ~/.hermes should not produce a --profile flag."""
-        hermes_home = tmp_path / ".hermes"
+        """Default ~/.vigil should not produce a --profile flag."""
+        hermes_home = tmp_path / ".vigil"
         hermes_home.mkdir()
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        monkeypatch.setenv("HERMES_HOME", str(hermes_home))
+        monkeypatch.setenv("VIGIL_HOME", str(hermes_home))
         result = gateway_cli._profile_arg(str(hermes_home))
         assert result == ""
 
     def test_named_profile_returns_flag(self, tmp_path, monkeypatch):
-        """~/.hermes/profiles/mybot should return '--profile mybot'."""
-        profile_dir = tmp_path / ".hermes" / "profiles" / "mybot"
+        """~/.vigil/profiles/mybot should return '--profile mybot'."""
+        profile_dir = tmp_path / ".vigil" / "profiles" / "mybot"
         profile_dir.mkdir(parents=True)
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path / ".hermes"))
+        monkeypatch.setenv("VIGIL_HOME", str(tmp_path / ".vigil"))
         result = gateway_cli._profile_arg(str(profile_dir))
         assert result == "--profile mybot"
 
     def test_named_profile_under_target_user_root_returns_flag(self, tmp_path):
         """System installs generated under sudo must compare against target user's root."""
-        target_root = tmp_path / "home" / "alice" / ".hermes"
+        target_root = tmp_path / "home" / "alice" / ".vigil"
         profile_dir = target_root / "profiles" / "mybot"
         profile_dir.mkdir(parents=True)
 
@@ -2103,38 +2103,38 @@ class TestProfileArg:
         assert result == "--profile mybot"
 
     def test_hash_path_returns_empty(self, tmp_path, monkeypatch):
-        """Arbitrary non-profile HERMES_HOME should return empty string."""
-        custom_home = tmp_path / "custom" / "hermes"
+        """Arbitrary non-profile VIGIL_HOME should return empty string."""
+        custom_home = tmp_path / "custom" / "vigil"
         custom_home.mkdir(parents=True)
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path / ".hermes"))
+        monkeypatch.setenv("VIGIL_HOME", str(tmp_path / ".vigil"))
         result = gateway_cli._profile_arg(str(custom_home))
         assert result == ""
 
     def test_nested_profile_path_returns_empty(self, tmp_path, monkeypatch):
-        """~/.hermes/profiles/mybot/subdir should NOT match — too deep."""
-        nested = tmp_path / ".hermes" / "profiles" / "mybot" / "subdir"
+        """~/.vigil/profiles/mybot/subdir should NOT match — too deep."""
+        nested = tmp_path / ".vigil" / "profiles" / "mybot" / "subdir"
         nested.mkdir(parents=True)
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path / ".hermes"))
+        monkeypatch.setenv("VIGIL_HOME", str(tmp_path / ".vigil"))
         result = gateway_cli._profile_arg(str(nested))
         assert result == ""
 
     def test_invalid_profile_name_returns_empty(self, tmp_path, monkeypatch):
         """Profile names with invalid chars should not match the regex."""
-        bad_profile = tmp_path / ".hermes" / "profiles" / "My Bot!"
+        bad_profile = tmp_path / ".vigil" / "profiles" / "My Bot!"
         bad_profile.mkdir(parents=True)
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path / ".hermes"))
+        monkeypatch.setenv("VIGIL_HOME", str(tmp_path / ".vigil"))
         result = gateway_cli._profile_arg(str(bad_profile))
         assert result == ""
 
     def test_systemd_unit_includes_profile(self, tmp_path, monkeypatch):
         """generate_systemd_unit should include --profile in ExecStart for named profiles."""
-        profile_dir = tmp_path / ".hermes" / "profiles" / "mybot"
+        profile_dir = tmp_path / ".vigil" / "profiles" / "mybot"
         profile_dir.mkdir(parents=True)
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        monkeypatch.setenv("HERMES_HOME", str(profile_dir))
+        monkeypatch.setenv("VIGIL_HOME", str(profile_dir))
         monkeypatch.setattr(gateway_cli, "get_hermes_home", lambda: profile_dir)
         unit = gateway_cli.generate_systemd_unit(system=False)
         assert "--profile mybot" in unit
@@ -2149,11 +2149,11 @@ class TestProfileArg:
         """sudo system install must keep the target user's named profile in ExecStart."""
         root_home = tmp_path / "root"
         target_home = tmp_path / "home" / "alice"
-        root_profile = root_home / ".hermes" / "profiles" / "mybot"
+        root_profile = root_home / ".vigil" / "profiles" / "mybot"
         root_profile.mkdir(parents=True)
 
         monkeypatch.setattr(Path, "home", lambda: root_home)
-        monkeypatch.setenv("HERMES_HOME", str(root_profile))
+        monkeypatch.setenv("VIGIL_HOME", str(root_profile))
         monkeypatch.setattr(gateway_cli, "get_hermes_home", lambda: root_profile)
         monkeypatch.setattr(
             gateway_cli,
@@ -2165,14 +2165,14 @@ class TestProfileArg:
 
         assert "ExecStart=" in unit
         assert "--profile mybot gateway run" in unit
-        assert f'HERMES_HOME={target_home / ".hermes" / "profiles" / "mybot"}' in unit
+        assert f'VIGIL_HOME={target_home / ".vigil" / "profiles" / "mybot"}' in unit
 
     def test_launchd_plist_includes_profile(self, tmp_path, monkeypatch):
         """generate_launchd_plist should include --profile in ProgramArguments for named profiles."""
-        profile_dir = tmp_path / ".hermes" / "profiles" / "mybot"
+        profile_dir = tmp_path / ".vigil" / "profiles" / "mybot"
         profile_dir.mkdir(parents=True)
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        monkeypatch.setenv("HERMES_HOME", str(profile_dir))
+        monkeypatch.setenv("VIGIL_HOME", str(profile_dir))
         monkeypatch.setattr(gateway_cli, "get_hermes_home", lambda: profile_dir)
         plist = gateway_cli.generate_launchd_plist()
         assert "<string>--profile</string>" in plist
@@ -2187,7 +2187,7 @@ class TestProfileArg:
         assert "<string>Background</string>" in plist
 
     def test_launchd_plist_path_uses_real_user_home_not_profile_home(self, tmp_path, monkeypatch):
-        profile_dir = tmp_path / ".hermes" / "profiles" / "orcha"
+        profile_dir = tmp_path / ".vigil" / "profiles" / "orcha"
         profile_dir.mkdir(parents=True)
         machine_home = tmp_path / "machine-home"
         machine_home.mkdir()
@@ -2195,13 +2195,13 @@ class TestProfileArg:
         profile_home.mkdir()
 
         monkeypatch.setattr(Path, "home", lambda: profile_home)
-        monkeypatch.setenv("HERMES_HOME", str(profile_dir))
+        monkeypatch.setenv("VIGIL_HOME", str(profile_dir))
         monkeypatch.setattr(gateway_cli, "get_hermes_home", lambda: profile_dir)
         monkeypatch.setattr(pwd, "getpwuid", lambda uid: SimpleNamespace(pw_dir=str(machine_home)))
 
         plist_path = gateway_cli.get_launchd_plist_path()
 
-        assert plist_path == machine_home / "Library" / "LaunchAgents" / "ai.hermes.gateway-orcha.plist"
+        assert plist_path == machine_home / "Library" / "LaunchAgents" / "ai.vigil.gateway-orcha.plist"
 
 
 class TestRemapPathForUser:
@@ -2211,10 +2211,10 @@ class TestRemapPathForUser:
         monkeypatch.setattr(Path, "home", lambda: tmp_path / "root")
         (tmp_path / "root").mkdir()
         result = gateway_cli._remap_path_for_user(
-            str(tmp_path / "root" / ".hermes" / "hermes-agent"),
+            str(tmp_path / "root" / ".vigil" / "vigil-agent"),
             str(tmp_path / "alice"),
         )
-        assert result == str(tmp_path / "alice" / ".hermes" / "hermes-agent")
+        assert result == str(tmp_path / "alice" / ".vigil" / "vigil-agent")
 
     def test_keeps_system_path_unchanged(self, monkeypatch, tmp_path):
         monkeypatch.setattr(Path, "home", lambda: tmp_path / "root")
@@ -2225,7 +2225,7 @@ class TestRemapPathForUser:
     def test_noop_when_same_user(self, monkeypatch, tmp_path):
         monkeypatch.setattr(Path, "home", lambda: tmp_path / "alice")
         (tmp_path / "alice").mkdir()
-        original = str(tmp_path / "alice" / ".hermes" / "hermes-agent")
+        original = str(tmp_path / "alice" / ".vigil" / "vigil-agent")
         result = gateway_cli._remap_path_for_user(original, str(tmp_path / "alice"))
         assert result == original
 
@@ -2236,7 +2236,7 @@ class TestSystemUnitPathRemapping:
     def test_system_unit_has_no_root_paths(self, monkeypatch, tmp_path):
         root_home = tmp_path / "root"
         root_home.mkdir()
-        project = root_home / ".hermes" / "hermes-agent"
+        project = root_home / ".vigil" / "vigil-agent"
         project.mkdir(parents=True)
         venv_bin = project / "venv" / "bin"
         venv_bin.mkdir(parents=True)
@@ -2245,8 +2245,8 @@ class TestSystemUnitPathRemapping:
         target_home = "/home/alice"
 
         monkeypatch.setattr(Path, "home", lambda: root_home)
-        monkeypatch.setenv("HERMES_HOME", str(root_home / ".hermes"))
-        monkeypatch.setattr(gateway_cli, "get_hermes_home", lambda: root_home / ".hermes")
+        monkeypatch.setenv("VIGIL_HOME", str(root_home / ".vigil"))
+        monkeypatch.setattr(gateway_cli, "get_hermes_home", lambda: root_home / ".vigil")
         monkeypatch.setattr(gateway_cli, "PROJECT_ROOT", project)
         monkeypatch.setattr(gateway_cli, "_detect_venv_dir", lambda: project / "venv")
         monkeypatch.setattr(gateway_cli, "get_python_path", lambda: str(venv_bin / "python"))
@@ -2261,12 +2261,12 @@ class TestSystemUnitPathRemapping:
         assert str(root_home) not in unit
         # Target user paths should be present
         assert "/home/alice" in unit
-        # WorkingDirectory is anchored at the target user's HERMES_HOME (stable,
+        # WorkingDirectory is anchored at the target user's VIGIL_HOME (stable,
         # always exists) — NOT the source checkout under it. Pinning cwd to the
         # checkout is the rot bug fixed alongside this: a relocated/removed
         # checkout would crash-loop the unit on CHDIR (status=200).
-        assert "WorkingDirectory=/home/alice/.hermes" in unit
-        assert "WorkingDirectory=/home/alice/.hermes/hermes-agent" not in unit
+        assert "WorkingDirectory=/home/alice/.vigil" in unit
+        assert "WorkingDirectory=/home/alice/.vigil/vigil-agent" not in unit
 
 
 class TestDockerAwareGateway:
@@ -2357,7 +2357,7 @@ class TestDockerAwareGateway:
         assert "hermes gateway run" in out
 
 
-class TestLegacyHermesUnitDetection:
+class TestLegacyVIGILUnitDetection:
     """Tests for _find_legacy_hermes_units / has_legacy_hermes_units.
 
     These guard against the scenario that tripped Luis in April 2026: an
@@ -2373,7 +2373,7 @@ class TestLegacyHermesUnitDetection:
 
     # Minimal ExecStart that looks like our gateway
     _OUR_UNIT_TEXT = (
-        "[Unit]\nDescription=Hermes Gateway\n[Service]\n"
+        "[Unit]\nDescription=VIGIL Gateway\n[Service]\n"
         "ExecStart=/usr/bin/python -m hermes_cli.main gateway run --replace\n"
     )
 
@@ -2451,7 +2451,7 @@ class TestLegacyHermesUnitDetection:
         """
         user_dir, _ = self._setup_search_paths(tmp_path, monkeypatch)
         (user_dir / "hermes.service").write_text(
-            "[Unit]\nDescription=Some Other Hermes\n[Service]\n"
+            "[Unit]\nDescription=Some Other VIGIL\n[Service]\n"
             "ExecStart=/opt/other-hermes/bin/daemon --foreground\n",
             encoding="utf-8",
         )
@@ -2491,15 +2491,15 @@ class TestLegacyHermesUnitDetection:
         user_dir, _ = self._setup_search_paths(tmp_path, monkeypatch)
         variants = [
             "ExecStart=/venv/bin/python -m hermes_cli.main gateway run --replace",
-            "ExecStart=/venv/bin/python /opt/hermes/hermes_cli/main.py gateway run",
-            "ExecStart=/usr/local/bin/hermes gateway run --replace",
-            "ExecStart=/venv/bin/python /opt/hermes/gateway/run.py",
+            "ExecStart=/venv/bin/python /opt/vigil/hermes_cli/main.py gateway run",
+            "ExecStart=/usr/local/bin/vigil gateway run --replace",
+            "ExecStart=/venv/bin/python /opt/vigil/gateway/run.py",
         ]
         for i, execstart in enumerate(variants):
             name = f"hermes.service" if i == 0 else f"hermes.service"  # same name
             # Test each variant fresh
             (user_dir / "hermes.service").write_text(
-                f"[Unit]\nDescription=Old Hermes\n[Service]\n{execstart}\n",
+                f"[Unit]\nDescription=Old VIGIL\n[Service]\n{execstart}\n",
                 encoding="utf-8",
             )
             results = gateway_cli._find_legacy_hermes_units()
@@ -2544,11 +2544,11 @@ class TestLegacyHermesUnitDetection:
         assert results == []
 
 
-class TestRemoveLegacyHermesUnits:
+class TestRemoveLegacyVIGILUnits:
     """Tests for remove_legacy_hermes_units (the migration action)."""
 
     _OUR_UNIT_TEXT = (
-        "[Unit]\nDescription=Hermes Gateway\n[Service]\n"
+        "[Unit]\nDescription=VIGIL Gateway\n[Service]\n"
         "ExecStart=/usr/bin/python -m hermes_cli.main gateway run --replace\n"
     )
 
@@ -3097,24 +3097,24 @@ class TestGatewayCommandCatchesSystemScopeError:
 
 class TestServiceWorkingDirIsStable:
     """The gateway service must anchor WorkingDirectory at a stable path
-    (HERMES_HOME), never the source checkout / worktree, so a relocated or
+    (VIGIL_HOME), never the source checkout / worktree, so a relocated or
     deleted checkout can't crash-loop the unit on CHDIR (status=200).
     """
 
     def test_stable_working_dir_uses_hermes_home(self, tmp_path, monkeypatch):
-        home = tmp_path / ".hermes"
+        home = tmp_path / ".vigil"
         home.mkdir()
         monkeypatch.setattr(gateway_cli, "get_hermes_home", lambda: home)
         assert Path(gateway_cli._stable_service_working_dir()) == home.resolve()
 
     def test_stable_working_dir_falls_back_to_project_root(self, tmp_path, monkeypatch):
-        # HERMES_HOME points somewhere that does not exist -> fall back.
-        missing = tmp_path / "does-not-exist" / ".hermes"
+        # VIGIL_HOME points somewhere that does not exist -> fall back.
+        missing = tmp_path / "does-not-exist" / ".vigil"
         monkeypatch.setattr(gateway_cli, "get_hermes_home", lambda: missing)
         assert gateway_cli._stable_service_working_dir() == str(gateway_cli.PROJECT_ROOT)
 
     def test_user_unit_workingdirectory_is_hermes_home_not_checkout(self, tmp_path, monkeypatch):
-        home = tmp_path / ".hermes"
+        home = tmp_path / ".vigil"
         home.mkdir()
         monkeypatch.setattr(gateway_cli, "get_hermes_home", lambda: home)
         unit = gateway_cli.generate_systemd_unit(system=False)
@@ -3128,7 +3128,7 @@ class TestServiceWorkingDirIsStable:
     def test_launchd_workingdirectory_is_hermes_home(self, tmp_path, monkeypatch):
         import re
 
-        home = tmp_path / ".hermes"
+        home = tmp_path / ".vigil"
         home.mkdir()
         monkeypatch.setattr(gateway_cli, "get_hermes_home", lambda: home)
         plist = gateway_cli.generate_launchd_plist()
@@ -3145,7 +3145,7 @@ class TestServiceWorkingDirIsStable:
         causes the old instance to exit cleanly).  Switching to the scalar
         ``<key>KeepAlive</key><true/>`` makes launchd restart regardless of exit code.
         """
-        home = tmp_path / ".hermes"
+        home = tmp_path / ".vigil"
         home.mkdir()
         monkeypatch.setattr(gateway_cli, "get_hermes_home", lambda: home)
         plist = gateway_cli.generate_launchd_plist()

@@ -1,5 +1,5 @@
 """
-Hermes CLI - Unified command-line interface for Hermes Agent.
+VIGIL CLI - Unified command-line interface for VIGIL Agent.
 
 Provides subcommands for:
 - hermes chat          - Interactive chat (same as ./hermes)

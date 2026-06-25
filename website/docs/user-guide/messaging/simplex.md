@@ -29,7 +29,7 @@ simplex-chat -p 5225
 
 The daemon listens on WebSocket at `ws://127.0.0.1:5225` by default.
 
-## Configure Hermes
+## Configure VIGIL
 
 ### Via setup wizard
 
@@ -41,7 +41,7 @@ Select **SimpleX Chat** and follow the prompts.
 
 ### Via environment variables
 
-Add these to `~/.hermes/.env`:
+Add these to `~/.vigil/.env`:
 
 ```
 SIMPLEX_WS_URL=ws://127.0.0.1:5225
@@ -58,7 +58,7 @@ SIMPLEX_HOME_CHANNEL=<contact-id>
 | `SIMPLEX_GROUP_ALLOWED` | Optional | Comma-separated group IDs the bot participates in, or `*` for any group. Omit to ignore group messages entirely |
 | `SIMPLEX_HOME_CHANNEL` | Optional | Default contact/group ID for cron job delivery |
 | `SIMPLEX_HOME_CHANNEL_NAME` | Optional | Human label for the home channel |
-| `HERMES_SIMPLEX_TEXT_BATCH_DELAY` | Optional | Quiet-period seconds (default: `0.8`) used to concatenate rapid-fire inbound text messages into one event |
+| `VIGIL_SIMPLEX_TEXT_BATCH_DELAY` | Optional | Quiet-period seconds (default: `0.8`) used to concatenate rapid-fire inbound text messages into one event |
 
 ## Find your contact ID or display name
 
@@ -122,7 +122,7 @@ send_message(target="simplex:<contact-id>", message="Done!")
 ## Privacy notes
 
 - SimpleX never reveals phone numbers or email addresses — contacts use opaque IDs
-- The connection between Hermes and the daemon is local WebSocket (`ws://127.0.0.1:5225`) — no data leaves your machine
+- The connection between VIGIL and the daemon is local WebSocket (`ws://127.0.0.1:5225`) — no data leaves your machine
 - Messages are end-to-end encrypted by the SimpleX protocol before reaching the daemon
 
 ## Troubleshooting

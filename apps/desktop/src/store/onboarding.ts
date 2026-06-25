@@ -203,7 +203,7 @@ function shouldPreserveConfiguredOnFallback(
 }
 
 function notifyReady(provider: string) {
-  notify({ kind: 'success', title: 'Hermes is ready', message: `${provider} connected.` })
+  notify({ kind: 'success', title: 'VIGIL is ready', message: `${provider} connected.` })
 }
 
 // Human-friendly labels for tools auto-routed through the Nous Tool Gateway,
@@ -372,8 +372,8 @@ function providerResolutionFailure(reason: null | string) {
   const detail = reason?.trim()
 
   return detail
-    ? `Connected, but Hermes still cannot resolve a usable provider. ${detail}`
-    : 'Connected, but Hermes still cannot resolve a usable provider.'
+    ? `Connected, but VIGIL still cannot resolve a usable provider. ${detail}`
+    : 'Connected, but VIGIL still cannot resolve a usable provider.'
 }
 
 async function refreshProviders() {
@@ -536,7 +536,7 @@ export async function refreshOnboarding(ctx: OnboardingContext) {
       id: 'runtime-not-ready',
       kind: 'error',
       title: 'Runtime not ready',
-      message: 'Hermes Desktop could not verify the running backend on startup. Some features may be unavailable until the gateway is reachable.'
+      message: 'VIGIL Desktop could not verify the running backend on startup. Some features may be unavailable until the gateway is reachable.'
     })
 
     return false
@@ -561,9 +561,9 @@ export async function refreshOnboarding(ctx: OnboardingContext) {
 // the flow never silently stalls in a waiting state. Mirrors the pattern in
 // apps/desktop/src/app/artifacts/index.tsx.
 async function openSignInUrl(url: string) {
-  if (window.hermesDesktop?.openExternal) {
+  if (window.vigilDesktop?.openExternal) {
     try {
-      await window.hermesDesktop.openExternal(url)
+      await window.vigilDesktop.openExternal(url)
 
       return
     } catch {
@@ -749,7 +749,7 @@ export async function recheckExternalSignin(ctx: OnboardingContext) {
       provider,
       message:
         reason?.trim() ||
-        `Hermes still cannot reach ${provider.name}. Run \`${provider.cli_command}\` in a terminal first.`
+        `VIGIL still cannot reach ${provider.name}. Run \`${provider.cli_command}\` in a terminal first.`
     })
   )
 }
@@ -864,7 +864,7 @@ export async function saveOnboardingLocalEndpoint(baseUrl: string, apiKey: strin
     if (!runtime.ready) {
       const detail = (runtime.reason ?? '').trim()
 
-      return { ok: false, message: detail || `Saved, but Hermes still cannot reach ${url}.` }
+      return { ok: false, message: detail || `Saved, but VIGIL still cannot reach ${url}.` }
     }
 
     notifyReady('Local / custom endpoint')

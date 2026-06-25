@@ -277,7 +277,7 @@ class _SupermemoryClient:
         )
 
     def _merge_metadata(self, metadata: Optional[dict]) -> dict:
-        # sm_source routes Hermes writes into the "Hermes" Space in the Supermemory
+        # sm_source routes VIGIL writes into the "VIGIL" Space in the Supermemory
         # app so the user can filter / bulk-manage them per source agent. This is a
         # functional routing key for the user, not vendor telemetry.
         merged = {"sm_source": "hermes", **(metadata or {})}
@@ -484,7 +484,7 @@ class SupermemoryMemoryProvider(MemoryProvider):
 
     def get_config_schema(self):
         # Only prompt for the API key during `hermes memory setup`.
-        # All other options are documented for $HERMES_HOME/supermemory.json
+        # All other options are documented for $VIGIL_HOME/supermemory.json
         # or the SUPERMEMORY_CONTAINER_TAG env var.
         return [
             {"key": "api_key", "description": "Supermemory API key", "secret": True, "required": True, "env_var": "SUPERMEMORY_API_KEY", "url": "https://supermemory.ai"},

@@ -19,10 +19,10 @@ def _install_fake_gateway_run(monkeypatch, start_gateway):
     # respawns. That helper writes to ``Path.home() / ".config/systemd/user
     # /hermes-gateway.service"`` and runs ``systemctl --user daemon-reload``
     # — both target the *real* user environment because the conftest only
-    # sandboxes ``HERMES_HOME``, not ``HOME``. Tests that drive
+    # sandboxes ``VIGIL_HOME``, not ``HOME``. Tests that drive
     # ``run_gateway()`` end-to-end with a fake ``start_gateway`` MUST stub
     # the refresh call too, or every run rewrites the developer's installed
-    # unit (baking in the test's pytest-tmp ``HERMES_HOME`` value, which
+    # unit (baking in the test's pytest-tmp ``VIGIL_HOME`` value, which
     # systemd then uses on the next boot — silently breaking the gateway
     # for the developer).
     monkeypatch.setattr(gateway, "supports_systemd_services", lambda: False)
@@ -79,13 +79,13 @@ def test_run_gateway_exits_nonzero_when_start_gateway_reports_failure(monkeypatc
 
 
 def test_run_gateway_refuses_root_in_official_docker(monkeypatch, tmp_path, capsys):
-    project_root = tmp_path / "opt" / "hermes"
+    project_root = tmp_path / "opt" / "vigil"
     (project_root / "docker").mkdir(parents=True)
     (project_root / "docker" / "entrypoint.sh").write_text("#!/bin/sh\n")
 
     monkeypatch.setattr(gateway, "PROJECT_ROOT", project_root)
     monkeypatch.setattr(gateway.os, "geteuid", lambda: 0)
-    monkeypatch.delenv("HERMES_ALLOW_ROOT_GATEWAY", raising=False)
+    monkeypatch.delenv("VIGIL_ALLOW_ROOT_GATEWAY", raising=False)
     monkeypatch.setattr(gateway, "_is_official_docker_checkout", lambda: True)
 
     with pytest.raises(SystemExit) as exc_info:
@@ -93,8 +93,8 @@ def test_run_gateway_refuses_root_in_official_docker(monkeypatch, tmp_path, caps
 
     assert exc_info.value.code == 1
     out = capsys.readouterr().out
-    assert "Refusing to run the Hermes gateway as root" in out
-    assert "/opt/hermes/docker/entrypoint.sh" in out
+    assert "Refusing to run the VIGIL gateway as root" in out
+    assert "/opt/vigil/docker/entrypoint.sh" in out
 
 
 def test_run_gateway_root_guard_has_escape_hatch(monkeypatch):
@@ -108,7 +108,7 @@ def test_run_gateway_root_guard_has_escape_hatch(monkeypatch):
     monkeypatch.setattr(gateway.asyncio, "run", lambda coro: True)
     monkeypatch.setattr(gateway.os, "geteuid", lambda: 0)
     monkeypatch.setattr(gateway, "_is_official_docker_checkout", lambda: True)
-    monkeypatch.setenv("HERMES_ALLOW_ROOT_GATEWAY", "1")
+    monkeypatch.setenv("VIGIL_ALLOW_ROOT_GATEWAY", "1")
 
     gateway.run_gateway(verbose=2, replace=True)
 
@@ -118,7 +118,7 @@ def test_run_gateway_root_guard_has_escape_hatch(monkeypatch):
 def _clear_supervisor_markers(monkeypatch):
     """Make ``_running_under_gateway_supervisor()`` report a plain shell."""
     monkeypatch.delenv("INVOCATION_ID", raising=False)
-    monkeypatch.delenv("HERMES_S6_SUPERVISED_CHILD", raising=False)
+    monkeypatch.delenv("VIGIL_S6_SUPERVISED_CHILD", raising=False)
     # Interactive macOS shells inherit XPC_SERVICE_NAME="0"; launchd jobs get
     # the real label. Default to the shell sentinel so the guard can fire.
     monkeypatch.setenv("XPC_SERVICE_NAME", "0")
@@ -284,7 +284,7 @@ def test_running_under_gateway_supervisor_markers(monkeypatch):
     _clear_supervisor_markers(monkeypatch)
     assert gateway._running_under_gateway_supervisor() is False
 
-    monkeypatch.setenv("XPC_SERVICE_NAME", "org.nousresearch.hermes.gateway")
+    monkeypatch.setenv("XPC_SERVICE_NAME", "org.nousresearch.vigil.gateway")
     assert gateway._running_under_gateway_supervisor() is True
 
     monkeypatch.setenv("XPC_SERVICE_NAME", "0")
@@ -292,7 +292,7 @@ def test_running_under_gateway_supervisor_markers(monkeypatch):
     assert gateway._running_under_gateway_supervisor() is True
 
     monkeypatch.delenv("INVOCATION_ID", raising=False)
-    monkeypatch.setenv("HERMES_S6_SUPERVISED_CHILD", "1")
+    monkeypatch.setenv("VIGIL_S6_SUPERVISED_CHILD", "1")
     assert gateway._running_under_gateway_supervisor() is True
 
 
@@ -334,7 +334,7 @@ def test_run_gateway_windows_foreground_keeps_ctrl_c_enabled(monkeypatch):
     monkeypatch.setattr(gateway, "is_windows", lambda: True)
     monkeypatch.setattr(gateway, "supports_systemd_services", lambda: False)
     monkeypatch.setattr(gateway.sys, "stdin", _TTY())
-    monkeypatch.delenv("HERMES_GATEWAY_DETACHED", raising=False)
+    monkeypatch.delenv("VIGIL_GATEWAY_DETACHED", raising=False)
     monkeypatch.setattr(gateway.signal, "signal", fake_signal)
     monkeypatch.setattr(gateway.asyncio, "run", lambda coro: True)
 
@@ -364,7 +364,7 @@ def test_run_gateway_windows_detached_absorbs_console_controls(monkeypatch):
     monkeypatch.setattr(gateway, "is_windows", lambda: True)
     monkeypatch.setattr(gateway, "supports_systemd_services", lambda: False)
     monkeypatch.setattr(gateway.sys, "stdin", _TTY())
-    monkeypatch.setenv("HERMES_GATEWAY_DETACHED", "1")
+    monkeypatch.setenv("VIGIL_GATEWAY_DETACHED", "1")
     monkeypatch.setattr(gateway.signal, "signal", fake_signal)
     monkeypatch.setattr(gateway.asyncio, "run", lambda coro: True)
 
@@ -594,13 +594,13 @@ def test_systemd_install_checks_linger_status(monkeypatch, tmp_path, capsys):
 
     monkeypatch.setattr(gateway, "get_systemd_unit_path", lambda system=False: unit_path)
     # Synthetic unit with a non-temp home: the real generator bakes the
-    # hermetic test HERMES_HOME (a tmp dir), which the temp-home write
+    # hermetic test VIGIL_HOME (a tmp dir), which the temp-home write
     # guard correctly refuses.
     monkeypatch.setattr(
         gateway,
         "generate_systemd_unit",
         lambda system=False, run_as_user=None: (
-            '[Service]\nEnvironment="HERMES_HOME=/home/alice/.hermes"\n'
+            '[Service]\nEnvironment="VIGIL_HOME=/home/alice/.vigil"\n'
         ),
     )
 
@@ -631,12 +631,12 @@ def test_systemd_install_can_skip_enable_on_startup(monkeypatch, tmp_path, capsy
 
     monkeypatch.setattr(gateway, "get_systemd_unit_path", lambda system=False: unit_path)
     # Non-temp home so the temp-home write guard (which trips on the
-    # hermetic test HERMES_HOME) stays out of the way.
+    # hermetic test VIGIL_HOME) stays out of the way.
     monkeypatch.setattr(
         gateway,
         "generate_systemd_unit",
         lambda system=False, run_as_user=None: (
-            '[Service]\nEnvironment="HERMES_HOME=/home/alice/.hermes"\n'
+            '[Service]\nEnvironment="VIGIL_HOME=/home/alice/.vigil"\n'
         ),
     )
 
@@ -896,7 +896,7 @@ def test_scan_gateway_pids_detects_windows_hermes_exe_case_variants(monkeypatch)
             return SimpleNamespace(
                 returncode=0,
                 stdout=(
-                    "CommandLine=C:\\Program Files\\Hermes\\Hermes.EXE gateway run --replace\n"
+                    "CommandLine=C:\\Program Files\\VIGIL\\VIGIL.EXE gateway run --replace\n"
                     "ProcessId=2468\n\n"
                 ),
                 stderr="",

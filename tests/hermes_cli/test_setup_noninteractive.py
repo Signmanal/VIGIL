@@ -74,7 +74,7 @@ class TestNonInteractiveSetup:
         with (
             patch("hermes_cli.setup.ensure_hermes_home"),
             patch("hermes_cli.setup.load_config", return_value={}),
-            patch("hermes_cli.setup.get_hermes_home", return_value="/tmp/.hermes"),
+            patch("hermes_cli.setup.get_hermes_home", return_value="/tmp/.vigil"),
             patch("hermes_cli.auth.get_active_provider", side_effect=AssertionError("wizard continued")),
             patch("builtins.input", side_effect=AssertionError("input should not be called")),
         ):
@@ -92,7 +92,7 @@ class TestNonInteractiveSetup:
         with (
             patch("hermes_cli.setup.ensure_hermes_home"),
             patch("hermes_cli.setup.load_config", return_value={}),
-            patch("hermes_cli.setup.get_hermes_home", return_value="/tmp/.hermes"),
+            patch("hermes_cli.setup.get_hermes_home", return_value="/tmp/.vigil"),
             patch("hermes_cli.auth.get_active_provider", side_effect=AssertionError("wizard continued")),
             patch("sys.stdin") as mock_stdin,
             patch("builtins.input", side_effect=AssertionError("input should not be called")),
@@ -107,7 +107,7 @@ class TestNonInteractiveSetup:
         """--reset should rewrite config.yaml even when the wizard cannot run interactively."""
         from hermes_cli.setup import run_setup_wizard
 
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("VIGIL_HOME", str(tmp_path))
         cfg = load_config()
         cfg["model"] = {"provider": "custom", "base_url": "http://localhost:8080/v1", "default": "llama3"}
         cfg["agent"]["max_turns"] = 12
@@ -154,7 +154,7 @@ class TestNonInteractiveSetup:
             received["section"] = args.section
 
         monkeypatch.setattr(main_mod, "cmd_setup", fake_cmd_setup)
-        monkeypatch.setattr("sys.argv", ["hermes", "setup", "tts"])
+        monkeypatch.setattr("sys.argv", ["vigil", "setup", "tts"])
 
         main_mod.main()
 

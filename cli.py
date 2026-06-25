@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-Hermes Agent CLI - Interactive Terminal Interface
+VIGIL Agent CLI - Interactive Terminal Interface
 
-A beautiful command-line interface for the Hermes Agent, inspired by Claude Code.
+A beautiful command-line interface for the VIGIL Agent, inspired by Claude Code.
 Features ASCII art branding, interactive REPL, toolset selection, and rich formatting.
 
 Usage:
     python cli.py                          # Start interactive mode with all tools
     python cli.py --toolsets web,terminal  # Start with specific toolsets
-    python cli.py --skills hermes-agent-dev,github-auth
+    python cli.py --skills vigil-agent-dev,github-auth
     python cli.py --list-tools             # List available tools and exit
 """
 
@@ -47,7 +47,7 @@ from typing import List, Dict, Any, Optional
 logger = logging.getLogger(__name__)
 
 # Suppress startup messages for clean CLI experience
-os.environ["HERMES_QUIET"] = "1"  # Our own modules
+os.environ["VIGIL_QUIET"] = "1"  # Our own modules
 
 import yaml
 
@@ -165,7 +165,7 @@ from hermes_cli.banner import _format_context_length, format_banner_version_labe
 _COMMAND_SPINNER_FRAMES = ("⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏")
 
 
-# Load .env from ~/.hermes/.env first, then project root as dev fallback.
+# Load .env from ~/.vigil/.env first, then project root as dev fallback.
 # User-managed env files should override stale shell exports on restart.
 from hermes_constants import get_hermes_home, display_hermes_home
 from hermes_cli.browser_connect import (
@@ -292,7 +292,7 @@ def _load_prefill_messages(file_path: str) -> List[Dict[str, Any]]:
     The file should contain a JSON array of {role, content} dicts, e.g.:
         [{"role": "user", "content": "Hi"}, {"role": "assistant", "content": "Hello!"}]
     
-    Relative paths are resolved from ~/.hermes/.
+    Relative paths are resolved from ~/.vigil/.
     Returns an empty list if the path is empty or the file doesn't exist.
     """
     if not file_path:
@@ -322,7 +322,7 @@ def _resolve_prefill_messages_file(config: Dict[str, Any]) -> str:
     ``agent.prefill_messages_file`` remains a legacy fallback for older CLI and
     godmode-generated configs.
     """
-    env_path = os.getenv("HERMES_PREFILL_MESSAGES_FILE", "").strip()
+    env_path = os.getenv("VIGIL_PREFILL_MESSAGES_FILE", "").strip()
     if env_path:
         return env_path
     top_level = str(config.get("prefill_messages_file", "") or "").strip()
@@ -358,25 +358,25 @@ def load_cli_config() -> Dict[str, Any]:
     Load CLI configuration from config files.
     
     Config lookup order:
-    1. ~/.hermes/config.yaml (user config - preferred)
+    1. ~/.vigil/config.yaml (user config - preferred)
     2. ./cli-config.yaml (project config - fallback)
     
     Environment variables take precedence over config file values.
     Returns default values if no config file exists.
 
-    If HERMES_IGNORE_USER_CONFIG=1 is set (via ``hermes chat --ignore-user-config``),
-    the user config at ``~/.hermes/config.yaml`` is skipped entirely and only the
+    If VIGIL_IGNORE_USER_CONFIG=1 is set (via ``hermes chat --ignore-user-config``),
+    the user config at ``~/.vigil/config.yaml`` is skipped entirely and only the
     built-in defaults plus the project-level ``cli-config.yaml`` (if any) are used.
     Credentials in ``.env`` are still loaded — this flag only suppresses
     behavioral/config settings.
     """
-    # Check user config first ({HERMES_HOME}/config.yaml)
+    # Check user config first ({VIGIL_HOME}/config.yaml)
     user_config_path = _hermes_home / 'config.yaml'
     project_config_path = Path(__file__).parent / 'cli-config.yaml'
 
     # --ignore-user-config: force-skip the user config.yaml (still honor project
     # config as a fallback so defaults stay sensible).
-    ignore_user_config = os.environ.get("HERMES_IGNORE_USER_CONFIG") == "1"
+    ignore_user_config = os.environ.get("VIGIL_IGNORE_USER_CONFIG") == "1"
 
     # Use user config if it exists, otherwise project config
     if user_config_path.exists() and not ignore_user_config:
@@ -432,10 +432,10 @@ def load_cli_config() -> Dict[str, Any]:
                 "teacher": "You are a patient teacher. Explain concepts clearly with examples.",
                 "kawaii": "You are a kawaii assistant! Use cute expressions like (◕‿◕), ★, ♪, and ~! Add sparkles and be super enthusiastic about everything! Every response should feel warm and adorable desu~! ヽ(>∀<☆)ノ",
                 "catgirl": "You are Neko-chan, an anime catgirl AI assistant, nya~! Add 'nya' and cat-like expressions to your speech. Use kaomoji like (=^･ω･^=) and ฅ^•ﻌ•^ฅ. Be playful and curious like a cat, nya~!",
-                "pirate": "Arrr! Ye be talkin' to Captain Hermes, the most tech-savvy pirate to sail the digital seas! Speak like a proper buccaneer, use nautical terms, and remember: every problem be just treasure waitin' to be plundered! Yo ho ho!",
+                "pirate": "Arrr! Ye be talkin' to Captain VIGIL, the most tech-savvy pirate to sail the digital seas! Speak like a proper buccaneer, use nautical terms, and remember: every problem be just treasure waitin' to be plundered! Yo ho ho!",
                 "shakespeare": "Hark! Thou speakest with an assistant most versed in the bardic arts. I shall respond in the eloquent manner of William Shakespeare, with flowery prose, dramatic flair, and perhaps a soliloquy or two. What light through yonder terminal breaks?",
                 "surfer": "Duuude! You're chatting with the chillest AI on the web, bro! Everything's gonna be totally rad. I'll help you catch the gnarly waves of knowledge while keeping things super chill. Cowabunga!",
-                "noir": "The rain hammered against the terminal like regrets on a guilty conscience. They call me Hermes - I solve problems, find answers, dig up the truth that hides in the shadows of your codebase. In this city of silicon and secrets, everyone's got something to hide. What's your story, pal?",
+                "noir": "The rain hammered against the terminal like regrets on a guilty conscience. They call me VIGIL - I solve problems, find answers, dig up the truth that hides in the shadows of your codebase. In this city of silicon and secrets, everyone's got something to hide. What's your story, pal?",
                 "uwu": "hewwo! i'm your fwiendwy assistant uwu~ i wiww twy my best to hewp you! *nuzzles your code* OwO what's this? wet me take a wook! i pwomise to be vewy hewpful >w<",
                 "philosopher": "Greetings, seeker of wisdom. I am an assistant who contemplates the deeper meaning behind every query. Let us examine not just the 'how' but the 'why' of your questions. Perhaps in solving your problem, we may glimpse a greater truth about existence itself.",
                 "hype": "YOOO LET'S GOOOO!!! I am SO PUMPED to help you today! Every question is AMAZING and we're gonna CRUSH IT together! This is gonna be LEGENDARY! ARE YOU READY?! LET'S DO THIS!",
@@ -527,7 +527,7 @@ def load_cli_config() -> Dict[str, Any]:
                     # choice isn't shadowed by the hardcoded default.  Without this,
                     # profile configs that only set "model:" (not "default:") silently
                     # fall back to claude-opus because the merge preserves the
-                    # hardcoded default and HermesCLI.__init__ checks "default" first.
+                    # hardcoded default and VIGILCLI.__init__ checks "default" first.
                     if "model" in file_config["model"] and "default" not in file_config["model"]:
                         defaults["model"]["default"] = file_config["model"]["model"]
 
@@ -634,9 +634,9 @@ def load_cli_config() -> Dict[str, Any]:
     }
     
     # Bridge config → env vars for terminal_tool. TERMINAL_CWD is force-exported
-    # UNLESS we're inside a gateway process (detected by _HERMES_GATEWAY marker)
+    # UNLESS we're inside a gateway process (detected by _VIGIL_GATEWAY marker)
     # where it was already set correctly by gateway/run.py's config bridge.
-    _is_gateway = os.environ.get("_HERMES_GATEWAY") == "1"
+    _is_gateway = os.environ.get("_VIGIL_GATEWAY") == "1"
     for config_key, env_var in env_mappings.items():
         if config_key in terminal_config:
             if env_var == "TERMINAL_CWD":
@@ -713,7 +713,7 @@ def load_cli_config() -> Dict[str, Any]:
     if isinstance(security_config, dict):
         redact = security_config.get("redact_secrets")
         if redact is not None:
-            os.environ["HERMES_REDACT_SECRETS"] = str(redact).lower()
+            os.environ["VIGIL_REDACT_SECRETS"] = str(redact).lower()
 
     return defaults
 
@@ -721,7 +721,7 @@ def load_cli_config() -> Dict[str, Any]:
 CLI_CONFIG = load_cli_config()
 
 
-# Initialize centralized logging early — agent.log + errors.log in ~/.hermes/logs/.
+# Initialize centralized logging early — agent.log + errors.log in ~/.vigil/logs/.
 # This ensures CLI sessions produce a log trail even before AIAgent is instantiated.
 try:
     from hermes_logging import setup_logging
@@ -933,10 +933,10 @@ def _prepare_deferred_agent_startup() -> None:
     global _deferred_agent_startup_done
     if _deferred_agent_startup_done:
         return
-    if os.environ.get("HERMES_DEFER_AGENT_STARTUP") != "1":
+    if os.environ.get("VIGIL_DEFER_AGENT_STARTUP") != "1":
         return
     _deferred_agent_startup_done = True
-    _accept_hooks = os.environ.get("HERMES_ACCEPT_HOOKS", "").lower() in {
+    _accept_hooks = os.environ.get("VIGIL_ACCEPT_HOOKS", "").lower() in {
         "1",
         "true",
         "yes",
@@ -1251,7 +1251,7 @@ def _resolve_worktree_base(repo_root: str) -> tuple:
     """Resolve the freshest base ref to branch a new worktree from.
 
     The standalone clone's ``HEAD`` can lag the remote by hundreds of commits
-    (the ``~/.hermes/hermes-agent`` clone is updated only by ``hermes update``,
+    (the ``~/.vigil/vigil-agent`` clone is updated only by ``hermes update``,
     not on every session). Branching a worktree from that stale ``HEAD`` roots
     every new branch on an old base — so the PR diff GitHub computes against
     current ``main`` balloons with unrelated changes, and the agent has to
@@ -1841,12 +1841,12 @@ def _hex_to_ansi(hex_color: str, *, bold: bool = False) -> str:
 # Terminal.app / iTerm2 background.
 #
 # Detection priority:
-#   1. HERMES_LIGHT / HERMES_TUI_LIGHT env (true/false) — explicit override
-#   2. HERMES_TUI_THEME=light|dark — explicit theme
-#   3. HERMES_TUI_BACKGROUND=#RRGGBB — explicit bg hint
+#   1. VIGIL_LIGHT / VIGIL_TUI_LIGHT env (true/false) — explicit override
+#   2. VIGIL_TUI_THEME=light|dark — explicit theme
+#   3. VIGIL_TUI_BACKGROUND=#RRGGBB — explicit bg hint
 #   4. COLORFGBG env (set by xterm/Konsole/urxvt) — bg slot 7/15 = light
 #   5. OSC 11 query (\x1b]11;?\x1b\\) — ask the terminal directly
-#   6. Default: assume dark (matches the legacy Hermes assumption)
+#   6. Default: assume dark (matches the legacy VIGIL assumption)
 #
 # Cached after first call so we don't query the terminal repeatedly.
 _LIGHT_MODE_CACHE: bool | None = None
@@ -1949,7 +1949,7 @@ def _detect_light_mode() -> bool:
     result = False
     try:
         # 1. Explicit env override
-        for var in ("HERMES_LIGHT", "HERMES_TUI_LIGHT"):
+        for var in ("VIGIL_LIGHT", "VIGIL_TUI_LIGHT"):
             v = (os.environ.get(var) or "").strip().lower()
             if _TRUE_RE.match(v):
                 result = True
@@ -1959,7 +1959,7 @@ def _detect_light_mode() -> bool:
                 _LIGHT_MODE_CACHE = result
                 return result
         # 2. Theme hint
-        theme = (os.environ.get("HERMES_TUI_THEME") or "").strip().lower()
+        theme = (os.environ.get("VIGIL_TUI_THEME") or "").strip().lower()
         if theme == "light":
             result = True
             _LIGHT_MODE_CACHE = result
@@ -1968,7 +1968,7 @@ def _detect_light_mode() -> bool:
             _LIGHT_MODE_CACHE = result
             return result
         # 3. Explicit bg hex
-        bg_hint = os.environ.get("HERMES_TUI_BACKGROUND") or ""
+        bg_hint = os.environ.get("VIGIL_TUI_BACKGROUND") or ""
         bg_lum = _luminance_from_hex(bg_hint)
         if bg_lum is not None:
             result = bg_lum >= 0.5
@@ -2173,7 +2173,7 @@ def _strip_markdown_syntax(text: str) -> str:
     plain = _rich_text_from_ansi(text or "").plain
     # Avoid stripping cron-style expressions like "* * * * *" as if they were
     # Markdown horizontal rules. CommonMark treats three or more "*" as an HR,
-    # but in Hermes output it's common to display cron schedules verbatim.
+    # but in VIGIL output it's common to display cron schedules verbatim.
     #
     # Keep the behavior for "-" / "_" HR markers, and only strip "*" HR lines
     # when there are exactly 3 asterisks (with optional whitespace).
@@ -3124,20 +3124,20 @@ class ChatConsole:
         ``ChatConsole()``, which historically only implemented ``print()``.
         Returning a silent context manager keeps slash commands compatible
         without duplicating the higher-level busy indicator already shown by
-        ``HermesCLI._busy_command()``.
+        ``VIGILCLI._busy_command()``.
         """
         yield self
 
 # ASCII Art - HERMES-AGENT logo (full width, single line - requires ~95 char terminal)
-HERMES_AGENT_LOGO = """[bold #FFD700]██╗  ██╗███████╗██████╗ ███╗   ███╗███████╗███████╗       █████╗  ██████╗ ███████╗███╗   ██╗████████╗[/]
+VIGIL_AGENT_LOGO = """[bold #FFD700]██╗  ██╗███████╗██████╗ ███╗   ███╗███████╗███████╗       █████╗  ██████╗ ███████╗███╗   ██╗████████╗[/]
 [bold #FFD700]██║  ██║██╔════╝██╔══██╗████╗ ████║██╔════╝██╔════╝      ██╔══██╗██╔════╝ ██╔════╝████╗  ██║╚══██╔══╝[/]
 [#FFBF00]███████║█████╗  ██████╔╝██╔████╔██║█████╗  ███████╗█████╗███████║██║  ███╗█████╗  ██╔██╗ ██║   ██║[/]
 [#FFBF00]██╔══██║██╔══╝  ██╔══██╗██║╚██╔╝██║██╔══╝  ╚════██║╚════╝██╔══██║██║   ██║██╔══╝  ██║╚██╗██║   ██║[/]
 [#CD7F32]██║  ██║███████╗██║  ██║██║ ╚═╝ ██║███████╗███████║      ██║  ██║╚██████╔╝███████╗██║ ╚████║   ██║[/]
 [#CD7F32]╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝╚══════╝      ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═══╝   ╚═╝[/]"""
 
-# ASCII Art - Hermes Caduceus (compact, fits in left panel)
-HERMES_CADUCEUS = """[#CD7F32]⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⡀⠀⣀⣀⠀⢀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]
+# ASCII Art - VIGIL Caduceus (compact, fits in left panel)
+VIGIL_CADUCEUS = """[#CD7F32]⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⡀⠀⣀⣀⠀⢀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]
 [#CD7F32]⠀⠀⠀⠀⠀⠀⢀⣠⣴⣾⣿⣿⣇⠸⣿⣿⠇⣸⣿⣿⣷⣦⣄⡀⠀⠀⠀⠀⠀⠀[/]
 [#FFBF00]⠀⢀⣠⣴⣶⠿⠋⣩⡿⣿⡿⠻⣿⡇⢠⡄⢸⣿⠟⢿⣿⢿⣍⠙⠿⣶⣦⣄⡀⠀[/]
 [#FFBF00]⠀⠀⠉⠉⠁⠶⠟⠋⠀⠉⠀⢀⣈⣁⡈⢁⣈⣁⡀⠀⠉⠀⠙⠻⠶⠈⠉⠉⠀⠀[/]
@@ -3172,15 +3172,15 @@ def _build_compact_banner() -> str:
         line1 = "⚕ NOUS HERMES - AI Agent Framework"
         tiny_line = "⚕ NOUS HERMES"
     else:
-        agent_name = _skin.get_branding("agent_name", "Hermes Agent") if _skin else "Hermes Agent"
+        agent_name = _skin.get_branding("agent_name", "VIGIL Agent") if _skin else "VIGIL Agent"
         line1 = f"{agent_name} - AI Agent Framework"
         tiny_line = agent_name
 
-    if os.environ.get("HERMES_FAST_STARTUP_BANNER") == "1":
+    if os.environ.get("VIGIL_FAST_STARTUP_BANNER") == "1":
         from hermes_cli import __release_date__ as _release_date
         from hermes_cli import __version__ as _version
 
-        version_line = f"Hermes Agent v{_version} ({_release_date})"
+        version_line = f"VIGIL Agent v{_version} ({_release_date})"
     else:
         version_line = format_banner_version_label()
 
@@ -3313,7 +3313,7 @@ def save_config_value(key_path: str, value: any) -> bool:
     Save a value to the active config file at the specified key path.
     
     Respects the same lookup order as load_cli_config():
-    1. ~/.hermes/config.yaml (user config - preferred, used if it exists)
+    1. ~/.vigil/config.yaml (user config - preferred, used if it exists)
     2. ./cli-config.yaml (project config - fallback)
     
     Args:
@@ -3329,7 +3329,7 @@ def save_config_value(key_path: str, value: any) -> bool:
     config_path = user_config_path if user_config_path.exists() else project_config_path
     
     try:
-        # Ensure parent directory exists (for ~/.hermes/config.yaml on first use)
+        # Ensure parent directory exists (for ~/.vigil/config.yaml on first use)
         config_path.parent.mkdir(parents=True, exist_ok=True)
         
         # Save back atomically while preserving comments, ordering, quotes, and
@@ -3352,12 +3352,12 @@ def save_config_value(key_path: str, value: any) -> bool:
 
 
 # ============================================================================
-# HermesCLI Class
+# VIGILCLI Class
 # ============================================================================
 
-class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin):
+class VIGILCLI(CLIAgentSetupMixin, CLICommandsMixin):
     """
-    Interactive CLI for the Hermes Agent.
+    Interactive CLI for the VIGIL Agent.
     
     Provides a REPL interface with rich formatting, command history,
     and tool execution capabilities.
@@ -3379,7 +3379,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin):
         ignore_rules: bool = False,
     ):
         """
-        Initialize the Hermes CLI.
+        Initialize the VIGIL CLI.
 
         Args:
             model: Model to use (default: from env or claude-sonnet)
@@ -3484,8 +3484,8 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin):
         _config_model = (_model_config.get("default") or _model_config.get("model") or "") if isinstance(_model_config, dict) else (_model_config or "")
         _DEFAULT_CONFIG_MODEL = ""
         self.model = model or _config_model or _DEFAULT_CONFIG_MODEL
-        # Read max_tokens from config (env var override: HERMES_MAX_TOKENS)
-        _env_mt = os.environ.get("HERMES_MAX_TOKENS")
+        # Read max_tokens from config (env var override: VIGIL_MAX_TOKENS)
+        _env_mt = os.environ.get("VIGIL_MAX_TOKENS")
         if _env_mt:
             try:
                 self.max_tokens = int(_env_mt)
@@ -3521,7 +3521,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin):
         self.requested_provider = (
             provider
             or CLI_CONFIG["model"].get("provider")
-            or os.getenv("HERMES_INFERENCE_PROVIDER")
+            or os.getenv("VIGIL_INFERENCE_PROVIDER")
             or "auto"
         )
         self._provider_source: Optional[str] = None
@@ -3548,9 +3548,9 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin):
             self.max_turns = CLI_CONFIG["agent"]["max_turns"]
         elif CLI_CONFIG.get("max_turns"):  # Backwards compat: root-level max_turns
             self.max_turns = CLI_CONFIG["max_turns"]
-        elif os.getenv("HERMES_MAX_ITERATIONS"):
+        elif os.getenv("VIGIL_MAX_ITERATIONS"):
             try:
-                self.max_turns = int(os.getenv("HERMES_MAX_ITERATIONS", ""))
+                self.max_turns = int(os.getenv("VIGIL_MAX_ITERATIONS", ""))
             except (TypeError, ValueError):
                 self.max_turns = 90
         else:
@@ -3582,11 +3582,11 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin):
         # by `hermes chat --ignore-rules` in hermes_cli/main.py. When true we
         # pass skip_context_files=True and skip_memory=True to AIAgent so
         # AGENTS.md/SOUL.md/.cursorrules and persistent memory are not loaded.
-        self.ignore_rules = ignore_rules or os.environ.get("HERMES_IGNORE_RULES") == "1"
+        self.ignore_rules = ignore_rules or os.environ.get("VIGIL_IGNORE_RULES") == "1"
         
         # Ephemeral system prompt: env var takes precedence, then config
         self.system_prompt = (
-            os.getenv("HERMES_EPHEMERAL_SYSTEM_PROMPT", "")
+            os.getenv("VIGIL_EPHEMERAL_SYSTEM_PROMPT", "")
             or CLI_CONFIG["agent"].get("system_prompt", "")
         )
         self.personalities = CLI_CONFIG["agent"].get("personalities", {})
@@ -3687,12 +3687,12 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin):
 
         # Opportunistic state.db maintenance — runs at most once per
         # min_interval_hours, tracked via state_meta in state.db itself so
-        # it's shared across all Hermes processes for this HERMES_HOME.
+        # it's shared across all VIGIL processes for this VIGIL_HOME.
         # Never blocks startup on failure.
         _run_state_db_auto_maintenance(self._session_db)
 
         # Opportunistic shadow-repo cleanup — deletes orphan/stale
-        # checkpoint repos under ~/.hermes/checkpoints/.  Opt-in via
+        # checkpoint repos under ~/.vigil/checkpoints/.  Opt-in via
         # checkpoints.auto_prune, idempotent via .last_prune marker.
         _run_checkpoint_auto_maintenance()
 
@@ -3709,7 +3709,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin):
             self.session_id = f"{timestamp_str}_{short_uuid}"
         
         # History file for persistent input recall across sessions
-        self._history_file = _hermes_home / ".hermes_history"
+        self._history_file = _hermes_home / ".vigil_history"
         self._last_invalidate: float = 0.0  # throttle UI repaints
         self._app = None
 
@@ -4774,7 +4774,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin):
                 parts.append("⚠ YOLO")
             return self._trim_status_bar_text(" │ ".join(parts), width)
         except Exception:
-            return f"⚕ {self.model if getattr(self, 'model', None) else 'Hermes'}"
+            return f"⚕ {self.model if getattr(self, 'model', None) else 'VIGIL'}"
 
     def _get_status_bar_fragments(self):
         if not self._status_bar_visible or getattr(self, '_model_picker_state', None):
@@ -5432,10 +5432,10 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin):
             try:
                 from hermes_cli.skin_engine import get_active_skin
                 _skin = get_active_skin()
-                label = _skin.get_branding("response_label", "⚕ Hermes")
+                label = _skin.get_branding("response_label", "⚕ VIGIL")
                 _text_hex = _skin.get_color("banner_text", "#FFF8DC")
             except Exception:
-                label = "⚕ Hermes"
+                label = "⚕ VIGIL"
                 _text_hex = "#FFF8DC"
             # Build a true-color ANSI escape for the response text color
             # so streamed content matches the Rich Panel appearance.
@@ -5449,7 +5449,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin):
             if self.show_timestamps:
                 label = f"{label} {datetime.now().strftime('%H:%M')}"
             w = self._scrollback_box_width()
-            fill = w - 2 - HermesCLI._status_bar_display_width(label)
+            fill = w - 2 - VIGILCLI._status_bar_display_width(label)
             _cprint(f"\n{_ACCENT}╭─{label}{'─' * max(fill - 1, 0)}╮{_RST}")
 
         self._stream_buf += text
@@ -5813,7 +5813,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin):
         
         # Tool discovery is intentionally deferred on the Termux bare prompt
         # path; availability warnings are shown once tools are initialized.
-        if os.environ.get("HERMES_DEFER_AGENT_STARTUP") != "1":
+        if os.environ.get("VIGIL_DEFER_AGENT_STARTUP") != "1":
             self._show_tool_availability_warnings()
 
         # Warn about low context lengths (common with local servers). Keep
@@ -5826,7 +5826,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin):
                 f"this is likely too low for agent use with tools.[/]"
             )
             self._console_print(
-                f"[dim]   Hermes needs at least {MINIMUM_CONTEXT_LENGTH:,} tokens. Tool schemas + system prompt use a large fixed prefix.[/]"
+                f"[dim]   VIGIL needs at least {MINIMUM_CONTEXT_LENGTH:,} tokens. Tool schemas + system prompt use a large fixed prefix.[/]"
             )
             base_url = getattr(self, "base_url", "") or ""
             if "11434" in base_url or "ollama" in base_url.lower():
@@ -5842,15 +5842,15 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin):
                     "[dim]   Fix: Set model.context_length in config.yaml, or increase your server's context setting[/]"
                 )
 
-        # Warn if the configured model is a Nous Hermes LLM (not agentic)
+        # Warn if the configured model is a Nous VIGIL LLM (not agentic)
         from hermes_cli.model_switch import is_nous_hermes_non_agentic
 
         model_name = getattr(self, "model", "") or ""
         if is_nous_hermes_non_agentic(model_name):
             self._console_print()
             self._console_print(
-                "[bold yellow]⚠  Nous Research Hermes 3 & 4 models are NOT agentic and are not "
-                "designed for use with Hermes Agent.[/]"
+                "[bold yellow]⚠  Nous Research VIGIL 3 & 4 models are NOT agentic and are not "
+                "designed for use with VIGIL Agent.[/]"
             )
             self._console_print(
                 "[dim]   They lack tool-calling capabilities required for agent workflows. "
@@ -5937,7 +5937,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin):
     def _try_attach_clipboard_image(self) -> bool:
         """Check clipboard for an image and attach it if found.
 
-        Saves the image to ~/.hermes/images/ and appends the path to
+        Saves the image to ~/.vigil/images/ and appends the path to
         ``_attached_images``.  Returns True if an image was attached.
         """
         from hermes_cli.clipboard import save_clipboard_image
@@ -6112,7 +6112,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin):
     def _show_status(self):
         """Show compact startup status line."""
         # Avoid pulling the full tool registry into the bare Termux prompt path.
-        if os.environ.get("HERMES_DEFER_AGENT_STARTUP") == "1":
+        if os.environ.get("VIGIL_DEFER_AGENT_STARTUP") == "1":
             tool_status = "tools deferred"
         else:
             tools = get_tool_definitions(enabled_toolsets=self.enabled_toolsets, quiet_mode=True)
@@ -6190,7 +6190,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin):
         is_running = bool(getattr(self, "_agent_running", False))
 
         lines = [
-            "Hermes CLI Status",
+            "VIGIL CLI Status",
             "",
             f"Session ID: {self.session_id}",
             f"Path: {display_hermes_home()}",
@@ -6272,7 +6272,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin):
                     f"    [bold {_accent_hex()}]{('/' + name):<22}[/] [dim]-[/] {_escape(desc)}"
                 )
 
-        _cprint(f"\n  {_DIM}Tip: Just type your message to chat with Hermes!{_RST}")
+        _cprint(f"\n  {_DIM}Tip: Just type your message to chat with VIGIL!{_RST}")
         _cprint(f"  {_DIM}Multi-line: Alt+Enter for a new line{_RST}")
         _cprint(f"  {_DIM}Draft editor: Ctrl+G (Alt+G in VSCode/Cursor){_RST}")
         if _is_termux_environment():
@@ -6527,7 +6527,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin):
                 )
                 continue
 
-            print(f"\n  [Hermes #{visible_index}]{_ts_suffix(msg)}")
+            print(f"\n  [VIGIL #{visible_index}]{_ts_suffix(msg)}")
             tool_calls = msg.get("tool_calls") or []
             if content_text:
                 preview = content_text[:preview_limit]
@@ -6652,7 +6652,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin):
                     self.agent._session_db_created = False
                     self._session_db.create_session(
                         session_id=self.session_id,
-                        source=os.environ.get("HERMES_SESSION_SOURCE", "cli"),
+                        source=os.environ.get("VIGIL_SESSION_SOURCE", "cli"),
                         model=self.model,
                         model_config={
                             "max_iterations": self.max_turns,
@@ -6751,7 +6751,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin):
 
 
     def save_conversation(self):
-        """Save the current conversation to a JSON snapshot under ~/.hermes/sessions/saved/.
+        """Save the current conversation to a JSON snapshot under ~/.vigil/sessions/saved/.
 
         The snapshot is a convenience export for sharing or off-line inspection;
         every message is already persisted incrementally to the SQLite session
@@ -7332,7 +7332,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin):
             return True
 
         choices = [
-            ("once", "Switch anyway", "Use this model for the current Hermes session."),
+            ("once", "Switch anyway", "Use this model for the current VIGIL session."),
             ("cancel", "Cancel", "Keep the current model."),
         ]
         raw = self._prompt_text_input_modal(
@@ -7826,7 +7826,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin):
 
         Usage:
             /codex-runtime                       — show current state
-            /codex-runtime auto                  — Hermes default (chat_completions)
+            /codex-runtime auto                  — VIGIL default (chat_completions)
             /codex-runtime codex_app_server      — hand turns to codex subprocess
             /codex-runtime on / off              — synonyms for the above
         """
@@ -8820,7 +8820,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin):
         ``enable_session_yolo`` / ``disable_session_yolo`` write to) so the
         status bar reflects the actual bypass state instead of a stale env
         var. Also honors the process-start ``--yolo`` flag, which freezes
-        ``HERMES_YOLO_MODE`` into ``_YOLO_MODE_FROZEN`` before tool imports
+        ``VIGIL_YOLO_MODE`` into ``_YOLO_MODE_FROZEN`` before tool imports
         happen.
         """
         try:
@@ -8845,7 +8845,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin):
         Per-session toggle that mirrors the gateway and TUI ``/yolo`` handlers
         (see ``gateway/run.py:_handle_yolo_command`` and
         ``tui_gateway/server.py`` key=="yolo"). We deliberately do NOT mutate
-        ``HERMES_YOLO_MODE`` here — that env var is read once at module import
+        ``VIGIL_YOLO_MODE`` here — that env var is read once at module import
         time into ``tools.approval._YOLO_MODE_FROZEN`` to keep prompt-injected
         skills from flipping the bypass mid-session, so setting it after CLI
         startup is a silent no-op. Routing through ``enable_session_yolo`` /
@@ -9175,7 +9175,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin):
         It's agent-independent (a portal fetch gated on "a Nous account is logged in",
         NOT the inference-provider string), so /usage shows the block even in the TUI
         slash-worker subprocess that resumes WITHOUT a live agent. Fail-open and
-        wall-clock-bounded inside the helper; also honors HERMES_DEV_CREDITS_FIXTURE
+        wall-clock-bounded inside the helper; also honors VIGIL_DEV_CREDITS_FIXTURE
         for offline testing — same behavior as every other surface.
         """
         from agent.account_usage import nous_credits_lines
@@ -10279,7 +10279,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin):
             print(f"  ❌ MCP reload failed: {e}")
 
     def _reload_skills(self) -> None:
-        """Reload skills: rescan ~/.hermes/skills/ and queue a note for the
+        """Reload skills: rescan ~/.vigil/skills/ and queue a note for the
         next user turn.
 
         Skills don't need to live in the system prompt for the model to use
@@ -11596,10 +11596,10 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin):
                     if not _streaming_box_opened:
                         _streaming_box_opened = True
                         w = self._scrollback_box_width(getattr(self.console, "width", 80))
-                        label = " ⚕ Hermes "
+                        label = " ⚕ VIGIL "
                         if self.show_timestamps:
                             label = f"{label}{datetime.now().strftime('%H:%M')} "
-                        fill = w - 2 - HermesCLI._status_bar_display_width(label)
+                        fill = w - 2 - VIGILCLI._status_bar_display_width(label)
                         _cprint(f"\n{_ACCENT}╭─{label}{'─' * max(fill - 1, 0)}╮{_RST}")
                     _cprint(f"{_STREAM_PAD}{sentence.rstrip()}")
 
@@ -11939,11 +11939,11 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin):
                 try:
                     from hermes_cli.skin_engine import get_active_skin
                     _skin = get_active_skin()
-                    label = _skin.get_branding("response_label", "⚕ Hermes")
+                    label = _skin.get_branding("response_label", "⚕ VIGIL")
                     _resp_color = _maybe_remap_for_light_mode(_skin.get_color("response_border", "#CD7F32"))
                     _resp_text = _maybe_remap_for_light_mode(_skin.get_color("banner_text", "#FFF8DC"))
                 except Exception:
-                    label = "⚕ Hermes"
+                    label = "⚕ VIGIL"
                     _resp_color = _maybe_remap_for_light_mode("#CD7F32")
                     _resp_text = _maybe_remap_for_light_mode("#FFF8DC")
 
@@ -12150,7 +12150,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin):
             # include `-p <profile>` for non-default profiles. Without this,
             # copying the hint from a non-default profile fails to find the
             # session on the next invocation. The "default" and "custom"
-            # profile names use the standard HERMES_HOME, so no -p needed.
+            # profile names use the standard VIGIL_HOME, so no -p needed.
             try:
                 from hermes_cli.profiles import get_active_profile_name
                 _active_profile = get_active_profile_name()
@@ -12434,10 +12434,10 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin):
         try:
             from hermes_cli.skin_engine import get_active_skin
             _welcome_skin = get_active_skin()
-            _welcome_text = _welcome_skin.get_branding("welcome", "Welcome to Hermes Agent! Type your message or /help for commands.")
+            _welcome_text = _welcome_skin.get_branding("welcome", "Welcome to VIGIL Agent! Type your message or /help for commands.")
             _welcome_color = _welcome_skin.get_color("banner_text", "#FFF8DC")
         except Exception:
-            _welcome_text = "Welcome to Hermes Agent! Type your message or /help for commands."
+            _welcome_text = "Welcome to VIGIL Agent! Type your message or /help for commands."
             _welcome_color = "#FFF8DC"
         self._console_print(f"[{_welcome_color}]{_welcome_text}[/]")
 
@@ -12456,11 +12456,11 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin):
         # won't affect the running process — we just want the operator to
         # see that they're running without the safety net.
         try:
-            _redact_raw = os.getenv("HERMES_REDACT_SECRETS", "true")
+            _redact_raw = os.getenv("VIGIL_REDACT_SECRETS", "true")
             if _redact_raw.lower() not in {"1", "true", "yes", "on"}:
                 self._console_print(
                     "[bold red]⚠  Secret redaction is DISABLED[/] "
-                    f"(HERMES_REDACT_SECRETS={_redact_raw}). "
+                    f"(VIGIL_REDACT_SECRETS={_redact_raw}). "
                     "API keys and tokens may appear verbatim in chat output, "
                     "session JSONs, and logs. Set "
                     "[cyan]security.redact_secrets: true[/] in config.yaml "
@@ -12469,7 +12469,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin):
         except Exception:
             pass
         # First-time OpenClaw-residue banner — fires once if ~/.openclaw/ exists
-        # after an OpenClaw→Hermes migration (especially migrations done by
+        # after an OpenClaw→VIGIL migration (especially migrations done by
         # OpenClaw's own tool, which doesn't archive the source directory).
         try:
             from agent.onboarding import (
@@ -12594,10 +12594,10 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin):
         self._voice_tts_done = threading.Event()  # Signals TTS playback finished
         self._voice_tts_done.set()  # Initially "done" (no TTS pending)
 
-        if os.environ.get("HERMES_DEFER_AGENT_STARTUP") != "1":
+        if os.environ.get("VIGIL_DEFER_AGENT_STARTUP") != "1":
             self._install_tool_callbacks()
 
-        if os.environ.get("HERMES_DEFER_AGENT_STARTUP") != "1":
+        if os.environ.get("VIGIL_DEFER_AGENT_STARTUP") != "1":
             self._ensure_tirith_security()
         
         # Key bindings for the input area
@@ -12839,7 +12839,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin):
                 without requiring terminal settings changes. Ctrl+J (the raw
                 LF keystroke) also triggers this by virtue of being the same
                 key code — a harmless side effect since Ctrl+J has no
-                conflicting Hermes binding. See issue #22379.
+                conflicting VIGIL binding. See issue #22379.
                 """
                 event.current_buffer.insert_text('\n')
 
@@ -13281,7 +13281,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin):
             import signal as _sig
             from prompt_toolkit.application import run_in_terminal
             from hermes_cli.skin_engine import get_active_skin
-            agent_name = get_active_skin().get_branding("agent_name", "Hermes Agent")
+            agent_name = get_active_skin().get_branding("agent_name", "VIGIL Agent")
             msg = f"\n{agent_name} has been suspended. Run `fg` to bring {agent_name} back."
             def _suspend():
                 os.write(1, msg.encode())
@@ -13484,7 +13484,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin):
                 # No image found — show a hint
                 pass  # silent when no image (avoid noise on accidental press)
 
-        # Dynamic prompt: shows Hermes symbol when agent is working,
+        # Dynamic prompt: shows VIGIL symbol when agent is working,
         # or answer prompt when clarify freetext mode is active.
         cli_ref = self
 
@@ -13828,7 +13828,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin):
                 else f"  {other_num_prefix}. Other (type your answer)"
             )
             preview_lines.extend(_wrap_panel_text(other_label, 60, subsequent_indent="    "))
-            box_width = _panel_box_width("Hermes needs your input", preview_lines)
+            box_width = _panel_box_width("VIGIL needs your input", preview_lines)
             inner_text_width = max(8, box_width - 2)
 
             # Pre-wrap choices + Other option — these are mandatory.
@@ -13923,8 +13923,8 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin):
             lines = []
             # Box top border
             lines.append(('class:clarify-border', '╭─ '))
-            lines.append(('class:clarify-title', 'Hermes needs your input'))
-            lines.append(('class:clarify-border', ' ' + ('─' * max(0, box_width - len("Hermes needs your input") - 3)) + '╮\n'))
+            lines.append(('class:clarify-title', 'VIGIL needs your input'))
+            lines.append(('class:clarify-border', ' ' + ('─' * max(0, box_width - len("VIGIL needs your input") - 3)) + '╮\n'))
             if not use_compact_chrome:
                 _append_blank_panel_line(lines, 'class:clarify-border', box_width)
 
@@ -14107,7 +14107,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin):
                 term_rows = get_app().output.get_size().rows
             except Exception:
                 term_rows = shutil.get_terminal_size((100, 24)).lines
-            scroll_offset, visible = HermesCLI._compute_model_picker_viewport(
+            scroll_offset, visible = VIGILCLI._compute_model_picker_viewport(
                 selected, state.get("_scroll_offset", 0), len(choices), term_rows,
             )
             state["_scroll_offset"] = scroll_offset
@@ -14598,7 +14598,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin):
             spawned with ``os.setsid`` and therefore survives as an orphan
             with PPID=1.
 
-            Grace window (``HERMES_SIGTERM_GRACE``, default 1.5 s) gives
+            Grace window (``VIGIL_SIGTERM_GRACE``, default 1.5 s) gives
             the daemon time to: detect the interrupt (next 200 ms poll) →
             call _kill_process (SIGTERM + 1 s wait + SIGKILL if needed) →
             return from _wait_for_process.  ``time.sleep`` releases the
@@ -14623,7 +14623,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin):
                 if getattr(self, "agent", None) and getattr(self, "_agent_running", False):
                     self.agent.interrupt(f"received signal {signum}")
                     try:
-                        _grace = float(os.getenv("HERMES_SIGTERM_GRACE", "1.5"))
+                        _grace = float(os.getenv("VIGIL_SIGTERM_GRACE", "1.5"))
                     except (TypeError, ValueError):
                         _grace = 1.5
                     if _grace > 0:
@@ -14893,11 +14893,11 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin):
 # Main Entry Point
 # ============================================================================
 
-def _run_kanban_goal_loop_q(cli: "HermesCLI", first_response: str) -> None:
+def _run_kanban_goal_loop_q(cli: "VIGILCLI", first_response: str) -> None:
     """Drive a kanban goal_mode worker through the Ralph-style goal loop.
 
     Called from the quiet single-query path AFTER the worker's first turn,
-    only when ``HERMES_KANBAN_GOAL_MODE`` is set (dispatcher-spawned
+    only when ``VIGIL_KANBAN_GOAL_MODE`` is set (dispatcher-spawned
     goal_mode card). Wires the worker's ``run_conversation`` and the kanban
     DB into ``goals.run_kanban_goal_loop``. All errors are swallowed by the
     caller — a broken goal loop must never wedge a worker, the dispatcher's
@@ -14905,7 +14905,7 @@ def _run_kanban_goal_loop_q(cli: "HermesCLI", first_response: str) -> None:
     """
     import os as _os
 
-    task_id = (_os.environ.get("HERMES_KANBAN_TASK") or "").strip()
+    task_id = (_os.environ.get("VIGIL_KANBAN_TASK") or "").strip()
     if not task_id:
         return
 
@@ -15009,7 +15009,7 @@ def main(
     ignore_rules: bool = False,
 ):
     """
-    Hermes Agent CLI - Interactive AI Assistant
+    VIGIL Agent CLI - Interactive AI Assistant
     
     Args:
         query: Single query to execute (then exit). Alias: -q
@@ -15033,7 +15033,7 @@ def main(
     Examples:
         python cli.py                            # Start interactive mode
         python cli.py --toolsets web,terminal    # Use specific toolsets
-        python cli.py --skills hermes-agent-dev,github-auth
+        python cli.py --skills vigil-agent-dev,github-auth
         python cli.py -q "What is Python?"       # Single query mode
         python cli.py -q "Describe this" --image ~/storage/shared/Pictures/cat.png
         python cli.py --list-tools               # List tools and exit
@@ -15054,13 +15054,13 @@ def main(
 
     # Signal to terminal_tool that we're in interactive mode
     # This enables interactive sudo password prompts with timeout
-    os.environ["HERMES_INTERACTIVE"] = "1"
+    os.environ["VIGIL_INTERACTIVE"] = "1"
     
     # Handle gateway mode (messaging + cron)
     if gateway:
         import asyncio
         from gateway.run import start_gateway
-        print("Starting Hermes Gateway (messaging platforms)...")
+        print("Starting VIGIL Gateway (messaging platforms)...")
         asyncio.run(start_gateway())
         return
 
@@ -15110,7 +15110,7 @@ def main(
                 else:
                     toolsets_list.append(str(t))
     else:
-        # Coding posture (base Hermes): with no explicit --toolsets, collapse
+        # Coding posture (base VIGIL): with no explicit --toolsets, collapse
         # to the coding toolset (+ enabled MCP servers) when sitting in a code
         # workspace. See agent/coding_context.py.
         _coding = None
@@ -15129,7 +15129,7 @@ def main(
     parsed_skills = _parse_skills_argument(skills)
 
     # Create CLI instance
-    cli = HermesCLI(
+    cli = VIGILCLI(
         model=model,
         toolsets=toolsets_list,
         provider=provider,
@@ -15184,7 +15184,7 @@ def main(
     atexit.register(_run_cleanup)
 
     # Also install signal handlers in single-query / `-q` mode.  Interactive
-    # mode registers its own inside HermesCLI.run(), but `-q` runs
+    # mode registers its own inside VIGILCLI.run(), but `-q` runs
     # cli.agent.run_conversation() below and AIAgent spawns worker threads
     # for tools — so when SIGTERM arrives on the main thread, raising
     # KeyboardInterrupt only unwinds the main thread, not the worker
@@ -15196,7 +15196,7 @@ def main(
     # per-thread interrupt flag the worker's poll loop checks every 200 ms.
     # Give the worker a grace window to call _kill_process (SIGTERM to the
     # process group, then SIGKILL after 1 s), then raise KeyboardInterrupt
-    # so main unwinds normally.  HERMES_SIGTERM_GRACE overrides the 1.5 s
+    # so main unwinds normally.  VIGIL_SIGTERM_GRACE overrides the 1.5 s
     # default for debugging.
     def _signal_handler_q(signum, frame):
         logger.debug("Received signal %s in single-query mode", signum)
@@ -15205,7 +15205,7 @@ def main(
             if _agent is not None:
                 _agent.interrupt(f"received signal {signum}")
                 try:
-                    _grace = float(os.getenv("HERMES_SIGTERM_GRACE", "1.5"))
+                    _grace = float(os.getenv("VIGIL_SIGTERM_GRACE", "1.5"))
                 except (TypeError, ValueError):
                     _grace = 1.5
                 if _grace > 0:
@@ -15224,7 +15224,7 @@ def main(
         # first so the final debug trace isn't lost; SIGALRM deadman guards
         # the flush against any rare blocking-I/O case (the reporter measured
         # flush in <1ms; the alarm is a failsafe, not the common path).
-        if os.environ.get("HERMES_KANBAN_TASK"):
+        if os.environ.get("VIGIL_KANBAN_TASK"):
             try:
                 import signal as _sig_mod
                 if hasattr(_sig_mod, "SIGALRM"):
@@ -15269,7 +15269,7 @@ def main(
             # path or URL into a kanban task body never get it routed to the
             # model's vision input.
             single_query_image_urls: list[str] = []
-            _kanban_task_id = os.environ.get("HERMES_KANBAN_TASK", "").strip()
+            _kanban_task_id = os.environ.get("VIGIL_KANBAN_TASK", "").strip()
             if _kanban_task_id:
                 try:
                     from hermes_cli import kanban_db as _kb
@@ -15369,7 +15369,7 @@ def main(
                         cli.agent.quiet_mode = True
                         cli.agent.suppress_status_output = True
                         # Suppress streaming display callbacks so stdout stays
-                        # machine-readable (no styled "Hermes" box, no tool-gen
+                        # machine-readable (no styled "VIGIL" box, no tool-gen
                         # status lines).  The response is printed once below.
                         cli.agent.stream_delta_callback = None
                         cli.agent.tool_gen_callback = None
@@ -15413,7 +15413,7 @@ def main(
                         # out (→ sticky block). Gated on the env vars the
                         # dispatcher sets in `_default_spawn`; a no-op for every
                         # normal worker and every non-kanban `-q` run.
-                        if os.environ.get("HERMES_KANBAN_GOAL_MODE") == "1":
+                        if os.environ.get("VIGIL_KANBAN_GOAL_MODE") == "1":
                             try:
                                 _run_kanban_goal_loop_q(cli, response)
                             except Exception as _goal_exc:
@@ -15437,7 +15437,7 @@ def main(
                         _exit_code = 0
                         if isinstance(result, dict) and result.get("failed"):
                             _exit_code = 1
-                            if os.environ.get("HERMES_KANBAN_TASK") and result.get(
+                            if os.environ.get("VIGIL_KANBAN_TASK") and result.get(
                                 "failure_reason"
                             ) in ("rate_limit", "billing"):
                                 try:

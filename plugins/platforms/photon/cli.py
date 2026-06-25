@@ -10,7 +10,7 @@ Subcommands:
     telemetry          show or toggle Spectrum SDK telemetry (on/off)
 
 The device-code login runs automatically as the first step of ``setup``;
-there is no standalone ``login`` verb (matching how every other Hermes
+there is no standalone ``login`` verb (matching how every other VIGIL
 gateway channel onboards through a single setup surface).
 
 Photon uses the spectrum-ts gRPC stream for inbound — there is no webhook
@@ -45,7 +45,7 @@ def register_cli(parser: argparse.ArgumentParser) -> None:
         help="First-time setup (device login + project + user + sidecar)",
     )
     p_setup.add_argument("--project-name", default=None,
-                         help="Project name (default: 'Hermes Agent')")
+                         help="Project name (default: 'VIGIL Agent')")
     p_setup.add_argument("--phone", default=None,
                          help="Your E.164 phone number (e.g. +15551234567)")
     p_setup.add_argument("--first-name", default=None)
@@ -141,7 +141,7 @@ def _cmd_setup(args: argparse.Namespace) -> int:
     else:
         print("[1/5] Reusing existing Photon token")
 
-    # 2. Find or create the "Hermes Agent" project.
+    # 2. Find or create the "VIGIL Agent" project.
     name = args.project_name or photon_auth.DEFAULT_PROJECT_NAME
     dashboard_id = photon_auth.load_dashboard_project_id()
     try:
@@ -164,7 +164,7 @@ def _cmd_setup(args: argparse.Namespace) -> int:
         print("could not resolve a Photon project id", file=sys.stderr)
         return 1
 
-    # 3. Rotate the project secret and persist creds (runtime -> ~/.hermes/.env,
+    # 3. Rotate the project secret and persist creds (runtime -> ~/.vigil/.env,
     #    ids -> auth.json). Spectrum is always enabled and provisioned at
     #    create-time, and the dashboard project id *is* the Spectrum project id
     #    (ids unified), so there's nothing to enable — the id we already have is
@@ -335,7 +335,7 @@ def _cmd_install_sidecar(_args: argparse.Namespace) -> int:
 
 
 def _telemetry_enabled() -> bool:
-    """Read PHOTON_TELEMETRY from the env / ~/.hermes/.env.
+    """Read PHOTON_TELEMETRY from the env / ~/.vigil/.env.
 
     Mirrors the sidecar's truthy set (index.mjs) so the state shown here
     always matches what the sidecar will actually do.
@@ -360,7 +360,7 @@ def _cmd_telemetry(args: argparse.Namespace) -> int:
     except Exception as e:
         print(f"could not save PHOTON_TELEMETRY: {e}", file=sys.stderr)
         return 1
-    print(f"✓ Spectrum telemetry turned {state} (PHOTON_TELEMETRY in ~/.hermes/.env)")
+    print(f"✓ Spectrum telemetry turned {state} (PHOTON_TELEMETRY in ~/.vigil/.env)")
     print("  Restart the gateway for the sidecar to pick it up:  hermes gateway restart")
     return 0
 

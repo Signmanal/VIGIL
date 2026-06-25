@@ -13,11 +13,11 @@ import pytest
 
 @pytest.fixture
 def isolated_home(tmp_path, monkeypatch):
-    """Isolate HERMES_HOME + reset any module-level catalog cache per test."""
-    home = tmp_path / ".hermes"
+    """Isolate VIGIL_HOME + reset any module-level catalog cache per test."""
+    home = tmp_path / ".vigil"
     home.mkdir()
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("VIGIL_HOME", str(home))
 
     # Force a fresh catalog module state for each test.
     import importlib
@@ -180,9 +180,9 @@ class TestFallbackChain:
     releases (opus 4.8, etc.) never reach the picker.
     """
 
-    PRIMARY = "https://hermes-agent.nousresearch.com/docs/api/model-catalog.json"
+    PRIMARY = "https://vigil-agent.nousresearch.com/docs/api/model-catalog.json"
     FALLBACK = (
-        "https://raw.githubusercontent.com/NousResearch/hermes-agent"
+        "https://raw.githubusercontent.com/NousResearch/vigil-agent"
         "/main/website/static/api/model-catalog.json"
     )
 
@@ -378,9 +378,9 @@ class TestIntegrationWithModelsModule:
         # We deliberately do NOT use the ``isolated_home`` fixture here:
         # that fixture monkeypatches ``Path.home`` to ``tmp_path``, which
         # trips the auth-store seat-belt in ``_auth_file_path()`` because
-        # ``HERMES_HOME / auth.json`` then resolves to the same path the
+        # ``VIGIL_HOME / auth.json`` then resolves to the same path the
         # seat-belt thinks is the "real" user store. Use the autouse
-        # ``_hermetic_environment`` HERMES_HOME directly instead.
+        # ``_hermetic_environment`` VIGIL_HOME directly instead.
         import importlib
         from hermes_cli import model_catalog
         from hermes_cli.models import get_curated_nous_model_ids
@@ -388,7 +388,7 @@ class TestIntegrationWithModelsModule:
         try:
             from hermes_cli.model_switch import list_picker_providers
 
-            active_home = Path(os.environ["HERMES_HOME"])
+            active_home = Path(os.environ["VIGIL_HOME"])
             (active_home / "auth.json").write_text(
                 json.dumps(
                     {
@@ -440,7 +440,7 @@ class TestIntegrationWithModelsModule:
                 list_picker_providers,
             )
 
-            active_home = Path(os.environ["HERMES_HOME"])
+            active_home = Path(os.environ["VIGIL_HOME"])
             (active_home / "auth.json").write_text(
                 json.dumps(
                     {

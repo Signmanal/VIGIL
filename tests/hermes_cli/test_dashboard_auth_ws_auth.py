@@ -33,7 +33,7 @@ from hermes_cli.dashboard_auth.ws_tickets import (
     internal_ws_credential,
     mint_ticket,
 )
-from tests.hermes_cli.conftest_dashboard_auth import StubAuthProvider
+from tests.vigil_cli.conftest_dashboard_auth import StubAuthProvider
 
 
 # ---------------------------------------------------------------------------
@@ -260,7 +260,7 @@ class TestWsAuthOkGated:
 
     def test_rejection_audit_logs(self, gated_app, tmp_path, monkeypatch):
         # Point the audit log at a tmp dir so we can read what got written.
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("VIGIL_HOME", str(tmp_path))
         from hermes_cli.dashboard_auth import audit as audit_mod
 
         # The log path is resolved lazily on the first audit_log() call;
@@ -500,7 +500,7 @@ class TestWsHostOriginGuardOrigins:
         assert web_server._ws_host_origin_is_allowed(ws) is False
 
     def test_explicit_non_loopback_file_origin_allowed(self, insecure_explicit_host_app):
-        """Packaged Hermes Desktop also uses file:// when connecting to a
+        """Packaged VIGIL Desktop also uses file:// when connecting to a
         Tailscale/LAN dashboard bind.
 
         The WebSocket route calls _ws_auth_ok before this guard, so in

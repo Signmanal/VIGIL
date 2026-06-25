@@ -10,12 +10,12 @@ covers the operational concerns: starting them all together, viewing logs
 across profiles, preventing the host from sleeping, and recovering from common
 launchd/systemd quirks.
 
-If you only run one Hermes agent, you don't need this page — see
+If you only run one VIGIL agent, you don't need this page — see
 [Profiles](./profiles.md) for the basics.
 
 ## When to use this
 
-You want this setup when you have two or more Hermes agents that should all
+You want this setup when you have two or more VIGIL agents that should all
 be online at the same time. Common reasons:
 
 - A personal assistant on one Telegram bot and a coding agent on another
@@ -25,7 +25,7 @@ be online at the same time. Common reasons:
   memory and skills
 
 Every profile already gets its own per-platform LaunchAgent
-(`ai.hermes.gateway-<name>.plist`) or systemd user service
+(`ai.vigil.gateway-<name>.plist`) or systemd user service
 (`hermes-gateway-<name>.service`). This guide adds the patterns for managing
 them collectively.
 
@@ -89,7 +89,7 @@ hermes config set gateway.multiplex_profiles true
 hermes gateway restart
 ```
 
-Equivalently, in the default profile's `~/.hermes/config.yaml`:
+Equivalently, in the default profile's `~/.vigil/config.yaml`:
 
 ```yaml
 gateway:
@@ -274,10 +274,10 @@ never clash:
 
 | Platform | Path                                                              |
 | -------- | ----------------------------------------------------------------- |
-| macOS    | `~/Library/LaunchAgents/ai.hermes.gateway-<profile>.plist`        |
+| macOS    | `~/Library/LaunchAgents/ai.vigil.gateway-<profile>.plist`        |
 | Linux    | `~/.config/systemd/user/hermes-gateway-<profile>.service`         |
 
-The default profile keeps the historical names: `ai.hermes.gateway.plist` /
+The default profile keeps the historical names: `ai.vigil.gateway.plist` /
 `hermes-gateway.service`.
 
 ## Viewing logs
@@ -286,18 +286,18 @@ Each profile writes to its own log files:
 
 ```bash
 # Default profile
-tail -f ~/.hermes/logs/gateway.log
-tail -f ~/.hermes/logs/gateway.error.log
+tail -f ~/.vigil/logs/gateway.log
+tail -f ~/.vigil/logs/gateway.error.log
 
 # Named profile
-tail -f ~/.hermes/profiles/<name>/logs/gateway.log
-tail -f ~/.hermes/profiles/<name>/logs/gateway.error.log
+tail -f ~/.vigil/profiles/<name>/logs/gateway.log
+tail -f ~/.vigil/profiles/<name>/logs/gateway.error.log
 ```
 
 Stream every profile's log simultaneously:
 
 ```bash
-tail -f ~/.hermes/logs/gateway.log ~/.hermes/profiles/*/logs/gateway.log
+tail -f ~/.vigil/logs/gateway.log ~/.vigil/profiles/*/logs/gateway.log
 ```
 
 The CLI also has a structured log viewer:
@@ -322,13 +322,13 @@ systemctl --user list-units 'hermes-gateway-*'   # Linux — units
 Every profile keeps its config inside its own directory:
 
 ```
-~/.hermes/profiles/<name>/
+~/.vigil/profiles/<name>/
 ├── .env              # API keys, bot tokens (chmod 600)
 ├── config.yaml       # model, provider, toolsets, gateway settings
 └── SOUL.md           # personality / system prompt
 ```
 
-The default profile uses `~/.hermes/` directly with the same three files.
+The default profile uses `~/.vigil/` directly with the same three files.
 
 Edit them with any editor or via the CLI:
 
@@ -357,7 +357,7 @@ to sleep when idle. Two patterns:
 ```bash
 caffeinate -dis                    # block display, idle, and system sleep
 caffeinate -dis -t 28800           # same, auto-exit after 8 hours
-caffeinate -i -w $(cat ~/.hermes/gateway.pid) &   # awake while default gateway runs
+caffeinate -i -w $(cat ~/.vigil/gateway.pid) &   # awake while default gateway runs
 
 # Persistent: run in background and forget
 nohup caffeinate -dis >/dev/null 2>&1 &
@@ -409,7 +409,7 @@ To audit:
 
 ```bash
 grep -H 'TELEGRAM_BOT_TOKEN\|DISCORD_BOT_TOKEN' \
-     ~/.hermes/.env ~/.hermes/profiles/*/.env
+     ~/.vigil/.env ~/.vigil/profiles/*/.env
 ```
 
 ## Updating the code
@@ -440,7 +440,7 @@ If a profile's gateway shows `not running` but a process is still alive:
 
 ```bash
 ps -ef | grep "hermes_cli.*-p <profile>"
-cat ~/.hermes/profiles/<profile>/gateway.pid
+cat ~/.vigil/profiles/<profile>/gateway.pid
 kill -TERM <pid>          # graceful
 kill -KILL <pid>          # if that fails after a few seconds
 <profile> gateway start
@@ -450,8 +450,8 @@ kill -KILL <pid>          # if that fails after a few seconds
 
 ```bash
 # macOS
-launchctl unload ~/Library/LaunchAgents/ai.hermes.gateway-<profile>.plist
-launchctl load   ~/Library/LaunchAgents/ai.hermes.gateway-<profile>.plist
+launchctl unload ~/Library/LaunchAgents/ai.vigil.gateway-<profile>.plist
+launchctl load   ~/Library/LaunchAgents/ai.vigil.gateway-<profile>.plist
 
 # Linux
 systemctl --user restart hermes-gateway-<profile>.service

@@ -1,5 +1,5 @@
 """
-Interactive setup wizard for Hermes Agent.
+Interactive setup wizard for VIGIL Agent.
 
 Modular wizard with independently-runnable sections:
   1. Model & Provider — choose your AI provider and model
@@ -8,7 +8,7 @@ Modular wizard with independently-runnable sections:
   4. Messaging Platforms — connect Telegram, Discord, etc.
   5. Tools — configure TTS, web search, image generation, etc.
 
-Config files are stored in ~/.hermes/ for easy access.
+Config files are stored in ~/.vigil/ for easy access.
 """
 
 import importlib.util
@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 PROJECT_ROOT = Path(__file__).parent.parent.resolve()
 
-_DOCS_BASE = "https://hermes-agent.nousresearch.com/docs"
+_DOCS_BASE = "https://vigil-agent.nousresearch.com/docs"
 
 
 def _model_config_dict(config: Dict[str, Any]) -> Dict[str, Any]:
@@ -176,13 +176,13 @@ def is_interactive_stdin() -> bool:
 def print_noninteractive_setup_guidance(reason: str | None = None) -> None:
     """Print guidance for headless/non-interactive setup flows."""
     print()
-    print(color("⚕ Hermes Setup — Non-interactive mode", Colors.CYAN, Colors.BOLD))
+    print(color("⚕ VIGIL Setup — Non-interactive mode", Colors.CYAN, Colors.BOLD))
     print()
     if reason:
         print_info(reason)
     print_info("The interactive wizard cannot be used here.")
     print()
-    print_info("Configure Hermes using environment variables or config commands:")
+    print_info("Configure VIGIL using environment variables or config commands:")
     print_info("  hermes config set model.provider custom")
     print_info("  hermes config set model.base_url http://localhost:8080/v1")
     print_info("  hermes config set model.default your-model-name")
@@ -276,14 +276,14 @@ def is_noninteractive() -> bool:
     """True when no human is available to answer a prompt.
 
     The dashboard/desktop spawn CLI actions with ``stdin=DEVNULL`` and
-    ``HERMES_NONINTERACTIVE=1`` (see ``hermes_cli/web_server.py``). In that
+    ``VIGIL_NONINTERACTIVE=1`` (see ``hermes_cli/web_server.py``). In that
     context an ``input()`` raises ``EOFError`` immediately, so a prompt that
     aborts on EOF kills the spawned action — this is what made the desktop
     "restart gateway" fail when the Windows gateway service was not yet
     installed (the start path asks "Install it now?" with no one to answer).
     Honour the explicit env flag here so callers fall back to their default.
     """
-    return os.environ.get("HERMES_NONINTERACTIVE", "").strip().lower() in {
+    return os.environ.get("VIGIL_NONINTERACTIVE", "").strip().lower() in {
         "1",
         "true",
         "yes",
@@ -294,7 +294,7 @@ def is_noninteractive() -> bool:
 def prompt_yes_no(question: str, default: bool = True) -> bool:
     """Prompt for yes/no. Ctrl+C exits, empty input returns default.
 
-    Non-interactive callers (``HERMES_NONINTERACTIVE=1`` or a closed/redirected
+    Non-interactive callers (``VIGIL_NONINTERACTIVE=1`` or a closed/redirected
     stdin) have no one to answer, so fall back to ``default`` instead of
     aborting the whole process.
     """
@@ -975,7 +975,7 @@ def _setup_tts_provider(config: dict):
         print_info("OpenAI TTS will use the managed Nous gateway and bill to your subscription.")
         if get_env_value("VOICE_TOOLS_OPENAI_KEY") or get_env_value("OPENAI_API_KEY"):
             print_warning(
-                "Direct OpenAI credentials are still configured and may take precedence until removed from ~/.hermes/.env."
+                "Direct OpenAI credentials are still configured and may take precedence until removed from ~/.vigil/.env."
             )
 
     if selected == "neutts":
@@ -1027,7 +1027,7 @@ def _setup_tts_provider(config: dict):
 
     elif selected == "xai":
         # Resolution order: existing OAuth tokens (free for SuperGrok subscribers
-        # via the Hermes auth store) > existing XAI_API_KEY > prompt the user.
+        # via the VIGIL auth store) > existing XAI_API_KEY > prompt the user.
         # When neither is configured, offer both options instead of forcing the
         # API-key path — xAI TTS works fine with OAuth bearer tokens too.
         oauth_logged_in = _xai_oauth_logged_in_for_setup()
@@ -1168,7 +1168,7 @@ def setup_terminal_backend(config: dict):
     """Configure the terminal execution backend."""
     import platform as _platform
     print_header("Terminal Backend")
-    print_info("Choose where Hermes runs shell commands and code.")
+    print_info("Choose where VIGIL runs shell commands and code.")
     print_info("This affects tool execution, file access, and isolation.")
     print_info(f"   Guide: {_DOCS_BASE}/user-guide/configuration#terminal-backend-configuration")
     print()
@@ -1471,10 +1471,10 @@ def _apply_default_agent_settings(config: dict):
     """Apply recommended defaults for all agent settings without prompting."""
     config.setdefault("agent", {})["max_turns"] = 150
     # config.yaml is the authoritative source for max_turns; the gateway
-    # bridges it into HERMES_MAX_ITERATIONS at startup. We no longer write
+    # bridges it into VIGIL_MAX_ITERATIONS at startup. We no longer write
     # to .env to avoid the dual-source inconsistency that caused the
     # 60-vs-500 bug (stale .env entry silently shadowing config.yaml).
-    remove_env_value("HERMES_MAX_ITERATIONS")
+    remove_env_value("VIGIL_MAX_ITERATIONS")
 
     config.setdefault("display", {})["tool_progress"] = "all"
 
@@ -1520,10 +1520,10 @@ def setup_agent_settings(config: dict):
             # Write to config.yaml (authoritative) only. Also clean up any
             # stale .env entry from earlier setup runs — the gateway's
             # bridge in gateway/run.py now unconditionally derives
-            # HERMES_MAX_ITERATIONS from agent.max_turns at startup.
+            # VIGIL_MAX_ITERATIONS from agent.max_turns at startup.
             config.setdefault("agent", {})["max_turns"] = max_iter
             config.pop("max_turns", None)
-            remove_env_value("HERMES_MAX_ITERATIONS")
+            remove_env_value("VIGIL_MAX_ITERATIONS")
             print_success(f"Max iterations set to {max_iter}")
     except ValueError:
         print_warning("Invalid number, keeping current value")
@@ -1696,7 +1696,7 @@ def _setup_telegram_auto_result():
 
 
 def _profile_name_from_hermes_home(hermes_home) -> str | None:
-    """Return the active profile name when HERMES_HOME is a profile dir."""
+    """Return the active profile name when VIGIL_HOME is a profile dir."""
     if hermes_home.parent.name == "profiles":
         return hermes_home.name
     return None
@@ -1813,7 +1813,7 @@ def _setup_telegram():
         print_info("⚠️  No allowlist set - anyone who finds your bot can use it!")
 
     print()
-    print_info("📬 Home Channel: where Hermes delivers cron job results,")
+    print_info("📬 Home Channel: where VIGIL delivers cron job results,")
     print_info("   cross-platform messages, and notifications.")
     print_info("   For Telegram DMs, this is your user ID (same as above).")
 
@@ -1851,7 +1851,7 @@ def _setup_bluebubbles():
         if not prompt_yes_no("Reconfigure BlueBubbles?", False):
             return
 
-    print_info("Connects Hermes to iMessage via BlueBubbles — a free, open-source")
+    print_info("Connects VIGIL to iMessage via BlueBubbles — a free, open-source")
     print_info("macOS server that bridges iMessage to any device.")
     print_info("   Requires a Mac running BlueBubbles Server v1.0.0+")
     print_info("   Download: https://bluebubbles.app/")
@@ -1927,7 +1927,7 @@ def _setup_webhooks():
     print_warning("   internet. For security, run the gateway in a sandboxed environment")
     print_warning("   (Docker, VM, etc.) to limit blast radius from prompt injection.")
     print()
-    print_info("   Full guide: https://hermes-agent.nousresearch.com/docs/user-guide/messaging/webhooks/")
+    print_info("   Full guide: https://vigil-agent.nousresearch.com/docs/user-guide/messaging/webhooks/")
     print()
 
     port = prompt("Webhook port (default 8644)")
@@ -1954,7 +1954,7 @@ def _setup_webhooks():
     print_info("      http://your-server:8644/webhooks/<route-name>")
     print()
     print_info("   Route configuration guide:")
-    print_info("   https://hermes-agent.nousresearch.com/docs/user-guide/messaging/webhooks/#configuring-routes")
+    print_info("   https://vigil-agent.nousresearch.com/docs/user-guide/messaging/webhooks/#configuring-routes")
     print()
     print_info("   Open config in your editor:  hermes config edit")
     print_info("   Open config in your editor:  hermes config edit")
@@ -1965,7 +1965,7 @@ def setup_gateway(config: dict):
     from hermes_cli.gateway import _all_platforms, _platform_status, _configure_platform
 
     print_header("Messaging Platforms")
-    print_info("Connect to messaging platforms to chat with Hermes from anywhere.")
+    print_info("Connect to messaging platforms to chat with VIGIL from anywhere.")
     print_info("Toggle with Space, confirm with Enter.")
     print()
 
@@ -2401,15 +2401,15 @@ def _load_openclaw_migration_module():
 
 # Item kinds that represent high-impact changes warranting explicit warnings.
 # Gateway tokens/channels can hijack messaging platforms from the old agent.
-# Config values may have different semantics between OpenClaw and Hermes.
+# Config values may have different semantics between OpenClaw and VIGIL.
 # Instruction/context files (.md) can contain incompatible setup procedures.
 _HIGH_IMPACT_KIND_KEYWORDS = {
-    "gateway": "⚠ Gateway/messaging — this will configure Hermes to use your OpenClaw messaging channels",
-    "telegram": "⚠ Telegram — this will point Hermes at your OpenClaw Telegram bot",
-    "slack": "⚠ Slack — this will point Hermes at your OpenClaw Slack workspace",
-    "discord": "⚠ Discord — this will point Hermes at your OpenClaw Discord bot",
-    "whatsapp": "⚠ WhatsApp — this will point Hermes at your OpenClaw WhatsApp connection",
-    "config": "⚠ Config values — OpenClaw settings may not map 1:1 to Hermes equivalents",
+    "gateway": "⚠ Gateway/messaging — this will configure VIGIL to use your OpenClaw messaging channels",
+    "telegram": "⚠ Telegram — this will point VIGIL at your OpenClaw Telegram bot",
+    "slack": "⚠ Slack — this will point VIGIL at your OpenClaw Slack workspace",
+    "discord": "⚠ Discord — this will point VIGIL at your OpenClaw Discord bot",
+    "whatsapp": "⚠ WhatsApp — this will point VIGIL at your OpenClaw WhatsApp connection",
+    "config": "⚠ Config values — OpenClaw settings may not map 1:1 to VIGIL equivalents",
     "soul": "⚠ Instruction file — may contain OpenClaw-specific setup/restart procedures",
     "memory": "⚠ Memory/context file — may reference OpenClaw-specific infrastructure",
     "context": "⚠ Context file — may contain OpenClaw-specific instructions",
@@ -2453,7 +2453,7 @@ def _print_migration_preview(report: dict):
         print()
 
     if conflict_items:
-        print(color("  Would overwrite (conflicts with existing Hermes config):", Colors.YELLOW))
+        print(color("  Would overwrite (conflicts with existing VIGIL config):", Colors.YELLOW))
         for item in conflict_items:
             kind = item.get("kind", "unknown")
             reason = item.get("reason", "already exists")
@@ -2474,8 +2474,8 @@ def _print_migration_preview(report: dict):
         for warning in sorted(warnings_shown):
             print(color(f"    {warning}", Colors.YELLOW))
         print()
-        print(color("  Note: OpenClaw config values may have different semantics in Hermes.", Colors.YELLOW))
-        print(color("  For example, OpenClaw's tool_call_execution: \"auto\" ≠ Hermes's yolo mode.", Colors.YELLOW))
+        print(color("  Note: OpenClaw config values may have different semantics in VIGIL.", Colors.YELLOW))
+        print(color("  For example, OpenClaw's tool_call_execution: \"auto\" ≠ VIGIL's yolo mode.", Colors.YELLOW))
         print(color("  Instruction files (.md) from OpenClaw may contain incompatible procedures.", Colors.YELLOW))
         print()
 
@@ -2498,7 +2498,7 @@ def _offer_openclaw_migration(hermes_home: Path) -> bool:
     print()
     print_header("OpenClaw Installation Detected")
     print_info(f"Found OpenClaw data at {openclaw_dir}")
-    print_info("Hermes can preview what would be imported before making any changes.")
+    print_info("VIGIL can preview what would be imported before making any changes.")
     print()
 
     if not prompt_yes_no("Would you like to see what can be imported?", default=True):
@@ -2568,7 +2568,7 @@ def _offer_openclaw_migration(hermes_home: Path) -> bool:
         )
         return False
 
-    # Execute the migration — overwrite=False so existing Hermes configs are
+    # Execute the migration — overwrite=False so existing VIGIL configs are
     # preserved. The user saw the preview; conflicts are skipped by default.
     try:
         migrator = mod.Migrator(
@@ -2576,7 +2576,7 @@ def _offer_openclaw_migration(hermes_home: Path) -> bool:
             target_root=hermes_home.resolve(),
             execute=True,
             workspace_target=None,
-            overwrite=False,  # preserve existing Hermes config
+            overwrite=False,  # preserve existing VIGIL config
             migrate_secrets=True,
             output_dir=None,
             selected_options=selected,
@@ -2599,7 +2599,7 @@ def _offer_openclaw_migration(hermes_home: Path) -> bool:
     if migrated:
         print_success(f"Imported {migrated} item(s) from OpenClaw.")
     if conflicts:
-        print_info(f"Skipped {conflicts} item(s) that already exist in Hermes (use hermes claw migrate --overwrite to force).")
+        print_info(f"Skipped {conflicts} item(s) that already exist in VIGIL (use hermes claw migrate --overwrite to force).")
     if skipped:
         print_info(f"Skipped {skipped} item(s) (not found or unchanged).")
     if errors:
@@ -2633,7 +2633,7 @@ def _run_portal_one_shot(config: dict) -> None:
     Wired into ``hermes setup --portal`` and ``hermes portal``. This is the
     Nous-Portal slice of the first-time quick setup, collapsed into a single
     shareable command so a brand-new user goes from zero to a fully working
-    Hermes session — model selected, provider set, and web/image/tts/browser
+    VIGIL session — model selected, provider set, and web/image/tts/browser
     tools routed via their Portal sub — without being told to run
     ``hermes setup`` and hunt for the quick-setup option.
 
@@ -2653,7 +2653,7 @@ def _run_portal_one_shot(config: dict) -> None:
             Colors.MAGENTA,
         )
     )
-    print(color("│     ⚕ Hermes Setup — Nous Portal (one-shot)             │", Colors.MAGENTA))
+    print(color("│     ⚕ VIGIL Setup — Nous Portal (one-shot)             │", Colors.MAGENTA))
     print(
         color(
             "└─────────────────────────────────────────────────────────┘",
@@ -2783,7 +2783,7 @@ def run_setup_wizard(args):
                         Colors.MAGENTA,
                     )
                 )
-                print(color(f"│     ⚕ Hermes Setup — {label:<34s} │", Colors.MAGENTA))
+                print(color(f"│     ⚕ VIGIL Setup — {label:<34s} │", Colors.MAGENTA))
                 print(
                     color(
                         "└─────────────────────────────────────────────────────────┘",
@@ -2819,7 +2819,7 @@ def run_setup_wizard(args):
     )
     print(
         color(
-            "│             ⚕ Hermes Agent Setup Wizard                │", Colors.MAGENTA
+            "│             ⚕ VIGIL Agent Setup Wizard                │", Colors.MAGENTA
         )
     )
     print(
@@ -2830,7 +2830,7 @@ def run_setup_wizard(args):
     )
     print(
         color(
-            "│  Let's configure your Hermes Agent installation.       │", Colors.MAGENTA
+            "│  Let's configure your VIGIL Agent installation.       │", Colors.MAGENTA
         )
     )
     print(
@@ -2859,7 +2859,7 @@ def run_setup_wizard(args):
 
         print()
         print_header("Reconfigure")
-        print_success("You already have Hermes configured.")
+        print_success("You already have VIGIL configured.")
         print_info("Running the full wizard — each prompt shows your current value.")
         print_info("Press Enter to keep it, or type a new value to change it.")
         print_info("")
@@ -2884,7 +2884,7 @@ def run_setup_wizard(args):
             config = load_config()
 
         setup_mode = prompt_choice(
-            "How would you like to set up Hermes?",
+            "How would you like to set up VIGIL?",
             [
                 "Quick Setup (Nous Portal) — free OAuth login, no API keys, model + tools (recommended)",
                 "Full setup — configure every provider, tool & option yourself (bring your own keys)",
@@ -3343,7 +3343,7 @@ def _run_quick_setup(config: dict, hermes_home):
     if missing_messaging:
         print()
         print_header("Messaging Platforms")
-        print_info("Connect Hermes to messaging apps to chat from anywhere.")
+        print_info("Connect VIGIL to messaging apps to chat from anywhere.")
         print_info("You can configure these later with 'hermes setup gateway'.")
 
         # Group by platform (preserving order)

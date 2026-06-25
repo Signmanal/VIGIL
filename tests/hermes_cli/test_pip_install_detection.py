@@ -21,7 +21,7 @@ def test_git_install_detected_when_git_dir_exists(tmp_path):
 
 
 def test_managed_install_takes_precedence(tmp_path):
-    """When HERMES_MANAGED is set, that takes precedence over git detection."""
+    """When VIGIL_MANAGED is set, that takes precedence over git detection."""
     (tmp_path / ".git").mkdir()
     with patch("hermes_cli.config.get_managed_system", return_value="NixOS"), \
          patch("hermes_cli.config.get_hermes_home", return_value=tmp_path):
@@ -36,7 +36,7 @@ def test_recommended_update_command_pip():
     cmd = recommended_update_command_for_method("pip")
     assert "pip install" in cmd or "uv pip install" in cmd
     assert "--upgrade" in cmd
-    assert "hermes-agent" in cmd
+    assert "vigil-agent" in cmd
 
 
 def test_stamp_file_takes_precedence(tmp_path):
@@ -49,9 +49,9 @@ def test_stamp_file_takes_precedence(tmp_path):
 
 
 def test_code_scoped_stamp_wins_over_home_stamp(tmp_path):
-    """The stamp next to the running code is authoritative over $HERMES_HOME.
+    """The stamp next to the running code is authoritative over $VIGIL_HOME.
 
-    Models a host git install whose $HERMES_HOME is shared with (and stamped
+    Models a host git install whose $VIGIL_HOME is shared with (and stamped
     'docker' by) a co-located container. The code-scoped stamp must win so the
     host install is correctly identified as 'git' and 'hermes update' works.
     """
@@ -71,7 +71,7 @@ def test_home_docker_stamp_ignored_when_not_containerized(tmp_path):
     """A 'docker' home stamp is ignored on a host (non-container) install.
 
     Self-heal path for homes already poisoned by an older image that wrote
-    'docker' into the shared $HERMES_HOME. With no code-scoped stamp, a host
+    'docker' into the shared $VIGIL_HOME. With no code-scoped stamp, a host
     git checkout must fall through to '.git' detection rather than honour the
     contaminating 'docker' value and refuse to update.
     """
@@ -111,7 +111,7 @@ def test_home_non_docker_stamp_still_honored_for_backcompat(tmp_path):
     """Legacy non-'docker' home stamps (e.g. 'git') are still respected.
 
     Only the 'docker' value carries the cross-contamination risk, so a host
-    install that historically stamped 'git'/'pip' into $HERMES_HOME keeps
+    install that historically stamped 'git'/'pip' into $VIGIL_HOME keeps
     resolving from there when no code-scoped stamp exists yet.
     """
     code = tmp_path / "code"
@@ -127,7 +127,7 @@ def test_home_non_docker_stamp_still_honored_for_backcompat(tmp_path):
 
 
 def test_stamp_install_method_writes_code_scoped(tmp_path):
-    """stamp_install_method writes next to the code, not into $HERMES_HOME."""
+    """stamp_install_method writes next to the code, not into $VIGIL_HOME."""
     code = tmp_path / "code"
     home = tmp_path / "home"
     code.mkdir()
@@ -178,7 +178,7 @@ def test_banner_warns_on_pip_install(tmp_path):
     from rich.console import Console
     from hermes_cli import banner
 
-    hh = tmp_path / ".hermes"
+    hh = tmp_path / ".vigil"
     hh.mkdir()
     (hh / ".install_method").write_text("pip\n")
 
@@ -204,7 +204,7 @@ def test_banner_no_pip_warning_on_git_install(tmp_path):
     from rich.console import Console
     from hermes_cli import banner
 
-    hh = tmp_path / ".hermes"
+    hh = tmp_path / ".vigil"
     hh.mkdir()
     (hh / ".install_method").write_text("git\n")
 

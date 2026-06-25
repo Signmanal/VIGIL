@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { uniqueCwds, type WorktreeResolver } from '@/app/chat/sidebar/workspace-groups'
-import type { HermesWorktreeInfo } from '@/global'
+import type { VIGILWorktreeInfo } from '@/global'
 import type { SessionInfo } from '@/hermes'
 import { desktopFsCacheKey, desktopWorktrees } from '@/lib/desktop-fs'
 
-type WorktreeMap = Record<string, HermesWorktreeInfo | null>
+type WorktreeMap = Record<string, VIGILWorktreeInfo | null>
 
 /**
  * Probe the local filesystem for the git-worktree identity of each session cwd

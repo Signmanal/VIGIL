@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { GlyphSpinner } from '@/components/ui/glyph-spinner'
 import { Switch } from '@/components/ui/switch'
-import type { HermesGateway } from '@/hermes'
+import type { VIGILGateway } from '@/hermes'
 import { getGlobalModelOptions } from '@/hermes'
 import { useI18n } from '@/i18n'
 import { displayModelName, modelDisplayParts } from '@/lib/model-status-label'
@@ -21,7 +21,7 @@ import {
 import type { ModelOptionProvider, ModelOptionsResponse } from '@/types/hermes'
 
 interface ModelVisibilityDialogProps {
-  gw?: HermesGateway
+  gw?: VIGILGateway
   onOpenChange: (open: boolean) => void
   onOpenProviders: () => void
   open: boolean

@@ -643,7 +643,7 @@ class CredentialPool:
     def _sync_xai_oauth_entry_from_auth_store(self, entry: PooledCredential) -> PooledCredential:
         """Sync an xAI OAuth pool entry from auth.json if tokens differ.
 
-        xAI OAuth refresh tokens are single-use.  When another Hermes process
+        xAI OAuth refresh tokens are single-use.  When another VIGIL process
         (or another profile sharing the same auth.json) refreshes the token,
         it writes the new pair to ``providers["xai-oauth"]["tokens"]`` under
         ``_auth_store_lock``.  Without this resync, our in-memory pool entry
@@ -893,7 +893,7 @@ class CredentialPool:
                         logger.debug("Failed to write refreshed token to credentials file: %s", wexc)
             elif self.provider == "openai-codex":
                 # Adopt fresher tokens from auth.json before spending the
-                # refresh_token — single-use tokens consumed by another Hermes
+                # refresh_token — single-use tokens consumed by another VIGIL
                 # process sharing the same auth.json singleton would otherwise
                 # trigger ``refresh_token_reused`` on the next POST.
                 synced = self._sync_codex_entry_from_auth_store(entry)
@@ -1048,7 +1048,7 @@ class CredentialPool:
                         self._current_id = None
                     self._persist()
                     return None
-            # For openai-codex: same race as xAI/nous — another Hermes process
+            # For openai-codex: same race as xAI/nous — another VIGIL process
             # may have consumed the refresh token between our proactive sync
             # and the HTTP call.  Re-check auth.json and adopt the fresh tokens
             # if they have rotated since.
@@ -1239,7 +1239,7 @@ class CredentialPool:
         for entry in self._entries:
             # For anthropic claude_code entries, sync from the credentials file
             # before any status/refresh checks. This picks up tokens refreshed
-            # by other processes (Claude Code CLI, other Hermes profiles).
+            # by other processes (Claude Code CLI, other VIGIL profiles).
             if (self.provider == "anthropic" and entry.source == "claude_code"
                     and entry.last_status in {STATUS_EXHAUSTED, STATUS_DEAD}):
                 synced = self._sync_anthropic_entry_from_credentials_file(entry)
@@ -1637,7 +1637,7 @@ def _seed_from_singletons(provider: str, entries: List[PooledCredential]) -> Tup
             return False
 
     if provider == "anthropic":
-        # Only auto-discover external credentials (Claude Code, Hermes PKCE)
+        # Only auto-discover external credentials (Claude Code, VIGIL PKCE)
         # when the user has explicitly configured anthropic as their provider.
         # Without this gate, auxiliary client fallback chains silently read
         # ~/.claude/.credentials.json without user consent.  See PR #4210.
@@ -1661,7 +1661,7 @@ def _seed_from_singletons(provider: str, entries: List[PooledCredential]) -> Tup
         # Code identity injection, `mcp_` tool-name rewrite, and claude-cli
         # User-Agent header (`agent/anthropic_adapter.py:2128`).  Users who
         # explicitly opted into the API-key path are explicitly opting OUT of
-        # that masquerade.  Prefer ~/.hermes/.env over os.environ for the
+        # that masquerade.  Prefer ~/.vigil/.env over os.environ for the
         # same reason `_seed_from_env` does — that's the authoritative file
         # that `hermes setup` writes.
         _env_file = load_env()
@@ -1806,7 +1806,7 @@ def _seed_from_singletons(provider: str, entries: List[PooledCredential]) -> Tup
     elif provider == "qwen-oauth":
         # Qwen OAuth tokens live in ~/.qwen/oauth_creds.json, written by
         # the Qwen CLI (`qwen auth qwen-oauth`).  They aren't in the
-        # Hermes auth store or env vars, so resolve them here.
+        # VIGIL auth store or env vars, so resolve them here.
         # Use refresh_if_expiring=False to avoid network calls during
         # pool loading / provider discovery.
         try:
@@ -1834,7 +1834,7 @@ def _seed_from_singletons(provider: str, entries: List[PooledCredential]) -> Tup
             logger.debug("Qwen OAuth token seed failed: %s", exc)
 
     elif provider == "minimax-oauth":
-        # MiniMax OAuth tokens live in ~/.hermes/auth.json providers.minimax-oauth.
+        # MiniMax OAuth tokens live in ~/.vigil/auth.json providers.minimax-oauth.
         # Seed the pool so `/auth list` reflects the logged-in state and the
         # standard `hermes auth remove minimax-oauth <N>` flow works.
         # Use refresh_if_expiring=False equivalent: resolve_minimax_oauth_runtime_credentials
@@ -1878,14 +1878,14 @@ def _seed_from_singletons(provider: str, entries: List[PooledCredential]) -> Tup
     elif provider == "openai-codex":
         # Respect user suppression — `hermes auth remove openai-codex` marks
         # the device_code source as suppressed so it won't be re-seeded from
-        # the Hermes auth store.  Without this gate the removal is instantly
+        # the VIGIL auth store.  Without this gate the removal is instantly
         # undone on the next load_pool() call.
         if _is_suppressed(provider, "device_code"):
             return changed, active_sources
 
         state = _load_provider_state(auth_store, "openai-codex")
         tokens = state.get("tokens") if isinstance(state, dict) else None
-        # Hermes owns its own Codex auth state — we do NOT auto-import from
+        # VIGIL owns its own Codex auth state — we do NOT auto-import from
         # ~/.codex/auth.json at pool-load time.  OAuth refresh tokens are
         # single-use, so sharing them with Codex CLI / VS Code causes
         # refresh_token_reused race failures.  Users who want to adopt
@@ -1947,8 +1947,8 @@ def _seed_from_env(provider: str, entries: List[PooledCredential]) -> Tuple[bool
     changed = False
     active_sources: Set[str] = set()
 
-    # Prefer ~/.hermes/.env over os.environ — the user's config file is the
-    # authoritative source for Hermes credentials. Stale env vars from parent
+    # Prefer ~/.vigil/.env over os.environ — the user's config file is the
+    # authoritative source for VIGIL credentials. Stale env vars from parent
     # processes (Codex CLI, test scripts, etc.) should not override deliberate
     # changes to the .env file.
     def _get_env_prefer_dotenv(key: str) -> str:
@@ -1958,7 +1958,7 @@ def _seed_from_env(provider: str, entries: List[PooledCredential]) -> Tuple[bool
 
     # Honour user suppression — `hermes auth remove <provider> <N>` for an
     # env-seeded credential marks the env:<VAR> source as suppressed so it
-    # won't be re-seeded from the user's shell environment or ~/.hermes/.env.
+    # won't be re-seeded from the user's shell environment or ~/.vigil/.env.
     # Without this gate the removal is silently undone on the next
     # load_pool() call whenever the var is still exported by the shell.
     try:
@@ -1996,7 +1996,7 @@ def _seed_from_env(provider: str, entries: List[PooledCredential]) -> Tuple[bool
         return payload
 
     if provider == "openrouter":
-        # Prefer ~/.hermes/.env over os.environ
+        # Prefer ~/.vigil/.env over os.environ
         token = _get_env_prefer_dotenv("OPENROUTER_API_KEY")
         if token:
             source = "env:OPENROUTER_API_KEY"
@@ -2033,7 +2033,7 @@ def _seed_from_env(provider: str, entries: List[PooledCredential]) -> Tuple[bool
         ]
 
     for env_var in env_vars:
-        # Prefer ~/.hermes/.env over os.environ
+        # Prefer ~/.vigil/.env over os.environ
         token = _get_env_prefer_dotenv(env_var)
         if not token:
             continue
@@ -2077,7 +2077,7 @@ def _prune_stale_seeded_entries(
         # (e.g. an `hermes auth` command that confirmed the source is gone).
         if entry.source.startswith("env:"):
             return prune_env_sources
-        # File-backed singletons (device-code OAuth, claude_code) and Hermes
+        # File-backed singletons (device-code OAuth, claude_code) and VIGIL
         # PKCE should disappear from the pool when their backing file is gone.
         return (
             is_borrowed_credential_source(entry.source, entry.provider)

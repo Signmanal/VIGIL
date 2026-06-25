@@ -1,4 +1,4 @@
-"""``hermes debug`` debug tools for Hermes Agent.
+"""``hermes debug`` debug tools for VIGIL Agent.
 
 Currently supports:
     hermes debug share    Upload debug report (system info + logs) to a
@@ -6,7 +6,7 @@ Currently supports:
                           By default, log content is run through
                           ``agent.redact.redact_sensitive_text`` with
                           ``force=True`` before upload so credentials in
-                          ``~/.hermes/logs/*.log`` are not leaked into
+                          ``~/.vigil/logs/*.log`` are not leaked into
                           the public paste service. Pass ``--no-redact``
                           to disable.
 """
@@ -62,7 +62,7 @@ _AUTO_DELETE_SECONDS = 21600
 # ---------------------------------------------------------------------------
 
 def _pending_file() -> Path:
-    """Path to ``~/.hermes/pastes/pending.json``.
+    """Path to ``~/.vigil/pastes/pending.json``.
 
     Each entry: ``{"url": "...", "expire_at": <unix_ts>}``.  Scheduled
     DELETEs used to be handled by spawning a detached Python process per
@@ -189,7 +189,7 @@ def _best_effort_sweep_expired_pastes() -> None:
 
 _PRIVACY_NOTICE = """\
 ⚠️  This will upload the following to a public paste service:
-  • System info (OS, Python version, Hermes version, provider, which API keys
+  • System info (OS, Python version, VIGIL version, provider, which API keys
     are configured — NOT the actual keys)
   • Recent log lines (agent.log, errors.log, gateway.log, gui.log, desktop.log
     — may contain conversation fragments and file paths)
@@ -235,7 +235,7 @@ def delete_paste(url: str) -> bool:
     target = f"{_PASTE_RS_URL}{paste_id}"
     req = urllib.request.Request(
         target, method="DELETE",
-        headers={"User-Agent": "hermes-agent/debug-share"},
+        headers={"User-Agent": "vigil-agent/debug-share"},
     )
     with urllib.request.urlopen(req, timeout=30) as resp:
         return 200 <= resp.status < 300
@@ -249,7 +249,7 @@ def _schedule_auto_delete(urls: list[str], delay_seconds: int = _AUTO_DELETE_SEC
     every ``hermes debug share`` invocation added ~20 MB of resident Python
     interpreters that never exited until the sleep completed.
 
-    The replacement is stateless: we append to ``~/.hermes/pastes/pending.json``
+    The replacement is stateless: we append to ``~/.vigil/pastes/pending.json``
     and the gateway's cron ticker sweeps expired entries once per hour.
     ``hermes debug share`` also runs an opportunistic sweep as a fallback
     for CLI-only users.  If neither runs again, paste.rs's own retention
@@ -268,7 +268,7 @@ def _upload_paste_rs(content: str) -> str:
         _PASTE_RS_URL, data=data, method="POST",
         headers={
             "Content-Type": "text/plain; charset=utf-8",
-            "User-Agent": "hermes-agent/debug-share",
+            "User-Agent": "vigil-agent/debug-share",
         },
     )
     with urllib.request.urlopen(req, timeout=30) as resp:
@@ -283,7 +283,7 @@ def _upload_dpaste_com(content: str, expiry_days: int = 7) -> str:
 
     dpaste.com uses multipart form data.
     """
-    boundary = "----HermesDebugBoundary9f3c"
+    boundary = "----VIGILDebugBoundary9f3c"
 
     def _field(name: str, value: str) -> str:
         return (
@@ -304,7 +304,7 @@ def _upload_dpaste_com(content: str, expiry_days: int = 7) -> str:
         _DPASTE_COM_URL, data=body, method="POST",
         headers={
             "Content-Type": f"multipart/form-data; boundary={boundary}",
-            "User-Agent": "hermes-agent/debug-share",
+            "User-Agent": "vigil-agent/debug-share",
         },
     )
     with urllib.request.urlopen(req, timeout=30) as resp:
@@ -789,7 +789,7 @@ def run_debug_share(args):
     # Manual delete fallback
     print(f"To delete now:  hermes debug delete <url>")
 
-    print(f"\nShare these links with the Hermes team for support.")
+    print(f"\nShare these links with the VIGIL team for support.")
 
 
 def run_debug_delete(args):

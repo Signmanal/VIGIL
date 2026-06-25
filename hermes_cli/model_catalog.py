@@ -1,6 +1,6 @@
 """Remote model catalog fetcher.
 
-The Hermes docs site hosts a JSON manifest of curated models for providers
+The VIGIL docs site hosts a JSON manifest of curated models for providers
 we want to update without shipping a release (currently OpenRouter and
 Nous Portal). This module fetches, validates, and caches that manifest,
 falling back to the in-repo hardcoded lists when the network is unavailable.
@@ -9,7 +9,7 @@ Pipeline
 --------
 1. ``get_catalog()`` — returns a parsed manifest dict.
    - Checks in-process cache (invalidated by TTL).
-   - Reads disk cache at ``~/.hermes/cache/model_catalog.json``.
+   - Reads disk cache at ``~/.vigil/cache/model_catalog.json``.
    - Fetches the master URL if disk cache is stale or missing.
    - On any fetch failure, keeps using the stale cache (or empty dict).
 
@@ -52,7 +52,7 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
-from hermes_cli import __version__ as _HERMES_VERSION
+from hermes_cli import __version__ as _VIGIL_VERSION
 from utils import atomic_replace
 
 logger = logging.getLogger(__name__)
@@ -62,7 +62,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 DEFAULT_CATALOG_URL = (
-    "https://hermes-agent.nousresearch.com/docs/api/model-catalog.json"
+    "https://vigil-agent.nousresearch.com/docs/api/model-catalog.json"
 )
 # Fallback fetch chain. The Docusaurus site is served through Vercel, which
 # occasionally returns HTTP 403 + x-vercel-mitigated: challenge for non-
@@ -71,13 +71,13 @@ DEFAULT_CATALOG_URL = (
 # is the same manifest published from the same repo and is not bot-gated,
 # so we fall through to it whenever the primary URL fails.
 DEFAULT_CATALOG_FALLBACK_URLS: tuple[str, ...] = (
-    "https://raw.githubusercontent.com/NousResearch/hermes-agent/main/website/static/api/model-catalog.json",
+    "https://raw.githubusercontent.com/NousResearch/vigil-agent/main/website/static/api/model-catalog.json",
 )
 DEFAULT_TTL_HOURS = 1
 DEFAULT_FETCH_TIMEOUT = 8.0
 SUPPORTED_SCHEMA_VERSION = 1
 
-_HERMES_USER_AGENT = f"hermes-cli/{_HERMES_VERSION}"
+_VIGIL_USER_AGENT = f"hermes-cli/{_VIGIL_VERSION}"
 
 # In-process cache to avoid repeated disk + parse work across multiple
 # calls within the same session. Invalidated by TTL against the disk file's
@@ -129,7 +129,7 @@ def _fetch_manifest(url: str, timeout: float) -> dict[str, Any] | None:
             url,
             headers={
                 "Accept": "application/json",
-                "User-Agent": _HERMES_USER_AGENT,
+                "User-Agent": _VIGIL_USER_AGENT,
             },
         )
         with urllib.request.urlopen(req, timeout=timeout) as resp:
@@ -366,7 +366,7 @@ def seed_cache_from_checkout(project_root: "Path | str") -> bool:
     or the Portal hiccups.
 
     Reads the shipped manifest, validates it against the schema, and writes it
-    to ``~/.hermes/cache/model_catalog.json`` via the same atomic writer the
+    to ``~/.vigil/cache/model_catalog.json`` via the same atomic writer the
     network path uses. Returns ``True`` on success, ``False`` if the file is
     missing, malformed, or fails validation (caller should treat a ``False``
     as non-fatal — the network fetch path still applies on the next picker

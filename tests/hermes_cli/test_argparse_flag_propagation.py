@@ -25,7 +25,7 @@ def _build_parser():
     Since main() is a large function that does much more than parse args,
     we replicate just the parser structure here to avoid side effects.
     """
-    parser = argparse.ArgumentParser(prog="hermes")
+    parser = argparse.ArgumentParser(prog="vigil")
     parser.add_argument("--resume", "-r", metavar="SESSION", default=None)
     parser.add_argument(
         "--continue", "-c", dest="continue_last", nargs="?",
@@ -110,39 +110,39 @@ class TestChatVerboseArg:
 
 
 class TestYoloEnvVar:
-    """Verify --yolo sets HERMES_YOLO_MODE regardless of flag position.
+    """Verify --yolo sets VIGIL_YOLO_MODE regardless of flag position.
 
     This tests the actual cmd_chat logic pattern (getattr → os.environ).
     """
 
     @pytest.fixture(autouse=True)
     def _clean_env(self):
-        os.environ.pop("HERMES_YOLO_MODE", None)
+        os.environ.pop("VIGIL_YOLO_MODE", None)
         yield
-        os.environ.pop("HERMES_YOLO_MODE", None)
+        os.environ.pop("VIGIL_YOLO_MODE", None)
 
     def _simulate_cmd_chat_yolo_check(self, args):
         """Replicate the exact check from cmd_chat in main.py."""
         if getattr(args, "yolo", False):
-            os.environ["HERMES_YOLO_MODE"] = "1"
+            os.environ["VIGIL_YOLO_MODE"] = "1"
 
     def test_yolo_before_chat_sets_env(self):
         parser = _build_parser()
         args = parser.parse_args(["--yolo", "chat"])
         self._simulate_cmd_chat_yolo_check(args)
-        assert os.environ.get("HERMES_YOLO_MODE") == "1"
+        assert os.environ.get("VIGIL_YOLO_MODE") == "1"
 
     def test_yolo_after_chat_sets_env(self):
         parser = _build_parser()
         args = parser.parse_args(["chat", "--yolo"])
         self._simulate_cmd_chat_yolo_check(args)
-        assert os.environ.get("HERMES_YOLO_MODE") == "1"
+        assert os.environ.get("VIGIL_YOLO_MODE") == "1"
 
     def test_no_yolo_no_env(self):
         parser = _build_parser()
         args = parser.parse_args(["chat"])
         self._simulate_cmd_chat_yolo_check(args)
-        assert os.environ.get("HERMES_YOLO_MODE") is None
+        assert os.environ.get("VIGIL_YOLO_MODE") is None
 
 
 class TestAcceptHooksOnAgentSubparsers:
