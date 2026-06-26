@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -11,6 +12,18 @@ from unittest.mock import patch
 import pytest
 
 from vigil_cli import main as cli_main
+
+
+def _uses_desktop_node_engine_check(fn):
+    fn.uses_desktop_node_engine_check = True
+    return fn
+
+
+@pytest.fixture(autouse=True)
+def _disable_desktop_node_engine_check(monkeypatch, request):
+    if getattr(request.node.function, "uses_desktop_node_engine_check", False):
+        return
+    monkeypatch.setattr(cli_main, "_ensure_desktop_node", lambda: None)
 
 
 def _ns(**kw):
@@ -34,6 +47,84 @@ def _make_desktop_tree(tmp_path: Path) -> Path:
     desktop_dir.mkdir(parents=True)
     (desktop_dir / "package.json").write_text("{}", encoding="utf-8")
     return root
+
+
+def test_desktop_node_engine_range_accepts_lts_and_current_versions():
+    assert cli_main._desktop_node_version_supported((20, 19, 0))
+    assert cli_main._desktop_node_version_supported((22, 12, 0))
+    assert cli_main._desktop_node_version_supported((24, 0, 0))
+    assert not cli_main._desktop_node_version_supported((20, 18, 1))
+    assert not cli_main._desktop_node_version_supported((22, 11, 0))
+    assert not cli_main._desktop_node_version_supported((23, 11, 0))
+
+
+@_uses_desktop_node_engine_check
+def test_desktop_node_engine_check_prefers_supported_managed_node(tmp_path, monkeypatch):
+    import vigil_constants
+
+    system_bin = tmp_path / "system" / "bin"
+    managed_bin = tmp_path / "managed" / "node" / "bin"
+    system_bin.mkdir(parents=True)
+    managed_bin.mkdir(parents=True)
+    system_node = system_bin / "node"
+    managed_node = managed_bin / "node"
+    system_npm = system_bin / "npm"
+    managed_npm = managed_bin / "npm"
+    for path in (system_node, managed_node, system_npm, managed_npm):
+        path.write_text("", encoding="utf-8")
+
+    def find_node(command: str) -> str:
+        return str(system_node if command == "node" else system_npm)
+
+    def find_managed(command: str) -> str:
+        return str(managed_node if command == "node" else managed_npm)
+
+    versions = {
+        str(system_node): (23, 11, 0),
+        str(managed_node): (22, 12, 0),
+    }
+
+    monkeypatch.setenv("PATH", str(system_bin))
+    monkeypatch.setattr(vigil_constants, "find_node_executable", find_node)
+    monkeypatch.setattr(vigil_constants, "find_vigil_node_executable", find_managed)
+    monkeypatch.setattr(cli_main, "_node_version_for_executable", lambda node: versions.get(node))
+
+    cli_main._ensure_desktop_node()
+
+    assert os.environ["PATH"].split(os.pathsep)[0] == str(managed_bin)
+
+
+@_uses_desktop_node_engine_check
+def test_desktop_node_engine_check_skip_bootstrap_fails_on_unsupported_node(
+    tmp_path,
+    monkeypatch,
+    capsys,
+):
+    import vigil_constants
+
+    system_bin = tmp_path / "system" / "bin"
+    system_bin.mkdir(parents=True)
+    system_node = system_bin / "node"
+    system_npm = system_bin / "npm"
+    system_node.write_text("", encoding="utf-8")
+    system_npm.write_text("", encoding="utf-8")
+
+    monkeypatch.setenv("VIGIL_SKIP_NODE_BOOTSTRAP", "1")
+    monkeypatch.setattr(
+        vigil_constants,
+        "find_node_executable",
+        lambda command: str(system_node if command == "node" else system_npm),
+    )
+    monkeypatch.setattr(vigil_constants, "find_vigil_node_executable", lambda command: None)
+    monkeypatch.setattr(cli_main, "_node_version_for_executable", lambda node: (23, 11, 0))
+
+    with pytest.raises(SystemExit) as exc:
+        cli_main._ensure_desktop_node()
+
+    assert exc.value.code == 1
+    output = capsys.readouterr().out
+    assert "current Node is v23.11.0" in output
+    assert cli_main._DESKTOP_NODE_ENGINE_RANGE in output
 
 
 def _make_packaged_executable(root: Path, monkeypatch, platform: str = "darwin") -> Path:

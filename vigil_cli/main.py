@@ -1582,6 +1582,158 @@ def _tui_need_rebuild(root: Path) -> bool:
     return False
 
 
+_DESKTOP_NODE_ENGINE_RANGE = "^20.19.0 || ^22.12.0 || >=24.0.0"
+
+
+def _parse_node_version(raw: str) -> tuple[int, int, int] | None:
+    text = raw.strip()
+    if text.startswith("v"):
+        text = text[1:]
+    parts = text.split(".")
+    if len(parts) < 2:
+        return None
+    try:
+        major = int(parts[0])
+        minor = int(parts[1])
+        patch = int(parts[2]) if len(parts) > 2 else 0
+    except ValueError:
+        return None
+    return major, minor, patch
+
+
+def _format_node_version(version: tuple[int, int, int] | None) -> str:
+    if version is None:
+        return "unknown"
+    return f"v{version[0]}.{version[1]}.{version[2]}"
+
+
+def _node_version_for_executable(node: str | None) -> tuple[int, int, int] | None:
+    if not node:
+        return None
+    try:
+        result = subprocess.run(
+            [node, "--version"],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            check=False,
+            timeout=10,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if result.returncode != 0:
+        return None
+    return _parse_node_version(result.stdout or "")
+
+
+def _desktop_node_version_supported(version: tuple[int, int, int] | None) -> bool:
+    if version is None:
+        return False
+    major, minor, patch = version
+    if major == 20:
+        return (minor, patch) >= (19, 0)
+    if major == 22:
+        return (minor, patch) >= (12, 0)
+    return major >= 24
+
+
+def _prepend_path_dirs(dirs: list[Path]) -> None:
+    parts = [part for part in os.environ.get("PATH", "").split(os.pathsep) if part]
+    for directory in reversed(dirs):
+        text = str(directory)
+        if directory.is_dir() and text not in parts:
+            parts.insert(0, text)
+    os.environ["PATH"] = os.pathsep.join(parts)
+
+
+def _ensure_desktop_node() -> None:
+    """Prefer a desktop-compatible Node before invoking npm.
+
+    Several Electron/Vite dependencies reject odd Node 23 builds via
+    ``engines``. They usually warn rather than fail, but the deterministic
+    desktop installer should select the managed LTS Node instead of emitting a
+    noisy EBADENGINE block on every launch.
+    """
+    from vigil_constants import find_node_executable, find_vigil_node_executable
+
+    node = find_node_executable("node")
+    npm = find_node_executable("npm")
+    if not node or not npm:
+        return
+
+    current_version = _node_version_for_executable(node)
+    if _desktop_node_version_supported(current_version):
+        return
+
+    managed_node = find_vigil_node_executable("node")
+    managed_npm = find_vigil_node_executable("npm")
+    managed_version = _node_version_for_executable(managed_node)
+    if managed_node and managed_npm and _desktop_node_version_supported(managed_version):
+        _prepend_path_dirs([Path(managed_node).resolve().parent])
+        return
+
+    if os.environ.get("VIGIL_SKIP_NODE_BOOTSTRAP"):
+        if current_version is not None:
+            print(
+                "✗ Desktop GUI dependencies require Node.js "
+                f"{_DESKTOP_NODE_ENGINE_RANGE}; current Node is "
+                f"{_format_node_version(current_version)}."
+            )
+            print("  Install Node.js 22.12+ or 24+, or unset VIGIL_SKIP_NODE_BOOTSTRAP.")
+            sys.exit(1)
+        return
+
+    helper = PROJECT_ROOT / "scripts" / "lib" / "node-bootstrap.sh"
+    if not helper.is_file():
+        return
+
+    if current_version is not None:
+        print(
+            "→ Node.js "
+            f"{_format_node_version(current_version)} is outside the desktop "
+            f"dependency range ({_DESKTOP_NODE_ENGINE_RANGE}); using VIGIL-managed Node 22..."
+        )
+
+    vigil_home = os.environ.get("VIGIL_HOME") or str(Path.home() / ".vigil")
+    try:
+        result = subprocess.run(
+            [
+                "bash",
+                "-c",
+                (
+                    f'source "{helper}" >&2 '
+                    "&& _nb_install_bundled_node >&2 "
+                    "&& _nb_configure_npm_prefix >&2 "
+                    '&& printf "%s\\n" "$VIGIL_HOME/node/bin/node"'
+                ),
+            ],
+            env={
+                **os.environ,
+                "VIGIL_HOME": vigil_home,
+                "VIGIL_NODE_TARGET_MAJOR": "22",
+                "VIGIL_NODE_MIN_VERSION": "20",
+            },
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return
+
+    if result.returncode != 0:
+        print(
+            "⚠ Could not install VIGIL-managed Node 22; continuing with the current Node.js."
+        )
+        return
+
+    resolved = (result.stdout or "").strip().splitlines()
+    if resolved:
+        _prepend_path_dirs([Path(resolved[-1]).resolve().parent])
+
+
 def _ensure_tui_node() -> None:
     """Make sure `node` + `npm` are on PATH for the TUI.
 
@@ -1625,7 +1777,6 @@ def _ensure_tui_node() -> None:
     except (OSError, subprocess.SubprocessError):
         return
 
-    parts = os.environ.get("PATH", "").split(os.pathsep)
     extras: list[Path] = []
 
     resolved = (result.stdout or "").strip()
@@ -1633,12 +1784,7 @@ def _ensure_tui_node() -> None:
         extras.append(Path(resolved).resolve().parent)
 
     extras.extend([Path(vigil_home) / "node" / "bin", Path.home() / ".local" / "bin"])
-
-    for extra in extras:
-        s = str(extra)
-        if extra.is_dir() and s not in parts:
-            parts.insert(0, s)
-    os.environ["PATH"] = os.pathsep.join(parts)
+    _prepend_path_dirs(extras)
 
 
 def _find_bundled_tui(vigil_cli_dir: Path | None = None) -> Path | None:
@@ -5457,6 +5603,15 @@ def cmd_gui(args: argparse.Namespace):
 
     from vigil_constants import find_node_executable, with_vigil_node_path
 
+    source_mode = getattr(args, "source", False)
+    skip_build = getattr(args, "skip_build", False)
+    force_build = getattr(args, "force_build", False)
+
+    packaged_executable = _desktop_packaged_executable(desktop_dir)
+    needs_npm = source_mode or not skip_build
+    if needs_npm:
+        _ensure_desktop_node()
+
     # with_vigil_node_path() copies os.environ when called with no arg.
     env = with_vigil_node_path()
     if getattr(args, "fake_boot", False):
@@ -5468,13 +5623,7 @@ def cmd_gui(args: argparse.Namespace):
     if getattr(args, "cwd", None):
         env["VIGIL_DESKTOP_CWD"] = str(Path(args.cwd).expanduser().resolve())
 
-    source_mode = getattr(args, "source", False)
-    skip_build = getattr(args, "skip_build", False)
-    force_build = getattr(args, "force_build", False)
-
-    packaged_executable = _desktop_packaged_executable(desktop_dir)
-
-    if source_mode or not skip_build:
+    if needs_npm:
         npm = find_node_executable("npm")
         if not npm:
             print("Desktop GUI requires Node.js/npm, but npm was not found on PATH.")
