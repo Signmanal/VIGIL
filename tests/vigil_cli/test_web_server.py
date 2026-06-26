@@ -4469,8 +4469,8 @@ class TestNormaliseThemeDefinition:
         assert result is not None
         assert result["palette"]["background"] == {"hex": "#000000", "alpha": 1.0}
         assert result["palette"]["midground"] == {"hex": "#ffffff", "alpha": 1.0}
-        # foreground falls back to default (transparent white)
-        assert result["palette"]["foreground"]["hex"] == "#ffffff"
+        # foreground falls back to the default Sentinel cyan overlay.
+        assert result["palette"]["foreground"]["hex"] == "#38BDF8"
         assert result["palette"]["foreground"]["alpha"] == 0.0
 
     def test_full_palette_form(self):
