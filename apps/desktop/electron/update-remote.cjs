@@ -1,7 +1,7 @@
 /**
  * Pure helpers for choosing a remote URL during passive update checks.
  *
- * A public install can end up with `origin=git@github.com:NousResearch/vigil-agent.git`.
+ * A public install can end up with `origin=git@github.com:Signmanal/VIGIL.git`.
  * If the user's GitHub SSH key is FIDO2/passkey-backed, a background `git fetch
  * origin` triggers an unexplained hardware-touch prompt. For passive checks
  * against the official repo we substitute the public HTTPS `ls-remote` path,
@@ -12,8 +12,12 @@
  * testable without booting Electron (main.cjs requires('electron') at load).
  */
 
-const OFFICIAL_REPO_HTTPS_URL = 'https://github.com/NousResearch/vigil-agent.git'
-const OFFICIAL_REPO_CANONICAL = 'github.com/nousresearch/vigil-agent'
+const OFFICIAL_REPO_OWNER = 'Signmanal'
+const OFFICIAL_REPO_NAME = 'VIGIL'
+const OFFICIAL_REPO_SLUG = `${OFFICIAL_REPO_OWNER}/${OFFICIAL_REPO_NAME}`
+const OFFICIAL_REPO_HTTPS_URL = `https://github.com/${OFFICIAL_REPO_SLUG}.git`
+const OFFICIAL_REPO_RAW_BASE_URL = `https://raw.githubusercontent.com/${OFFICIAL_REPO_SLUG}`
+const OFFICIAL_REPO_CANONICAL = `github.com/${OFFICIAL_REPO_SLUG}`.toLowerCase()
 
 // Normalize common GitHub remote URL forms to `host/owner/repo` (lowercased,
 // no trailing slash, no .git suffix) so SSH and HTTPS forms of the same repo
@@ -49,6 +53,7 @@ function isOfficialSshRemote(url) {
 
 module.exports = {
   OFFICIAL_REPO_HTTPS_URL,
+  OFFICIAL_REPO_RAW_BASE_URL,
   OFFICIAL_REPO_CANONICAL,
   canonicalGitHubRemote,
   isSshRemote,

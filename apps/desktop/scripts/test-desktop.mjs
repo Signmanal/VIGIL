@@ -279,6 +279,8 @@ function launchFresh() {
 //   - The VIGIL Agent Python payload is NOT shipped (it's fetched at first
 //     launch via install.ps1's stage protocol).
 //   - install-stamp.json IS shipped in resources/ with a valid commit + branch.
+//   - bootstrap/install.sh and bootstrap/install.ps1 ARE shipped so first-launch
+//     bootstrap does not depend on raw.githubusercontent.com being reachable.
 //   - native-deps/@homebridge/node-pty-prebuilt-multiarch/ IS shipped with
 //     the package.json + lib/ + at least one .node binary (the renderer's
 //     integrated terminal needs this; see Phase 1F.6).
@@ -315,6 +317,13 @@ function validateBundle() {
   }
   if (!stamp.branch || typeof stamp.branch !== 'string') {
     die(`install-stamp.json is missing the branch field: ${JSON.stringify(stamp)}`)
+  }
+
+  for (const installer of ['install.sh', 'install.ps1']) {
+    const installerPath = path.join(APP.resourcesPath, 'bootstrap', installer)
+    if (!exists(installerPath)) {
+      die(`Missing bundled bootstrap installer: ${installerPath}`)
+    }
   }
 
   // Positive assertion: node-pty native deps shipped

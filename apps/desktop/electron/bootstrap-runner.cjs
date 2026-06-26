@@ -39,6 +39,7 @@ const fsp = require('node:fs/promises')
 const path = require('node:path')
 const https = require('node:https')
 const { spawn } = require('node:child_process')
+const { OFFICIAL_REPO_RAW_BASE_URL } = require('./update-remote.cjs')
 
 const IS_WINDOWS = process.platform === 'win32'
 
@@ -81,6 +82,20 @@ function resolveLocalInstallScript(sourceRepoRoot) {
   }
 }
 
+// The installer shipped alongside a packaged desktop app via extraResources.
+// This keeps first-launch bootstrap independent of raw.githubusercontent.com
+// access and lets local/private builds install from the exact packaged script.
+function bundledInstallScript(resourcesPath = process.resourcesPath) {
+  if (!resourcesPath) return null
+  const candidate = path.join(resourcesPath, 'bootstrap', installScriptName())
+  try {
+    fs.accessSync(candidate, fs.constants.R_OK)
+    return candidate
+  } catch {
+    return null
+  }
+}
+
 function bootstrapCacheDir(hermesHome) {
   return path.join(hermesHome, 'bootstrap-cache')
 }
@@ -109,7 +124,7 @@ function downloadInstallScript(commit, destPath) {
   // is immutable (unlike a branch ref), so we don't need integrity
   // verification beyond "did the file we wrote pass a syntax probe."
   const scriptName = installScriptName()
-  const url = `https://raw.githubusercontent.com/NousResearch/vigil-agent/${commit}/scripts/${scriptName}`
+  const url = `${OFFICIAL_REPO_RAW_BASE_URL}/${commit}/scripts/${scriptName}`
   return new Promise((resolve, reject) => {
     fs.mkdirSync(path.dirname(destPath), { recursive: true })
     const tmpPath = destPath + '.tmp'
@@ -179,7 +194,14 @@ function downloadInstallScript(commit, destPath) {
   })
 }
 
-async function resolveInstallScript({ installStamp, sourceRepoRoot, hermesHome, emit, _download = downloadInstallScript }) {
+async function resolveInstallScript({
+  installStamp,
+  sourceRepoRoot,
+  hermesHome,
+  resourcesPath,
+  emit,
+  _download = downloadInstallScript
+}) {
   // 1. Dev shortcut: prefer a local checkout's installer so we can iterate
   //    without pushing. SOURCE_REPO_ROOT comes from main.cjs (path.resolve
   //    of APP_ROOT/../..).
@@ -189,7 +211,16 @@ async function resolveInstallScript({ installStamp, sourceRepoRoot, hermesHome, 
     return { path: localScript, source: 'local', kind: installScriptKind() }
   }
 
-  // 2. Packaged path: download from GitHub at the pinned commit (1B's stamp).
+  // 2. Packaged path: prefer the installer shipped with the desktop app. A
+  //    packaged build may be stamped to a private or not-yet-pushed commit, so
+  //    raw GitHub cannot be the only path for a fresh machine.
+  const bundledScript = bundledInstallScript(resourcesPath)
+  if (bundledScript) {
+    emit({ type: 'log', line: `[bootstrap] using bundled ${installScriptName()} at ${bundledScript}` })
+    return { path: bundledScript, source: 'bundled', kind: installScriptKind() }
+  }
+
+  // 3. Legacy packaged path: download from GitHub at the pinned commit.
   if (!installStamp || !installStamp.commit || !STAMP_COMMIT_RE.test(installStamp.commit)) {
     throw new Error(
       `Cannot resolve ${installScriptName()}: no SOURCE_REPO_ROOT and no install stamp. ` +
@@ -724,6 +755,7 @@ module.exports = {
   parseStageResult,
   resolveLocalInstallScript,
   resolveInstallScript,
+  bundledInstallScript,
   installedAgentInstallScript,
   cachedScriptPath
 }

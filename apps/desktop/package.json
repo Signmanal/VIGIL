@@ -167,6 +167,14 @@
         "to": "install-stamp.json"
       },
       {
+        "from": "../../scripts/install.sh",
+        "to": "bootstrap/install.sh"
+      },
+      {
+        "from": "../../scripts/install.ps1",
+        "to": "bootstrap/install.ps1"
+      },
+      {
         "from": "build/native-deps",
         "to": "native-deps"
       },

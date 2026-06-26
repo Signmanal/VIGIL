@@ -7,6 +7,7 @@ const path = require('node:path')
 const {
   runBootstrap,
   resolveInstallScript,
+  bundledInstallScript,
   installedAgentInstallScript,
   cachedScriptPath
 } = require('./bootstrap-runner.cjs')
@@ -54,6 +55,63 @@ test('installedAgentInstallScript resolves the installer in the agent checkout',
     assert.equal(installedAgentInstallScript(null), null, 'null home -> null')
   } finally {
     fs.rmSync(home, { recursive: true, force: true })
+  }
+})
+
+test('bundledInstallScript resolves the installer shipped with app resources', () => {
+  const resources = mkTmpHome()
+  try {
+    assert.equal(bundledInstallScript(resources), null, 'absent before bootstrap resources exist')
+
+    const bootstrapDir = path.join(resources, 'bootstrap')
+    fs.mkdirSync(bootstrapDir, { recursive: true })
+    const scriptPath = path.join(bootstrapDir, SCRIPT_NAME)
+    fs.writeFileSync(scriptPath, '#!/bin/sh\necho bundled\n')
+
+    assert.equal(bundledInstallScript(resources), scriptPath)
+    assert.equal(bundledInstallScript(null), null, 'null resources path -> null')
+  } finally {
+    fs.rmSync(resources, { recursive: true, force: true })
+  }
+})
+
+test('resolveInstallScript prefers the bundled installer before cache or network', async () => {
+  const home = mkTmpHome()
+  const resources = mkTmpHome()
+  try {
+    const commit = 'a'.repeat(40)
+    const bundledDir = path.join(resources, 'bootstrap')
+    fs.mkdirSync(bundledDir, { recursive: true })
+    const bundled = path.join(bundledDir, SCRIPT_NAME)
+    fs.writeFileSync(bundled, '#!/bin/sh\necho bundled\n')
+
+    const cached = cachedScriptPath(home, commit)
+    fs.mkdirSync(path.dirname(cached), { recursive: true })
+    fs.writeFileSync(cached, '#!/bin/sh\necho cached\n')
+
+    let downloadTouched = false
+    const logs = []
+    const result = await resolveInstallScript({
+      installStamp: { commit },
+      sourceRepoRoot: null,
+      hermesHome: home,
+      resourcesPath: resources,
+      emit: ev => logs.push(ev),
+      _download: async () => {
+        downloadTouched = true
+      }
+    })
+
+    assert.equal(result.source, 'bundled')
+    assert.equal(result.path, bundled)
+    assert.equal(downloadTouched, false)
+    assert.ok(
+      logs.some(ev => /using bundled/.test(ev.line || '')),
+      'emits a bundled-installer log line'
+    )
+  } finally {
+    fs.rmSync(home, { recursive: true, force: true })
+    fs.rmSync(resources, { recursive: true, force: true })
   }
 })
 
