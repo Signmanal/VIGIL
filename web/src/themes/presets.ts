@@ -40,18 +40,44 @@ const DEFAULT_LAYOUT: ThemeLayout = {
 
 export const defaultTheme: DashboardTheme = {
   name: "default",
-  label: "VIGIL Signal",
-  description: "Classic dark teal — the canonical VIGIL look",
+  label: "VIGIL Sentinel",
+  description: "Sentinel Ops command palette — the canonical VIGIL look",
   palette: {
-    background: { hex: "#041c1c", alpha: 1 },
-    midground: { hex: "#ffe6cb", alpha: 1 },
-    foreground: { hex: "#ffffff", alpha: 0 },
-    warmGlow: "rgba(255, 189, 56, 0.35)",
-    noiseOpacity: 1,
+    background: { hex: "#08111F", alpha: 1 },
+    midground: { hex: "#E5E7EB", alpha: 1 },
+    foreground: { hex: "#38BDF8", alpha: 0 },
+    warmGlow: "rgba(56, 189, 248, 0.24)",
+    noiseOpacity: 0.85,
   },
   typography: DEFAULT_TYPOGRAPHY,
   layout: DEFAULT_LAYOUT,
-  terminalBackground: "#000000",
+  terminalBackground: "#08111F",
+  colorOverrides: {
+    card: "#162033",
+    cardForeground: "#E5E7EB",
+    popover: "#162033",
+    popoverForeground: "#E5E7EB",
+    primary: "#38BDF8",
+    primaryForeground: "#08111F",
+    secondary: "#1F2937",
+    secondaryForeground: "#E5E7EB",
+    muted: "#1F2937",
+    mutedForeground: "#9CA3AF",
+    accent: "#1F2937",
+    accentForeground: "#38BDF8",
+    destructive: "#EF4444",
+    destructiveForeground: "#E5E7EB",
+    success: "#34D399",
+    warning: "#F59E0B",
+    border: "#334155",
+    input: "#334155",
+    ring: "#38BDF8",
+  },
+  seriesColors: {
+    inputTokenAccent: "#38BDF8",
+    outputTokenAccent: "#34D399",
+  },
+  swatchColors: ["#08111F", "#38BDF8", "#162033"],
 };
 
 export const midnightTheme: DashboardTheme = {
@@ -285,8 +311,8 @@ export const nousBlueTheme: DashboardTheme = {
  */
 export const defaultLargeTheme: DashboardTheme = {
   name: "default-large",
-  label: "VIGIL Signal (Large)",
-  description: "VIGIL Signal with bigger fonts and roomier spacing",
+  label: "VIGIL Sentinel (Large)",
+  description: "VIGIL Sentinel with bigger fonts and roomier spacing",
   palette: defaultTheme.palette,
   typography: {
     ...DEFAULT_TYPOGRAPHY,
@@ -297,6 +323,10 @@ export const defaultLargeTheme: DashboardTheme = {
     ...DEFAULT_LAYOUT,
     density: "spacious",
   },
+  colorOverrides: defaultTheme.colorOverrides,
+  seriesColors: defaultTheme.seriesColors,
+  swatchColors: defaultTheme.swatchColors,
+  terminalBackground: defaultTheme.terminalBackground,
 };
 
 export const BUILTIN_THEMES: Record<string, DashboardTheme> = {

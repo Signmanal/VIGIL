@@ -14,7 +14,7 @@ def build_gui_parser(subparsers, *, cmd_gui: Callable) -> None:
     # =========================================================================
     gui_parser = subparsers.add_parser(
         "desktop",
-        aliases=["gui"],
+        aliases=["gui", "destkop"],
         help="Build and launch the native desktop app",
         description=(
             "Launch the VIGIL Electron desktop app. By default this installs "

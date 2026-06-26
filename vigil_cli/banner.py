@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 # ANSI building blocks for conversation display
 # =========================================================================
 
-_GOLD = "\033[1;38;2;255;215;0m"  # True-color #FFD700 bold
+_CYAN = "\033[1;38;2;56;189;248m"  # True-color #38BDF8 bold
 _BOLD = "\033[1m"
 _DIM = "\033[2m"
 _RST = "\033[0m"
@@ -61,22 +61,22 @@ def _skin_color(key: str, fallback: str) -> str:
 
 from vigil_cli import __version__ as VERSION, __release_date__ as RELEASE_DATE
 
-VIGIL_AGENT_LOGO = """[bold #7DD3FC]██╗   ██╗██╗ ██████╗ ██╗██╗     [/]
-[bold #7DD3FC]██║   ██║██║██╔════╝ ██║██║     [/]
-[#22D3EE]██║   ██║██║██║  ███╗██║██║     [/]
+VIGIL_AGENT_LOGO = """[bold #38BDF8]██╗   ██╗██╗ ██████╗ ██╗██╗     [/]
+[bold #38BDF8]██║   ██║██║██╔════╝ ██║██║     [/]
+[#38BDF8]██║   ██║██║██║  ███╗██║██║     [/]
 [#34D399]╚██╗ ██╔╝██║██║   ██║██║██║     [/]
 [#34D399] ╚████╔╝ ██║╚██████╔╝██║███████╗[/]
-[#0F766E]  ╚═══╝  ╚═╝ ╚═════╝ ╚═╝╚══════╝[/]
-[#5EEAD4]        SECURITY OPERATIONS AGENT[/]"""
+[#334155]  ╚═══╝  ╚═╝ ╚═════╝ ╚═╝╚══════╝[/]
+[#9CA3AF]        SENTINEL OPS CONSOLE[/]"""
 
-VIGIL_SENTINEL_ART = """[#22D3EE]          ╭────────────╮[/]
-[#22D3EE]      ╭───┤ VIGIL SOC ├───╮[/]
-[#5EEAD4]      │   ╰────┬─────╯   │[/]
+VIGIL_SENTINEL_ART = """[#38BDF8]          ╭────────────╮[/]
+[#38BDF8]      ╭───┤ VIGIL SOC ├───╮[/]
+[#34D399]      │   ╰────┬─────╯   │[/]
 [#34D399]      │      ╭─▼─╮       │[/]
 [#34D399]      │      │ V │       │[/]
 [#34D399]      │      ╰─┬─╯       │[/]
-[#5EEAD4]      │  local-first ops │[/]
-[#22D3EE]      ╰──── signal guard ─╯[/]"""
+[#9CA3AF]      │  local-first ops │[/]
+[#38BDF8]      ╰──── signal guard ─╯[/]"""
 
 
 
@@ -628,10 +628,10 @@ def build_welcome_banner(console: "Console", model: str, cwd: str,
     layout_table.add_column("right", justify="left")
 
     # Resolve skin colors once for the entire banner
-    accent = _skin_color("banner_accent", "#FFBF00")
-    dim = _skin_color("banner_dim", "#B8860B")
-    text = _skin_color("banner_text", "#FFF8DC")
-    session_color = _skin_color("session_border", "#8B8682")
+    accent = _skin_color("banner_accent", "#34D399")
+    dim = _skin_color("banner_dim", "#9CA3AF")
+    text = _skin_color("banner_text", "#E5E7EB")
+    session_color = _skin_color("session_border", "#334155")
 
     # Use skin's custom hero art if provided.
     try:
@@ -855,8 +855,8 @@ def build_welcome_banner(console: "Console", model: str, cwd: str,
     right_content = "\n".join(right_lines)
     layout_table.add_row(left_content, right_content)
 
-    title_color = _skin_color("banner_title", "#FFD700")
-    border_color = _skin_color("banner_border", "#CD7F32")
+    title_color = _skin_color("banner_title", "#38BDF8")
+    border_color = _skin_color("banner_border", "#334155")
     version_label = format_banner_version_label()
     release_info = get_latest_release_tag()
     if release_info:

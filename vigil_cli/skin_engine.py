@@ -17,36 +17,36 @@ All fields are optional. Missing values inherit from the ``default`` skin.
 
     # Colors: hex values for Rich markup (banner, UI, response box)
     colors:
-      banner_border: "#CD7F32"            # Panel border color
-      banner_title: "#FFD700"             # Panel title text color
-      banner_accent: "#FFBF00"            # Section headers (Available Tools, etc.)
-      banner_dim: "#B8860B"               # Dim/muted text (separators, labels)
-      banner_text: "#FFF8DC"              # Body text (tool names, skill names)
-      ui_accent: "#FFBF00"               # General UI accent
-      ui_label: "#5EEAD4"                # UI labels
+      banner_border: "#334155"            # Panel border color
+      banner_title: "#38BDF8"             # Panel title text color
+      banner_accent: "#34D399"            # Section headers (Available Tools, etc.)
+      banner_dim: "#9CA3AF"               # Dim/muted text (separators, labels)
+      banner_text: "#E5E7EB"              # Body text (tool names, skill names)
+      ui_accent: "#38BDF8"               # General UI accent
+      ui_label: "#34D399"                # UI labels
       ui_ok: "#4caf50"                   # Success indicators
-      ui_error: "#ef5350"                # Error indicators
-      ui_warn: "#ffa726"                 # Warning indicators
-      prompt: "#FFF8DC"                  # Prompt text color
-      input_rule: "#CD7F32"              # Input area horizontal rule
-      response_border: "#FFD700"         # Response box border (ANSI)
-      status_bar_bg: "#1a1a2e"           # Status bar background
-      status_bar_text: "#C0C0C0"         # Status bar default text
-      status_bar_strong: "#FFD700"       # Status bar highlighted text
-      status_bar_dim: "#8B8682"          # Status bar separators/muted text
+      ui_error: "#EF4444"                # Error indicators
+      ui_warn: "#F59E0B"                 # Warning indicators
+      prompt: "#E5E7EB"                  # Prompt text color
+      input_rule: "#334155"              # Input area horizontal rule
+      response_border: "#38BDF8"         # Response box border (ANSI)
+      status_bar_bg: "#08111F"           # Status bar background
+      status_bar_text: "#E5E7EB"         # Status bar default text
+      status_bar_strong: "#38BDF8"       # Status bar highlighted text
+      status_bar_dim: "#9CA3AF"          # Status bar separators/muted text
       status_bar_good: "#8FBC8F"         # Healthy context usage
-      status_bar_warn: "#FFD700"         # Warning context usage
-      status_bar_bad: "#FF8C00"          # High context usage
-      status_bar_critical: "#FF6B6B"     # Critical context usage
-      session_label: "#DAA520"           # Session label color
-      session_border: "#8B8682"          # Session ID dim color
-      status_bar_bg: "#1a1a2e"          # TUI status/usage bar background
-      voice_status_bg: "#1a1a2e"        # TUI voice status background
-      selection_bg: "#333355"           # TUI mouse-selection highlight background
-      completion_menu_bg: "#1a1a2e"      # Completion menu background
-      completion_menu_current_bg: "#333355"  # Active completion row background
-      completion_menu_meta_bg: "#1a1a2e"     # Completion meta column background
-      completion_menu_meta_current_bg: "#333355"  # Active completion meta background
+      status_bar_warn: "#F59E0B"         # Warning context usage
+      status_bar_bad: "#F59E0B"          # High context usage
+      status_bar_critical: "#EF4444"     # Critical context usage
+      session_label: "#34D399"           # Session label color
+      session_border: "#334155"          # Session ID dim color
+      status_bar_bg: "#08111F"          # TUI status/usage bar background
+      voice_status_bg: "#08111F"        # TUI voice status background
+      selection_bg: "#1F2937"           # TUI mouse-selection highlight background
+      completion_menu_bg: "#111827"      # Completion menu background
+      completion_menu_current_bg: "#1F2937"  # Active completion row background
+      completion_menu_meta_bg: "#162033"     # Completion meta column background
+      completion_menu_meta_current_bg: "#1F2937"  # Active completion meta background
 
     # Spinner: customize the animated spinner during API calls
     spinner:
@@ -89,7 +89,7 @@ USAGE
     from vigil_cli.skin_engine import get_active_skin, list_skins, set_active_skin
 
     skin = get_active_skin()
-    print(skin.colors["banner_title"])    # "#FFD700"
+    print(skin.colors["banner_title"])    # "#38BDF8"
     print(skin.get_branding("agent_name"))  # "VIGIL Agent"
 
     set_active_skin("ares")               # Switch to built-in ares skin
@@ -98,7 +98,7 @@ USAGE
 BUILT-IN SKINS
 ==============
 
-- ``default`` — VIGIL Signal, a cyan/green security-operations look
+- ``default`` — VIGIL Sentinel Ops, a cyan/green security-operations look
 - ``ares``    — Crimson/bronze war-god theme with custom spinner wings
 - ``mono``    — Clean grayscale monochrome
 - ``slate``   — Cool blue developer-focused theme
@@ -164,38 +164,44 @@ class SkinConfig:
 _BUILTIN_SKINS: Dict[str, Dict[str, Any]] = {
     "default": {
         "name": "default",
-        "description": "VIGIL Signal — cyan and green security operations",
+        "description": "VIGIL Sentinel Ops — cyan and green security operations",
         "colors": {
-            "banner_border": "#0F766E",
-            "banner_title": "#7DD3FC",
+            "banner_border": "#334155",
+            "banner_title": "#38BDF8",
             "banner_accent": "#34D399",
-            "banner_dim": "#64748B",
-            "banner_text": "#E2E8F0",
-            "ui_accent": "#22D3EE",
-            "ui_label": "#5EEAD4",
+            "banner_dim": "#9CA3AF",
+            "banner_text": "#E5E7EB",
+            "ui_accent": "#38BDF8",
+            "ui_label": "#34D399",
             "ui_ok": "#34D399",
-            "ui_error": "#ef5350",
-            "ui_warn": "#FBBF24",
-            "prompt": "#E2E8F0",
-            "input_rule": "#0F766E",
-            "response_border": "#22D3EE",
-            "status_bar_bg": "#07111F",
-            "status_bar_text": "#E2E8F0",
-            "status_bar_strong": "#5EEAD4",
-            "status_bar_dim": "#64748B",
+            "ui_error": "#EF4444",
+            "ui_warn": "#F59E0B",
+            "prompt": "#E5E7EB",
+            "input_rule": "#334155",
+            "response_border": "#38BDF8",
+            "status_bar_bg": "#08111F",
+            "status_bar_text": "#E5E7EB",
+            "status_bar_strong": "#38BDF8",
+            "status_bar_dim": "#9CA3AF",
             "status_bar_good": "#34D399",
-            "status_bar_warn": "#FBBF24",
-            "status_bar_bad": "#FB7185",
+            "status_bar_warn": "#F59E0B",
+            "status_bar_bad": "#F59E0B",
             "status_bar_critical": "#EF4444",
-            "session_label": "#5EEAD4",
-            "session_border": "#164E63",
+            "session_label": "#34D399",
+            "session_border": "#334155",
+            "voice_status_bg": "#08111F",
+            "selection_bg": "#1F2937",
+            "completion_menu_bg": "#111827",
+            "completion_menu_current_bg": "#1F2937",
+            "completion_menu_meta_bg": "#162033",
+            "completion_menu_meta_current_bg": "#1F2937",
         },
         "spinner": {
             # Empty = use hardcoded defaults in display.py
         },
         "branding": {
             "agent_name": "VIGIL Agent",
-            "welcome": "Welcome to VIGIL Agent! Type your message or /help for commands.",
+            "welcome": "Welcome to VIGIL. Type your message or /help for commands.",
             "goodbye": "Goodbye! ◆",
             "response_label": " ◆ VIGIL ",
             "prompt_symbol": "❯",
@@ -872,24 +878,24 @@ def get_prompt_toolkit_style_overrides() -> Dict[str, str]:
     # color schemes).  Skins can opt into a colored prompt by setting
     # `prompt` explicitly in their YAML.
     prompt = skin.get_color("prompt", "")
-    input_rule = skin.get_color("input_rule", "#CD7F32")
-    title = skin.get_color("banner_title", "#FFD700")
-    text = skin.get_color("banner_text", "#FFF8DC")
+    input_rule = skin.get_color("input_rule", "#334155")
+    title = skin.get_color("banner_title", "#38BDF8")
+    text = skin.get_color("banner_text", "#E5E7EB")
     dim = skin.get_color("banner_dim", "#555555")
     label = skin.get_color("ui_label", title)
-    warn = skin.get_color("ui_warn", "#FF8C00")
-    error = skin.get_color("ui_error", "#FF6B6B")
-    status_bg = skin.get_color("status_bar_bg", "#1a1a2e")
+    warn = skin.get_color("ui_warn", "#F59E0B")
+    error = skin.get_color("ui_error", "#EF4444")
+    status_bg = skin.get_color("status_bar_bg", "#08111F")
     status_text = skin.get_color("status_bar_text", text)
     status_strong = skin.get_color("status_bar_strong", title)
     status_dim = skin.get_color("status_bar_dim", dim)
-    status_good = skin.get_color("status_bar_good", skin.get_color("ui_ok", "#8FBC8F"))
+    status_good = skin.get_color("status_bar_good", skin.get_color("ui_ok", "#34D399"))
     status_warn = skin.get_color("status_bar_warn", warn)
     status_bad = skin.get_color("status_bar_bad", skin.get_color("banner_accent", warn))
     status_critical = skin.get_color("status_bar_critical", error)
     voice_bg = skin.get_color("voice_status_bg", status_bg)
-    menu_bg = skin.get_color("completion_menu_bg", "#1a1a2e")
-    menu_current_bg = skin.get_color("completion_menu_current_bg", "#333355")
+    menu_bg = skin.get_color("completion_menu_bg", "#111827")
+    menu_current_bg = skin.get_color("completion_menu_current_bg", "#1F2937")
     menu_meta_bg = skin.get_color("completion_menu_meta_bg", menu_bg)
     menu_meta_current_bg = skin.get_color("completion_menu_meta_current_bg", menu_current_bg)
 

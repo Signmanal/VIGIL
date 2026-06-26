@@ -2,13 +2,14 @@ import { useCallback } from 'react'
 
 import { useTheme } from './context'
 
-// Retired skin names land on the canonical Nous skin so old muscle memory works.
+// Retired skin names land on the current default; nous remains selectable.
 const ALIASES: Record<string, string> = {
   ares: 'ember',
-  default: 'nous',
-  gold: 'nous',
-  vigil: 'nous',
-  'nous-light': 'nous'
+  default: 'sentinel',
+  gold: 'sentinel',
+  'sentinel-ops': 'sentinel',
+  vigil: 'sentinel',
+  'nous-light': 'sentinel'
 }
 
 export function useSkinCommand() {

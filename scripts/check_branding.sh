@@ -18,9 +18,13 @@ targets = [
     "vigil",
     "setup-vigil.sh",
     "vigil_constants.py",
+    "cli.py",
+    "vigil_cli/banner.py",
     "vigil_cli/main.py",
+    "vigil_cli/skin_engine.py",
     "vigil_cli/subcommands/dashboard.py",
     "vigil_cli/subcommands/gui.py",
+    "ui-tui/src",
     "web/src",
     "apps/desktop/package.json",
     "apps/desktop/src",
@@ -31,6 +35,7 @@ targets = [
 
 patterns = [
     r"\bHermes\b",
+    r"HERMES-AGENT",
     r"hermes-agent",
     r"NousResearch",
     r"nousresearch",
@@ -61,6 +66,12 @@ allowed_files = {
 
 allowed_line = re.compile(
     r"upstream Hermes|Hermes-compatible"
+    r"|github\.com/NousResearch/vigil-agent"
+    r"|github\.com/nousresearch/vigil-agent"
+    r"|canonical NousResearch/vigil-agent repo"
+    r"|Nous Research VIGIL 3 & 4 models"
+    r"|Nous Research to charge"
+    r"|portal\.nousresearch\.com/billing"
 )
 
 violations = []

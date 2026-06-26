@@ -86,6 +86,15 @@ def test_single_handler_builders(name, builder, kw, argv):
     assert ns.func is handler
 
 
+def test_desktop_accepts_common_typo_alias():
+    parser = argparse.ArgumentParser(prog="vigil")
+    sub = parser.add_subparsers(dest="command")
+    handler = _h("gui")
+    build_gui_parser(sub, cmd_gui=handler)
+    ns = parser.parse_args(["destkop"])
+    assert ns.func is handler
+
+
 def test_dashboard_builder_two_handlers():
     parser = argparse.ArgumentParser(prog="vigil")
     sub = parser.add_subparsers(dest="command")

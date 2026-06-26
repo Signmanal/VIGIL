@@ -10,7 +10,14 @@ interface Pref {
 }
 
 const cases = [
-  { name: 'skin', pref: skinPref as unknown as Pref, fallback: DEFAULT_SKIN_NAME, a: 'ember', b: 'midnight', junk: 'nope' },
+  {
+    name: 'skin',
+    pref: skinPref as unknown as Pref,
+    fallback: DEFAULT_SKIN_NAME,
+    a: 'ember',
+    b: 'midnight',
+    junk: 'nope'
+  },
   { name: 'mode', pref: modePref as unknown as Pref, fallback: 'light', a: 'dark', b: 'system', junk: 'dusk' }
 ]
 
@@ -37,5 +44,16 @@ describe.each(cases)('per-profile $name', ({ pref, fallback, a, b, junk }) => {
   it('normalizes an unknown stored value back to the default', () => {
     pref.assign('work', junk)
     expect(pref.resolve('work')).toBe(fallback)
+  })
+})
+
+describe('legacy skin compatibility', () => {
+  beforeEach(() => window.localStorage.clear())
+
+  it('keeps old saved nous preferences selectable instead of falling back', () => {
+    skinPref.assign('default', 'nous')
+
+    expect(skinPref.resolve('default')).toBe('nous')
+    expect(skinPref.resolve('work')).toBe('nous')
   })
 })

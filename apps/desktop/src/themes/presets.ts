@@ -9,8 +9,7 @@ import type { DesktopTheme, DesktopThemeTypography } from './types'
 // text/mono fonts carry emoji glyphs, so without this emoji render as tofu
 // boxes on platforms whose default text font lacks them (e.g. Linux/#40364).
 // Covers macOS, Windows, Linux, plus the `emoji` generic for anything else.
-export const EMOJI_FALLBACK =
-  '"Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", emoji'
+export const EMOJI_FALLBACK = '"Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", emoji'
 
 const SYSTEM_SANS =
   '"Segoe WPC", "Segoe UI", -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", system-ui, sans-serif, ' +
@@ -24,14 +23,110 @@ export const DEFAULT_TYPOGRAPHY: DesktopThemeTypography = { fontSans: SYSTEM_SAN
 const NOUS_BLUE = '#0053FD'
 const PSYCHE_BLUE = '#1540B1'
 const PSYCHE_WARM = '#FFE6CB'
+const SENTINEL_BG = '#08111F'
+const SENTINEL_BG_SOFT = '#111827'
+const SENTINEL_SURFACE = '#162033'
+const SENTINEL_SURFACE_SOFT = '#1F2937'
+const SENTINEL_CYAN = '#38BDF8'
+const SENTINEL_GREEN = '#34D399'
+const SENTINEL_AMBER = '#F59E0B'
+const SENTINEL_RED = '#EF4444'
+const SENTINEL_TEXT = '#E5E7EB'
+const SENTINEL_MUTED = '#9CA3AF'
+const SENTINEL_BORDER = '#334155'
 
 const nousTint = (pct: number) => `color-mix(in srgb, ${NOUS_BLUE} ${pct}%, #FFFFFF)`
 const nousTintTransparent = (pct: number) => `color-mix(in srgb, ${NOUS_BLUE} ${pct}%, transparent)`
 
+/** Sentinel Ops — VIGIL's default operations-console palette. */
+export const sentinelTheme: DesktopTheme = {
+  name: 'sentinel',
+  label: 'Sentinel',
+  description: 'Sentinel Ops console with cyan, green, amber, and red signals',
+  colors: {
+    background: SENTINEL_BG_SOFT,
+    foreground: SENTINEL_TEXT,
+    card: SENTINEL_SURFACE_SOFT,
+    cardForeground: SENTINEL_TEXT,
+    muted: SENTINEL_SURFACE,
+    mutedForeground: SENTINEL_MUTED,
+    popover: SENTINEL_SURFACE_SOFT,
+    popoverForeground: SENTINEL_TEXT,
+    primary: SENTINEL_CYAN,
+    primaryForeground: SENTINEL_BG,
+    secondary: SENTINEL_SURFACE,
+    secondaryForeground: SENTINEL_TEXT,
+    accent: SENTINEL_GREEN,
+    accentForeground: SENTINEL_BG,
+    border: SENTINEL_BORDER,
+    input: SENTINEL_BORDER,
+    ring: SENTINEL_CYAN,
+    midground: SENTINEL_CYAN,
+    composerRing: SENTINEL_GREEN,
+    destructive: SENTINEL_RED,
+    destructiveForeground: SENTINEL_TEXT,
+    sidebarBackground: SENTINEL_BG,
+    sidebarBorder: SENTINEL_BORDER,
+    userBubble: SENTINEL_SURFACE,
+    userBubbleBorder: SENTINEL_BORDER
+  },
+  darkColors: {
+    background: SENTINEL_BG,
+    foreground: SENTINEL_TEXT,
+    card: SENTINEL_SURFACE,
+    cardForeground: SENTINEL_TEXT,
+    muted: SENTINEL_SURFACE_SOFT,
+    mutedForeground: SENTINEL_MUTED,
+    popover: SENTINEL_SURFACE,
+    popoverForeground: SENTINEL_TEXT,
+    primary: SENTINEL_CYAN,
+    primaryForeground: SENTINEL_BG,
+    secondary: SENTINEL_SURFACE_SOFT,
+    secondaryForeground: SENTINEL_TEXT,
+    accent: SENTINEL_GREEN,
+    accentForeground: SENTINEL_BG,
+    border: SENTINEL_BORDER,
+    input: SENTINEL_BORDER,
+    ring: SENTINEL_CYAN,
+    midground: SENTINEL_CYAN,
+    composerRing: SENTINEL_GREEN,
+    destructive: SENTINEL_RED,
+    destructiveForeground: SENTINEL_TEXT,
+    sidebarBackground: SENTINEL_BG,
+    sidebarBorder: SENTINEL_BORDER,
+    userBubble: SENTINEL_SURFACE_SOFT,
+    userBubbleBorder: SENTINEL_BORDER
+  },
+  typography: {
+    fontMono: `"JetBrains Mono", ${SYSTEM_MONO}`
+  },
+  terminal: {
+    foreground: SENTINEL_TEXT,
+    cursor: SENTINEL_CYAN,
+    selectionBackground: 'rgba(56, 189, 248, 0.28)',
+    black: SENTINEL_BG,
+    red: SENTINEL_RED,
+    green: SENTINEL_GREEN,
+    yellow: SENTINEL_AMBER,
+    blue: SENTINEL_CYAN,
+    magenta: '#A78BFA',
+    cyan: SENTINEL_CYAN,
+    white: SENTINEL_TEXT,
+    brightBlack: SENTINEL_BORDER,
+    brightRed: '#F87171',
+    brightGreen: '#6EE7B7',
+    brightYellow: '#FBBF24',
+    brightBlue: '#7DD3FC',
+    brightMagenta: '#C4B5FD',
+    brightCyan: '#67E8F9',
+    brightWhite: '#F8FAFC'
+  }
+}
+
 /**
- * Nous — canonical VIGIL desktop identity. The palette keeps the current
- * glass geometry neutral, then lets the old bb/gui blue and psyche cream
- * return as accent seeds.
+ * Nous — legacy VIGIL desktop identity. The palette keeps the current glass
+ * geometry neutral, then lets the old bb/gui blue and psyche cream return as
+ * accent seeds.
  */
 export const nousTheme: DesktopTheme = {
   name: 'nous',
@@ -279,6 +374,7 @@ export const slateTheme: DesktopTheme = {
 }
 
 export const BUILTIN_THEMES: Record<string, DesktopTheme> = {
+  sentinel: sentinelTheme,
   nous: nousTheme,
   midnight: midnightTheme,
   ember: emberTheme,
@@ -290,4 +386,4 @@ export const BUILTIN_THEMES: Record<string, DesktopTheme> = {
 export const BUILTIN_THEME_LIST = Object.values(BUILTIN_THEMES)
 
 /** Skin used when nothing is persisted or the persisted name is retired. */
-export const DEFAULT_SKIN_NAME = 'nous'
+export const DEFAULT_SKIN_NAME = 'sentinel'

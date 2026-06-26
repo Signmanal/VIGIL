@@ -11897,8 +11897,8 @@ def mount_spa(application: FastAPI):
 # Built-in dashboard themes — label + description only.  The actual color
 # definitions live in the frontend (web/src/themes/presets.ts).
 _BUILTIN_DASHBOARD_THEMES = [
-    {"name": "default",       "label": "VIGIL Signal",         "description": "Classic dark teal — the canonical VIGIL look"},
-    {"name": "default-large", "label": "VIGIL Signal (Large)", "description": "VIGIL Signal with bigger fonts and roomier spacing"},
+    {"name": "default",       "label": "VIGIL Sentinel",         "description": "Sentinel Ops command palette — the canonical VIGIL look"},
+    {"name": "default-large", "label": "VIGIL Sentinel (Large)", "description": "VIGIL Sentinel with bigger fonts and roomier spacing"},
     {"name": "nous-blue",     "label": "Nous Blue",           "description": "Light mode — vivid Nous-blue accents on cream canvas"},
     {"name": "midnight",      "label": "Midnight",            "description": "Deep blue-violet with cool accents"},
     {"name": "ember",     "label": "Ember",          "description": "Warm crimson and bronze — forge vibes"},
@@ -12001,10 +12001,10 @@ def _normalise_theme_definition(data: Dict[str, Any]) -> Optional[Dict[str, Any]
         return parsed if parsed is not None else {"hex": default_hex, "alpha": default_alpha}
 
     palette = {
-        "background": _layer("background", "#041c1c", 1.0),
-        "midground": _layer("midground", "#ffe6cb", 1.0),
-        "foreground": _layer("foreground", "#ffffff", 0.0),
-        "warmGlow": palette_src.get("warmGlow") or data.get("warmGlow") or "rgba(255, 189, 56, 0.35)",
+        "background": _layer("background", "#08111F", 1.0),
+        "midground": _layer("midground", "#E5E7EB", 1.0),
+        "foreground": _layer("foreground", "#38BDF8", 0.0),
+        "warmGlow": palette_src.get("warmGlow") or data.get("warmGlow") or "rgba(56, 189, 248, 0.24)",
         "noiseOpacity": 1.0,
     }
     raw_noise = palette_src.get("noiseOpacity", data.get("noiseOpacity"))

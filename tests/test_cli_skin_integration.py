@@ -92,7 +92,7 @@ class TestCliSkinPromptIntegration:
 
 
 class TestCompactBannerSkinIntegration:
-    def test_default_compact_banner_uses_vigil_security_branding(self):
+    def test_default_compact_banner_uses_vigil_sentinel_ops_branding(self):
         set_active_skin("default")
 
         with patch("cli.shutil.get_terminal_size", return_value=SimpleNamespace(columns=90)), \
@@ -100,10 +100,9 @@ class TestCompactBannerSkinIntegration:
             banner = _build_compact_banner()
 
         assert "VIGIL" in banner
-        assert "Security Operations Agent" in banner
-        assert "NOUS VIGIL" not in banner
+        assert "Sentinel Ops Console" in banner
 
-    def test_poseidon_compact_banner_uses_skin_branding_instead_of_nous_hermes(self):
+    def test_poseidon_compact_banner_uses_skin_branding_instead_of_default(self):
         set_active_skin("poseidon")
 
         with patch("cli.shutil.get_terminal_size", return_value=SimpleNamespace(columns=90)), \
@@ -111,7 +110,7 @@ class TestCompactBannerSkinIntegration:
             banner = _build_compact_banner()
 
         assert "Poseidon Agent" in banner
-        assert "NOUS VIGIL" not in banner
+        assert "Sentinel Ops Console" not in banner
 
     def test_poseidon_compact_banner_uses_skin_colors(self):
         set_active_skin("poseidon")

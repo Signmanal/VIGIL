@@ -238,12 +238,12 @@ function normalizeAnsiForeground(color: string): string {
 
 const BRAND: ThemeBrand = {
   name: 'VIGIL Agent',
-  icon: '⚕',
+  icon: '◆',
   prompt: '❯',
   welcome: 'Type your message or /help for commands.',
-  goodbye: 'Goodbye! ⚕',
+  goodbye: 'Goodbye! ◆',
   tool: '┊',
-  helpHeader: '(^_^)? Commands'
+  helpHeader: '◆ VIGIL Commands'
 }
 
 const cleanPromptSymbol = (s: string | undefined, fallback: string) => {
@@ -256,46 +256,38 @@ const cleanPromptSymbol = (s: string | undefined, fallback: string) => {
 
 export const DARK_THEME: Theme = {
   color: {
-    primary: '#FFD700',
-    accent: '#FFBF00',
-    border: '#CD7F32',
-    text: '#FFF8DC',
-    muted: '#CC9B1F',
-    // Bumped from the old `#B8860B` darkgoldenrod (~53% luminance) which
-    // read as barely-visible on dark terminals for long body text.  The
-    // new value sits ~60% luminance — readable without losing the "muted /
-    // secondary" semantic.  Field labels still use `label` (65%) which
-    // stays brighter so hierarchy holds.
-    completionBg: '#1a1a2e',
-    completionCurrentBg: '#333355',
-    completionMetaBg: '#1a1a2e',
-    completionMetaCurrentBg: '#333355',
+    primary: '#38BDF8',
+    accent: '#34D399',
+    border: '#334155',
+    text: '#E5E7EB',
+    muted: '#9CA3AF',
+    completionBg: '#111827',
+    completionCurrentBg: '#1F2937',
+    completionMetaBg: '#162033',
+    completionMetaCurrentBg: '#1F2937',
 
-    label: '#DAA520',
-    ok: '#4caf50',
-    error: '#ef5350',
-    warn: '#ffa726',
+    label: '#34D399',
+    ok: '#34D399',
+    error: '#EF4444',
+    warn: '#F59E0B',
 
-    prompt: '#FFF8DC',
-    // sessionLabel/sessionBorder intentionally track the `dim` value — they
-    // are "same role, same colour" by design.  fromSkin's banner_dim fallback
-    // relies on this pairing (#11300).
-    sessionLabel: '#CC9B1F',
-    sessionBorder: '#CC9B1F',
+    prompt: '#E5E7EB',
+    sessionLabel: '#34D399',
+    sessionBorder: '#334155',
 
-    statusBg: '#1a1a2e',
-    statusFg: '#C0C0C0',
-    statusGood: '#8FBC8F',
-    statusWarn: '#FFD700',
-    statusBad: '#FF8C00',
-    statusCritical: '#FF6B6B',
-    selectionBg: '#3a3a55',
+    statusBg: '#08111F',
+    statusFg: '#E5E7EB',
+    statusGood: '#34D399',
+    statusWarn: '#F59E0B',
+    statusBad: '#F59E0B',
+    statusCritical: '#EF4444',
+    selectionBg: '#1F2937',
 
     diffAdded: 'rgb(220,255,220)',
     diffRemoved: 'rgb(255,220,220)',
     diffAddedWord: 'rgb(36,138,61)',
     diffRemovedWord: 'rgb(207,34,46)',
-    shellDollar: '#4dabf7'
+    shellDollar: '#38BDF8'
   },
 
   brand: BRAND,
@@ -304,43 +296,43 @@ export const DARK_THEME: Theme = {
   bannerHero: ''
 }
 
-// Light-terminal palette: darker golds/ambers that stay legible on white
+// Light-terminal palette: Sentinel Ops colors adapted for bright terminal
 // backgrounds. Same shape as DARK_THEME so `fromSkin` still layers on top
 // cleanly (#11300).
 export const LIGHT_THEME: Theme = {
   color: {
-    primary: '#8B6914',
-    accent: '#A0651C',
-    border: '#7A4F1F',
-    text: '#3D2F13',
-    muted: '#7A5A0F',
-    completionBg: '#F5F5F5',
-    completionCurrentBg: mix('#F5F5F5', '#A0651C', 0.25),
-    completionMetaBg: '#F5F5F5',
-    completionMetaCurrentBg: mix('#F5F5F5', '#A0651C', 0.25),
+    primary: '#111827',
+    accent: '#38BDF8',
+    border: '#334155',
+    text: '#111827',
+    muted: '#334155',
+    completionBg: '#E5E7EB',
+    completionCurrentBg: mix('#E5E7EB', '#38BDF8', 0.25),
+    completionMetaBg: '#E5E7EB',
+    completionMetaCurrentBg: mix('#E5E7EB', '#34D399', 0.25),
 
-    label: '#7A5A0F',
-    ok: '#2E7D32',
-    error: '#C62828',
-    warn: '#E65100',
+    label: '#334155',
+    ok: '#34D399',
+    error: '#EF4444',
+    warn: '#F59E0B',
 
-    prompt: '#2B2014',
-    sessionLabel: '#7A5A0F',
-    sessionBorder: '#7A5A0F',
+    prompt: '#111827',
+    sessionLabel: '#334155',
+    sessionBorder: '#334155',
 
-    statusBg: '#F5F5F5',
-    statusFg: '#333333',
-    statusGood: '#2E7D32',
-    statusWarn: '#8B6914',
-    statusBad: '#D84315',
-    statusCritical: '#B71C1C',
-    selectionBg: '#D4E4F7',
+    statusBg: '#E5E7EB',
+    statusFg: '#111827',
+    statusGood: '#34D399',
+    statusWarn: '#F59E0B',
+    statusBad: '#F59E0B',
+    statusCritical: '#EF4444',
+    selectionBg: '#9CA3AF',
 
     diffAdded: 'rgb(200,240,200)',
     diffRemoved: 'rgb(240,200,200)',
     diffAddedWord: 'rgb(27,94,32)',
     diffRemovedWord: 'rgb(183,28,28)',
-    shellDollar: '#1565C0'
+    shellDollar: '#38BDF8'
   },
 
   brand: BRAND,
@@ -534,7 +526,7 @@ export function fromSkin(
     c('completion_menu_current_bg') ??
     (hasSkinColors ? mix(completionBg, bannerAccent, 0.25) : d.color.completionCurrentBg)
 
-  const completionMetaBg = c('completion_menu_meta_bg') ?? completionBg
+  const completionMetaBg = c('completion_menu_meta_bg') ?? (hasSkinColors ? completionBg : d.color.completionMetaBg)
   const completionMetaCurrentBg = c('completion_menu_meta_current_bg') ?? completionCurrentBg
 
   return normalizeThemeForAnsiLightTerminal({
@@ -555,8 +547,8 @@ export function fromSkin(
       warn: c('ui_warn') ?? d.color.warn,
 
       prompt: c('prompt') ?? c('banner_text') ?? d.color.prompt,
-      sessionLabel: c('session_label') ?? muted,
-      sessionBorder: c('session_border') ?? muted,
+      sessionLabel: c('session_label') ?? (hasSkinColors ? muted : d.color.sessionLabel),
+      sessionBorder: c('session_border') ?? (hasSkinColors ? muted : d.color.sessionBorder),
 
       statusBg: d.color.statusBg,
       statusFg: d.color.statusFg,
