@@ -492,8 +492,7 @@ export const en: Translations = {
       profileConnection: profile =>
         `Connection used only when “${profile}” is the active profile. Set it to Local to inherit the default.`,
       envOverrideTitle: 'Environment variables are controlling this desktop session.',
-      envOverrideDesc:
-        'Unset VIGIL_DESKTOP_REMOTE_URL and VIGIL_DESKTOP_REMOTE_TOKEN to use the saved setting below.',
+      envOverrideDesc: 'Unset VIGIL_DESKTOP_REMOTE_URL and VIGIL_DESKTOP_REMOTE_TOKEN to use the saved setting below.',
       localTitle: 'Local gateway',
       localDesc: 'Start a private VIGIL backend on localhost. This is the default and works offline.',
       remoteTitle: 'Remote gateway',
@@ -695,9 +694,11 @@ export const en: Translations = {
   skills: {
     tabSkills: 'Skills',
     tabToolsets: 'Toolsets',
+    tabMarket: 'Market',
     all: 'All',
     searchSkills: 'Search skills...',
     searchToolsets: 'Search toolsets...',
+    searchMarket: 'Search skills.sh or paste owner/repo...',
     refresh: 'Refresh skills',
     refreshing: 'Refreshing skills',
     loading: 'Loading capabilities...',
@@ -718,7 +719,28 @@ export const en: Translations = {
     toolsetEnabled: 'Toolset enabled',
     toolsetDisabled: 'Toolset disabled',
     appliesToNewSessions: name => `${name} applies to new sessions.`,
-    failedToUpdate: name => `Failed to update ${name}`
+    failedToUpdate: name => `Failed to update ${name}`,
+    marketTitle: 'Skill market',
+    marketDesc:
+      'Search the configured Skill Hub, install community skills into the current profile, then refresh the local list.',
+    marketOpen: 'Open skills.sh',
+    marketSource: 'Source',
+    marketAllSources: 'All sources',
+    marketLoading: 'Searching skill market...',
+    marketEmptyTitle: 'Search the market',
+    marketEmptyDesc: 'Type a topic like browser, security, docs, or paste an owner/repo identifier from skills.sh.',
+    marketNoResultsTitle: 'No market results',
+    marketNoResultsDesc: 'Try a broader query, another source, or install an owner/repo identifier directly.',
+    marketInstall: 'Install',
+    marketInstalling: 'Installing...',
+    marketInstalled: 'Installed',
+    marketInstallStarted: identifier =>
+      `${identifier} install started. Refresh skills after the background action finishes.`,
+    marketInstallFailed: identifier => `Failed to install ${identifier}`,
+    marketSearchFailed: 'Skill market search failed',
+    marketDirectInstall: identifier => `Install ${identifier} directly`,
+    marketTrust: trust => `Trust: ${trust}`,
+    marketSourceLabel: source => `Source: ${source}`
   },
 
   agents: {
@@ -728,7 +750,8 @@ export const en: Translations = {
     manageRoles: 'Manage roles',
     roleHint: 'Reusable agents live in Profiles: edit SOUL.md, then pick that profile from the chat sidebar.',
     emptyTitle: 'No live subagents',
-    emptyDesc: 'When a turn delegates work, child agents stream their progress here. Use roles to switch the assistant persona before starting a session.',
+    emptyDesc:
+      'When a turn delegates work, child agents stream their progress here. Use roles to switch the assistant persona before starting a session.',
     running: 'Running',
     failed: 'Failed',
     done: 'Done',
@@ -836,7 +859,7 @@ export const en: Translations = {
       settings: { title: 'Settings', detail: 'Configure VIGIL desktop' },
       skills: { title: 'Plugins & Tools', detail: 'Enable skills, toolsets, MCP servers, and providers' },
       messaging: { title: 'Messaging', detail: 'Set up Telegram, Slack, Discord, and more' },
-      artifacts: { title: 'Reports', detail: 'Browse generated reports and outputs' }
+      artifacts: { title: 'Outputs', detail: 'Browse session reports, files, images, and links' }
     },
     sectionEntries: {
       sessions: { title: 'Sessions panel', detail: 'Search, pin, and manage sessions' },
@@ -1069,6 +1092,14 @@ export const en: Translations = {
     cloneFrom: 'Clone from',
     cloneFromNone: 'None (blank)',
     cloneFromDesc: 'Copies config, skills, and SOUL.md from the selected source profile.',
+    startingSkills: 'Starting skills',
+    startingSkillsDesc: source =>
+      `Choose which skills stay enabled after creation. Loaded from ${source}; clear all for a minimal agent.`,
+    loadingSkills: 'Loading skills...',
+    noSkillsAvailable: 'No skills are available from this source profile.',
+    skillsSelected: (selected, total) => `${selected}/${total} selected`,
+    selectAllSkills: 'Select all',
+    clearSkills: 'Clear',
     cloneFromDefault: 'Clone from default',
     cloneFromDefaultDesc: 'Copy config, skills, and SOUL.md from your default profile.',
     invalidName: hint => `Invalid name. ${hint}`,
@@ -1086,6 +1117,7 @@ export const en: Translations = {
     setupCopied: 'Setup command copied',
     soulSaved: 'SOUL.md saved',
     failedLoad: 'Failed to load profiles',
+    failedLoadSkills: 'Failed to load skills',
     failedDelete: 'Failed to delete profile',
     failedCopy: 'Failed to copy setup command',
     failedLoadSoul: 'Failed to load SOUL.md',
@@ -1205,22 +1237,23 @@ export const en: Translations = {
   },
 
   artifacts: {
-    search: 'Search reports...',
-    refresh: 'Refresh reports',
-    refreshing: 'Refreshing reports',
-    indexing: 'Indexing recent session reports',
+    search: 'Search outputs...',
+    refresh: 'Refresh outputs',
+    refreshing: 'Refreshing outputs',
+    indexing: 'Indexing recent session outputs',
     tabReports: 'Reports',
     tabAll: 'All',
     tabImages: 'Images',
     tabFiles: 'Files',
     tabLinks: 'Links',
-    noArtifactsTitle: 'No reports found',
+    noArtifactsTitle: 'No outputs found',
     noArtifactsDesc:
-      'Task reports from chats and scheduled runs appear here. Related images, files, and links stay available in the other tabs.',
-    failedLoad: 'Reports failed to load',
+      'Reports, images, files, and links generated or referenced by chats and scheduled runs appear here.',
+    failedLoad: 'Outputs failed to load',
     openFailed: 'Open failed',
     preview: 'Preview',
     previewFailed: 'Preview failed',
+    statArtifacts: 'Total outputs',
     statReports: 'Reports',
     statSessions: 'Source sessions',
     statRelated: 'Related outputs',
@@ -1255,7 +1288,7 @@ export const en: Translations = {
       'new-session': 'New session',
       skills: 'Plugins & Tools',
       messaging: 'Messaging',
-      artifacts: 'Reports'
+      artifacts: 'Outputs'
     },
     searchAria: 'Search sessions',
     searchPlaceholder: 'Search sessions…',
@@ -1474,6 +1507,13 @@ export const en: Translations = {
     availableTitleBackend: 'Backend update available',
     availableBodyBackend: 'A newer version of the connected VIGIL backend is ready to install.',
     availableBodyNoChangelog: 'A newer version is ready. Release notes aren’t available for this install type.',
+    changelogGroups: {
+      new: "What's new",
+      fixed: 'Fixed',
+      faster: 'Faster',
+      improved: 'Improved',
+      other: 'Other improvements'
+    },
     updateNow: 'Update now',
     maybeLater: 'Maybe later',
     moreChanges: count => `+ ${count} more change${count === 1 ? '' : 's'} included.`,

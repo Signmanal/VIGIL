@@ -4,6 +4,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const getSkills = vi.fn()
 const getToolsets = vi.fn()
+const getSkillHubSources = vi.fn()
+const searchSkillHub = vi.fn()
+const installSkillHub = vi.fn()
 const toggleSkill = vi.fn()
 const toggleToolset = vi.fn()
 const getToolsetConfig = vi.fn()
@@ -12,6 +15,9 @@ const selectToolsetProvider = vi.fn()
 vi.mock('@/vigil', () => ({
   getSkills: () => getSkills(),
   getToolsets: () => getToolsets(),
+  getSkillHubSources: () => getSkillHubSources(),
+  searchSkillHub: (query: string, source: string) => searchSkillHub(query, source),
+  installSkillHub: (identifier: string) => installSkillHub(identifier),
   toggleSkill: (name: string, enabled: boolean) => toggleSkill(name, enabled),
   toggleToolset: (name: string, enabled: boolean) => toggleToolset(name, enabled),
   getToolsetConfig: (name: string) => getToolsetConfig(name),
@@ -40,10 +46,10 @@ function toolset(overrides: Record<string, unknown> = {}) {
   }
 }
 
-function renderSkills() {
+function renderSkills(route = '/skills?tab=toolsets') {
   return import('./index').then(({ SkillsView }) =>
     render(
-      <MemoryRouter initialEntries={['/skills?tab=toolsets']}>
+      <MemoryRouter initialEntries={[route]}>
         <SkillsView />
       </MemoryRouter>
     )
@@ -53,6 +59,14 @@ function renderSkills() {
 beforeEach(() => {
   getSkills.mockResolvedValue([])
   getToolsets.mockResolvedValue([toolset()])
+  getSkillHubSources.mockResolvedValue({
+    featured: [],
+    index_available: false,
+    installed: {},
+    sources: [{ id: 'skills-sh', label: 'skills.sh' }]
+  })
+  searchSkillHub.mockResolvedValue({ installed: {}, results: [], source_counts: {}, timed_out: [] })
+  installSkillHub.mockResolvedValue({ ok: true, pid: 123, name: 'skills-install' })
   toggleToolset.mockResolvedValue({ ok: true, name: 'web', enabled: false })
   getToolsetConfig.mockResolvedValue({ has_category: false, active_provider: null, providers: [] })
 })
@@ -75,9 +89,7 @@ describe('SkillsView toolset management', () => {
   })
 
   it('renders toolset titles without leading emoji', async () => {
-    getToolsets.mockResolvedValue([
-      toolset({ name: 'cronjob', label: '⏰ Cron Jobs', description: 'cron tools' })
-    ])
+    getToolsets.mockResolvedValue([toolset({ name: 'cronjob', label: '⏰ Cron Jobs', description: 'cron tools' })])
 
     await renderSkills()
 
@@ -99,5 +111,17 @@ describe('SkillsView toolset management', () => {
     fireEvent.click(configureBtn)
 
     await waitFor(() => expect(getToolsetConfig).toHaveBeenCalledWith('web'))
+  })
+
+  it('installs direct market identifiers from the skills market tab', async () => {
+    await renderSkills('/skills?tab=market')
+
+    const search = await screen.findByPlaceholderText('Search skills.sh or paste owner/repo...')
+    fireEvent.change(search, { target: { value: 'owner/repo' } })
+
+    const install = await screen.findByRole('button', { name: 'Install owner/repo directly' })
+    fireEvent.click(install)
+
+    await waitFor(() => expect(installSkillHub).toHaveBeenCalledWith('owner/repo'))
   })
 })

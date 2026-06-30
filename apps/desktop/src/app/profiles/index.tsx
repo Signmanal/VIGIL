@@ -32,6 +32,7 @@ import { notify, notifyError } from '@/store/notifications'
 import { useRefreshHotkey } from '../hooks/use-refresh-hotkey'
 import { OverlayMain, OverlayNewButton, OverlaySidebar, OverlaySplitLayout } from '../overlays/overlay-split-layout'
 import { OverlayView } from '../overlays/overlay-view'
+import { ProfileSkillPicker, type ProfileSkillSelection } from './profile-skill-picker'
 
 const PROFILE_NAME_RE = /^[a-z0-9][a-z0-9_-]{0,63}$/
 
@@ -83,14 +84,18 @@ export function ProfilesView({ onClose }: ProfilesViewProps) {
   }, [profiles, selectedName])
 
   const handleCreate = useCallback(
-    async (name: string, cloneFrom: null | string) => {
+    async (name: string, cloneFrom: null | string, skillSelection?: ProfileSkillSelection) => {
       const trimmed = name.trim()
 
       if (!isValidProfileName(trimmed)) {
         throw new Error(p.nameHint)
       }
 
-      await createProfile({ name: trimmed, clone_from: cloneFrom })
+      await createProfile({
+        name: trimmed,
+        clone_from: cloneFrom,
+        ...(skillSelection?.touched ? { keep_skills: skillSelection.selected } : {})
+      })
       notify({ kind: 'success', title: p.created, message: trimmed })
       setSelectedName(trimmed)
       await refresh()
@@ -180,38 +185,38 @@ export function ProfilesView({ onClose }: ProfilesViewProps) {
       )}
 
       <CreateProfileDialog
-          onClose={() => setCreateOpen(false)}
-          onCreate={async (name, cloneFrom) => handleCreate(name, cloneFrom)}
-          open={createOpen}
-          profiles={profiles ?? []}
-        />
+        onClose={() => setCreateOpen(false)}
+        onCreate={async (name, cloneFrom, skillSelection) => handleCreate(name, cloneFrom, skillSelection)}
+        open={createOpen}
+        profiles={profiles ?? []}
+      />
 
-        <Dialog onOpenChange={open => !open && !deleting && setPendingDelete(null)} open={pendingDelete !== null}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>{p.deleteTitle}</DialogTitle>
-              <DialogDescription>
-                {pendingDelete ? (
-                  <>
-                    {p.deleteDescPrefix}
-                    <span className="font-medium text-foreground">{pendingDelete.name}</span>
-                    {p.deleteDescMid}
-                    <span className="font-mono text-xs">{pendingDelete.path}</span>
-                    {p.deleteDescSuffix}
-                  </>
-                ) : null}
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <Button disabled={deleting} onClick={() => setPendingDelete(null)} variant="outline">
-                {t.common.cancel}
-              </Button>
-              <Button disabled={deleting} onClick={() => void handleConfirmDelete()} variant="destructive">
-                {deleting ? p.deleting : t.common.delete}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+      <Dialog onOpenChange={open => !open && !deleting && setPendingDelete(null)} open={pendingDelete !== null}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{p.deleteTitle}</DialogTitle>
+            <DialogDescription>
+              {pendingDelete ? (
+                <>
+                  {p.deleteDescPrefix}
+                  <span className="font-medium text-foreground">{pendingDelete.name}</span>
+                  {p.deleteDescMid}
+                  <span className="font-mono text-xs">{pendingDelete.path}</span>
+                  {p.deleteDescSuffix}
+                </>
+              ) : null}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button disabled={deleting} onClick={() => setPendingDelete(null)} variant="outline">
+              {t.common.cancel}
+            </Button>
+            <Button disabled={deleting} onClick={() => void handleConfirmDelete()} variant="destructive">
+              {deleting ? p.deleting : t.common.delete}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </OverlayView>
   )
 }
@@ -459,7 +464,7 @@ function CreateProfileDialog({
   profiles
 }: {
   onClose: () => void
-  onCreate: (name: string, cloneFrom: null | string) => Promise<void>
+  onCreate: (name: string, cloneFrom: null | string, skillSelection: ProfileSkillSelection) => Promise<void>
   open: boolean
   profiles: ProfileInfo[]
 }) {
@@ -467,6 +472,7 @@ function CreateProfileDialog({
   const p = t.profiles
   const [name, setName] = useState('')
   const [cloneFrom, setCloneFrom] = useState<null | string>('default')
+  const [skillSelection, setSkillSelection] = useState<ProfileSkillSelection>({ selected: [], touched: false })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<null | string>(null)
 
@@ -477,6 +483,7 @@ function CreateProfileDialog({
 
     setName('')
     setCloneFrom('default')
+    setSkillSelection({ selected: [], touched: false })
     setError(null)
     setSaving(false)
   }, [open])
@@ -497,7 +504,7 @@ function CreateProfileDialog({
     setError(null)
 
     try {
-      await onCreate(trimmed, cloneFrom)
+      await onCreate(trimmed, cloneFrom, skillSelection)
       onClose()
     } catch (err) {
       setError(err instanceof Error ? err.message : p.failedCreate)
@@ -536,7 +543,10 @@ function CreateProfileDialog({
             <label className="text-xs font-medium" htmlFor="new-profile-clone-from">
               {p.cloneFrom}
             </label>
-            <Select onValueChange={value => setCloneFrom(value === '__none__' ? null : value)} value={cloneFrom ?? '__none__'}>
+            <Select
+              onValueChange={value => setCloneFrom(value === '__none__' ? null : value)}
+              value={cloneFrom ?? '__none__'}
+            >
               <SelectTrigger className="h-9 rounded-md" id="new-profile-clone-from">
                 <SelectValue />
               </SelectTrigger>
@@ -551,6 +561,13 @@ function CreateProfileDialog({
             </Select>
             <p className="text-xs text-muted-foreground">{p.cloneFromDesc}</p>
           </div>
+
+          <ProfileSkillPicker
+            active={open}
+            disabled={saving}
+            onSelectionChange={setSkillSelection}
+            sourceProfile={cloneFrom}
+          />
 
           {error && (
             <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">

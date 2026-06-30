@@ -232,7 +232,9 @@ function IdleView({
       <div className="grid gap-3 rounded-xl border border-border/70 bg-muted/20 px-4 py-3">
         {groups.map(group => (
           <div key={group.id}>
-            <p className="text-[0.625rem] font-semibold uppercase tracking-wide text-muted-foreground">{group.label}</p>
+            <p className="text-[0.625rem] font-semibold uppercase tracking-wide text-muted-foreground">
+              {u.changelogGroups[group.id] ?? group.label}
+            </p>
             <ul className="mt-1.5 grid gap-1.5 text-xs text-foreground">
               {group.items.map(item => (
                 <li className="flex items-start gap-2" key={item}>

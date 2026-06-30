@@ -9584,8 +9584,9 @@ class ProfileCreate(BaseModel):
     # Built-in / optional skills to KEEP active. When this list is non-empty,
     # the builder uses "replace" semantics: the bundle is seeded, then every
     # seeded skill NOT in this list is added to the profile's disabled list.
-    # Empty list = leave the seeded bundle untouched (legacy behaviour).
-    keep_skills: List[str] = []
+    # None = leave the seeded bundle untouched (legacy behaviour).
+    # Empty list = disable every seeded/copied skill.
+    keep_skills: Optional[List[str]] = None
     # Skills-hub identifiers to install into the new profile. Installed async
     # via a subprocess scoped to the profile (`vigil -p <name> skills install`)
     # because skills_hub.SKILLS_DIR is import-time-bound and the VIGIL_HOME
@@ -9912,9 +9913,10 @@ async def create_profile_endpoint(body: ProfileCreate):
 
     # Optional "keep" skill selection — replace semantics. When the builder
     # sends an explicit keep list, disable every seeded skill not in it.
-    # Best-effort. Skipped when keep_skills is empty (legacy: keep the bundle).
+    # Best-effort. Skipped when keep_skills is omitted (legacy: keep the bundle).
+    # An explicit empty list means "disable every seeded/copied skill".
     skills_disabled = 0
-    if body.keep_skills:
+    if body.keep_skills is not None:
         try:
             skills_disabled = _disable_unselected_skills(path, body.keep_skills)
         except Exception:

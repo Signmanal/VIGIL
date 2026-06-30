@@ -813,9 +813,11 @@ export const ja = defineLocale({
   skills: {
     tabSkills: 'スキル',
     tabToolsets: 'ツールセット',
+    tabMarket: 'マーケット',
     all: 'すべて',
     searchSkills: 'スキルを検索...',
     searchToolsets: 'ツールセットを検索...',
+    searchMarket: 'skills.sh を検索、または owner/repo を貼り付け...',
     refresh: 'スキルを更新',
     refreshing: 'スキルを更新中',
     loading: '機能を読み込み中...',
@@ -836,7 +838,27 @@ export const ja = defineLocale({
     toolsetEnabled: 'ツールセットを有効にしました',
     toolsetDisabled: 'ツールセットを無効にしました',
     appliesToNewSessions: name => `${name} は新しいセッションに適用されます。`,
-    failedToUpdate: name => `${name} の更新に失敗しました`
+    failedToUpdate: name => `${name} の更新に失敗しました`,
+    marketTitle: 'スキルマーケット',
+    marketDesc: '設定済みの Skill Hub を検索し、コミュニティスキルを現在のプロファイルにインストールします。',
+    marketOpen: 'skills.sh を開く',
+    marketSource: 'ソース',
+    marketAllSources: 'すべてのソース',
+    marketLoading: 'スキルマーケットを検索中...',
+    marketEmptyTitle: 'マーケットを検索',
+    marketEmptyDesc: 'browser、security、docs などのトピック、または skills.sh の owner/repo 識別子を入力します。',
+    marketNoResultsTitle: 'マーケット結果はありません',
+    marketNoResultsDesc: '検索語を広げる、ソースを変える、または owner/repo 識別子を直接インストールしてください。',
+    marketInstall: 'インストール',
+    marketInstalling: 'インストール中...',
+    marketInstalled: 'インストール済み',
+    marketInstallStarted: identifier =>
+      `${identifier} のインストールを開始しました。バックグラウンド action の完了後にスキルを更新してください。`,
+    marketInstallFailed: identifier => `${identifier} のインストールに失敗しました`,
+    marketSearchFailed: 'スキルマーケット検索に失敗しました',
+    marketDirectInstall: identifier => `${identifier} を直接インストール`,
+    marketTrust: trust => `信頼: ${trust}`,
+    marketSourceLabel: source => `ソース: ${source}`
   },
 
   agents: {
@@ -951,7 +973,7 @@ export const ja = defineLocale({
       settings: { title: '設定', detail: 'VIGIL デスクトップを設定' },
       skills: { title: 'スキルとツール', detail: 'スキル、ツールセット、プロバイダーを有効化' },
       messaging: { title: 'メッセージング', detail: 'Telegram、Slack、Discord などを設定' },
-      artifacts: { title: 'アーティファクト', detail: '生成された出力を閲覧' }
+      artifacts: { title: '出力', detail: 'セッションのレポート、ファイル、画像、リンクを閲覧' }
     },
     sectionEntries: {
       sessions: { title: 'セッションパネル', detail: 'セッションの検索、ピン留め、管理' },
@@ -1192,6 +1214,14 @@ export const ja = defineLocale({
     cloneFrom: '複製元',
     cloneFromNone: 'なし（空）',
     cloneFromDesc: '選択したプロファイルから設定、スキル、SOUL.md をコピーします。',
+    startingSkills: '開始時のスキル',
+    startingSkillsDesc: source =>
+      `作成後に有効のままにするスキルを選択します。${source} から読み込みます。すべて外すと最小構成のエージェントになります。`,
+    loadingSkills: 'スキルを読み込み中...',
+    noSkillsAvailable: 'このソースプロファイルに利用できるスキルはありません。',
+    skillsSelected: (selected, total) => `${selected}/${total} 選択済み`,
+    selectAllSkills: 'すべて選択',
+    clearSkills: 'クリア',
     cloneFromDefault: 'デフォルトプロファイルから設定を複製',
     cloneFromDefaultDesc: 'デフォルトプロファイルから設定、スキル、SOUL.md をコピーします。',
     invalidName: hint => `無効なプロファイル名。${hint}`,
@@ -1209,6 +1239,7 @@ export const ja = defineLocale({
     setupCopied: 'セットアップコマンドをコピーしました',
     soulSaved: 'SOUL.md を保存しました',
     failedLoad: 'プロファイルの読み込みに失敗しました',
+    failedLoadSkills: 'スキルの読み込みに失敗しました',
     failedDelete: 'プロファイルの削除に失敗しました',
     failedCopy: 'セットアップコマンドのコピーに失敗しました',
     failedLoadSoul: 'SOUL.md の読み込みに失敗しました',
@@ -1329,22 +1360,23 @@ export const ja = defineLocale({
   },
 
   artifacts: {
-    search: 'レポートを検索...',
-    refresh: 'レポートを更新',
-    refreshing: 'レポートを更新中',
-    indexing: '最近のセッションのレポートをインデックス中',
+    search: '出力を検索...',
+    refresh: '出力を更新',
+    refreshing: '出力を更新中',
+    indexing: '最近のセッション出力をインデックス中',
     tabReports: 'レポート',
     tabAll: 'すべて',
     tabImages: '画像',
     tabFiles: 'ファイル',
     tabLinks: 'リンク',
-    noArtifactsTitle: 'レポートが見つかりません',
+    noArtifactsTitle: '出力が見つかりません',
     noArtifactsDesc:
-      'チャットやスケジュール実行で生成されたレポートがここに集約されます。関連する画像、ファイル、リンクは他のタブに残ります。',
-    failedLoad: 'レポートの読み込みに失敗しました',
+      'チャットやスケジュール実行で生成または参照されたレポート、画像、ファイル、リンクがここに表示されます。',
+    failedLoad: '出力の読み込みに失敗しました',
     openFailed: '開くことができませんでした',
     preview: 'プレビュー',
     previewFailed: 'プレビューに失敗しました',
+    statArtifacts: '出力合計',
     statReports: 'レポート',
     statSessions: '元セッション',
     statRelated: '関連出力',
@@ -1379,7 +1411,7 @@ export const ja = defineLocale({
       'new-session': '新しいセッション',
       skills: 'スキルとツール',
       messaging: 'メッセージング',
-      artifacts: 'レポート'
+      artifacts: '出力'
     },
     searchAria: 'セッションを検索',
     searchPlaceholder: 'セッションを検索…',
@@ -1599,6 +1631,13 @@ export const ja = defineLocale({
     availableBodyBackend: '接続中の VIGIL バックエンドの新しいバージョンをインストールできます。',
     availableBodyNoChangelog:
       '新しいバージョンを利用できます。このインストール形式ではリリースノートは表示できません。',
+    changelogGroups: {
+      new: '新機能',
+      fixed: '修正',
+      faster: '高速化',
+      improved: '改善',
+      other: 'その他の改善'
+    },
     updateNow: '今すぐ更新',
     maybeLater: '後で',
     moreChanges: count => `さらに ${count} 件の変更が含まれています。`,
@@ -1943,8 +1982,7 @@ export const ja = defineLocale({
       showConsole: 'プレビューコンソールを表示',
       hideDevTools: 'プレビュー DevTools を非表示',
       openDevTools: 'プレビュー DevTools を開く',
-      finishedRestarting: message =>
-        `VIGIL がプレビューサーバーの再起動を完了しました${message ? `: ${message}` : ''}`,
+      finishedRestarting: message => `VIGIL がプレビューサーバーの再起動を完了しました${message ? `: ${message}` : ''}`,
       failedRestarting: message => `サーバーの再起動に失敗しました: ${message}`,
       unknownError: '不明なエラー',
       restartedTitle: 'プレビューサーバーが再起動しました',

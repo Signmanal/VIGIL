@@ -515,6 +515,8 @@ export interface ProfileCreatePayload {
   clone_all?: boolean
   clone_from?: null | string
   clone_from_default?: boolean
+  hub_skills?: string[]
+  keep_skills?: string[]
   name: string
   no_skills?: boolean
 }
@@ -547,6 +549,43 @@ export interface SkillInfo {
   description: string
   enabled: boolean
   name: string
+}
+
+export interface SkillHubInstalledInfo {
+  name?: null | string
+  scan_verdict?: null | string
+  trust_level?: null | string
+}
+
+export interface SkillHubSourceInfo {
+  available?: boolean
+  id: string
+  label: string
+  rate_limited?: boolean
+}
+
+export interface SkillHubResult {
+  description: string
+  identifier: string
+  name: string
+  repo?: null | string
+  source: string
+  tags: string[]
+  trust_level: string
+}
+
+export interface SkillHubSourcesResponse {
+  featured: SkillHubResult[]
+  index_available: boolean
+  installed: Record<string, SkillHubInstalledInfo>
+  sources: SkillHubSourceInfo[]
+}
+
+export interface SkillHubSearchResponse {
+  installed: Record<string, SkillHubInstalledInfo>
+  results: SkillHubResult[]
+  source_counts: Record<string, number>
+  timed_out: string[]
 }
 
 export interface ToolsetInfo {

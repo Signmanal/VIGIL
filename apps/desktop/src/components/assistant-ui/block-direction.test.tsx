@@ -7,8 +7,8 @@
 // blocks stay attribute-free (the plaintext CSS owns them). jsdom does not
 // resolve dir="auto", so the contract is asserted at the attribute level.
 import { AssistantRuntimeProvider, type ThreadMessage, useExternalStoreRuntime } from '@assistant-ui/react'
-import { render, screen } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { cleanup, render, screen } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { Thread } from './thread'
 
@@ -21,10 +21,20 @@ class TestResizeObserver {
 }
 
 vi.stubGlobal('ResizeObserver', TestResizeObserver)
-vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) =>
-  window.setTimeout(() => callback(performance.now()), 0)
-)
-vi.stubGlobal('cancelAnimationFrame', (id: number) => window.clearTimeout(id))
+const rafTimers = new Set<number>()
+
+vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+  const id = window.setTimeout(() => {
+    rafTimers.delete(id)
+    callback(performance.now())
+  }, 0)
+  rafTimers.add(id)
+  return id
+})
+vi.stubGlobal('cancelAnimationFrame', (id: number) => {
+  rafTimers.delete(id)
+  window.clearTimeout(id)
+})
 
 Element.prototype.scrollTo = function scrollTo() {}
 
@@ -45,6 +55,14 @@ function stubOffsetDimension(
 
 stubOffsetDimension('offsetWidth', 'clientWidth', 800)
 stubOffsetDimension('offsetHeight', 'clientHeight', 600)
+
+afterEach(() => {
+  cleanup()
+  for (const id of rafTimers) {
+    window.clearTimeout(id)
+  }
+  rafTimers.clear()
+})
 
 function userMessage(): ThreadMessage {
   return {

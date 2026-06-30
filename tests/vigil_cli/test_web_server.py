@@ -3220,6 +3220,24 @@ class TestNewEndpoints:
         finally:
             reset_vigil_home_override(token)
 
+        # An explicit empty keep list is different from omitting keep_skills:
+        # it means the builder's "clear all" action should disable every
+        # seeded/copied skill.
+        empty_resp = self.client.post(
+            "/api/profiles",
+            json={"name": "empty-skills", "keep_skills": []},
+        )
+
+        assert empty_resp.status_code == 200
+        assert empty_resp.json()["skills_disabled"] == 2
+        empty_dir = get_vigil_home() / "profiles" / "empty-skills"
+        token = set_vigil_home_override(str(empty_dir))
+        try:
+            disabled = get_disabled_skills(load_config())
+            assert {"drop-me", "keep-me"}.issubset(disabled)
+        finally:
+            reset_vigil_home_override(token)
+
     def test_profile_open_terminal_uses_macos_terminal(self, monkeypatch):
         from vigil_constants import get_vigil_home
         import vigil_cli.web_server as web_server

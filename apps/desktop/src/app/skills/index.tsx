@@ -1,17 +1,27 @@
 import type * as React from 'react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react'
 
 import { PageLoader } from '@/components/page-loader'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Codicon } from '@/components/ui/codicon'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { TextTab, TextTabMeta } from '@/components/ui/text-tab'
-import { getSkills, getToolsets, toggleSkill, toggleToolset } from '@/vigil'
+import {
+  getSkillHubSources,
+  getSkills,
+  getToolsets,
+  installSkillHub,
+  searchSkillHub,
+  toggleSkill,
+  toggleToolset
+} from '@/vigil'
 import { useI18n } from '@/i18n'
+import { openExternalLink } from '@/lib/external-link'
 import { cn } from '@/lib/utils'
 import { notify, notifyError } from '@/store/notifications'
-import type { SkillInfo, ToolsetInfo } from '@/types/vigil'
+import type { SkillHubResult, SkillHubSourceInfo, SkillInfo, ToolsetInfo } from '@/types/vigil'
 
 import { useRefreshHotkey } from '../hooks/use-refresh-hotkey'
 import { useRouteEnumParam } from '../hooks/use-route-enum-param'
@@ -22,8 +32,10 @@ import { asText, includesQuery, prettyName, toolNames, toolsetDisplayLabel } fro
 import { ToolsetConfigPanel } from '../settings/toolset-config-panel'
 import type { SetStatusbarItemGroup } from '../shell/statusbar-controls'
 
-const SKILLS_MODES = ['skills', 'toolsets'] as const
+const SKILLS_MODES = ['skills', 'toolsets', 'market'] as const
 type SkillsMode = (typeof SKILLS_MODES)[number]
+const SKILLS_MARKET_URL = 'https://www.skills.sh/'
+const DIRECT_SKILL_IDENTIFIER_RE = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/
 
 function categoryFor(skill: SkillInfo): string {
   return asText(skill.category) || 'general'
@@ -211,8 +223,16 @@ export function SkillsView({ setStatusbarItemGroup: _setStatusbarItemGroup, ...p
         ) : undefined
       }
       onSearchChange={setQuery}
-      searchHidden={mode === 'skills' ? (skills?.length ?? 0) === 0 : (toolsets?.length ?? 0) === 0}
-      searchPlaceholder={mode === 'skills' ? t.skills.searchSkills : t.skills.searchToolsets}
+      searchHidden={
+        mode === 'skills' ? (skills?.length ?? 0) === 0 : mode === 'toolsets' ? (toolsets?.length ?? 0) === 0 : false
+      }
+      searchPlaceholder={
+        mode === 'skills'
+          ? t.skills.searchSkills
+          : mode === 'toolsets'
+            ? t.skills.searchToolsets
+            : t.skills.searchMarket
+      }
       searchTrailingAction={
         <Button
           aria-label={refreshing ? t.skills.refreshing : t.skills.refresh}
@@ -235,6 +255,9 @@ export function SkillsView({ setStatusbarItemGroup: _setStatusbarItemGroup, ...p
           </TextTab>
           <TextTab active={mode === 'toolsets'} onClick={() => setMode('toolsets')}>
             {t.skills.tabToolsets}
+          </TextTab>
+          <TextTab active={mode === 'market'} onClick={() => setMode('market')}>
+            {t.skills.tabMarket}
           </TextTab>
         </>
       }
@@ -279,7 +302,7 @@ export function SkillsView({ setStatusbarItemGroup: _setStatusbarItemGroup, ...p
             </div>
           )}
         </div>
-      ) : (
+      ) : mode === 'toolsets' ? (
         <div className={cn('h-full overflow-y-auto py-3', PAGE_INSET_X)}>
           {visibleToolsets.length === 0 ? (
             <EmptyState description={t.skills.noToolsetsDesc} title={t.skills.noToolsetsTitle} />
@@ -346,8 +369,237 @@ export function SkillsView({ setStatusbarItemGroup: _setStatusbarItemGroup, ...p
             </div>
           )}
         </div>
+      ) : (
+        <SkillMarketPanel onInstalled={refreshCapabilities} query={query} />
       )}
     </PageSearchShell>
+  )
+}
+
+function isDirectSkillIdentifier(value: string): boolean {
+  return DIRECT_SKILL_IDENTIFIER_RE.test(value.trim())
+}
+
+function SkillMarketPanel({ onInstalled, query }: { onInstalled: () => Promise<void>; query: string }) {
+  const { t } = useI18n()
+  const [sources, setSources] = useState<SkillHubSourceInfo[]>([])
+  const [source, setSource] = useState('skills-sh')
+  const [results, setResults] = useState<SkillHubResult[]>([])
+  const [installed, setInstalled] = useState<Record<string, unknown>>({})
+  const [loadingSources, setLoadingSources] = useState(false)
+  const [searching, setSearching] = useState(false)
+  const [installing, setInstalling] = useState<null | string>(null)
+  const [error, setError] = useState<null | string>(null)
+  const deferredQuery = useDeferredValue(query.trim())
+
+  useEffect(() => {
+    let cancelled = false
+    setLoadingSources(true)
+
+    void getSkillHubSources()
+      .then(payload => {
+        if (cancelled) {
+          return
+        }
+
+        setSources(payload.sources || [])
+        setInstalled(payload.installed || {})
+      })
+      .catch(err => {
+        if (!cancelled) {
+          notifyError(err, t.skills.marketSearchFailed)
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoadingSources(false)
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [t])
+
+  useEffect(() => {
+    if (deferredQuery.length < 2) {
+      setResults([])
+      setError(null)
+
+      return
+    }
+
+    let cancelled = false
+    setSearching(true)
+    setError(null)
+
+    void searchSkillHub(deferredQuery, source)
+      .then(payload => {
+        if (cancelled) {
+          return
+        }
+
+        setResults(payload.results || [])
+        setInstalled(payload.installed || {})
+      })
+      .catch(err => {
+        if (!cancelled) {
+          setResults([])
+          setError(err instanceof Error ? err.message : t.skills.marketSearchFailed)
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setSearching(false)
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [deferredQuery, source, t])
+
+  const sourceOptions = useMemo(() => {
+    const known = new Map<string, SkillHubSourceInfo>()
+
+    for (const item of sources) {
+      known.set(item.id, item)
+    }
+
+    if (!known.has('skills-sh')) {
+      known.set('skills-sh', { id: 'skills-sh', label: 'skills.sh' })
+    }
+
+    return [{ id: 'all', label: t.skills.marketAllSources }, ...Array.from(known.values())]
+  }, [sources, t])
+
+  async function handleInstall(identifier: string) {
+    setInstalling(identifier)
+
+    try {
+      await installSkillHub(identifier)
+      notify({
+        kind: 'success',
+        title: t.skills.marketInstalling,
+        message: t.skills.marketInstallStarted(identifier)
+      })
+      await onInstalled()
+    } catch (err) {
+      notifyError(err, t.skills.marketInstallFailed(identifier))
+    } finally {
+      setInstalling(null)
+    }
+  }
+
+  const directIdentifier = isDirectSkillIdentifier(deferredQuery) ? deferredQuery : null
+  const directAlreadyListed = directIdentifier ? results.some(result => result.identifier === directIdentifier) : false
+
+  return (
+    <div className={cn('h-full overflow-y-auto py-4', PAGE_INSET_X)}>
+      <div className="mx-auto max-w-4xl space-y-4">
+        <section className="rounded-lg border border-(--ui-stroke-secondary) bg-(--ui-bg-secondary) p-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h3 className="text-sm font-semibold">{t.skills.marketTitle}</h3>
+              <p className="mt-1 max-w-2xl text-xs leading-5 text-muted-foreground">{t.skills.marketDesc}</p>
+            </div>
+            <Button onClick={() => openExternalLink(SKILLS_MARKET_URL)} size="sm" type="button" variant="outline">
+              <Codicon name="link-external" size="0.8rem" />
+              {t.skills.marketOpen}
+            </Button>
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <label className="text-xs font-medium" htmlFor="skill-market-source">
+              {t.skills.marketSource}
+            </label>
+            <Select onValueChange={setSource} value={source}>
+              <SelectTrigger className="h-8 w-52 rounded-md" id="skill-market-source">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {sourceOptions.map(option => (
+                  <SelectItem key={option.id} value={option.id}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {loadingSources && <span className="text-xs text-muted-foreground">{t.skills.marketLoading}</span>}
+          </div>
+        </section>
+
+        {directIdentifier && !directAlreadyListed && (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-(--ui-stroke-secondary) bg-(--ui-bg-secondary) px-3 py-2">
+            <div className="min-w-0">
+              <div className="truncate font-mono text-xs">{directIdentifier}</div>
+              <div className="text-[0.68rem] text-muted-foreground">{SKILLS_MARKET_URL}</div>
+            </div>
+            <Button
+              disabled={installing === directIdentifier}
+              onClick={() => void handleInstall(directIdentifier)}
+              size="sm"
+              type="button"
+            >
+              {installing === directIdentifier
+                ? t.skills.marketInstalling
+                : t.skills.marketDirectInstall(directIdentifier)}
+            </Button>
+          </div>
+        )}
+
+        {deferredQuery.length < 2 ? (
+          <EmptyState description={t.skills.marketEmptyDesc} title={t.skills.marketEmptyTitle} />
+        ) : searching ? (
+          <PageLoader className="min-h-52" label={t.skills.marketLoading} />
+        ) : error ? (
+          <EmptyState description={error} title={t.skills.marketSearchFailed} />
+        ) : results.length === 0 ? (
+          <EmptyState description={t.skills.marketNoResultsDesc} title={t.skills.marketNoResultsTitle} />
+        ) : (
+          <div className="space-y-2">
+            {results.map(result => {
+              const isInstalled = Boolean(installed[result.identifier])
+              const isInstalling = installing === result.identifier
+
+              return (
+                <div
+                  className="grid gap-3 rounded-md border border-(--ui-stroke-secondary) bg-(--ui-bg-secondary) p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
+                  key={result.identifier}
+                >
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <div className="truncate text-sm font-medium">{result.name}</div>
+                      <Badge variant="outline">{t.skills.marketTrust(result.trust_level)}</Badge>
+                      <Badge variant="muted">{t.skills.marketSourceLabel(result.source)}</Badge>
+                    </div>
+                    <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">
+                      {result.description || t.skills.noDescription}
+                    </p>
+                    <div className="mt-1 truncate font-mono text-[0.68rem] text-muted-foreground">
+                      {result.identifier}
+                    </div>
+                  </div>
+                  <Button
+                    disabled={isInstalled || isInstalling}
+                    onClick={() => void handleInstall(result.identifier)}
+                    size="sm"
+                    type="button"
+                    variant={isInstalled ? 'outline' : 'default'}
+                  >
+                    {isInstalled
+                      ? t.skills.marketInstalled
+                      : isInstalling
+                        ? t.skills.marketInstalling
+                        : t.skills.marketInstall}
+                  </Button>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    </div>
   )
 }
 

@@ -39,6 +39,8 @@ import type {
   SessionInfo,
   SessionMessagesResponse,
   SessionSearchResponse,
+  SkillHubSearchResponse,
+  SkillHubSourcesResponse,
   SkillInfo,
   StatusResponse,
   ToolsetConfig,
@@ -105,6 +107,11 @@ export type {
   SessionRuntimeInfo,
   SessionSearchResponse,
   SessionSearchResult,
+  SkillHubInstalledInfo,
+  SkillHubResult,
+  SkillHubSearchResponse,
+  SkillHubSourceInfo,
+  SkillHubSourcesResponse,
   SkillInfo,
   StaleAuxAssignment,
   StatusResponse,
@@ -354,10 +361,7 @@ export function getMemoryProviderConfig(provider: string): Promise<MemoryProvide
   })
 }
 
-export function saveMemoryProviderConfig(
-  provider: string,
-  values: Record<string, string>
-): Promise<{ ok: boolean }> {
+export function saveMemoryProviderConfig(provider: string, values: Record<string, string>): Promise<{ ok: boolean }> {
   return window.vigilDesktop.api<{ ok: boolean }>({
     path: `/api/memory/providers/${encodeURIComponent(provider)}/config`,
     method: 'PUT',
@@ -477,10 +481,12 @@ export function getMemoryProviderOAuthStatus(provider: string): Promise<MemoryPr
   })
 }
 
-export function getSkills(): Promise<SkillInfo[]> {
+export function getSkills(profile?: string): Promise<SkillInfo[]> {
+  const scopedProfile = profile?.trim()
+
   return window.vigilDesktop.api<SkillInfo[]>({
-    ...profileScoped(),
-    path: '/api/skills'
+    ...(scopedProfile ? {} : profileScoped()),
+    path: scopedProfile ? `/api/skills?profile=${encodeURIComponent(scopedProfile)}` : '/api/skills'
   })
 }
 
@@ -490,6 +496,51 @@ export function toggleSkill(name: string, enabled: boolean): Promise<{ ok: boole
     path: '/api/skills/toggle',
     method: 'PUT',
     body: { name, enabled }
+  })
+}
+
+export function getSkillHubSources(profile?: string): Promise<SkillHubSourcesResponse> {
+  const scopedProfile = profile?.trim()
+
+  return window.vigilDesktop.api<SkillHubSourcesResponse>({
+    ...(scopedProfile ? {} : profileScoped()),
+    path: scopedProfile
+      ? `/api/skills/hub/sources?profile=${encodeURIComponent(scopedProfile)}`
+      : '/api/skills/hub/sources'
+  })
+}
+
+export function searchSkillHub(
+  query: string,
+  source = 'skills-sh',
+  limit = 20,
+  profile?: string
+): Promise<SkillHubSearchResponse> {
+  const params = new URLSearchParams({
+    q: query,
+    source,
+    limit: String(Math.max(1, Math.floor(limit)))
+  })
+  const scopedProfile = profile?.trim()
+
+  if (scopedProfile) {
+    params.set('profile', scopedProfile)
+  }
+
+  return window.vigilDesktop.api<SkillHubSearchResponse>({
+    ...(scopedProfile ? {} : profileScoped()),
+    path: `/api/skills/hub/search?${params.toString()}`
+  })
+}
+
+export function installSkillHub(identifier: string, profile?: string): Promise<ActionResponse> {
+  const scopedProfile = profile?.trim()
+
+  return window.vigilDesktop.api<ActionResponse>({
+    ...(scopedProfile ? {} : profileScoped()),
+    path: '/api/skills/hub/install',
+    method: 'POST',
+    body: scopedProfile ? { identifier, profile: scopedProfile } : { identifier }
   })
 }
 

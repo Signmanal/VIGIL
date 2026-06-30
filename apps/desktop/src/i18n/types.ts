@@ -599,9 +599,11 @@ export interface Translations {
   skills: {
     tabSkills: string
     tabToolsets: string
+    tabMarket: string
     all: string
     searchSkills: string
     searchToolsets: string
+    searchMarket: string
     refresh: string
     refreshing: string
     loading: string
@@ -623,6 +625,25 @@ export interface Translations {
     toolsetDisabled: string
     appliesToNewSessions: (name: string) => string
     failedToUpdate: (name: string) => string
+    marketTitle: string
+    marketDesc: string
+    marketOpen: string
+    marketSource: string
+    marketAllSources: string
+    marketLoading: string
+    marketEmptyTitle: string
+    marketEmptyDesc: string
+    marketNoResultsTitle: string
+    marketNoResultsDesc: string
+    marketInstall: string
+    marketInstalling: string
+    marketInstalled: string
+    marketInstallStarted: (identifier: string) => string
+    marketInstallFailed: (identifier: string) => string
+    marketSearchFailed: string
+    marketDirectInstall: (identifier: string) => string
+    marketTrust: (trust: string) => string
+    marketSourceLabel: (source: string) => string
   }
 
   agents: {
@@ -867,6 +888,13 @@ export interface Translations {
     cloneFrom: string
     cloneFromNone: string
     cloneFromDesc: string
+    startingSkills: string
+    startingSkillsDesc: (source: string) => string
+    loadingSkills: string
+    noSkillsAvailable: string
+    skillsSelected: (selected: number, total: number) => string
+    selectAllSkills: string
+    clearSkills: string
     cloneFromDefault: string
     cloneFromDefaultDesc: string
     invalidName: (hint: string) => string
@@ -884,6 +912,7 @@ export interface Translations {
     setupCopied: string
     soulSaved: string
     failedLoad: string
+    failedLoadSkills: string
     failedDelete: string
     failedCopy: string
     failedLoadSoul: string
@@ -978,6 +1007,7 @@ export interface Translations {
     openFailed: string
     preview: string
     previewFailed: string
+    statArtifacts: string
     statReports: string
     statSessions: string
     statRelated: string
@@ -1165,6 +1195,13 @@ export interface Translations {
     availableTitleBackend: string
     availableBodyBackend: string
     availableBodyNoChangelog: string
+    changelogGroups: {
+      new: string
+      fixed: string
+      faster: string
+      improved: string
+      other: string
+    }
     updateNow: string
     maybeLater: string
     moreChanges: (count: number) => string

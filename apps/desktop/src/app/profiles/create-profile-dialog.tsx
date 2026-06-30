@@ -2,7 +2,14 @@ import { useEffect, useState } from 'react'
 
 import { ActionStatus } from '@/components/ui/action-status'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
@@ -11,6 +18,8 @@ import { useI18n } from '@/i18n'
 import { AlertTriangle } from '@/lib/icons'
 import { cn } from '@/lib/utils'
 import type { ProfileInfo } from '@/types/vigil'
+
+import { ProfileSkillPicker, type ProfileSkillSelection } from './profile-skill-picker'
 
 const PROFILE_NAME_RE = /^[a-z0-9][a-z0-9_-]{0,63}$/
 
@@ -37,6 +46,7 @@ export function CreateProfileDialog({
   const [name, setName] = useState('')
   const [cloneFrom, setCloneFrom] = useState<null | string>('default')
   const [soul, setSoul] = useState('')
+  const [skillSelection, setSkillSelection] = useState<ProfileSkillSelection>({ selected: [], touched: false })
   const [status, setStatus] = useState<'done' | 'idle' | 'saving'>('idle')
   const [error, setError] = useState<null | string>(null)
 
@@ -48,6 +58,7 @@ export function CreateProfileDialog({
     setName('')
     setCloneFrom('default')
     setSoul('')
+    setSkillSelection({ selected: [], touched: false })
     setError(null)
     setStatus('idle')
   }, [open])
@@ -69,7 +80,11 @@ export function CreateProfileDialog({
     setError(null)
 
     try {
-      await createProfile({ name: trimmed, clone_from: cloneFrom })
+      await createProfile({
+        name: trimmed,
+        clone_from: cloneFrom,
+        ...(skillSelection.touched ? { keep_skills: skillSelection.selected } : {})
+      })
 
       if (soul.trim()) {
         await updateProfileSoul(trimmed, soul)
@@ -114,7 +129,10 @@ export function CreateProfileDialog({
             <label className="text-xs font-medium" htmlFor="new-profile-clone-from">
               {p.cloneFrom}
             </label>
-            <Select onValueChange={value => setCloneFrom(value === '__none__' ? null : value)} value={cloneFrom ?? '__none__'}>
+            <Select
+              onValueChange={value => setCloneFrom(value === '__none__' ? null : value)}
+              value={cloneFrom ?? '__none__'}
+            >
               <SelectTrigger className="h-9 rounded-md" id="new-profile-clone-from">
                 <SelectValue />
               </SelectTrigger>
@@ -129,6 +147,13 @@ export function CreateProfileDialog({
             </Select>
             <p className="text-xs text-muted-foreground">{p.cloneFromDesc}</p>
           </div>
+
+          <ProfileSkillPicker
+            active={open}
+            disabled={busy}
+            onSelectionChange={setSkillSelection}
+            sourceProfile={cloneFrom}
+          />
 
           <div className="grid gap-1.5">
             <label className="text-xs font-medium" htmlFor="new-profile-soul">

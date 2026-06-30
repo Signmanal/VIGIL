@@ -39,7 +39,7 @@ import type { SetStatusbarItemGroup } from '../shell/statusbar-controls'
 
 type ArtifactKind = 'report' | 'image' | 'file' | 'link'
 type ArtifactFilter = 'all' | ArtifactKind
-const ARTIFACT_FILTERS: readonly ArtifactFilter[] = ['report', 'all', 'image', 'file', 'link']
+const ARTIFACT_FILTERS: readonly ArtifactFilter[] = ['all', 'report', 'image', 'file', 'link']
 
 interface ArtifactRecord {
   id: string
@@ -406,7 +406,7 @@ export function ArtifactsView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
   const [query, setQuery] = useState('')
   const [refreshing, setRefreshing] = useState(false)
 
-  const [kindFilter, setKindFilter] = useRouteEnumParam('tab', ARTIFACT_FILTERS, 'report')
+  const [kindFilter, setKindFilter] = useRouteEnumParam('tab', ARTIFACT_FILTERS, 'all')
 
   const [failedImageIds, setFailedImageIds] = useState<Set<string>>(() => new Set())
   const [imagePage, setImagePage] = useState(1)
@@ -510,12 +510,10 @@ export function ArtifactsView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
     }
   }, [artifacts])
 
-  const reportSessionCount = useMemo(() => {
-    const reportSessionIds = new Set(
-      (artifacts || []).filter(artifact => artifact.kind === 'report').map(artifact => artifact.sessionId)
-    )
+  const artifactSessionCount = useMemo(() => {
+    const artifactSessionIds = new Set((artifacts || []).map(artifact => artifact.sessionId))
 
-    return reportSessionIds.size
+    return artifactSessionIds.size
   }, [artifacts])
 
   const openArtifact = useCallback(
@@ -592,11 +590,11 @@ export function ArtifactsView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
       searchValue={query}
       tabs={
         <>
-          <TextTab active={kindFilter === 'report'} onClick={() => setKindFilter('report')}>
-            {a.tabReports} <TextTabMeta>({counts.report})</TextTabMeta>
-          </TextTab>
           <TextTab active={kindFilter === 'all'} onClick={() => setKindFilter('all')}>
             {a.tabAll} <TextTabMeta>({counts.all})</TextTabMeta>
+          </TextTab>
+          <TextTab active={kindFilter === 'report'} onClick={() => setKindFilter('report')}>
+            {a.tabReports} <TextTabMeta>({counts.report})</TextTabMeta>
           </TextTab>
           <TextTab active={kindFilter === 'image'} onClick={() => setKindFilter('image')}>
             {a.tabImages} <TextTabMeta>({counts.image})</TextTabMeta>
@@ -623,17 +621,13 @@ export function ArtifactsView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
         <div className="h-full overflow-y-auto">
           <div className={cn('flex flex-col gap-3 pb-2', PAGE_INSET_X)}>
             <div className="grid grid-cols-1 gap-2 pt-2 sm:grid-cols-3">
-              <ReportStatCard icon={<FileText className="size-4" />} label={a.statReports} value={counts.report} />
+              <ReportStatCard icon={<FileText className="size-4" />} label={a.statArtifacts} value={counts.all} />
               <ReportStatCard
                 icon={<FolderOpen className="size-4" />}
                 label={a.statSessions}
-                value={reportSessionCount}
+                value={artifactSessionCount}
               />
-              <ReportStatCard
-                icon={<Link2 className="size-4" />}
-                label={a.statRelated}
-                value={Math.max(0, counts.all - counts.report)}
-              />
+              <ReportStatCard icon={<Link2 className="size-4" />} label={a.statReports} value={counts.report} />
             </div>
 
             {visibleImageArtifacts.length > 0 && (

@@ -291,7 +291,7 @@ function resolveVIGILHome() {
 
 const VIGIL_HOME = resolveVIGILHome()
 
-function hermesManagedNodePathEntries() {
+function vigilManagedNodePathEntries() {
   // NOTE: keep this ordering in sync with iter_vigil_node_dirs() in
   // vigil_constants.py — this Node main process cannot import the Python
   // module, so the platform-ordering rule is mirrored here.
