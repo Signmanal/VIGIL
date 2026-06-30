@@ -98,4 +98,21 @@ describe('collectArtifactsForSession', () => {
       label: 'vigil-audit-report.html'
     })
   })
+
+  it('indexes report paths after Chinese punctuation in assistant text', () => {
+    const artifacts = collectArtifactsForSession(makeSession(), [
+      {
+        content: '文件路径：/Users/alice/.vigil/skills/xsiam-cli/workspace/ueba_risk_report_20260630/index.html。',
+        role: 'assistant',
+        timestamp: 6000
+      }
+    ])
+
+    expect(artifacts).toHaveLength(1)
+    expect(artifacts[0]).toMatchObject({
+      href: 'file:///Users/alice/.vigil/skills/xsiam-cli/workspace/ueba_risk_report_20260630/index.html',
+      kind: 'report',
+      label: 'index.html'
+    })
+  })
 })

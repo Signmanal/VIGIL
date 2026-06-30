@@ -124,4 +124,37 @@ describe('SkillsView toolset management', () => {
 
     await waitFor(() => expect(installSkillHub).toHaveBeenCalledWith('owner/repo'))
   })
+
+  it('shows configured market sources and featured skills before search', async () => {
+    getSkillHubSources.mockResolvedValue({
+      featured: [
+        {
+          description: 'Generate incident reports',
+          identifier: 'security/incident-reporter',
+          name: 'Incident Reporter',
+          repo: null,
+          source: 'vigil-index',
+          tags: ['security'],
+          trust_level: 'trusted'
+        }
+      ],
+      index_available: true,
+      installed: {},
+      sources: [
+        { available: true, id: 'vigil-index', label: 'VIGIL Index' },
+        { id: 'github', label: 'GitHub', rate_limited: true }
+      ]
+    })
+
+    await renderSkills('/skills?tab=market')
+
+    expect(await screen.findByText('Configured sources')).toBeTruthy()
+    expect(screen.getByText('VIGIL Index')).toBeTruthy()
+    expect(screen.getByText('GitHub')).toBeTruthy()
+    expect(await screen.findByText('Incident Reporter')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Install' }))
+
+    await waitFor(() => expect(installSkillHub).toHaveBeenCalledWith('security/incident-reporter'))
+  })
 })

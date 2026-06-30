@@ -631,6 +631,12 @@ export interface Translations {
     marketSource: string
     marketAllSources: string
     marketLoading: string
+    marketSourcesTitle: string
+    marketSourceReady: string
+    marketSourceUnavailable: string
+    marketSourceRateLimited: string
+    marketFeaturedTitle: string
+    marketFeaturedDesc: string
     marketEmptyTitle: string
     marketEmptyDesc: string
     marketNoResultsTitle: string
@@ -864,6 +870,7 @@ export interface Translations {
     defaultBadge: string
     rename: string
     copySetup: string
+    setupCommandHint: string
     copying: string
     modelLabel: string
     skillsLabel: string

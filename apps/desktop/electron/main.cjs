@@ -302,9 +302,7 @@ function vigilManagedNodePathEntries() {
 }
 
 function pathWithVIGILManagedNode(...entries) {
-  return [...vigilManagedNodePathEntries(), ...entries, process.env.PATH]
-    .filter(Boolean)
-    .join(path.delimiter)
+  return [...vigilManagedNodePathEntries(), ...entries, process.env.PATH].filter(Boolean).join(path.delimiter)
 }
 
 // ACTIVE_VIGIL_ROOT — the canonical mutable VIGIL install. Same path
@@ -1239,9 +1237,7 @@ function findOnPath(command) {
     platform: process.platform,
     pathModule: path
   })
-  const pathEntries = lookupPath
-    .split(path.delimiter)
-    .filter(Boolean)
+  const pathEntries = lookupPath.split(path.delimiter).filter(Boolean)
   const extensions = IS_WINDOWS
     ? ['', ...(process.env.PATHEXT || '.COM;.EXE;.BAT;.CMD').split(';').filter(Boolean)]
     : ['']
@@ -1988,7 +1984,8 @@ async function applyUpdates(opts = {}) {
 
     emitUpdateProgress({
       stage: 'restart',
-      message: 'Updating VIGIL — this window will close and the updater will open. Don’t reopen VIGIL yourself; it restarts automatically when the update finishes.',
+      message:
+        'Updating VIGIL — this window will close and the updater will open. Don’t reopen VIGIL yourself; it restarts automatically when the update finishes.',
       percent: 100
     })
     repairMacUpdaterHelper(updater)
@@ -2071,7 +2068,9 @@ async function handOffWindowsBootstrapRecovery(reason) {
   })
   child.unref()
 
-  rememberLog(`[bootstrap] handed off ${reason} recovery to updater: ${updater} ${updaterArgs.join(' ')}; exiting desktop to release app.asar`)
+  rememberLog(
+    `[bootstrap] handed off ${reason} recovery to updater: ${updater} ${updaterArgs.join(' ')}; exiting desktop to release app.asar`
+  )
   // Same dwell as the in-app update hand-off (#50419): give the updater's
   // window time to appear before we vanish, so the recovery doesn't look like
   // a crash and provoke a mid-recovery relaunch.
@@ -2417,6 +2416,10 @@ function readBootstrapMarker() {
   return readJson(BOOTSTRAP_COMPLETE_MARKER)
 }
 
+function isActiveInstallReady() {
+  return isVIGILSourceRoot(ACTIVE_VIGIL_ROOT) && fileExists(getVenvPython(VENV_ROOT))
+}
+
 function isBootstrapComplete() {
   const marker = readBootstrapMarker()
   if (!marker || typeof marker !== 'object') return false
@@ -2429,7 +2432,7 @@ function isBootstrapComplete() {
   // a runnable venv: an interrupted or split-home install can leave the marker
   // + checkout without a venv, and trusting that spawns a dead backend
   // ("gateway offline") instead of re-running bootstrap to repair it.
-  return isVIGILSourceRoot(ACTIVE_VIGIL_ROOT) && fileExists(getVenvPython(VENV_ROOT))
+  return isActiveInstallReady()
 }
 
 function writeBootstrapMarker(payload) {
@@ -2443,6 +2446,48 @@ function writeBootstrapMarker(payload) {
   }
   writeFileAtomic(BOOTSTRAP_COMPLETE_MARKER, JSON.stringify(merged, null, 2) + '\n', 'utf8')
   return merged
+}
+
+function activeRootGitValue(args) {
+  try {
+    return execFileSync('git', ['-C', ACTIVE_VIGIL_ROOT, ...args], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore']
+    }).trim()
+  } catch {
+    return ''
+  }
+}
+
+function ensureBootstrapMarkerForActiveInstall() {
+  if (isBootstrapComplete()) {
+    return true
+  }
+
+  if (!isActiveInstallReady()) {
+    return false
+  }
+
+  const pinnedCommit = INSTALL_STAMP?.commit || activeRootGitValue(['rev-parse', 'HEAD'])
+
+  if (!pinnedCommit || pinnedCommit.length < 7) {
+    rememberLog('[bootstrap] active install looks runnable but no commit could be resolved; repair bootstrap will run')
+    return false
+  }
+
+  try {
+    const marker = writeBootstrapMarker({
+      pinnedCommit,
+      pinnedBranch: INSTALL_STAMP?.branch || activeRootGitValue(['branch', '--show-current']) || null
+    })
+    rememberLog(
+      `[bootstrap] adopted existing active install; wrote marker for ${String(marker.pinnedCommit).slice(0, 12)}`
+    )
+    return isBootstrapComplete()
+  } catch (error) {
+    rememberLog(`[bootstrap] failed to adopt existing active install: ${error.message}`)
+    return false
+  }
 }
 
 function resolveWebDist() {
@@ -2659,7 +2704,7 @@ function resolveVIGILBackend(dashboardArgs) {
   //    completed initial configuration; we trust the install and go straight
   //    to spawning vigil. Updates flow through the in-app update path
   //    (applyUpdates -> git pull) or `vigil update` from the CLI.
-  if (isBootstrapComplete()) {
+  if (ensureBootstrapMarkerForActiveInstall()) {
     return createActiveBackend(dashboardArgs)
   }
 
@@ -2790,7 +2835,9 @@ async function ensureRuntime(backend) {
     rememberLog('[bootstrap] no VIGIL install found; starting first-launch bootstrap')
 
     if (await handOffWindowsBootstrapRecovery('bootstrap-needed')) {
-      const handoffError = new Error('VIGIL recovery was handed off to VIGIL Setup. The desktop will restart when recovery completes.')
+      const handoffError = new Error(
+        'VIGIL recovery was handed off to VIGIL Setup. The desktop will restart when recovery completes.'
+      )
       handoffError.isBootstrapFailure = true
       handoffError.bootstrapHandedOff = true
       bootstrapFailure = handoffError
@@ -2925,7 +2972,6 @@ async function ensureRuntime(backend) {
   })
   return backend
 }
-
 
 function fetchJson(url, token, options = {}) {
   return new Promise((resolve, reject) => {

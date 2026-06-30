@@ -60,7 +60,7 @@ import {
   updateQueuedPrompt
 } from '@/store/composer-queue'
 import { $statusItemsBySession } from '@/store/composer-status'
-import { $previewStatusBySession } from '@/store/preview-status'
+import { $previewStatusBySession, recordPreviewArtifact } from '@/store/preview-status'
 import { notify } from '@/store/notifications'
 import { $gatewayState, $messages, setSessionPickerOpen } from '@/store/session'
 import { $threadScrolledUp } from '@/store/thread-scroll'
@@ -132,6 +132,48 @@ const pickPlaceholder = (pool: readonly string[]) => pool[Math.floor(Math.random
  *  items are a registry row, not a composer branch. */
 const COMPLETION_ACTIONS: Record<string, () => void> = {
   'session-picker': () => setSessionPickerOpen(true)
+}
+
+const CHAT_PREVIEW_MARKDOWN_LINK_RE = /\[([^\]]+)\]\(([^)\s]+)\)/g
+const CHAT_PREVIEW_PATH_RE = /(^|[\s("'`：,，])((?:file:\/\/|\/|~\/|\.\.?\/)[^\s"'`<>，。；、]+(?:\.[a-z0-9]{1,8})?)/gi
+const CHAT_PREVIEW_EXT_RE = /\.(?:html?|md|markdown|pdf|txt|log|json|jsonl|csv|tsv|xml|ya?ml|toml)(?:[?#].*)?$/i
+
+function normalizeChatPreviewTarget(value: string): string {
+  return value
+    .trim()
+    .replace(/^`|`$/g, '')
+    .replace(/[),.;，。；、]+$/, '')
+}
+
+function isChatPreviewTarget(value: string): boolean {
+  return Boolean(
+    value &&
+    (/^file:\/\//i.test(value) ||
+      (/^(?:\/|\.{1,2}\/|~\/).+/i.test(value) && CHAT_PREVIEW_EXT_RE.test(value)) ||
+      /^https?:\/\/(?:localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])/i.test(value))
+  )
+}
+
+function previewTargetsFromChatText(text: string): string[] {
+  const targets = new Set<string>()
+
+  for (const match of text.matchAll(CHAT_PREVIEW_MARKDOWN_LINK_RE)) {
+    const target = normalizeChatPreviewTarget(match[2] || '')
+
+    if (isChatPreviewTarget(target)) {
+      targets.add(target)
+    }
+  }
+
+  for (const match of text.matchAll(CHAT_PREVIEW_PATH_RE)) {
+    const target = normalizeChatPreviewTarget(match[2] || '')
+
+    if (isChatPreviewTarget(target)) {
+      targets.add(target)
+    }
+  }
+
+  return Array.from(targets)
 }
 
 /** Map a picked `/` completion to its pill accent. Driven by the completion
@@ -221,6 +263,7 @@ export function ChatBar({
   )
 
   const attachments = useStore($composerAttachments)
+  const messages = useStore($messages)
   const queuedPromptsBySession = useStore($queuedPromptsBySession)
   const statusItemsBySession = useStore($statusItemsBySession)
   const previewStatusBySession = useStore($previewStatusBySession)
@@ -254,6 +297,22 @@ export function ChatBar({
     [previewStatusBySession, queuedPrompts.length, statusItemsBySession, statusSessionId]
   )
 
+  useEffect(() => {
+    if (!statusSessionId) {
+      return
+    }
+
+    for (const message of messages.slice(-8)) {
+      if ((message.role !== 'assistant' && message.role !== 'tool') || message.pending) {
+        continue
+      }
+
+      for (const target of previewTargetsFromChatText(chatMessageText(message))) {
+        recordPreviewArtifact(statusSessionId, target, cwd || '')
+      }
+    }
+  }, [cwd, messages, statusSessionId])
+
   const composerRef = useRef<HTMLFormElement | null>(null)
   const composerSurfaceRef = useRef<HTMLDivElement | null>(null)
   const editorRef = useRef<HTMLDivElement | null>(null)
@@ -274,14 +333,17 @@ export function ChatBar({
     poppedOut ? handleComposerDock() : handleComposerPopOut()
   }, [handleComposerDock, handleComposerPopOut, poppedOut])
 
-  const { dockProximity, dragging, onPointerDown: onComposerGesturePointerDown } =
-    useComposerPopoutGestures({
-      composerRef,
-      onDock: handleComposerDock,
-      onPopOut: handleComposerPopOut,
-      poppedOut,
-      position: popoutPosition
-    })
+  const {
+    dockProximity,
+    dragging,
+    onPointerDown: onComposerGesturePointerDown
+  } = useComposerPopoutGestures({
+    composerRef,
+    onDock: handleComposerDock,
+    onPopOut: handleComposerPopOut,
+    poppedOut,
+    position: popoutPosition
+  })
 
   const draftRef = useRef(draft)
   const pendingDraftPersistRef = useRef<{ scope: string | null; text: string } | null>(null)
@@ -812,8 +874,7 @@ export function ChatBar({
   // Suppress the "No matches" empty state once a slash command is past its name:
   // a no-arg command has nothing to offer, and a fully-typed arg commits on
   // Space/Tab — neither should dead-end on a popover.
-  const argStageEmpty =
-    trigger?.kind === '/' && slashArgStage(trigger.query) && !triggerLoading && !triggerItems.length
+  const argStageEmpty = trigger?.kind === '/' && slashArgStage(trigger.query) && !triggerLoading && !triggerItems.length
 
   const closeTrigger = () => {
     setTrigger(null)
@@ -840,7 +901,14 @@ export function ChatBar({
       id: text,
       type: 'slash',
       label: text.slice(1),
-      metadata: { command: slashCommandToken(trigger.query), display: text, meta: '', group: '', action: '', rawText: text }
+      metadata: {
+        command: slashCommandToken(trigger.query),
+        display: text,
+        meta: '',
+        group: '',
+        action: '',
+        rawText: text
+      }
     })
   }
 
@@ -980,10 +1048,7 @@ export function ChatBar({
 
     // Non-collapsed Backspace/Delete: native selection-delete is ~O(n²) on large
     // drafts (Ctrl+A → Delete froze ~1.3s). Collapsed carets fall through.
-    if (
-      (event.key === 'Backspace' || event.key === 'Delete') &&
-      deleteSelectionInEditor(event.currentTarget)
-    ) {
+    if ((event.key === 'Backspace' || event.key === 'Delete') && deleteSelectionInEditor(event.currentTarget)) {
       event.preventDefault()
       flushEditorToDraft(event.currentTarget)
 
@@ -2117,7 +2182,9 @@ export function ChatBar({
               <div
                 className={cn(
                   'relative z-1 flex min-h-0 w-full flex-col gap-(--composer-row-gap) overflow-hidden rounded-[inherit] px-(--composer-surface-pad-x) py-(--composer-surface-pad-y) transition-opacity duration-200 ease-out',
-                  scrolledUp ? 'opacity-30 group-hover/composer:opacity-100 group-focus-within/composer-surface:opacity-100' : 'opacity-100'
+                  scrolledUp
+                    ? 'opacity-30 group-hover/composer:opacity-100 group-focus-within/composer-surface:opacity-100'
+                    : 'opacity-100'
                 )}
                 data-slot="composer-fade"
               >

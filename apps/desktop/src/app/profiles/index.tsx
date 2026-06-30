@@ -323,6 +323,10 @@ function ProfileDetail({
               </div>
             </div>
 
+            <p className="rounded-md border border-(--ui-stroke-secondary) bg-(--ui-bg-secondary) px-3 py-2 text-xs leading-5 text-muted-foreground">
+              {p.setupCommandHint}
+            </p>
+
             <dl className="grid gap-2 text-xs sm:grid-cols-2">
               <DetailRow label={p.modelLabel}>
                 {profile.model ? (

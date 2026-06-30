@@ -383,7 +383,8 @@ function isDirectSkillIdentifier(value: string): boolean {
 function SkillMarketPanel({ onInstalled, query }: { onInstalled: () => Promise<void>; query: string }) {
   const { t } = useI18n()
   const [sources, setSources] = useState<SkillHubSourceInfo[]>([])
-  const [source, setSource] = useState('skills-sh')
+  const [source, setSource] = useState('all')
+  const [featured, setFeatured] = useState<SkillHubResult[]>([])
   const [results, setResults] = useState<SkillHubResult[]>([])
   const [installed, setInstalled] = useState<Record<string, unknown>>({})
   const [loadingSources, setLoadingSources] = useState(false)
@@ -403,6 +404,7 @@ function SkillMarketPanel({ onInstalled, query }: { onInstalled: () => Promise<v
         }
 
         setSources(payload.sources || [])
+        setFeatured(payload.featured || [])
         setInstalled(payload.installed || {})
       })
       .catch(err => {
@@ -493,6 +495,64 @@ function SkillMarketPanel({ onInstalled, query }: { onInstalled: () => Promise<v
 
   const directIdentifier = isDirectSkillIdentifier(deferredQuery) ? deferredQuery : null
   const directAlreadyListed = directIdentifier ? results.some(result => result.identifier === directIdentifier) : false
+  const featuredForSource = useMemo(
+    () => (source === 'all' ? featured : featured.filter(item => item.source === source)),
+    [featured, source]
+  )
+  const marketSources = sourceOptions.filter(option => option.id !== 'all')
+
+  const sourceStatus = (option: SkillHubSourceInfo): string => {
+    if (option.rate_limited) {
+      return t.skills.marketSourceRateLimited
+    }
+
+    if (option.available === false) {
+      return t.skills.marketSourceUnavailable
+    }
+
+    return t.skills.marketSourceReady
+  }
+
+  const renderResultCards = (items: SkillHubResult[]) => (
+    <div className="space-y-2">
+      {items.map(result => {
+        const isInstalled = Boolean(installed[result.identifier])
+        const isInstalling = installing === result.identifier
+
+        return (
+          <div
+            className="grid gap-3 rounded-md border border-(--ui-stroke-secondary) bg-(--ui-bg-secondary) p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
+            key={result.identifier}
+          >
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <div className="truncate text-sm font-medium">{result.name}</div>
+                <Badge variant="outline">{t.skills.marketTrust(result.trust_level)}</Badge>
+                <Badge variant="muted">{t.skills.marketSourceLabel(result.source)}</Badge>
+              </div>
+              <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">
+                {result.description || t.skills.noDescription}
+              </p>
+              <div className="mt-1 truncate font-mono text-[0.68rem] text-muted-foreground">{result.identifier}</div>
+            </div>
+            <Button
+              disabled={isInstalled || isInstalling}
+              onClick={() => void handleInstall(result.identifier)}
+              size="sm"
+              type="button"
+              variant={isInstalled ? 'outline' : 'default'}
+            >
+              {isInstalled
+                ? t.skills.marketInstalled
+                : isInstalling
+                  ? t.skills.marketInstalling
+                  : t.skills.marketInstall}
+            </Button>
+          </div>
+        )
+      })}
+    </div>
+  )
 
   return (
     <div className={cn('h-full overflow-y-auto py-4', PAGE_INSET_X)}>
@@ -527,6 +587,41 @@ function SkillMarketPanel({ onInstalled, query }: { onInstalled: () => Promise<v
             </Select>
             {loadingSources && <span className="text-xs text-muted-foreground">{t.skills.marketLoading}</span>}
           </div>
+
+          {marketSources.length > 0 && (
+            <div className="mt-4 space-y-2">
+              <div className="text-[0.68rem] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                {t.skills.marketSourcesTitle}
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {marketSources.map(option => {
+                  const active = source === option.id
+
+                  return (
+                    <button
+                      className={cn(
+                        'rounded-md border px-3 py-2 text-left transition-colors',
+                        active
+                          ? 'border-primary/70 bg-primary/10 text-foreground'
+                          : 'border-(--ui-stroke-secondary) bg-(--ui-bg-primary) text-foreground/85 hover:bg-(--ui-bg-tertiary)'
+                      )}
+                      key={option.id}
+                      onClick={() => setSource(option.id)}
+                      type="button"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="truncate text-sm font-medium">{option.label}</span>
+                        <Badge variant={option.rate_limited || option.available === false ? 'outline' : 'muted'}>
+                          {sourceStatus(option)}
+                        </Badge>
+                      </div>
+                      <div className="mt-1 truncate font-mono text-[0.68rem] text-muted-foreground">{option.id}</div>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
         </section>
 
         {directIdentifier && !directAlreadyListed && (
@@ -549,7 +644,17 @@ function SkillMarketPanel({ onInstalled, query }: { onInstalled: () => Promise<v
         )}
 
         {deferredQuery.length < 2 ? (
-          <EmptyState description={t.skills.marketEmptyDesc} title={t.skills.marketEmptyTitle} />
+          featuredForSource.length > 0 ? (
+            <section className="space-y-3">
+              <div>
+                <h3 className="text-sm font-semibold">{t.skills.marketFeaturedTitle}</h3>
+                <p className="mt-1 text-xs leading-5 text-muted-foreground">{t.skills.marketFeaturedDesc}</p>
+              </div>
+              {renderResultCards(featuredForSource)}
+            </section>
+          ) : (
+            <EmptyState description={t.skills.marketEmptyDesc} title={t.skills.marketEmptyTitle} />
+          )
         ) : searching ? (
           <PageLoader className="min-h-52" label={t.skills.marketLoading} />
         ) : error ? (
@@ -557,46 +662,7 @@ function SkillMarketPanel({ onInstalled, query }: { onInstalled: () => Promise<v
         ) : results.length === 0 ? (
           <EmptyState description={t.skills.marketNoResultsDesc} title={t.skills.marketNoResultsTitle} />
         ) : (
-          <div className="space-y-2">
-            {results.map(result => {
-              const isInstalled = Boolean(installed[result.identifier])
-              const isInstalling = installing === result.identifier
-
-              return (
-                <div
-                  className="grid gap-3 rounded-md border border-(--ui-stroke-secondary) bg-(--ui-bg-secondary) p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
-                  key={result.identifier}
-                >
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <div className="truncate text-sm font-medium">{result.name}</div>
-                      <Badge variant="outline">{t.skills.marketTrust(result.trust_level)}</Badge>
-                      <Badge variant="muted">{t.skills.marketSourceLabel(result.source)}</Badge>
-                    </div>
-                    <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">
-                      {result.description || t.skills.noDescription}
-                    </p>
-                    <div className="mt-1 truncate font-mono text-[0.68rem] text-muted-foreground">
-                      {result.identifier}
-                    </div>
-                  </div>
-                  <Button
-                    disabled={isInstalled || isInstalling}
-                    onClick={() => void handleInstall(result.identifier)}
-                    size="sm"
-                    type="button"
-                    variant={isInstalled ? 'outline' : 'default'}
-                  >
-                    {isInstalled
-                      ? t.skills.marketInstalled
-                      : isInstalling
-                        ? t.skills.marketInstalling
-                        : t.skills.marketInstall}
-                  </Button>
-                </div>
-              )
-            })}
-          </div>
+          renderResultCards(results)
         )}
       </div>
     </div>

@@ -56,7 +56,7 @@ interface ArtifactRecord {
 const MARKDOWN_IMAGE_RE = /!\[([^\]]*)\]\(([^)\s]+)\)/g
 const MARKDOWN_LINK_RE = /\[([^\]]+)\]\(([^)\s]+)\)/g
 const URL_RE = /https?:\/\/[^\s<>"')]+/g
-const PATH_RE = /(^|[\s("'`])((?:\/|~\/|\.\.?\/)[^\s"'`<>]+(?:\.[a-z0-9]{1,8})?)/gi
+const PATH_RE = /(^|[\s("'`：,，])((?:\/|~\/|\.\.?\/)[^\s"'`<>，。；、]+(?:\.[a-z0-9]{1,8})?)/gi
 const IMAGE_EXT_RE = /\.(?:png|jpe?g|gif|webp|svg|bmp)(?:\?.*)?$/i
 const REPORT_EXT_RE = /\.(?:html?|md|markdown|pdf|txt|log|jsonl?|csv|tsv|xml|ya?ml|toml|docx?|xlsx?|pptx?)(?:\?.*)?$/i
 const FILE_EXT_RE =
@@ -74,7 +74,7 @@ const ARTIFACT_TIME_FMT = new Intl.DateTimeFormat(undefined, {
 })
 
 function normalizeValue(value: string): string {
-  return value.trim().replace(/[),.;]+$/, '')
+  return value.trim().replace(/[),.;，。；、]+$/, '')
 }
 
 function parseMaybeJson(value: string): unknown {
