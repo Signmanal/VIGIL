@@ -43,18 +43,18 @@ export const ja = defineLocale({
   },
 
   boot: {
-    ready: 'VIGIL Desktop の準備ができました',
+    ready: 'XCLAW Desktop の準備ができました',
     desktopBootFailedWithMessage: message => `デスクトップの起動に失敗しました: ${message}`,
     steps: {
       connectingGateway: 'ライブデスクトップゲートウェイに接続中',
-      loadingSettings: 'VIGIL の設定を読み込み中',
+      loadingSettings: 'XCLAW の設定を読み込み中',
       loadingSessions: '最近のセッションを読み込み中',
       startingDesktopConnection: 'デスクトップ接続を開始中',
-      startingVIGILDesktop: 'VIGIL Desktop を起動中…'
+      startingVIGILDesktop: 'XCLAW Desktop を起動中…'
     },
     errors: {
-      backgroundExited: 'VIGIL バックグラウンドプロセスが終了しました。',
-      backgroundExitedDuringStartup: '起動中に VIGIL バックグラウンドプロセスが終了しました。',
+      backgroundExited: 'XCLAW バックグラウンドプロセスが終了しました。',
+      backgroundExitedDuringStartup: '起動中に XCLAW バックグラウンドプロセスが終了しました。',
       backendStopped: 'バックエンドが停止しました',
       desktopBootFailed: 'デスクトップの起動に失敗しました',
       gatewayConnectionLost: 'ゲートウェイへの接続が切断されました',
@@ -62,7 +62,7 @@ export const ja = defineLocale({
       ipcBridgeUnavailable: 'デスクトップ IPC ブリッジが利用できません。'
     },
     failure: {
-      title: 'VIGIL を起動できませんでした',
+      title: 'XCLAW を起動できませんでした',
       description:
         'バックグラウンドゲートウェイが起動しませんでした。以下の回復手順をお試しください。チャットや設定は削除されません。',
       remoteTitle: 'リモートゲートウェイへのサインインが必要です',
@@ -100,8 +100,8 @@ export const ja = defineLocale({
     copyDetailFailed: '通知の詳細をコピーできませんでした',
     backendOutOfDateTitle: 'バックエンドが古いです',
     backendOutOfDateMessage:
-      'VIGIL バックエンドがこのデスクトップビルドより古く、正常に動作しない場合があります。更新して揃えてください。',
-    updateVIGIL: 'VIGIL を更新',
+      'XCLAW バックエンドがこのデスクトップビルドより古く、正常に動作しない場合があります。更新して揃えてください。',
+    updateVIGIL: 'XCLAW を更新',
     updateReadyTitle: '更新の準備ができました',
     updateReadyMessage: count => `${count} 件の新しい変更が利用可能です。`,
     seeWhatsNew: '新機能を見る',
@@ -109,7 +109,7 @@ export const ja = defineLocale({
       elevenLabsNeedsKey: 'ElevenLabs STT には ELEVENLABS_API_KEY が必要です。',
       elevenLabsRejectedKey: 'ElevenLabs が API キーを拒否しました (401)。',
       methodNotAllowed:
-        'デスクトップバックエンドがそのリクエストを拒否しました (405 Method Not Allowed)。VIGIL Desktop を再起動してください。',
+        'デスクトップバックエンドがそのリクエストを拒否しました (405 Method Not Allowed)。XCLAW Desktop を再起動してください。',
       microphonePermission: 'マイクのアクセス許可が拒否されました。',
       openaiRejectedApiKey: 'OpenAI が API キーを拒否しました。',
       openaiRejectedApiKeyWithStatus: status => `OpenAI が API キーを拒否しました (${status} invalid_api_key)。`,
@@ -139,8 +139,8 @@ export const ja = defineLocale({
       approveAction: '承認',
       rejectAction: '拒否',
       inputTitle: '入力が必要です',
-      inputBody: 'VIGIL が応答を待っています。',
-      turnDoneTitle: 'VIGIL が完了しました',
+      inputBody: 'XCLAW が応答を待っています。',
+      turnDoneTitle: 'XCLAW が完了しました',
       turnDoneBody: '応答の準備ができました。',
       turnErrorTitle: 'ターンが失敗しました',
       backgroundDoneTitle: 'バックグラウンドタスクが完了しました',
@@ -183,7 +183,7 @@ export const ja = defineLocale({
     exportConfig: '設定を書き出す',
     importConfig: '設定を読み込む',
     resetToDefaults: 'デフォルトに戻す',
-    resetConfirm: 'すべての設定を VIGIL のデフォルトに戻しますか？',
+    resetConfirm: 'すべての設定を XCLAW のデフォルトに戻しますか？',
     exportFailed: '書き出しに失敗しました',
     resetFailed: 'リセットに失敗しました',
     nav: {
@@ -204,7 +204,7 @@ export const ja = defineLocale({
       intro: 'アプリ内トーストとは別の、ネイティブのデスクトップ通知です。設定は端末ごとに保存されます。',
       enableAll: '通知を有効にする',
       enableAllDesc: 'マスタースイッチ。オフにすると以下のすべての通知を無効にします。',
-      focusedHint: '完了通知は VIGIL がバックグラウンドにあるときのみ表示されます。',
+      focusedHint: '完了通知は XCLAW がバックグラウンドにあるときのみ表示されます。',
       kinds: {
         approval: {
           label: '承認が必要',
@@ -212,11 +212,11 @@ export const ja = defineLocale({
         },
         input: {
           label: '入力が必要',
-          description: 'VIGIL が質問したか、パスワードやシークレットを必要としています。'
+          description: 'XCLAW が質問したか、パスワードやシークレットを必要としています。'
         },
         turnDone: {
           label: '応答完了',
-          description: 'VIGIL がバックグラウンドのときにターンが完了しました。'
+          description: 'XCLAW がバックグラウンドのときにターンが完了しました。'
         },
         turnError: {
           label: 'ターン失敗',
@@ -228,7 +228,7 @@ export const ja = defineLocale({
         }
       },
       test: 'テスト通知を送信',
-      testTitle: 'VIGIL',
+      testTitle: 'XCLAW',
       testBody: '通知は正常に動作しています。',
       testSent:
         'テストを送信しました。表示されない場合は、OS の通知許可と集中モード／おやすみモードを確認してください。',
@@ -248,7 +248,7 @@ export const ja = defineLocale({
       advanced: '詳細'
     },
     searchPlaceholder: {
-      about: 'VIGIL Desktop について',
+      about: 'XCLAW Desktop について',
       config: '設定を検索…',
       gateway: 'ゲートウェイ接続…',
       keys: 'API キーを検索…',
@@ -265,7 +265,7 @@ export const ja = defineLocale({
       intro:
         'デスクトップ専用の表示設定です。モードは明るさ、テーマはアクセントカラーとチャット面のスタイルを制御します。',
       colorMode: 'カラーモード',
-      colorModeDesc: '固定モードを選ぶか、VIGIL をシステム設定に合わせます。',
+      colorModeDesc: '固定モードを選ぶか、XCLAW をシステム設定に合わせます。',
       toolViewTitle: 'ツール呼び出しの表示',
       toolViewDesc: 'プロダクト表示は生のツールペイロードを隠し、テクニカル表示は入出力をすべて表示します。',
       translucencyTitle: 'ウィンドウの透過',
@@ -291,9 +291,9 @@ export const ja = defineLocale({
       pet: {
         title: 'ペット',
         intro:
-          'アプリ上に浮かぶ petdex のアニメーションマスコットを採用しましょう。ツール実行中は走り、成功すると喜び、エラーでしょんぼりと、VIGIL の状態に反応します。',
+          'アプリ上に浮かぶ petdex のアニメーションマスコットを採用しましょう。ツール実行中は走り、成功すると喜び、エラーでしょんぼりと、XCLAW の状態に反応します。',
         restartHint:
-          'ペット機能には再起動が必要です。この機能が追加される前に起動したアプリが動作中です。VIGIL を終了して再度開き、このページに戻ってください。',
+          'ペット機能には再起動が必要です。この機能が追加される前に起動したアプリが動作中です。XCLAW を終了して再度開き、このページに戻ってください。',
         scaleTitle: 'サイズ',
         scaleDesc: '浮遊マスコットの大きさを変更します。すべての画面に即時反映されます。',
         on: 'オン',
@@ -487,10 +487,10 @@ export const ja = defineLocale({
         showReasoning: 'バックエンドが推論内容を提供したときに表示します。'
       },
       timezone:
-        'VIGIL がローカル時刻のコンテキストを必要とするときに使用します。空欄ならシステムのタイムゾーンを使います。',
+        'XCLAW がローカル時刻のコンテキストを必要とするときに使用します。空欄ならシステムのタイムゾーンを使います。',
       agent: {
         imageInputMode: '画像添付をモデルへ送る方法を制御します。',
-        maxTurns: 'VIGIL が 1 回の実行を停止するまでのツール呼び出しターン上限です。'
+        maxTurns: 'XCLAW が 1 回の実行を停止するまでのツール呼び出しターン上限です。'
       },
       terminal: {
         cwd: 'ツールとターミナル作業のデフォルトプロジェクトフォルダーです。',
@@ -500,9 +500,9 @@ export const ja = defineLocale({
       codeExecution: {
         mode: 'コード実行を現在のプロジェクトにどれだけ厳密に制限するかを設定します。'
       },
-      fileReadMaxChars: 'VIGIL が 1 回のファイル読み取りで取得できる最大文字数です。',
+      fileReadMaxChars: 'XCLAW が 1 回のファイル読み取りで取得できる最大文字数です。',
       approvals: {
-        mode: '明示的な承認が必要なコマンドを VIGIL がどう扱うかを設定します。',
+        mode: '明示的な承認が必要なコマンドを XCLAW がどう扱うかを設定します。',
         timeout: '承認プロンプトがタイムアウトするまで待つ時間です。'
       },
       security: {
@@ -532,11 +532,11 @@ export const ja = defineLocale({
       },
       updates: {
         nonInteractiveLocalChanges:
-          'アプリから VIGIL 自身を更新するとき、ローカルのソース変更を保持するか破棄するかを選びます。ターミナル更新では常に確認されます。'
+          'アプリから XCLAW 自身を更新するとき、ローカルのソース変更を保持するか破棄するかを選びます。ターミナル更新では常に確認されます。'
       }
     }),
     about: {
-      heading: 'VIGIL Desktop',
+      heading: 'XCLAW Desktop',
       version: value => `バージョン ${value}`,
       versionUnavailable: 'バージョンを取得できません',
       updates: '更新',
@@ -554,7 +554,7 @@ export const ja = defineLocale({
       lastChecked: age => `前回確認: ${age}`,
       justNowSuffix: ' · たった今',
       automaticUpdates: '自動更新',
-      automaticUpdatesDesc: 'VIGIL はバックグラウンドで自動的に更新を確認し、利用可能になったら通知します。',
+      automaticUpdatesDesc: 'XCLAW はバックグラウンドで自動的に更新を確認し、利用可能になったら通知します。',
       branchCommit: (branch, commit) => `ブランチ ${branch} · コミット ${commit}`,
       never: '未確認',
       justNow: 'たった今',
@@ -567,7 +567,7 @@ export const ja = defineLocale({
       noneParen: '(なし)',
       notSet: '未設定',
       commaSeparated: 'カンマ区切りの値',
-      loading: 'VIGIL の設定を読み込み中...',
+      loading: 'XCLAW の設定を読み込み中...',
       emptyTitle: '設定項目がありません',
       emptyDesc: 'このセクションには調整できる設定がありません。',
       failedLoad: '設定の読み込みに失敗しました',
@@ -604,7 +604,7 @@ export const ja = defineLocale({
       title: 'ゲートウェイ接続',
       envOverride: 'env オーバーライド',
       intro:
-        'VIGIL Desktop はデフォルトで独自のローカルゲートウェイを起動します。別のマシンや信頼できるプロキシの背後で既に動作している VIGIL バックエンドをこのアプリで制御する場合は、リモートゲートウェイを使用してください。以下でプロファイルを選択して、それぞれのリモートホストを設定します。',
+        'XCLAW Desktop はデフォルトで独自のローカルゲートウェイを起動します。別のマシンや信頼できるプロキシの背後で既に動作している XCLAW バックエンドをこのアプリで制御する場合は、リモートゲートウェイを使用してください。以下でプロファイルを選択して、それぞれのリモートホストを設定します。',
       appliesTo: '適用対象',
       allProfiles: 'すべてのプロファイル',
       defaultConnection: '独自のオーバーライドがないすべてのプロファイルのデフォルト接続。',
@@ -615,10 +615,10 @@ export const ja = defineLocale({
         '保存された設定を使用するには VIGIL_DESKTOP_REMOTE_URL と VIGIL_DESKTOP_REMOTE_TOKEN の設定を解除してください。',
       localTitle: 'ローカルゲートウェイ',
       localDesc:
-        'ローカルホストでプライベートな VIGIL バックエンドを起動します。これがデフォルトで、オフラインでも動作します。',
+        'ローカルホストでプライベートな XCLAW バックエンドを起動します。これがデフォルトで、オフラインでも動作します。',
       remoteTitle: 'リモートゲートウェイ',
       remoteDesc:
-        'このデスクトップシェルをリモートの VIGIL バックエンドに接続します。ホスト型ゲートウェイは OAuth またはユーザー名とパスワードを使用します。自己ホスト型はセッショントークンを使用する場合があります。',
+        'このデスクトップシェルをリモートの XCLAW バックエンドに接続します。ホスト型ゲートウェイは OAuth またはユーザー名とパスワードを使用します。自己ホスト型はセッショントークンを使用する場合があります。',
       remoteUrlTitle: 'リモート URL',
       remoteUrlDesc:
         'リモートダッシュボードバックエンドのベース URL。/vigil などのパスプレフィックスもサポートしています。',
@@ -657,9 +657,9 @@ export const ja = defineLocale({
       enterUrlFirst: '最初にリモート URL を入力してください。',
       restartingTitle: 'ゲートウェイ接続を再起動中',
       savedTitle: 'ゲートウェイ設定を保存しました',
-      restartingMessage: 'VIGIL Desktop は保存された設定を使用して再接続します。',
+      restartingMessage: 'XCLAW Desktop は保存された設定を使用して再接続します。',
       savedMessage: '次回起動時に保存されます。',
-      connectedTo: (baseUrl, version) => `${baseUrl}${version ? ` · VIGIL ${version}` : ''} に接続しました`,
+      connectedTo: (baseUrl, version) => `${baseUrl}${version ? ` · XCLAW ${version}` : ''} に接続しました`,
       reachableTitle: 'リモートゲートウェイに到達可能',
       signedOutTitle: 'サインアウトしました',
       signedOutMessage: 'リモートゲートウェイセッションをクリアしました。',
@@ -733,7 +733,7 @@ export const ja = defineLocale({
       connectAccount: 'アカウントを接続',
       haveApiKey: 'API キーをお持ちですか？',
       intro:
-        'サブスクリプションでサインインします。API キーのコピーは不要です。VIGIL がアプリ内でブラウザーサインインを代行します。',
+        'サブスクリプションでサインインします。API キーのコピーは不要です。XCLAW がアプリ内でブラウザーサインインを代行します。',
       connected: '接続済み',
       collapse: '折りたたむ',
       connectAnother: '別のプロバイダーを接続',
@@ -795,7 +795,7 @@ export const ja = defineLocale({
         'このツールセットにはプロバイダーのオプションがありません。有効にすれば現在の設定で動作します。',
       noProviders: '現在このツールセットに利用可能なプロバイダーがありません。',
       ready: '準備完了',
-      nousIncluded: 'Nous サブスクリプションに含まれています。有効にするには VIGIL Portal にサインインしてください。',
+      nousIncluded: 'Nous サブスクリプションに含まれています。有効にするには XCLAW Portal にサインインしてください。',
       noApiKeyRequired: 'API キーは不要です。',
       postSetupHint: step =>
         `このバックエンドは一度だけインストールが必要です (${step})。このマシン上で実行され、数分かかる場合があります。`,
@@ -868,11 +868,11 @@ export const ja = defineLocale({
   },
 
   agents: {
-    close: 'エージェントを閉じる',
-    title: 'スポーンツリー',
-    subtitle: '現在のターンのライブサブエージェントのアクティビティ。',
-    emptyTitle: 'ライブサブエージェントはありません',
-    emptyDesc: 'ターンで作業を委任すると、子エージェントの進捗状況がここにストリームされます。',
+    close: 'エキスパートを閉じる',
+    title: 'エキスパートワークスペース',
+    subtitle: '現在のターンのライブサブエキスパートのアクティビティ。',
+    emptyTitle: 'ライブサブエキスパートはありません',
+    emptyDesc: 'ターンで作業を委任すると、子エキスパートの進捗状況がここにストリームされます。',
     running: '実行中',
     failed: '失敗',
     done: '完了',
@@ -882,7 +882,7 @@ export const ja = defineLocale({
     delegation: index => `委任 ${index}`,
     workers: count => `${count} ワーカー`,
     workersActive: count => `${count} アクティブ`,
-    agentsCount: count => `${count} エージェント`,
+    agentsCount: count => `${count} エキスパート`,
     activeCount: count => `${count} アクティブ`,
     failedCount: count => `${count} 失敗`,
     toolsCount: count => `${count} ツール`,
@@ -915,7 +915,7 @@ export const ja = defineLocale({
       placeholder: 'ペットを検索…',
       loading: 'petdex ギャラリーを読み込み中…',
       error: 'petdex ギャラリーに接続できません。',
-      staleBackend: 'ペット機能を使うには VIGIL を再起動してください。',
+      staleBackend: 'ペット機能を使うには XCLAW を再起動してください。',
       empty: '一致するペットがありません。',
       turnOff: 'オフ',
       turnOn: 'オン',
@@ -942,8 +942,8 @@ export const ja = defineLocale({
       hatchComposing: 'まとめています…',
       hatchSaving: 'もうすぐです…',
       namePlaceholder: 'ペットに名前を付ける',
-      staleBackend: 'ペットを生成するには VIGIL を更新してください。',
-      backgroundHint: 'このウィンドウは閉じても大丈夫です。完了したら VIGIL が通知します。',
+      staleBackend: 'ペットを生成するには XCLAW を更新してください。',
+      backgroundHint: 'このウィンドウは閉じても大丈夫です。完了したら XCLAW が通知します。',
       slowProviderHint: '数分かかることがあります',
       remix: 'リミックス',
       remixConfirmTitle: 'この見た目でリミックスしますか？',
@@ -976,7 +976,7 @@ export const ja = defineLocale({
     },
     nav: {
       newChat: { title: '新しいセッション', detail: '新しいセッションを開始' },
-      settings: { title: '設定', detail: 'VIGIL デスクトップを設定' },
+      settings: { title: '設定', detail: 'XCLAW デスクトップを設定' },
       skills: { title: 'スキルとツール', detail: 'スキル、ツールセット、プロバイダーを有効化' },
       messaging: { title: 'メッセージング', detail: 'Telegram、Slack、Discord などを設定' },
       artifacts: { title: '出力', detail: 'セッションのレポート、ファイル、画像、リンクを閲覧' }
@@ -998,10 +998,10 @@ export const ja = defineLocale({
     noSessions: 'セッションはまだありません。',
     gatewayRunning: 'メッセージングゲートウェイが実行中',
     gatewayStopped: 'メッセージングゲートウェイが停止中',
-    hermesActiveSessions: (version, count) => `VIGIL ${version} · アクティブセッション ${count}`,
+    hermesActiveSessions: (version, count) => `XCLAW ${version} · アクティブセッション ${count}`,
     restartGateway: 'ゲートウェイを再起動',
     gatewayRestartFailed: 'ゲートウェイの再起動に失敗しました。',
-    updateVIGIL: 'VIGIL を更新',
+    updateVIGIL: 'XCLAW を更新',
     actionRunning: '実行中',
     actionDone: '完了',
     actionFailed: '失敗',
@@ -1217,7 +1217,7 @@ export const ja = defineLocale({
     deleteDescMid: ' が削除され、その ',
     deleteDescSuffix: ' ディレクトリが削除されます。この操作は元に戻せません。',
     deleting: '削除中...',
-    createDesc: 'プロファイルは独立した VIGIL 環境です：設定、スキル、SOUL.md が別々になります。',
+    createDesc: 'プロファイルは独立した XCLAW 環境です：設定、スキル、SOUL.md が別々になります。',
     nameLabel: '名前',
     cloneFrom: '複製元',
     cloneFromNone: 'なし（空）',
@@ -1257,9 +1257,9 @@ export const ja = defineLocale({
   },
 
   cron: {
-    close: 'Cron を閉じる',
-    search: 'Cron ジョブを検索...',
-    loading: 'Cron ジョブを読み込み中...',
+    close: '自動化を閉じる',
+    search: '自動化を検索...',
+    loading: '自動化を読み込み中...',
     states: {
       enabled: '有効',
       scheduled: 'スケジュール済み',
@@ -1311,9 +1311,9 @@ export const ja = defineLocale({
     monthlyOnDayAt: (dayOfMonth, time) => `毎月 ${dayOfMonth} 日 ${time} に`,
     topOfHour: '毎時 0 分',
     everyHourAt: minute => `毎時 :${minute} に`,
-    newCron: '新しい Cron',
+    newCron: '新しい自動化',
     emptyDescNew:
-      'Cron 式でプロンプトを実行するスケジュールを設定します。VIGIL が実行して、選択した宛先に結果を送信します。',
+      'Cron 式でプロンプトを実行するスケジュールを設定します。XCLAW が実行して、選択した宛先に結果を送信します。',
     emptyDescSearch: '検索キーワードを広げてください。',
     emptyTitleNew: 'スケジュールされたジョブがまだありません',
     emptyTitleSearch: '一致なし',
@@ -1418,6 +1418,8 @@ export const ja = defineLocale({
     nav: {
       'new-session': '新しいセッション',
       skills: 'スキルとツール',
+      agents: 'エキスパート',
+      cron: '自動化',
       messaging: 'メッセージング',
       artifacts: '出力'
     },
@@ -1428,7 +1430,7 @@ export const ja = defineLocale({
     results: '結果',
     pinned: 'ピン留め',
     sessions: 'セッション',
-    cronJobs: 'Cronジョブ',
+    cronJobs: '自動化',
     groupAriaGrouped: 'セッションを単一リストとして表示',
     groupAriaUngrouped: 'ワークスペースごとにセッションをグループ化',
     groupTitleGrouped: 'セッションのグループ化を解除',
@@ -1472,12 +1474,12 @@ export const ja = defineLocale({
   composer: {
     message: 'メッセージ',
     wakingProfile: profile => `${profile} を起動中…`,
-    placeholderStarting: 'VIGIL を起動中...',
-    placeholderReconnecting: 'VIGIL に再接続中…',
+    placeholderStarting: 'XCLAW を起動中...',
+    placeholderReconnecting: 'XCLAW に再接続中…',
     placeholderFollowUp: 'フォローアップを送信',
     newSessionPlaceholders: [
       '何を作りますか？',
-      'VIGIL にタスクを与える',
+      'XCLAW にタスクを与える',
       '何か考えていることはありますか？',
       '必要なことを説明してください',
       '何に取り組みますか？',
@@ -1537,7 +1539,7 @@ export const ja = defineLocale({
       'composer.history': 'ポップオーバー / 履歴を切り替え'
     },
     attachUrlTitle: 'URL を添付',
-    attachUrlDesc: 'VIGIL がページを取得し、このターンのコンテキストとして含めます。',
+    attachUrlDesc: 'XCLAW がページを取得し、このターンのコンテキストとして含めます。',
     urlPlaceholder: 'https://example.com/post',
     urlHintPre: '完全な URL を入力してください。例: ',
     attach: '添付',
@@ -1599,9 +1601,9 @@ export const ja = defineLocale({
   },
 
   statusStack: {
-    agents: 'エージェント',
+    agents: 'エキスパート',
     background: count => `バックグラウンド ${count} 件`,
-    subagents: count => `サブエージェント ${count} 件`,
+    subagents: count => `サブエキスパート ${count} 件`,
     todos: (done, total) => `タスク ${done}/${total}`,
     running: '実行中',
     stop: '停止',
@@ -1616,9 +1618,9 @@ export const ja = defineLocale({
       fetch: 'ダウンロード中…',
       pull: 'もうすぐ完了…',
       pydeps: '仕上げ中…',
-      update: 'VIGIL を更新中…',
+      update: 'XCLAW を更新中…',
       rebuild: 'デスクトップアプリを再ビルド中…',
-      restart: 'VIGIL を再起動中…',
+      restart: 'XCLAW を再起動中…',
       done: '更新が完了しました',
       manual: 'ターミナルから更新',
       guiSkew: 'デスクトップアプリを更新してください',
@@ -1628,15 +1630,15 @@ export const ja = defineLocale({
     checkFailedTitle: '更新を確認できませんでした',
     tryAgain: '再試行',
     notAvailableTitle: '更新は利用できません',
-    unsupportedMessage: 'このバージョンの VIGIL はアプリ内から自分を更新できません。',
+    unsupportedMessage: 'このバージョンの XCLAW はアプリ内から自分を更新できません。',
     connectionRetry: '接続を確認してもう一度試してください。',
     latestBody: '最新バージョンを実行しています。',
     latestBodyBackend: 'バックエンドは最新バージョンを実行しています。',
     allSetTitle: '準備完了',
     availableTitle: '新しい更新が利用可能',
-    availableBody: '新しいバージョンの VIGIL をインストールする準備ができています。',
+    availableBody: '新しいバージョンの XCLAW をインストールする準備ができています。',
     availableTitleBackend: 'バックエンドの更新があります',
-    availableBodyBackend: '接続中の VIGIL バックエンドの新しいバージョンをインストールできます。',
+    availableBodyBackend: '接続中の XCLAW バックエンドの新しいバージョンをインストールできます。',
     availableBodyNoChangelog:
       '新しいバージョンを利用できます。このインストール形式ではリリースノートは表示できません。',
     changelogGroups: {
@@ -1651,18 +1653,18 @@ export const ja = defineLocale({
     moreChanges: count => `さらに ${count} 件の変更が含まれています。`,
     manualTitle: 'ターミナルから更新',
     manualBody:
-      'VIGIL をコマンドラインからインストールしたため、更新もそこで実行されます。これをターミナルに貼り付けてください:',
-    manualPickedUp: 'VIGIL は次回起動時に新しいバージョンを読み込みます。',
+      'XCLAW をコマンドラインからインストールしたため、更新もそこで実行されます。これをターミナルに貼り付けてください:',
+    manualPickedUp: 'XCLAW は次回起動時に新しいバージョンを読み込みます。',
     guiSkewTitle: 'デスクトップアプリを更新してください',
     guiSkewBody:
-      'バックエンドは更新されましたが、このデスクトップアプリのパッケージは変更されていません。一致させるために VIGIL デスクトップアプリ（AppImage / .deb / .rpm）を更新または再インストールしてください。',
+      'バックエンドは更新されましたが、このデスクトップアプリのパッケージは変更されていません。一致させるために XCLAW デスクトップアプリ（AppImage / .deb / .rpm）を更新または再インストールしてください。',
     copy: 'コピー',
     copied: 'コピーしました',
     done: '完了',
     applyingBody:
-      'VIGIL アップデーターが独自のウィンドウで引き継ぎ、完了後に自動的に VIGIL を再度開きます。更新中はご自分で VIGIL を開き直さないでください。',
-    applyingBodyBackend: 'リモートバックエンドが更新を適用して再起動します。復帰すると VIGIL が自動的に再接続します。',
-    applyingClose: 'このウィンドウは更新中に閉じ、その後 VIGIL が自動的に再度開きます。',
+      'XCLAW アップデーターが独自のウィンドウで引き継ぎ、完了後に自動的に XCLAW を再度開きます。更新中はご自分で XCLAW を開き直さないでください。',
+    applyingBodyBackend: 'リモートバックエンドが更新を適用して再起動します。復帰すると XCLAW が自動的に再接続します。',
+    applyingClose: 'このウィンドウは更新中に閉じ、その後 XCLAW が自動的に再度開きます。',
     errorTitle: '更新が完了しませんでした',
     errorBody: 'ご安心ください。何も失われていません。今すぐ再試行できます。',
     notNow: '今は後で',
@@ -1685,7 +1687,7 @@ export const ja = defineLocale({
       skipped: 'スキップ',
       failed: '失敗'
     },
-    oneTimeTitle: 'VIGIL には一度限りのインストールが必要です',
+    oneTimeTitle: 'XCLAW には一度限りのインストールが必要です',
     unsupportedDesc: platform =>
       `${platform} では自動の初回インストールはまだ利用できません。ターミナルを開いて以下のコマンドを実行し、このアプリを再起動してください。以降の起動ではこの手順はスキップされます。`,
     installCommand: 'インストールコマンド',
@@ -1694,12 +1696,12 @@ export const ja = defineLocale({
     installTo: 'インストール先',
     retryAfterRun: '実行しました — 再試行',
     failedTitle: 'インストールに失敗しました',
-    settingUpTitle: 'VIGIL Agent を設定中',
+    settingUpTitle: 'XCLAW Agent を設定中',
     finishingTitle: '仕上げ中',
     failedDesc:
-      'インストール手順のいずれかが失敗しました。Windows では、別の VIGIL CLI またはデスクトップインスタンスが実行中の場合に発生することがあります。実行中の VIGIL インスタンスをすべて停止してから再試行してください。詳細は以下またはデスクトップログで確認できます。',
+      'インストール手順のいずれかが失敗しました。Windows では、別の XCLAW CLI またはデスクトップインスタンスが実行中の場合に発生することがあります。実行中の XCLAW インスタンスをすべて停止してから再試行してください。詳細は以下またはデスクトップログで確認できます。',
     activeDesc:
-      'これは一回限りのセットアップです。VIGIL インストーラーが依存関係をダウンロードしてマシンを設定しています。以降の起動ではこの手順はスキップされます。',
+      'これは一回限りのセットアップです。XCLAW インストーラーが依存関係をダウンロードしてマシンを設定しています。以降の起動ではこの手順はスキップされます。',
     progress: (completed, total) => `${total} ステップ中 ${completed} 完了`,
     currentStage: stage => ` — 現在: ${stage}`,
     fetchingManifest: 'インストーラーマニフェストを取得中...',
@@ -1717,10 +1719,10 @@ export const ja = defineLocale({
   },
 
   onboarding: {
-    headerTitle: 'VIGIL Agent のセットアップをしましょう',
+    headerTitle: 'XCLAW Agent のセットアップをしましょう',
     headerDesc: 'チャットを始めるにはモデルプロバイダーを接続してください。ほとんどのオプションはワンクリックです。',
-    preparingInstall: 'VIGIL はインストールを完了中です。初回実行では通常 1 分以内に完了します。',
-    starting: 'VIGIL を起動中…',
+    preparingInstall: 'XCLAW はインストールを完了中です。初回実行では通常 1 分以内に完了します。',
+    starting: 'XCLAW を起動中…',
     lookingUpProviders: 'プロバイダーを検索中...',
     collapse: '折りたたむ',
     otherProviders: 'その他のプロバイダー',
@@ -1728,7 +1730,7 @@ export const ja = defineLocale({
     chooseLater: '後でプロバイダーを選択します',
     recommended: '推奨',
     connected: '接続済み',
-    featuredPitch: '1 つのサブスクリプションで 300 以上の最先端モデル — VIGIL を実行するための推奨方法',
+    featuredPitch: '1 つのサブスクリプションで 300 以上の最先端モデル — XCLAW を実行するための推奨方法',
     openRouterPitch: '1 つのキーで数百のモデル — 堅実なデフォルト',
     apiKeyOptions: {
       openrouter: {
@@ -1741,7 +1743,7 @@ export const ja = defineLocale({
       local: {
         short: 'セルフホスト',
         description:
-          'ローカルまたはセルフホストの OpenAI 互換エンドポイント（vLLM、llama.cpp、Ollama など）に VIGIL を接続。'
+          'ローカルまたはセルフホストの OpenAI 互換エンドポイント（vLLM、llama.cpp、Ollama など）に XCLAW を接続。'
       }
     },
     backToSignIn: 'サインインに戻る',
@@ -1753,8 +1755,8 @@ export const ja = defineLocale({
     update: '更新',
     flowSubtitles: {
       pkce: 'ブラウザーを開いてサインインし、ここに戻ります',
-      device_code: 'ブラウザーで確認ページを開きます — VIGIL が自動接続します',
-      loopback: 'サインインのためブラウザーを開きます — VIGIL が自動接続します',
+      device_code: 'ブラウザーで確認ページを開きます — XCLAW が自動接続します',
+      loopback: 'サインインのためブラウザーを開きます — XCLAW が自動接続します',
       external: 'ターミナルで一度サインインして、チャットに戻ります'
     },
     startingSignIn: provider => `${provider} のサインインを開始中...`,
@@ -1765,12 +1767,12 @@ export const ja = defineLocale({
     pickDifferentProvider: '別のプロバイダーを選択',
     signInWith: provider => `${provider} でサインイン`,
     openedBrowser: provider => `${provider} をブラウザーで開きました。`,
-    authorizeThere: 'そこで VIGIL を承認してください。',
+    authorizeThere: 'そこで XCLAW を承認してください。',
     copyAuthCode: '認証コードをコピーして以下に貼り付けてください。',
     pasteAuthCode: '認証コードを貼り付け',
     reopenAuthPage: '認証ページを再度開く',
     autoBrowser: provider =>
-      `${provider} をブラウザーで開きました。VIGIL をそこで承認すれば自動接続されます。コピーや貼り付けは不要です。`,
+      `${provider} をブラウザーで開きました。XCLAW をそこで承認すれば自動接続されます。コピーや貼り付けは不要です。`,
     reopenSignInPage: 'サインインページを再度開く',
     waitingAuthorize: '承認を待っています...',
     externalPending: provider =>
@@ -1859,7 +1861,7 @@ export const ja = defineLocale({
       update: '更新',
       updateInProgress: '更新中',
       commitsBehind: (count, branch) => `${branch} より ${count} コミット遅れています`,
-      desktopVersion: version => `VIGIL Desktop v${version}`,
+      desktopVersion: version => `XCLAW Desktop v${version}`,
       backendVersion: version => `バックエンド v${version}`,
       clientLabel: version => `クライアント v${version}`,
       backendLabel: version => `バックエンド v${version}`,
@@ -1876,15 +1878,15 @@ export const ja = defineLocale({
       gatewayConnecting: '接続中',
       gatewayOffline: 'オフライン',
       gatewayRestarting: '再起動中…',
-      gatewayTitle: 'VIGIL 推論ゲートウェイのステータス',
-      agents: 'エージェント',
-      closeAgents: 'エージェントを閉じる',
-      openAgents: 'エージェントを開く',
-      subagents: count => `${count} サブエージェント`,
+      gatewayTitle: 'XCLAW 推論ゲートウェイのステータス',
+      agents: 'エキスパート',
+      closeAgents: 'エキスパートを閉じる',
+      openAgents: 'エキスパートを開く',
+      subagents: count => `${count} サブエキスパート`,
       failed: count => `${count} 失敗`,
       running: count => `${count} 実行中`,
-      cron: 'Cron',
-      openCron: 'Cron ジョブを開く',
+      cron: '自動化',
+      openCron: '自動化を開く',
       turnRunning: '実行中',
       currentTurnElapsed: '現在のターン経過時間',
       contextUsage: 'コンテキスト使用状況',
@@ -1949,7 +1951,7 @@ export const ja = defineLocale({
     binaryTitle: 'これはバイナリファイルのようです',
     binaryBody: label => `${label} をプレビューすると読み取り不能なテキストが表示される場合があります。`,
     largeTitle: 'このファイルは大きいです',
-    largeBody: (label, size) => `${label} は ${size} です。VIGIL は最初の 512 KB のみを表示します。`,
+    largeBody: (label, size) => `${label} は ${size} です。XCLAW は最初の 512 KB のみを表示します。`,
     previewAnyway: 'とにかくプレビュー',
     truncated: '最初の 512 KB を表示しています。',
     noInlineTitle: 'インラインプレビューなし',
@@ -1979,26 +1981,26 @@ export const ja = defineLocale({
       serverNotFound: 'サーバーが見つかりません',
       failedToLoad: 'プレビューの読み込みに失敗しました',
       tryAgain: '再試行',
-      restarting: 'VIGIL を再起動中...',
-      askRestart: 'VIGIL にサーバーの再起動を依頼',
-      lookingRestart: taskId => `VIGIL は再起動するプレビューサーバーを検索中です (${taskId})`,
+      restarting: 'XCLAW を再起動中...',
+      askRestart: 'XCLAW にサーバーの再起動を依頼',
+      lookingRestart: taskId => `XCLAW は再起動するプレビューサーバーを検索中です (${taskId})`,
       restartingTitle: 'プレビューサーバーを再起動中',
-      restartingMessage: 'VIGIL はバックグラウンドで作業中です。進捗はプレビューコンソールで確認してください。',
+      restartingMessage: 'XCLAW はバックグラウンドで作業中です。進捗はプレビューコンソールで確認してください。',
       startRestartFailed: message => `サーバー再起動を開始できませんでした: ${message}`,
       restartFailed: 'サーバーの再起動に失敗しました',
       hideConsole: 'プレビューコンソールを非表示',
       showConsole: 'プレビューコンソールを表示',
       hideDevTools: 'プレビュー DevTools を非表示',
       openDevTools: 'プレビュー DevTools を開く',
-      finishedRestarting: message => `VIGIL がプレビューサーバーの再起動を完了しました${message ? `: ${message}` : ''}`,
+      finishedRestarting: message => `XCLAW がプレビューサーバーの再起動を完了しました${message ? `: ${message}` : ''}`,
       failedRestarting: message => `サーバーの再起動に失敗しました: ${message}`,
       unknownError: '不明なエラー',
       restartedTitle: 'プレビューサーバーが再起動しました',
       reloadingNow: 'プレビューを再読み込み中です。',
       restartFailedTitle: 'プレビューの再起動に失敗しました',
-      restartFailedMessage: 'VIGIL がサーバーを再起動できませんでした。',
+      restartFailedMessage: 'XCLAW がサーバーを再起動できませんでした。',
       stillWorking:
-        'VIGIL はまだ作業中ですが、再起動の結果がまだ届いていません。サーバーコマンドがフォアグラウンドで実行されている可能性があります。',
+        'XCLAW はまだ作業中ですが、再起動の結果がまだ届いていません。サーバーコマンドがフォアグラウンドで実行されている可能性があります。',
       workspaceReloading: 'ワークスペースが変更され、プレビューを再読み込み中',
       fileChanged: url => `ファイルが変更され、プレビューを再読み込み中: ${url}`,
       filesChanged: (count, url) => `${count} 件のファイルが変更され、プレビューを再読み込み中: ${url}`,
@@ -2016,7 +2018,7 @@ export const ja = defineLocale({
     thread: {
       loadingSession: 'セッションを読み込み中',
       showEarlier: '以前のメッセージを表示',
-      loadingResponse: 'VIGIL が応答を読み込み中',
+      loadingResponse: 'XCLAW が応答を読み込み中',
       thinking: '考え中',
       today: time => `今日 ${time}`,
       yesterday: time => `昨日 ${time}`,
@@ -2043,7 +2045,7 @@ export const ja = defineLocale({
       attachingFile: '添付中…'
     },
     approval: {
-      gatewayDisconnected: 'VIGIL ゲートウェイが接続されていません',
+      gatewayDisconnected: 'XCLAW ゲートウェイが接続されていません',
       sendFailed: '承認応答を送信できませんでした',
       run: '実行',
       command: 'コマンド',
@@ -2054,12 +2056,12 @@ export const ja = defineLocale({
       reject: '拒否',
       alwaysTitle: 'このコマンドを常に許可しますか？',
       alwaysDescription: pattern =>
-        `これにより "${pattern}" パターンが永続的な許可リスト (~/.vigil/config.yaml) に追加されます。VIGIL はこのセッションや将来のセッションで、このようなコマンドについて再度尋ねません。`,
+        `これにより "${pattern}" パターンが永続的な許可リスト (~/.vigil/config.yaml) に追加されます。XCLAW はこのセッションや将来のセッションで、このようなコマンドについて再度尋ねません。`,
       alwaysAllow: '常に許可'
     },
     clarify: {
       notReady: '明確化リクエストはまだ準備できていません',
-      gatewayDisconnected: 'VIGIL ゲートウェイが接続されていません',
+      gatewayDisconnected: 'XCLAW ゲートウェイが接続されていません',
       sendFailed: '明確化応答を送信できませんでした',
       loadingQuestion: '質問を読み込み中…',
       other: 'その他（回答を入力）',
@@ -2172,15 +2174,15 @@ export const ja = defineLocale({
   },
 
   prompts: {
-    gatewayDisconnected: 'VIGIL ゲートウェイが接続されていません',
+    gatewayDisconnected: 'XCLAW ゲートウェイが接続されていません',
     sudoSendFailed: 'sudo パスワードを送信できませんでした',
     secretSendFailed: 'シークレットを送信できませんでした',
     sudoTitle: '管理者パスワード',
     sudoDesc:
-      'VIGIL は特権コマンドを実行するために sudo パスワードが必要です。ローカルエージェントにのみ送信されます。',
+      'XCLAW は特権コマンドを実行するために sudo パスワードが必要です。ローカルエージェントにのみ送信されます。',
     sudoPlaceholder: 'sudo パスワード',
     secretTitle: 'シークレットが必要です',
-    secretDesc: 'VIGIL は続行するための認証情報が必要です。',
+    secretDesc: 'XCLAW は続行するための認証情報が必要です。',
     secretPlaceholder: 'シークレット値'
   },
 
@@ -2233,8 +2235,8 @@ export const ja = defineLocale({
     sessionExportFailed: 'セッションをエクスポートできませんでした',
     imageSaved: '画像を保存しました',
     downloadStarted: 'ダウンロードを開始しました',
-    restartToUseSaveImage: '画像を保存するには VIGIL Desktop を再起動してください。',
-    restartToSaveImages: '画像を保存するには VIGIL Desktop を再起動してください',
+    restartToUseSaveImage: '画像を保存するには XCLAW Desktop を再起動してください。',
+    restartToSaveImages: '画像を保存するには XCLAW Desktop を再起動してください',
     imageDownloadFailed: '画像のダウンロードに失敗しました',
     openImage: '画像を開く',
     downloadImage: '画像をダウンロード',

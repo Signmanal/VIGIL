@@ -126,10 +126,10 @@ export type {
 export class VIGILGateway extends JsonRpcGatewayClient {
   constructor() {
     super({
-      closedErrorMessage: 'VIGIL gateway connection closed',
-      connectErrorMessage: 'Could not connect to VIGIL gateway',
+      closedErrorMessage: 'XCLAW gateway connection closed',
+      connectErrorMessage: 'Could not connect to XCLAW gateway',
       createRequestId: nextId => nextId,
-      notConnectedErrorMessage: 'VIGIL gateway is not connected',
+      notConnectedErrorMessage: 'XCLAW gateway is not connected',
       requestTimeoutMs: DEFAULT_GATEWAY_REQUEST_TIMEOUT_MS
     })
   }

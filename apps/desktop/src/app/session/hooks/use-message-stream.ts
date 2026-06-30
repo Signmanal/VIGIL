@@ -672,7 +672,7 @@ export function useMessageStream({
         const streamId = state.streamId ?? `assistant-error-${Date.now()}`
         const groupId = state.pendingBranchGroup ?? undefined
         const prev = state.messages
-        const error = errorMessage.trim() || 'VIGIL reported an error'
+        const error = errorMessage.trim() || 'XCLAW reported an error'
 
         const nextMessages = prev.some(m => m.id === streamId)
           ? prev.map(message =>
@@ -1140,7 +1140,7 @@ export function useMessageStream({
           }))
         }
       } else if (event.type === 'error') {
-        const errorMessage = payload?.message || 'VIGIL reported an error'
+        const errorMessage = payload?.message || 'XCLAW reported an error'
         const looksLikeProviderSetup = isProviderSetupErrorMessage(errorMessage)
 
         // A turn that errors out has also ended — drop any open blocking prompt
@@ -1174,7 +1174,7 @@ export function useMessageStream({
           notify({
             id: `gateway-error:${errorMessage}`,
             kind: 'error',
-            title: 'VIGIL error',
+            title: 'XCLAW error',
             message: errorMessage
           })
         }

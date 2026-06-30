@@ -39,7 +39,7 @@ function fsPath(endpoint: string, filePath: string) {
 function bridge() {
   const desktop = window.vigilDesktop
   if (!desktop) {
-    throw new Error('VIGIL Desktop bridge is unavailable')
+    throw new Error('XCLAW Desktop bridge is unavailable')
   }
   return desktop
 }

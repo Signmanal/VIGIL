@@ -50,8 +50,8 @@ export const uk: Translations = {
   },
 
   app: {
-    brand: "VIGIL Agent",
-    brandShort: "HA",
+    brand: "XCLAW Agent",
+    brandShort: "XC",
     closeNavigation: "Закрити навігацію",
     closeModelTools: "Закрити модель та інструменти",
     footer: {
@@ -120,8 +120,8 @@ export const uk: Translations = {
     starting: "Запускається",
     startedInBackground: "Запущено у фоні — перевірте журнали для прогресу",
     stopped: "Зупинено",
-    updateVIGIL: "Оновити VIGIL",
-    updatingVIGIL: "Оновлення VIGIL…",
+    updateVIGIL: "Оновити XCLAW",
+    updatingVIGIL: "Оновлення XCLAW…",
     waitingForOutput: "Очікування виводу…",
   },
 
@@ -321,7 +321,7 @@ export const uk: Translations = {
     enableRuntime: "Увімкнути",
     forceReinstall: "Примусово перевстановити (спершу видалити наявну теку)",
     headline:
-      "Знаходьте, встановлюйте, вмикайте та оновлюйте плагіни VIGIL (паритет з `vigil plugins`).",
+      "Знаходьте, встановлюйте, вмикайте та оновлюйте плагіни XCLAW (паритет з `vigil plugins`).",
     identifierLabel: "Git URL або owner/repo",
     inactive: "неактивний",
     installBtn: "Встановити",
@@ -487,11 +487,11 @@ export const uk: Translations = {
   achievements: {
     hero: {
       kicker: "Agentic Gamerscore",
-      title: "VIGIL Achievements",
+      title: "XCLAW Achievements",
       subtitle:
-        "Колекційні значки VIGIL, отримані з реальної історії сеансів. Відомі, але ще не виконані досягнення показані як Виявлені; Секретні досягнення залишаються прихованими, доки не з'явиться перший відповідний сигнал.",
+        "Колекційні значки XCLAW, отримані з реальної історії сеансів. Відомі, але ще не виконані досягнення показані як Виявлені; Секретні досягнення залишаються прихованими, доки не з'явиться перший відповідний сигнал.",
       scan_subtitle:
-        "Сканування історії сеансів VIGIL. Перше сканування на великих історіях може тривати 5–10 секунд.",
+        "Сканування історії сеансів XCLAW. Перше сканування на великих історіях може тривати 5–10 секунд.",
     },
     actions: {
       rescan: "Повторне сканування",
@@ -506,7 +506,7 @@ export const uk: Translations = {
       highest_tier: "Найвищий рівень",
       highest_tier_hint: "Copper → Silver → Gold → Diamond → Olympian",
       latest: "Останнє",
-      latest_hint_empty: "запускайте VIGIL частіше",
+      latest_hint_empty: "запускайте XCLAW частіше",
       none_yet: "Поки немає",
     },
     state: {
@@ -537,10 +537,10 @@ export const uk: Translations = {
       tiers_header: "Рівні",
       secret_header: "Секретні досягнення",
       secret_body:
-        "Секрети приховують свій точний тригер. Щойно VIGIL побачить пов'язаний сигнал, картка стає Виявленою та показує свою умову.",
+        "Секрети приховують свій точний тригер. Щойно XCLAW побачить пов'язаний сигнал, картка стає Виявленою та показує свою умову.",
       scan_status_header: "Стан сканування",
       scan_status_body:
-        "VIGIL одноразово сканує локальну історію, а потім картки з'являться автоматично. Якщо це триває кілька секунд — нічого не зависло.",
+        "XCLAW одноразово сканує локальну історію, а потім картки з'являться автоматично. Якщо це триває кілька секунд — нічого не зависло.",
       what_scanned_header: "Що сканується",
       what_scanned_body:
         "Сеанси, виклики інструментів, метадані моделей, помилки, досягнення та локальний стан розблокування.",
@@ -587,7 +587,7 @@ export const uk: Translations = {
         "«Поділитися в X» відкриває попередньо заповнений допис у новій вкладці. Якщо хочете прикріпити значок 1200×630 — спочатку натисніть «Копіювати зображення»: X дозволить вставити його прямо в редактор твіта. «Завантажити PNG» збереже файл для використання будь-де.",
       clipboard_unsupported:
         "Цей браузер не підтримує копіювання зображень у буфер обміну — використайте «Завантажити».",
-      tweet_text: "Just unlocked {tier_part}\"{name}\" in VIGIL Agent ☤",
+      tweet_text: "Just unlocked {tier_part}\"{name}\" in XCLAW Agent ☤",
     },
   },
   kanban: {

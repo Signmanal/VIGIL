@@ -53,8 +53,8 @@ export const en: Translations = {
   },
 
   app: {
-    brand: "VIGIL Agent",
-    brandShort: "HA",
+    brand: "XCLAW Agent",
+    brandShort: "XC",
     closeNavigation: "Close navigation",
     closeModelTools: "Close model and tools",
     footer: {
@@ -73,7 +73,7 @@ export const en: Translations = {
       analytics: "Analytics",
       chat: "Chat",
       config: "Config",
-      cron: "Cron",
+      cron: "Automation",
       documentation: "Documentation",
       keys: "Keys",
       logs: "Logs",
@@ -103,7 +103,7 @@ export const en: Translations = {
     actionFailed: "Action failed",
     actionFinished: "Finished",
     actions: "Actions",
-    agent: "Agent",
+    agent: "Expert",
     activeSessions: "Active Sessions",
     connected: "Connected",
     connectedPlatforms: "Connected Platforms",
@@ -128,8 +128,8 @@ export const en: Translations = {
     starting: "Starting",
     startedInBackground: "Started in background — check logs for progress",
     stopped: "Stopped",
-    updateVIGIL: "Update VIGIL",
-    updatingVIGIL: "Updating VIGIL…",
+    updateVIGIL: "Update XCLAW",
+    updatingVIGIL: "Updating XCLAW…",
     waitingForOutput: "Waiting for output…",
   },
 
@@ -187,8 +187,8 @@ export const en: Translations = {
     perModelBreakdown: "Per-Model Breakdown",
     topSkills: "Top Skills",
     skill: "Skill",
-    loads: "Agent Loaded",
-    edits: "Agent Managed",
+    loads: "Expert Loaded",
+    edits: "Expert Managed",
     lastUsed: "Last Used",
     input: "Input",
     output: "Output",
@@ -229,11 +229,11 @@ export const en: Translations = {
     confirmDeleteMessage:
       "This removes the job from the schedule. This cannot be undone.",
     confirmDeleteTitle: "Delete scheduled job?",
-    newJob: "New Cron Job",
+    newJob: "New Automation",
     nameOptional: "Name (optional)",
     namePlaceholder: "e.g. Daily summary",
     prompt: "Prompt",
-    promptPlaceholder: "What should the agent do on each run?",
+    promptPlaceholder: "What should the expert do on each run?",
     schedule: "Schedule (cron expression)",
     schedulePlaceholder: "0 9 * * *",
     scheduleMode: "Schedule",
@@ -272,7 +272,7 @@ export const en: Translations = {
       onceAt: "Once at {time}",
     },
     deliverTo: "Deliver to",
-    scheduledJobs: "Scheduled Jobs",
+    scheduledJobs: "Automation",
     noJobs: "No cron jobs configured. Create one above.",
     last: "Last",
     next: "Next",
@@ -310,7 +310,7 @@ export const en: Translations = {
     rename: "Rename",
     editSoul: "Edit SOUL.md",
     soulSection: "SOUL.md (personality / system prompt)",
-    soulPlaceholder: "# How this agent should behave…",
+    soulPlaceholder: "# How this expert should behave…",
     saveSoul: "Save SOUL",
     soulSaved: "SOUL.md saved",
     openInTerminal: "Copy CLI command",
@@ -364,7 +364,7 @@ export const en: Translations = {
     enableRuntime: "Enable",
     forceReinstall: "Force reinstall (delete existing folder first)",
     headline:
-      "Discover, install, enable, and update VIGIL plugins (`vigil plugins` parity).",
+      "Discover, install, enable, and update XCLAW plugins (`vigil plugins` parity).",
     identifierLabel: "Git URL or owner/repo",
     inactive: "inactive",
     installBtn: "Install",
@@ -444,7 +444,7 @@ export const en: Translations = {
     invalidJson: "Invalid JSON file",
     categories: {
       general: "General",
-      agent: "Agent",
+      agent: "Expert",
       terminal: "Terminal",
       display: "Display",
       delegation: "Delegation",
@@ -540,11 +540,11 @@ export const en: Translations = {
   achievements: {
     hero: {
       kicker: "Agentic Gamerscore",
-      title: "VIGIL Achievements",
+      title: "XCLAW Achievements",
       subtitle:
-        "Collectible VIGIL badges earned from real session history. Known unfinished achievements are shown as Discovered; Secret achievements stay hidden until the first matching behavior appears.",
+        "Collectible XCLAW badges earned from real session history. Known unfinished achievements are shown as Discovered; Secret achievements stay hidden until the first matching behavior appears.",
       scan_subtitle:
-        "Scanning VIGIL session history. First scan can take 5–10 seconds on large histories.",
+        "Scanning XCLAW session history. First scan can take 5–10 seconds on large histories.",
     },
     actions: {
       rescan: "Rescan",
@@ -559,7 +559,7 @@ export const en: Translations = {
       highest_tier: "Highest tier",
       highest_tier_hint: "Copper → Silver → Gold → Diamond → Olympian",
       latest: "Latest",
-      latest_hint_empty: "run VIGIL more",
+      latest_hint_empty: "run XCLAW more",
       none_yet: "None yet",
     },
     state: {
@@ -590,10 +590,10 @@ export const en: Translations = {
       tiers_header: "Tiers",
       secret_header: "Secret achievements",
       secret_body:
-        "Secrets hide their exact trigger. Once VIGIL sees a related signal, the card becomes Discovered and shows its requirement.",
+        "Secrets hide their exact trigger. Once XCLAW sees a related signal, the card becomes Discovered and shows its requirement.",
       scan_status_header: "Scan status",
       scan_status_body:
-        "VIGIL is scanning local history once, then cards will appear automatically. Nothing is stuck if this takes a few seconds.",
+        "XCLAW is scanning local history once, then cards will appear automatically. Nothing is stuck if this takes a few seconds.",
       what_scanned_header: "What is scanned",
       what_scanned_body:
         "Sessions, tool calls, model metadata, errors, achievements, and local unlock state.",
@@ -640,7 +640,7 @@ export const en: Translations = {
         "Share on X opens a pre-filled post in a new tab. Click Copy image first if you want the 1200×630 badge attached — X lets you paste it right into the tweet composer. Download PNG saves the file for use anywhere.",
       clipboard_unsupported:
         "Clipboard image copy not supported in this browser — use Download instead.",
-      tweet_text: "Just unlocked {tier_part}\"{name}\" in VIGIL Agent ☤",
+      tweet_text: "Just unlocked {tier_part}\"{name}\" in XCLAW Agent ☤",
     },
   },
 

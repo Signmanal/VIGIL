@@ -349,7 +349,7 @@ export function ChatView({
       }
 
       if (!gateway) {
-        throw new Error('VIGIL gateway unavailable')
+        throw new Error('XCLAW gateway unavailable')
       }
 
       return gateway.request<ModelOptionsResponse>('model.options', { session_id: activeSessionId })

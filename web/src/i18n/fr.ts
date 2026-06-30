@@ -50,8 +50,8 @@ export const fr: Translations = {
   },
 
   app: {
-    brand: "VIGIL Agent",
-    brandShort: "HA",
+    brand: "XCLAW Agent",
+    brandShort: "XC",
     closeNavigation: "Fermer la navigation",
     closeModelTools: "Fermer modèle et outils",
     footer: {
@@ -120,8 +120,8 @@ export const fr: Translations = {
     starting: "Démarrage",
     startedInBackground: "Démarré en arrière-plan — consultez les journaux pour la progression",
     stopped: "Arrêté",
-    updateVIGIL: "Mettre à jour VIGIL",
-    updatingVIGIL: "Mise à jour de VIGIL…",
+    updateVIGIL: "Mettre à jour XCLAW",
+    updatingVIGIL: "Mise à jour de XCLAW…",
     waitingForOutput: "En attente de la sortie…",
   },
 
@@ -321,7 +321,7 @@ export const fr: Translations = {
     enableRuntime: "Activer",
     forceReinstall: "Forcer la réinstallation (supprimer d'abord le dossier existant)",
     headline:
-      "Découvrez, installez, activez et mettez à jour les plugins VIGIL (parité avec `vigil plugins`).",
+      "Découvrez, installez, activez et mettez à jour les plugins XCLAW (parité avec `vigil plugins`).",
     identifierLabel: "URL Git ou owner/repo",
     inactive: "inactif",
     installBtn: "Installer",
@@ -486,11 +486,11 @@ export const fr: Translations = {
   achievements: {
     hero: {
       kicker: "Agentic Gamerscore",
-      title: "VIGIL Achievements",
+      title: "XCLAW Achievements",
       subtitle:
-        "Badges VIGIL à collectionner, gagnés à partir de l'historique réel des sessions. Les succès connus non terminés sont affichés comme Découverts ; les succès secrets restent cachés jusqu'à l'apparition du premier comportement correspondant.",
+        "Badges XCLAW à collectionner, gagnés à partir de l'historique réel des sessions. Les succès connus non terminés sont affichés comme Découverts ; les succès secrets restent cachés jusqu'à l'apparition du premier comportement correspondant.",
       scan_subtitle:
-        "Analyse de l'historique des sessions VIGIL en cours. Le premier scan peut prendre 5 à 10 secondes sur les historiques volumineux.",
+        "Analyse de l'historique des sessions XCLAW en cours. Le premier scan peut prendre 5 à 10 secondes sur les historiques volumineux.",
     },
     actions: {
       rescan: "Relancer le scan",
@@ -505,7 +505,7 @@ export const fr: Translations = {
       highest_tier: "Niveau le plus élevé",
       highest_tier_hint: "Copper → Silver → Gold → Diamond → Olympian",
       latest: "Dernier",
-      latest_hint_empty: "utilisez VIGIL davantage",
+      latest_hint_empty: "utilisez XCLAW davantage",
       none_yet: "Aucun pour l'instant",
     },
     state: {
@@ -536,10 +536,10 @@ export const fr: Translations = {
       tiers_header: "Niveaux",
       secret_header: "Succès secrets",
       secret_body:
-        "Les secrets cachent leur déclencheur exact. Dès qu'VIGIL détecte un signal lié, la carte passe à Découvert et affiche son exigence.",
+        "Les secrets cachent leur déclencheur exact. Dès qu'XCLAW détecte un signal lié, la carte passe à Découvert et affiche son exigence.",
       scan_status_header: "État du scan",
       scan_status_body:
-        "VIGIL analyse l'historique local une seule fois, puis les cartes apparaîtront automatiquement. Rien n'est bloqué si cela prend quelques secondes.",
+        "XCLAW analyse l'historique local une seule fois, puis les cartes apparaîtront automatiquement. Rien n'est bloqué si cela prend quelques secondes.",
       what_scanned_header: "Ce qui est analysé",
       what_scanned_body:
         "Sessions, appels d'outils, métadonnées du modèle, erreurs, succès et état de déblocage local.",
@@ -586,7 +586,7 @@ export const fr: Translations = {
         "Partager sur X ouvre une publication préremplie dans un nouvel onglet. Cliquez d'abord sur Copier l'image si vous voulez joindre le badge 1200×630 — X vous laisse le coller directement dans l'éditeur de tweet. Télécharger le PNG enregistre le fichier pour l'utiliser n'importe où.",
       clipboard_unsupported:
         "La copie d'image dans le presse-papiers n'est pas prise en charge par ce navigateur — utilisez Télécharger à la place.",
-      tweet_text: "Just unlocked {tier_part}\"{name}\" in VIGIL Agent ☤",
+      tweet_text: "Just unlocked {tier_part}\"{name}\" in XCLAW Agent ☤",
     },
   },
   kanban: {

@@ -49,8 +49,8 @@ export const zh: Translations = {
   },
 
   app: {
-    brand: "VIGIL Agent",
-    brandShort: "HA",
+    brand: "XCLAW Agent",
+    brandShort: "XC",
     closeNavigation: "关闭导航",
     closeModelTools: "关闭模型与工具",
     footer: {
@@ -69,12 +69,12 @@ export const zh: Translations = {
       analytics: "分析",
       chat: "对话",
       config: "配置",
-      cron: "定时任务",
+      cron: "自动化",
       documentation: "文档",
       keys: "密钥",
       logs: "日志",
       models: "模型",
-      profiles: "多Agent配置",
+      profiles: "多专家配置",
       plugins: "插件管理",
       sessions: "会话",
       skills: "技能",
@@ -95,7 +95,7 @@ export const zh: Translations = {
     actionFailed: "操作失败",
     actionFinished: "已完成",
     actions: "操作",
-    agent: "代理",
+    agent: "专家",
     activeSessions: "活跃会话",
     connected: "已连接",
     connectedPlatforms: "已连接平台",
@@ -119,8 +119,8 @@ export const zh: Translations = {
     starting: "启动中",
     startedInBackground: "已在后台启动 — 请查看日志",
     stopped: "已停止",
-    updateVIGIL: "更新 VIGIL",
-    updatingVIGIL: "正在更新 VIGIL…",
+    updateVIGIL: "更新 XCLAW",
+    updatingVIGIL: "正在更新 XCLAW…",
     waitingForOutput: "等待输出…",
   },
 
@@ -177,8 +177,8 @@ export const zh: Translations = {
     perModelBreakdown: "模型用量明细",
     topSkills: "常用技能",
     skill: "技能",
-    loads: "代理加载",
-    edits: "代理管理",
+    loads: "专家加载",
+    edits: "专家管理",
     lastUsed: "最近使用",
     input: "输入",
     output: "输出",
@@ -217,12 +217,12 @@ export const zh: Translations = {
 
   cron: {
     confirmDeleteMessage: "将从此计划移除该任务，此操作无法撤销。",
-    confirmDeleteTitle: "删除定时任务？",
-    newJob: "新建定时任务",
+    confirmDeleteTitle: "删除自动化？",
+    newJob: "新建自动化",
     nameOptional: "名称（可选）",
     namePlaceholder: "例如：每日总结",
     prompt: "提示词",
-    promptPlaceholder: "代理每次运行时应执行什么操作？",
+    promptPlaceholder: "专家每次运行时应执行什么操作？",
     schedule: "调度表达式（cron）",
     schedulePlaceholder: "0 9 * * *",
     scheduleMode: "调度",
@@ -261,7 +261,7 @@ export const zh: Translations = {
     },
     deliverTo: "投递至",
     scheduledJobs: "已调度任务",
-    noJobs: "暂无定时任务。在上方创建一个。",
+    noJobs: "暂无自动化。在上方创建一个。",
     last: "上次",
     next: "下次",
     pause: "暂停",
@@ -277,16 +277,16 @@ export const zh: Translations = {
   },
 
   profiles: {
-    newProfile: "新建多Agent配置",
+    newProfile: "新建多专家配置",
     name: "名称",
     namePlaceholder: "例如：coder, writer 等",
     nameRequired: "名称必填",
     nameRule:
       "仅允许小写字母、数字、下划线和短横线；首字符必须是字母或数字；最多 64 个字符。",
-    invalidName: "多Agent配置名称非法",    cloneFrom: "从配置文件克隆",
+    invalidName: "多专家配置名称非法",    cloneFrom: "从配置文件克隆",
     cloneFromNone: "无（空白）",
-    allProfiles: "多Agent配置列表",
-    noProfiles: "暂无多Agent配置。",
+    allProfiles: "多专家配置列表",
+    noProfiles: "暂无多专家配置。",
     defaultBadge: "默认",
     hasEnv: "已配置 env",
     model: "模型",
@@ -294,15 +294,15 @@ export const zh: Translations = {
     rename: "重命名",
     editSoul: "编辑 SOUL.md",
     soulSection: "SOUL.md（人格 / 系统提示词）",
-    soulPlaceholder: "# 这个代理应当如何工作……",
+    soulPlaceholder: "# 这个专家应当如何工作……",
     saveSoul: "保存 SOUL",
     soulSaved: "SOUL.md 已保存",
     openInTerminal: "复制 CLI 命令",
     commandCopied: "已复制到剪贴板",
     copyFailed: "复制失败",
-    confirmDeleteTitle: "删除多Agent配置？",
+    confirmDeleteTitle: "删除多专家配置？",
     confirmDeleteMessage:
-      "将永久删除多Agent配置 '{name}' — 包括配置、密钥、记忆、会话、技能、定时任务。此操作无法撤销。",
+      "将永久删除多专家配置 '{name}' — 包括配置、密钥、记忆、会话、技能、自动化。此操作无法撤销。",
     created: "已创建",
     deleted: "已删除",
     renamed: "已重命名",
@@ -315,7 +315,7 @@ export const zh: Translations = {
     enableAfterInstall: "安装后启用",
     enableRuntime: "启用",
     forceReinstall: "强制重装（先删除已有目录）",
-    headline: "发现、安装、启用和更新 VIGIL 插件（对齐 `vigil plugins` CLI）。",
+    headline: "发现、安装、启用和更新 XCLAW 插件（对齐 `vigil plugins` CLI）。",
     identifierLabel: "Git 地址或 owner/repo",
     inactive: "未启用",
     installBtn: "安装",
@@ -391,7 +391,7 @@ export const zh: Translations = {
     invalidJson: "无效的 JSON 文件",
     categories: {
       general: "通用",
-      agent: "代理",
+      agent: "专家",
       terminal: "终端",
       display: "显示",
       delegation: "委托",
@@ -480,11 +480,11 @@ export const zh: Translations = {
   achievements: {
     hero: {
       kicker: "Agentic Gamerscore",
-      title: "VIGIL Achievements",
+      title: "XCLAW Achievements",
       subtitle:
-        "从真实会话历史中获得的 VIGIL 可收集徽章。已知尚未达成的成就显示为「已发现」；秘密成就在首次出现匹配行为之前保持隐藏。",
+        "从真实会话历史中获得的 XCLAW 可收集徽章。已知尚未达成的成就显示为「已发现」；秘密成就在首次出现匹配行为之前保持隐藏。",
       scan_subtitle:
-        "正在扫描 VIGIL 会话历史。在历史记录较多时，首次扫描可能需要 5–10 秒。",
+        "正在扫描 XCLAW 会话历史。在历史记录较多时，首次扫描可能需要 5–10 秒。",
     },
     actions: {
       rescan: "重新扫描",
@@ -499,7 +499,7 @@ export const zh: Translations = {
       highest_tier: "最高等级",
       highest_tier_hint: "Copper → Silver → Gold → Diamond → Olympian",
       latest: "最新",
-      latest_hint_empty: "多多运行 VIGIL",
+      latest_hint_empty: "多多运行 XCLAW",
       none_yet: "暂无",
     },
     state: {
@@ -530,10 +530,10 @@ export const zh: Translations = {
       tiers_header: "等级",
       secret_header: "秘密成就",
       secret_body:
-        "秘密成就会隐藏其确切触发条件。一旦 VIGIL 检测到相关信号，卡片将变为「已发现」并显示其要求。",
+        "秘密成就会隐藏其确切触发条件。一旦 XCLAW 检测到相关信号，卡片将变为「已发现」并显示其要求。",
       scan_status_header: "扫描状态",
       scan_status_body:
-        "VIGIL 正在对本地历史进行一次扫描，之后卡片会自动出现。即使这需要几秒钟，也没有卡住。",
+        "XCLAW 正在对本地历史进行一次扫描，之后卡片会自动出现。即使这需要几秒钟，也没有卡住。",
       what_scanned_header: "扫描内容",
       what_scanned_body:
         "会话、工具调用、模型元数据、错误、成就和本地解锁状态。",
@@ -580,7 +580,7 @@ export const zh: Translations = {
         "「在 X 上分享」会在新标签页中打开预填好的帖子。如果想附上 1200×630 的徽章，请先点击「复制图片」—— X 允许你直接粘贴到推文编辑器中。「下载 PNG」会将文件保存下来，可在任意位置使用。",
       clipboard_unsupported:
         "此浏览器不支持复制剪贴板图片 —— 请改用「下载」。",
-      tweet_text: "Just unlocked {tier_part}\"{name}\" in VIGIL Agent ☤",
+      tweet_text: "Just unlocked {tier_part}\"{name}\" in XCLAW Agent ☤",
     },
   },
 

@@ -13,7 +13,7 @@ export const creditsCommands: SlashCommand[] = [
         .then(
           ctx.guarded<CreditsViewResponse>(view => {
             if (!view.logged_in) {
-              ctx.transcript.sys('💳 Not logged into VIGIL Portal — run /portal to log in.')
+              ctx.transcript.sys('💳 Not logged into XCLAW Portal — run /portal to log in.')
               return
             }
 

@@ -311,7 +311,7 @@ export const billingCommands: SlashCommand[] = [
         .then(
           ctx.guarded<BillingStateResponse>(s => {
             if (!s.logged_in) {
-              sys('💳 Not logged into VIGIL Portal — run /portal to log in, then /billing.')
+              sys('💳 Not logged into XCLAW Portal — run /portal to log in, then /billing.')
 
               return
             }

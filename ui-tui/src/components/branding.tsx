@@ -44,7 +44,7 @@ export function ArtLines({ lines }: { lines: [string, string][] }) {
 // Terminals can't scale glyphs, so "responsive" means picking a layout that
 // fits the available columns. Thresholds are picked so each tier reads
 // comfortably without forcing wrap or truncation drift on box-drawing edges.
-const TAG_FULL = 'VIGIL Sentinel Ops · Local-first security operations'
+const TAG_FULL = 'XCLAW Sentinel Ops · Local-first security operations'
 const TAG_MID = 'Sentinel Ops · Local-first security'
 const TAG_TINY = 'Sentinel Ops'
 const HIDE_BELOW = 34

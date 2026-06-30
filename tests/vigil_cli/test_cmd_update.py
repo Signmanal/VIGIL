@@ -782,10 +782,14 @@ class TestCmdUpdateCheckBranchFlag:
 
     @patch("vigil_cli.config.detect_install_method", return_value="git")
     @patch("subprocess.run")
-    def test_check_default_main_still_prefers_upstream(
+    def test_check_default_main_checks_origin_not_stale_upstream(
         self, mock_run, _mock_method, capsys
     ):
-        """No --branch (or --branch=None) preserves the upstream-then-origin probe."""
+        """No --branch (or --branch=None) checks the VIGIL origin branch.
+
+        A VIGIL checkout can preserve ``upstream`` as the imported Hermes
+        source, so the user-facing update check must not probe that remote.
+        """
         mock_run.side_effect = self._check_side_effect(
             target_branch="main", verify_ok=True, commit_count="0"
         )
@@ -794,11 +798,10 @@ class TestCmdUpdateCheckBranchFlag:
         cmd_update(args)
 
         commands = [" ".join(str(a) for a in c.args[0]) for c in mock_run.call_args_list]
-        # Should have tried upstream first.
-        assert any("fetch" in c and "upstream" in c for c in commands), commands
-        # Compare ref is upstream/main (upstream fetch succeeded).
+        assert not any("fetch" in c and "upstream" in c for c in commands), commands
+        assert any("fetch" in c and "origin" in c for c in commands), commands
         rev_list_cmds = [c for c in commands if "rev-list" in c]
-        assert any("upstream/main" in c for c in rev_list_cmds), rev_list_cmds
+        assert any("origin/main" in c for c in rev_list_cmds), rev_list_cmds
 
     @patch("vigil_cli.config.detect_install_method", return_value="pip")
     @patch("vigil_cli.banner.check_via_pypi", return_value=0)

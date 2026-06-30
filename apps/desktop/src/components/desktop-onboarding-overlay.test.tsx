@@ -56,11 +56,11 @@ afterEach(() => {
 })
 
 describe('onboarding Picker', () => {
-  it('features VIGIL Portal and hides other providers behind a disclosure', () => {
-    setProviders([provider('anthropic', 'Anthropic Claude'), provider('nous', 'VIGIL Portal')])
+  it('features XCLAW Portal and hides other providers behind a disclosure', () => {
+    setProviders([provider('anthropic', 'Anthropic Claude'), provider('nous', 'XCLAW Portal')])
     render(<Picker ctx={ctx} />)
 
-    expect(screen.getByText('VIGIL Portal')).toBeTruthy()
+    expect(screen.getByText('XCLAW Portal')).toBeTruthy()
     expect(screen.getByText('Recommended')).toBeTruthy()
     expect(screen.queryByText('Anthropic API Key')).toBeNull()
 
@@ -70,7 +70,7 @@ describe('onboarding Picker', () => {
     expect(screen.getByRole('button', { name: 'Collapse' })).toBeTruthy()
   })
 
-  it('shows every provider directly when VIGIL Portal is absent', () => {
+  it('shows every provider directly when XCLAW Portal is absent', () => {
     setProviders([provider('anthropic', 'Anthropic Claude'), provider('openai-codex', 'OpenAI Codex / ChatGPT')])
     render(<Picker ctx={ctx} />)
 
@@ -81,7 +81,7 @@ describe('onboarding Picker', () => {
   })
 
   it('offers "choose later" on first run and persists the skip', () => {
-    setProviders([provider('nous', 'VIGIL Portal')])
+    setProviders([provider('nous', 'XCLAW Portal')])
     render(<Picker ctx={ctx} />)
 
     const skip = screen.getByRole('button', { name: "I'll choose a provider later" })
@@ -93,7 +93,7 @@ describe('onboarding Picker', () => {
   })
 
   it('hides "choose later" in manual (add-provider) mode', () => {
-    setProviders([provider('nous', 'VIGIL Portal')])
+    setProviders([provider('nous', 'XCLAW Portal')])
     $desktopOnboarding.set({ ...$desktopOnboarding.get(), manual: true })
     render(<Picker ctx={ctx} />)
 

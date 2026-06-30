@@ -299,7 +299,7 @@ export function ToolsetConfigDrawer({ toolset, profile, onClose, onChanged }: Pr
                       )}
                       {provider.requires_nous_auth && (
                         <Badge tone="outline" className="text-xs">
-                          VIGIL Portal
+                          XCLAW Portal
                         </Badge>
                       )}
                     </div>

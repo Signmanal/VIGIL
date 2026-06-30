@@ -40,8 +40,8 @@ const DEFAULT_LAYOUT: ThemeLayout = {
 
 export const defaultTheme: DashboardTheme = {
   name: "default",
-  label: "VIGIL Sentinel",
-  description: "Sentinel Ops command palette — the canonical VIGIL look",
+  label: "XCLAW Sentinel",
+  description: "Sentinel Ops command palette — the canonical XCLAW look",
   palette: {
     background: { hex: "#08111F", alpha: 1 },
     midground: { hex: "#E5E7EB", alpha: 1 },
@@ -311,8 +311,8 @@ export const nousBlueTheme: DashboardTheme = {
  */
 export const defaultLargeTheme: DashboardTheme = {
   name: "default-large",
-  label: "VIGIL Sentinel (Large)",
-  description: "VIGIL Sentinel with bigger fonts and roomier spacing",
+  label: "XCLAW Sentinel (Large)",
+  description: "XCLAW Sentinel with bigger fonts and roomier spacing",
   palette: defaultTheme.palette,
   typography: {
     ...DEFAULT_TYPOGRAPHY,

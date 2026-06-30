@@ -1,30 +1,61 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="VIGIL app icon">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="XCLAW app icon">
   <defs>
-    <linearGradient id="bg" x1="120" y1="80" x2="900" y2="940" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#07111f"/>
-      <stop offset="0.54" stop-color="#0b2537"/>
-      <stop offset="1" stop-color="#052e2b"/>
+    <linearGradient id="bg" x1="112" y1="72" x2="910" y2="940" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#030507"/>
+      <stop offset="0.48" stop-color="#07131b"/>
+      <stop offset="1" stop-color="#031d1f"/>
     </linearGradient>
-    <linearGradient id="signal" x1="236" y1="202" x2="798" y2="818" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#7dd3fc"/>
-      <stop offset="0.5" stop-color="#22d3ee"/>
+    <linearGradient id="edge" x1="128" y1="134" x2="880" y2="898" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#e8fbff"/>
+      <stop offset="0.48" stop-color="#f8fbff"/>
+      <stop offset="1" stop-color="#bdf7ef"/>
+    </linearGradient>
+    <linearGradient id="signal" x1="166" y1="174" x2="858" y2="854" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#38bdf8"/>
+      <stop offset="0.55" stop-color="#22d3ee"/>
       <stop offset="1" stop-color="#34d399"/>
     </linearGradient>
-    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+    <radialGradient id="scan" cx="50%" cy="40%" r="62%">
+      <stop offset="0" stop-color="#0f2d3a" stop-opacity=".78"/>
+      <stop offset=".58" stop-color="#07131b" stop-opacity=".34"/>
+      <stop offset="1" stop-color="#020406" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="softGlow" x="-24%" y="-24%" width="148%" height="148%">
       <feGaussianBlur stdDeviation="18" result="blur"/>
       <feMerge>
         <feMergeNode in="blur"/>
         <feMergeNode in="SourceGraphic"/>
       </feMerge>
     </filter>
+    <filter id="hardShadow" x="-18%" y="-18%" width="136%" height="136%">
+      <feDropShadow dx="0" dy="18" stdDeviation="20" flood-color="#000000" flood-opacity=".46"/>
+    </filter>
   </defs>
-  <rect width="1024" height="1024" rx="228" fill="url(#bg)"/>
-  <path d="M178 708C254 846 386 916 512 916s258-70 334-208" fill="none" stroke="#164e63" stroke-width="30" stroke-linecap="round" opacity=".75"/>
-  <path d="M156 504c92-150 220-226 356-226s264 76 356 226c-92 150-220 226-356 226s-264-76-356-226Z" fill="none" stroke="#155e75" stroke-width="30" opacity=".78"/>
-  <path d="M242 504c68-104 160-156 270-156s202 52 270 156c-68 104-160 156-270 156s-202-52-270-156Z" fill="none" stroke="#22d3ee" stroke-width="26" opacity=".7"/>
-  <circle cx="512" cy="504" r="84" fill="#07111f" stroke="url(#signal)" stroke-width="26" filter="url(#glow)"/>
-  <path d="M512 162 754 262v176c0 186-96 315-242 424C366 753 270 624 270 438V262l242-100Z" fill="#07111f" stroke="url(#signal)" stroke-width="34" stroke-linejoin="round" opacity=".96"/>
-  <path d="M382 328 512 698 642 328h-78l-52 174-52-174h-78Z" fill="url(#signal)" filter="url(#glow)"/>
-  <path d="M330 760h364" stroke="#5eead4" stroke-width="28" stroke-linecap="round" opacity=".86"/>
-  <path d="M212 320h104M708 320h104M170 504h88M766 504h88" stroke="#7dd3fc" stroke-width="24" stroke-linecap="round" opacity=".7"/>
+
+  <rect width="1024" height="1024" rx="226" fill="url(#bg)"/>
+  <rect width="1024" height="1024" rx="226" fill="url(#scan)"/>
+  <rect x="28" y="28" width="968" height="968" rx="207" fill="none" stroke="url(#signal)" stroke-width="6" opacity=".52"/>
+  <path d="M149 188h128M747 188h128M149 836h128M747 836h128" stroke="url(#signal)" stroke-width="16" stroke-linecap="round" opacity=".58"/>
+  <path d="M188 149v128M836 149v128M188 747v128M836 747v128" stroke="url(#signal)" stroke-width="16" stroke-linecap="round" opacity=".58"/>
+
+  <path
+    d="M170 824 407 511 184 200h158l150 221 143-221h178L574 505l280 319H675L476 589 322 824H170Z"
+    fill="#22d3ee"
+    opacity=".28"
+    filter="url(#softGlow)"
+  />
+  <path
+    d="M170 824 407 511 184 200h158l150 221 143-221h178L574 505l280 319H675L476 589 322 824H170Z"
+    fill="url(#edge)"
+    filter="url(#hardShadow)"
+  />
+
+  <path d="M266 236 688 788h74L339 236h-73Z" fill="#020406" opacity=".72"/>
+  <path d="M642 236h91L548 470l-47-66 141-168Z" fill="#020406" opacity=".62"/>
+  <path d="M285 788h94l158-200 47 64-142 136H285Z" fill="#020406" opacity=".62"/>
+
+  <path d="M196 810 424 510 212 214h105l171 247 160-247h117L528 505l259 305H690L475 558 312 810H196Z" fill="none" stroke="url(#signal)" stroke-width="18" stroke-linejoin="round" opacity=".9"/>
+  <path d="M704 250h86l-42 54h-86l42-54ZM226 718h90l-48 58h-90l48-58ZM746 724h75l37 48h-74l-38-48Z" fill="#34d399" opacity=".82"/>
+  <path d="M332 178h360" stroke="#e8fbff" stroke-width="10" stroke-linecap="round" opacity=".26"/>
+  <path d="M332 846h360" stroke="#22d3ee" stroke-width="10" stroke-linecap="round" opacity=".24"/>
 </svg>

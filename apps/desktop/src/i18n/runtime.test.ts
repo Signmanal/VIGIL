@@ -18,7 +18,7 @@ describe('desktop i18n runtime translator', () => {
   it('translates string paths for the active runtime locale', () => {
     setRuntimeI18nLocale('zh')
 
-    expect(translateNow('boot.ready')).toBe('VIGIL 桌面版已就绪')
+    expect(translateNow('boot.ready')).toBe('XCLAW 桌面版已就绪')
     expect(translateNow('notifications.voice.noSpeechDetected')).toBe('没有检测到语音')
     expect(translateNow('composer.lookupNoMatches')).toBe('没有匹配项。')
     expect(translateNow('assistant.tool.statusRecovered')).toBe('已恢复')
@@ -33,7 +33,7 @@ describe('desktop i18n runtime translator', () => {
     expect(translateNow('common.save')).toBe('保存')
 
     setRuntimeI18nLocale('zh-hant')
-    expect(translateNow('cron.promptPlaceholder')).toBe('代理每次執行時應做什麼？')
+    expect(translateNow('cron.promptPlaceholder')).toBe('專家每次執行時應做什麼？')
   })
 
   it('translates settings copy for newly supported locales', () => {
@@ -61,7 +61,7 @@ describe('desktop i18n runtime translator', () => {
       boot.ready = undefined
       setRuntimeI18nLocale('ja')
 
-      expect(translateNow('boot.ready')).toBe('VIGIL Desktop is ready')
+      expect(translateNow('boot.ready')).toBe('XCLAW Desktop is ready')
     } finally {
       boot.ready = originalReady
     }

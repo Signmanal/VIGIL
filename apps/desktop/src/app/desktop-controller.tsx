@@ -961,7 +961,6 @@ export function DesktopController() {
   })
 
   const { leftStatusbarItems, statusbarItems } = useStatusbarItems({
-    agentsOpen,
     chatOpen,
     commandCenterOpen,
     extraLeftItems: statusbarItemGroups.flat.left,
@@ -969,7 +968,6 @@ export function DesktopController() {
     gatewayLogLines,
     gatewayState,
     inferenceStatus,
-    openAgents,
     freshDraftReady,
     openCommandCenterSection,
     requestGateway,

@@ -50,8 +50,8 @@ export const zhHant: Translations = {
   },
 
   app: {
-    brand: "VIGIL Agent",
-    brandShort: "HA",
+    brand: "XCLAW Agent",
+    brandShort: "XC",
     closeNavigation: "關閉導覽",
     closeModelTools: "關閉模型與工具",
     footer: {
@@ -70,12 +70,12 @@ export const zhHant: Translations = {
       analytics: "分析",
       chat: "對話",
       config: "設定",
-      cron: "排程任務",
+      cron: "自動化",
       documentation: "文件",
       keys: "金鑰",
       logs: "日誌",
       models: "模型",
-      profiles: "多代理設定檔",
+      profiles: "多專家設定檔",
       plugins: "外掛管理",
       sessions: "工作階段",
       skills: "技能",
@@ -96,7 +96,7 @@ export const zhHant: Translations = {
     actionFailed: "動作失敗",
     actionFinished: "已完成",
     actions: "動作",
-    agent: "代理",
+    agent: "專家",
     activeSessions: "使用中工作階段",
     connected: "已連線",
     connectedPlatforms: "已連線平台",
@@ -120,8 +120,8 @@ export const zhHant: Translations = {
     starting: "啟動中",
     startedInBackground: "已於背景啟動 — 請查看日誌以取得進度",
     stopped: "已停止",
-    updateVIGIL: "更新 VIGIL",
-    updatingVIGIL: "正在更新 VIGIL…",
+    updateVIGIL: "更新 XCLAW",
+    updatingVIGIL: "正在更新 XCLAW…",
     waitingForOutput: "等待輸出…",
   },
 
@@ -179,8 +179,8 @@ export const zhHant: Translations = {
     perModelBreakdown: "各模型用量明細",
     topSkills: "常用技能",
     skill: "技能",
-    loads: "代理載入",
-    edits: "代理管理",
+    loads: "專家載入",
+    edits: "專家管理",
     lastUsed: "最近使用",
     input: "輸入",
     output: "輸出",
@@ -220,12 +220,12 @@ export const zhHant: Translations = {
   cron: {
     confirmDeleteMessage:
       "將從排程移除此任務，此操作無法復原。",
-    confirmDeleteTitle: "刪除排程任務？",
-    newJob: "新增排程任務",
+    confirmDeleteTitle: "刪除自動化？",
+    newJob: "新增自動化",
     nameOptional: "名稱（選填）",
     namePlaceholder: "例如：每日摘要",
     prompt: "提示詞",
-    promptPlaceholder: "代理每次執行時應做什麼？",
+    promptPlaceholder: "專家每次執行時應做什麼？",
     schedule: "排程（cron 運算式）",
     schedulePlaceholder: "0 9 * * *",
     scheduleMode: "排程",
@@ -263,8 +263,8 @@ export const zhHant: Translations = {
       onceAt: "{time} 執行一次",
     },
     deliverTo: "傳送至",
-    scheduledJobs: "已排程任務",
-    noJobs: "尚未設定排程任務。請於上方建立。",
+    scheduledJobs: "自動化",
+    noJobs: "尚未設定自動化。請於上方建立。",
     last: "上次",
     next: "下次",
     pause: "暫停",
@@ -297,7 +297,7 @@ export const zhHant: Translations = {
     rename: "重新命名",
     editSoul: "編輯 SOUL.md",
     soulSection: "SOUL.md（人格 / 系統提示詞）",
-    soulPlaceholder: "# 此代理應如何運作…",
+    soulPlaceholder: "# 此專家應如何運作…",
     saveSoul: "儲存 SOUL",
     soulSaved: "SOUL.md 已儲存",
     openInTerminal: "複製 CLI 指令",
@@ -305,7 +305,7 @@ export const zhHant: Translations = {
     copyFailed: "複製失敗",
     confirmDeleteTitle: "刪除設定檔？",
     confirmDeleteMessage:
-      "將永久刪除設定檔「{name}」 — 包括設定、金鑰、記憶、工作階段、技能、排程任務。無法復原。",
+      "將永久刪除設定檔「{name}」 — 包括設定、金鑰、記憶、工作階段、技能、自動化。無法復原。",
     created: "已建立",
     deleted: "已刪除",
     renamed: "已重新命名",
@@ -319,7 +319,7 @@ export const zhHant: Translations = {
     enableRuntime: "啟用",
     forceReinstall: "強制重新安裝（先刪除既有資料夾）",
     headline:
-      "探索、安裝、啟用並更新 VIGIL 外掛（對齊 `vigil plugins` CLI）。",
+      "探索、安裝、啟用並更新 XCLAW 外掛（對齊 `vigil plugins` CLI）。",
     identifierLabel: "Git 網址或 owner/repo",
     inactive: "未啟用",
     installBtn: "安裝",
@@ -395,7 +395,7 @@ export const zhHant: Translations = {
     invalidJson: "無效的 JSON 檔案",
     categories: {
       general: "一般",
-      agent: "代理",
+      agent: "專家",
       terminal: "終端機",
       display: "顯示",
       delegation: "委派",
@@ -485,11 +485,11 @@ export const zhHant: Translations = {
   achievements: {
     hero: {
       kicker: "Agentic Gamerscore",
-      title: "VIGIL Achievements",
+      title: "XCLAW Achievements",
       subtitle:
-        "從真實工作階段歷史中獲得的 VIGIL 可收集徽章。已知尚未達成的成就會顯示為「已發現」；秘密成就在首次出現相符行為之前保持隱藏。",
+        "從真實工作階段歷史中獲得的 XCLAW 可收集徽章。已知尚未達成的成就會顯示為「已發現」；秘密成就在首次出現相符行為之前保持隱藏。",
       scan_subtitle:
-        "正在掃描 VIGIL 工作階段歷史。在歷史紀錄較多時，首次掃描可能需要 5–10 秒。",
+        "正在掃描 XCLAW 工作階段歷史。在歷史紀錄較多時，首次掃描可能需要 5–10 秒。",
     },
     actions: {
       rescan: "重新掃描",
@@ -504,7 +504,7 @@ export const zhHant: Translations = {
       highest_tier: "最高等級",
       highest_tier_hint: "Copper → Silver → Gold → Diamond → Olympian",
       latest: "最新",
-      latest_hint_empty: "多多執行 VIGIL",
+      latest_hint_empty: "多多執行 XCLAW",
       none_yet: "尚無",
     },
     state: {
@@ -535,10 +535,10 @@ export const zhHant: Translations = {
       tiers_header: "等級",
       secret_header: "秘密成就",
       secret_body:
-        "秘密成就會隱藏其確切觸發條件。一旦 VIGIL 偵測到相關訊號，卡片便會變為「已發現」並顯示其需求。",
+        "秘密成就會隱藏其確切觸發條件。一旦 XCLAW 偵測到相關訊號，卡片便會變為「已發現」並顯示其需求。",
       scan_status_header: "掃描狀態",
       scan_status_body:
-        "VIGIL 正在對本機歷史進行一次掃描，之後卡片會自動出現。即使需要幾秒鐘，也並未卡住。",
+        "XCLAW 正在對本機歷史進行一次掃描，之後卡片會自動出現。即使需要幾秒鐘，也並未卡住。",
       what_scanned_header: "掃描內容",
       what_scanned_body:
         "工作階段、工具呼叫、模型中繼資料、錯誤、成就以及本機解鎖狀態。",
@@ -585,7 +585,7 @@ export const zhHant: Translations = {
         "「在 X 上分享」會在新分頁中開啟預先填寫的貼文。若想附上 1200×630 的徽章，請先點擊「複製圖片」—— X 允許你直接貼到推文編輯器中。「下載 PNG」會將檔案儲存下來，可在任何地方使用。",
       clipboard_unsupported:
         "此瀏覽器不支援剪貼簿圖片複製 —— 請改用「下載」。",
-      tweet_text: "Just unlocked {tier_part}\"{name}\" in VIGIL Agent ☤",
+      tweet_text: "Just unlocked {tier_part}\"{name}\" in XCLAW Agent ☤",
     },
   },
   kanban: {

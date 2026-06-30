@@ -98,7 +98,7 @@ export function useGatewayRequest() {
       const gateway = gatewayRef.current
 
       if (!gateway) {
-        throw new Error('VIGIL gateway unavailable')
+        throw new Error('XCLAW gateway unavailable')
       }
 
       try {
