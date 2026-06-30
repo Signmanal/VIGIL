@@ -133,7 +133,7 @@ function OAuthPicker({
 }) {
   const { t } = useI18n()
   const p = t.settings.providers
-  const [showAll, setShowAll] = useState(false)
+  const [showAll, setShowAll] = useState(true)
   const ordered = useMemo(() => sortProviders(providers), [providers])
 
   if (ordered.length === 0) {
@@ -186,16 +186,18 @@ function OAuthPicker({
         </>
       )}
       {showOthers && (
-        <>
+        <div className="contents" id="settings-other-providers">
           {connected.length > 0 && <GroupLabel>{p.otherProviders}</GroupLabel>}
           {others.map(p => (
             <ProviderRow key={p.id} onSelect={select} provider={p} />
           ))}
           <KeyProviderRow onClick={onWantApiKey} />
-        </>
+        </div>
       )}
       {collapsible && (
         <Button
+          aria-controls="settings-other-providers"
+          aria-expanded={showAll}
           className="py-1 text-[length:var(--conversation-caption-font-size)]"
           onClick={() => setShowAll(v => !v)}
           size="inline"

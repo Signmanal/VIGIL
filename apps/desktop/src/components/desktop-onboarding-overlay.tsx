@@ -431,10 +431,16 @@ const persistShowAll = (value: boolean) => {
 export function Picker({ ctx }: { ctx: OnboardingContext }) {
   const { t } = useI18n()
   const { localEndpoint, manual, mode, providers } = useStore($desktopOnboarding)
-  const [showAll, setShowAll] = useState(readShowAll)
+  const [showAll, setShowAll] = useState(() => manual || readShowAll())
   const ordered = useMemo(() => (providers ? sortProviders(providers) : []), [providers])
   const hasOauth = ordered.length > 0
   const apiKeyOptions = useApiKeyCatalog()
+
+  useEffect(() => {
+    if (manual) {
+      setShowAll(true)
+    }
+  }, [manual])
 
   // localEndpoint forces the key form regardless of `mode` (which a manual
   // provider refresh may flip back to 'oauth'); it preselects the local option
@@ -476,16 +482,18 @@ export function Picker({ ctx }: { ctx: OnboardingContext }) {
       <div className="grid max-h-[60dvh] gap-2 overflow-y-auto p-1">
         {featured ? <FeaturedProviderRow onSelect={select} provider={featured} /> : null}
         {showRest ? (
-          <>
+          <div className="contents" id="onboarding-other-providers">
             {rest.map(p => (
               <ProviderRow key={p.id} onSelect={select} provider={p} />
             ))}
             <KeyProviderRow onClick={() => setOnboardingMode('apikey')} />
-          </>
+          </div>
         ) : null}
       </div>
       {collapsible ? (
         <Button
+          aria-controls="onboarding-other-providers"
+          aria-expanded={showRest}
           className="mt-1 self-center font-medium"
           onClick={() => setShowAll(persistShowAll(!showAll))}
           size="xs"

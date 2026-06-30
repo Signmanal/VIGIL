@@ -18,6 +18,7 @@ const getRecommendedDefaultModel = vi.fn()
 const setEnvVar = vi.fn()
 const getVIGILConfigRecord = vi.fn()
 const saveVIGILConfig = vi.fn()
+const startManualLocalEndpoint = vi.fn()
 const startManualProviderOAuth = vi.fn()
 
 vi.mock('@/vigil', () => ({
@@ -32,6 +33,7 @@ vi.mock('@/vigil', () => ({
 }))
 
 vi.mock('@/store/onboarding', () => ({
+  startManualLocalEndpoint: () => startManualLocalEndpoint(),
   startManualProviderOAuth: (slug: string) => startManualProviderOAuth(slug)
 }))
 
@@ -159,6 +161,27 @@ describe('ModelSettings', () => {
         task: 'vision'
       })
     )
+  })
+
+  it('activates an unconfigured api_key provider from an auxiliary model slot', async () => {
+    await renderModelSettings()
+
+    const changeButtons = await screen.findAllByRole('button', { name: 'Change' })
+    fireEvent.click(changeButtons[0])
+
+    const comboboxes = screen.getAllByRole('combobox')
+    const auxProviderSelect = comboboxes.at(-2)
+    expect(auxProviderSelect).toBeTruthy()
+    fireEvent.click(auxProviderSelect!)
+
+    const deepseekOption = await screen.findByText(/DeepSeek/)
+    fireEvent.click(deepseekOption)
+
+    const keyInput = await screen.findByPlaceholderText(/Paste DEEPSEEK_API_KEY/)
+    fireEvent.change(keyInput, { target: { value: 'sk-aux-123' } })
+    fireEvent.click(await screen.findByRole('button', { name: /Activate/ }))
+
+    await waitFor(() => expect(setEnvVar).toHaveBeenCalledWith('DEEPSEEK_API_KEY', 'sk-aux-123'))
   })
 
   it('warns when a main switch leaves auxiliary tasks pinned to another provider', async () => {

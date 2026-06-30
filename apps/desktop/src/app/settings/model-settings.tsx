@@ -127,7 +127,9 @@ export function ModelSettings({ onMainModelChanged }: ModelSettingsProps) {
   // Inline API-key entry for picking an unconfigured `api_key` provider in
   // place — mirrors the onboarding ApiKeyForm but scoped to the model picker.
   const [apiKeyDraft, setApiKeyDraft] = useState('')
+  const [auxApiKeyDraft, setAuxApiKeyDraft] = useState('')
   const [activating, setActivating] = useState(false)
+  const [auxActivating, setAuxActivating] = useState(false)
 
   const refresh = useCallback(async () => {
     setLoading(true)
@@ -182,6 +184,18 @@ export function ModelSettings({ onMainModelChanged }: ModelSettingsProps) {
     () => providers.find(provider => provider.slug === auxDraft.provider)?.models ?? [],
     [auxDraft.provider, providers]
   )
+
+  const auxDraftProviderRow = useMemo(
+    () => providers.find(provider => provider.slug === auxDraft.provider),
+    [auxDraft.provider, providers]
+  )
+
+  const auxDraftNeedsSetup = !!auxDraft.provider && !isProviderReady(auxDraftProviderRow)
+  const auxDraftSetupIsApiKey = auxDraftNeedsSetup && auxDraftProviderRow?.auth_type === 'api_key' && !!auxDraftProviderRow?.key_env
+
+  useEffect(() => {
+    setAuxApiKeyDraft('')
+  }, [auxDraft.provider])
 
   const auxiliaryTaskLabel = useCallback((key: string) => m.tasks[key]?.label ?? key, [m.tasks])
 
@@ -282,6 +296,42 @@ export function ModelSettings({ onMainModelChanged }: ModelSettingsProps) {
     }
   }, [apiKeyDraft, selectedProviderRow])
 
+  const activateAuxApiKeyProvider = useCallback(async () => {
+    const keyEnv = auxDraftProviderRow?.key_env
+    const slug = auxDraftProviderRow?.slug
+
+    if (!keyEnv || !slug || !auxApiKeyDraft.trim()) {
+      return
+    }
+
+    setAuxActivating(true)
+    setError('')
+
+    try {
+      await setEnvVar(keyEnv, auxApiKeyDraft.trim())
+      setAuxApiKeyDraft('')
+
+      let nextModel = ''
+
+      try {
+        const rec = await getRecommendedDefaultModel(slug)
+        nextModel = rec.model || ''
+      } catch {
+        nextModel = ''
+      }
+
+      const options = await getGlobalModelOptions()
+      setProviders(options.providers || [])
+      const refreshedRow = options.providers?.find(p => p.slug === slug)
+      const fallbackModel = refreshedRow?.models?.[0] ?? ''
+      setAuxDraft(prev => ({ ...prev, model: nextModel || fallbackModel }))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setAuxActivating(false)
+    }
+  }, [auxApiKeyDraft, auxDraftProviderRow])
+
   // OAuth / external providers can't be activated with a pasted key — hand off
   // to the shared onboarding flow scoped to this provider's real sign-in. The
   // custom / local endpoint is NOT an OAuth provider, so it gets the dedicated
@@ -302,6 +352,22 @@ export function ModelSettings({ onMainModelChanged }: ModelSettingsProps) {
       startManualProviderOAuth(slug)
     }
   }, [selectedProviderRow])
+
+  const startAuxProviderSetup = useCallback(() => {
+    const slug = auxDraftProviderRow?.slug
+
+    if (!slug) {
+      return
+    }
+
+    const lower = slug.toLowerCase()
+
+    if (lower === 'custom' || lower === 'local' || lower.startsWith('custom:')) {
+      startManualLocalEndpoint()
+    } else {
+      startManualProviderOAuth(slug)
+    }
+  }, [auxDraftProviderRow])
 
   const applyMainModel = useCallback(async () => {
     if (!selectedProvider || !selectedModel) {
@@ -428,7 +494,9 @@ export function ModelSettings({ onMainModelChanged }: ModelSettingsProps) {
                   <span className="inline-flex items-center gap-2">
                     <span>{provider.name}</span>
                     {!isProviderReady(provider) && (
-                      <span className="text-[0.65rem] uppercase tracking-[0.12em] text-muted-foreground">Set up</span>
+                      <span className="text-[0.65rem] uppercase tracking-[0.12em] text-muted-foreground">
+                        {m.providerSetupRequired}
+                      </span>
                     )}
                   </span>
                 </SelectItem>
@@ -447,7 +515,7 @@ export function ModelSettings({ onMainModelChanged }: ModelSettingsProps) {
                       void activateApiKeyProvider()
                     }
                   }}
-                  placeholder={`Paste ${selectedProviderRow?.key_env ?? 'API key'}`}
+                  placeholder={m.pasteProviderKey(selectedProviderRow?.key_env ?? 'API key')}
                   type="password"
                   value={apiKeyDraft}
                 />
@@ -457,12 +525,12 @@ export function ModelSettings({ onMainModelChanged }: ModelSettingsProps) {
                   size="sm"
                 >
                   {activating && <Loader2 className="size-3.5 animate-spin" />}
-                  {activating ? 'Activating...' : 'Activate'}
+                  {activating ? m.activatingProvider : m.activateProvider}
                 </Button>
               </>
             ) : (
               <Button onClick={startProviderSetup} size="sm" variant="textStrong">
-                Set up {selectedProviderRow?.name ?? 'provider'}
+                {m.setupProvider(selectedProviderRow?.name ?? 'provider')}
               </Button>
             )
           ) : (
@@ -611,33 +679,74 @@ export function ModelSettings({ onMainModelChanged }: ModelSettingsProps) {
                         <SelectContent>
                           {providerOptions.map(provider => (
                             <SelectItem key={provider.slug || 'none'} value={provider.slug || 'none'}>
-                              {provider.name}
+                              <span className="inline-flex items-center gap-2">
+                                <span>{provider.name}</span>
+                                {!isProviderReady(provider) && (
+                                  <span className="text-[0.65rem] uppercase tracking-[0.12em] text-muted-foreground">
+                                    {m.providerSetupRequired}
+                                  </span>
+                                )}
+                              </span>
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
-                      <Select
-                        onValueChange={value => setAuxDraft(prev => ({ ...prev, model: value }))}
-                        value={auxDraft.model}
-                      >
-                        <SelectTrigger className={cn('min-w-48', CONTROL_TEXT)}>
-                          <SelectValue placeholder={m.model} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {(auxDraftProviderModels.length ? auxDraftProviderModels : []).map(model => (
-                            <SelectItem key={model} value={model}>
-                              {model}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Button
-                        disabled={!auxDraft.provider || !auxDraft.model || applying}
-                        onClick={() => void applyAuxiliaryDraft(meta.key)}
-                        size="sm"
-                      >
-                        {applying ? m.applying : t.common.apply}
-                      </Button>
+                      {auxDraftNeedsSetup ? (
+                        auxDraftSetupIsApiKey ? (
+                          <>
+                            <Input
+                              autoComplete="off"
+                              className={cn('min-w-56 flex-1', CONTROL_TEXT)}
+                              onChange={event => setAuxApiKeyDraft(event.target.value)}
+                              onKeyDown={event => {
+                                if (event.key === 'Enter') {
+                                  void activateAuxApiKeyProvider()
+                                }
+                              }}
+                              placeholder={m.pasteProviderKey(auxDraftProviderRow?.key_env ?? 'API key')}
+                              type="password"
+                              value={auxApiKeyDraft}
+                            />
+                            <Button
+                              disabled={!auxApiKeyDraft.trim() || auxActivating}
+                              onClick={() => void activateAuxApiKeyProvider()}
+                              size="sm"
+                            >
+                              {auxActivating && <Loader2 className="size-3.5 animate-spin" />}
+                              {auxActivating ? m.activatingProvider : m.activateProvider}
+                            </Button>
+                          </>
+                        ) : (
+                          <Button onClick={startAuxProviderSetup} size="sm" variant="textStrong">
+                            {m.setupProvider(auxDraftProviderRow?.name ?? 'provider')}
+                          </Button>
+                        )
+                      ) : (
+                        <>
+                          <Select
+                            onValueChange={value => setAuxDraft(prev => ({ ...prev, model: value }))}
+                            value={auxDraft.model}
+                          >
+                            <SelectTrigger className={cn('min-w-48', CONTROL_TEXT)}>
+                              <SelectValue placeholder={m.model} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {(auxDraftProviderModels.length ? auxDraftProviderModels : []).map(model => (
+                                <SelectItem key={model} value={model}>
+                                  {model}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Button
+                            disabled={!auxDraft.provider || !auxDraft.model || applying}
+                            onClick={() => void applyAuxiliaryDraft(meta.key)}
+                            size="sm"
+                          >
+                            {applying ? m.applying : t.common.apply}
+                          </Button>
+                        </>
+                      )}
                       <Button onClick={() => setEditingAuxTask(null)} size="sm" variant="ghost">
                         {t.common.cancel}
                       </Button>

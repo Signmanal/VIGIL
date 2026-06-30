@@ -329,9 +329,11 @@ export function getVIGILConfig(): Promise<VIGILConfig> {
   })
 }
 
-export function getVIGILConfigRecord(): Promise<VIGILConfigRecord> {
+export function getVIGILConfigRecord(profileOrContext?: unknown): Promise<VIGILConfigRecord> {
+  const profile = typeof profileOrContext === 'string' ? profileOrContext : undefined
+
   return window.vigilDesktop.api<VIGILConfigRecord>({
-    ...profileScoped(),
+    ...(profile ? { profile } : profileScoped()),
     path: '/api/config'
   })
 }
@@ -350,9 +352,9 @@ export function getVIGILConfigSchema(): Promise<ConfigSchemaResponse> {
   })
 }
 
-export function saveVIGILConfig(config: VIGILConfigRecord): Promise<{ ok: boolean }> {
+export function saveVIGILConfig(config: VIGILConfigRecord, profile?: string): Promise<{ ok: boolean }> {
   return window.vigilDesktop.api<{ ok: boolean }>({
-    ...profileScoped(),
+    ...(profile ? { profile } : profileScoped()),
     path: '/api/config',
     method: 'PUT',
     body: { config }
@@ -494,12 +496,16 @@ export function getSkills(profile?: string): Promise<SkillInfo[]> {
   })
 }
 
-export function toggleSkill(name: string, enabled: boolean): Promise<{ ok: boolean; name: string; enabled: boolean }> {
+export function toggleSkill(
+  name: string,
+  enabled: boolean,
+  profile?: string
+): Promise<{ ok: boolean; name: string; enabled: boolean }> {
   return window.vigilDesktop.api<{ ok: boolean; name: string; enabled: boolean }>({
     ...profileScoped(),
     path: '/api/skills/toggle',
     method: 'PUT',
-    body: { name, enabled }
+    body: { name, enabled, ...(profile ? { profile } : {}) }
   })
 }
 

@@ -517,8 +517,22 @@ export interface ProfileCreatePayload {
   clone_from_default?: boolean
   hub_skills?: string[]
   keep_skills?: string[]
+  mcp_servers?: ProfileCreateMcpServer[]
   name: string
   no_skills?: boolean
+}
+
+export type McpServerConfig = Record<string, unknown>
+
+export interface ProfileCreateMcpServer {
+  args?: string[]
+  auth?: null | string
+  command?: null | string
+  disabled?: boolean
+  env?: Record<string, string>
+  name: string
+  tools?: Record<string, unknown>
+  url?: null | string
 }
 
 export interface ProfileInfo {

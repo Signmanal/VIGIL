@@ -1,5 +1,6 @@
 import type * as React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 import { PageLoader } from '@/components/page-loader'
 import { Button } from '@/components/ui/button'
@@ -20,18 +21,33 @@ import {
   getProfiles,
   getProfileSetupCommand,
   getProfileSoul,
+  getSkills,
+  getVIGILConfigRecord,
   type ProfileInfo,
   renameProfile,
+  saveVIGILConfig,
+  setApiRequestProfile,
+  toggleSkill,
   updateProfileSoul
 } from '@/vigil'
 import { useI18n } from '@/i18n'
 import { AlertTriangle, Pencil, Save, Terminal, Trash2, Users } from '@/lib/icons'
 import { cn } from '@/lib/utils'
 import { notify, notifyError } from '@/store/notifications'
+import { selectProfile } from '@/store/profile'
+import type { SkillInfo, VIGILConfigRecord } from '@/types/vigil'
 
 import { useRefreshHotkey } from '../hooks/use-refresh-hotkey'
 import { OverlayMain, OverlayNewButton, OverlaySidebar, OverlaySplitLayout } from '../overlays/overlay-split-layout'
 import { OverlayView } from '../overlays/overlay-view'
+import { SETTINGS_ROUTE, SKILLS_ROUTE } from '../routes'
+import {
+  applyMcpSelectionToConfig,
+  getMcpServers,
+  mcpTransportLabel,
+  ProfileMcpPicker,
+  type ProfileMcpSelection
+} from './profile-mcp-picker'
 import { ProfileSkillPicker, type ProfileSkillSelection } from './profile-skill-picker'
 
 const PROFILE_NAME_RE = /^[a-z0-9][a-z0-9_-]{0,63}$/
@@ -84,7 +100,12 @@ export function ProfilesView({ onClose }: ProfilesViewProps) {
   }, [profiles, selectedName])
 
   const handleCreate = useCallback(
-    async (name: string, cloneFrom: null | string, skillSelection?: ProfileSkillSelection) => {
+    async (
+      name: string,
+      cloneFrom: null | string,
+      skillSelection?: ProfileSkillSelection,
+      mcpSelection?: ProfileMcpSelection
+    ) => {
       const trimmed = name.trim()
 
       if (!isValidProfileName(trimmed)) {
@@ -96,6 +117,10 @@ export function ProfilesView({ onClose }: ProfilesViewProps) {
         clone_from: cloneFrom,
         ...(skillSelection?.touched ? { keep_skills: skillSelection.selected } : {})
       })
+      if (mcpSelection?.touched) {
+        const cfg = await getVIGILConfigRecord(trimmed)
+        await saveVIGILConfig(applyMcpSelectionToConfig(cfg, mcpSelection), trimmed)
+      }
       notify({ kind: 'success', title: p.created, message: trimmed })
       setSelectedName(trimmed)
       await refresh()
@@ -170,6 +195,7 @@ export function ProfilesView({ onClose }: ProfilesViewProps) {
                 key={selected.name}
                 onDelete={() => setPendingDelete(selected)}
                 onRename={newName => handleRename(selected.name, newName)}
+                onRefresh={() => void refresh()}
                 profile={selected}
               />
             ) : (
@@ -186,7 +212,9 @@ export function ProfilesView({ onClose }: ProfilesViewProps) {
 
       <CreateProfileDialog
         onClose={() => setCreateOpen(false)}
-        onCreate={async (name, cloneFrom, skillSelection) => handleCreate(name, cloneFrom, skillSelection)}
+        onCreate={async (name, cloneFrom, skillSelection, mcpSelection) =>
+          handleCreate(name, cloneFrom, skillSelection, mcpSelection)
+        }
         open={createOpen}
         profiles={profiles ?? []}
       />
@@ -249,16 +277,28 @@ function ProfileRow({ active, onSelect, profile }: { active: boolean; onSelect: 
 function ProfileDetail({
   onDelete,
   onRename,
+  onRefresh,
   profile
 }: {
   onDelete: () => void
   onRename: (newName: string) => Promise<void>
+  onRefresh: () => void
   profile: ProfileInfo
 }) {
+  const navigate = useNavigate()
   const { t } = useI18n()
   const p = t.profiles
   const [renameOpen, setRenameOpen] = useState(false)
   const [copying, setCopying] = useState(false)
+
+  const openProfileScoped = useCallback(
+    (path: string) => {
+      setApiRequestProfile(profile.name)
+      selectProfile(profile.name)
+      navigate(path)
+    },
+    [navigate, profile.name]
+  )
 
   const handleCopySetup = useCallback(async () => {
     setCopying(true)
@@ -309,6 +349,12 @@ function ProfileDetail({
                   <Terminal />
                   {copying ? p.copying : p.copySetup}
                 </Button>
+                <Button onClick={() => openProfileScoped(SKILLS_ROUTE)} size="sm" variant="outline">
+                  {p.startingSkills}
+                </Button>
+                <Button onClick={() => openProfileScoped(`${SETTINGS_ROUTE}?tab=mcp`)} size="sm" variant="outline">
+                  MCP
+                </Button>
                 {!profile.is_default && (
                   <Button
                     className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
@@ -343,6 +389,8 @@ function ProfileDetail({
           </header>
 
           <SoulEditor profileName={profile.name} />
+          <ProfileSkillManager onChanged={onRefresh} profileName={profile.name} />
+          <ProfileMcpManager profileName={profile.name} />
         </div>
       </div>
 
@@ -461,6 +509,208 @@ function SoulEditor({ profileName }: { profileName: string }) {
   )
 }
 
+function ProfileSkillManager({ onChanged, profileName }: { onChanged: () => void; profileName: string }) {
+  const { t } = useI18n()
+  const p = t.profiles
+  const [skills, setSkills] = useState<SkillInfo[]>([])
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState<null | string>(null)
+  const [error, setError] = useState<null | string>(null)
+
+  const load = useCallback(() => {
+    setLoading(true)
+    setError(null)
+
+    void getSkills(profileName)
+      .then(next => setSkills([...next].sort((a, b) => a.name.localeCompare(b.name))))
+      .catch(err => setError(err instanceof Error ? err.message : p.failedLoadSkills))
+      .finally(() => setLoading(false))
+  }, [p.failedLoadSkills, profileName])
+
+  useEffect(() => {
+    load()
+  }, [load])
+
+  async function toggle(skill: SkillInfo, enabled: boolean) {
+    setSaving(skill.name)
+    setError(null)
+
+    try {
+      await toggleSkill(skill.name, enabled, profileName)
+      setSkills(prev => prev.map(row => (row.name === skill.name ? { ...row, enabled } : row)))
+      onChanged()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : p.failedLoadSkills)
+    } finally {
+      setSaving(null)
+    }
+  }
+
+  const selected = skills.filter(skill => skill.enabled).length
+
+  return (
+    <section className="space-y-2">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <div>
+          <h4 className="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+            {p.startingSkills}
+          </h4>
+          <p className="text-xs text-muted-foreground">{p.profileSkillsDesc}</p>
+        </div>
+        <span className="text-[0.65rem] text-muted-foreground">{p.skillsSelected(selected, skills.length)}</span>
+      </div>
+
+      <div className="max-h-56 overflow-y-auto rounded-md border border-(--ui-stroke-secondary) bg-(--ui-bg-secondary)">
+        {loading ? (
+          <div className="px-3 py-4 text-xs text-muted-foreground">{p.loadingSkills}</div>
+        ) : error ? (
+          <div className="flex items-start gap-2 px-3 py-3 text-xs text-destructive">
+            <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
+            <span>{error}</span>
+          </div>
+        ) : skills.length === 0 ? (
+          <div className="px-3 py-4 text-xs text-muted-foreground">{p.noSkillsAvailable}</div>
+        ) : (
+          skills.map(skill => (
+            <label
+              className={cn(
+                'flex cursor-pointer items-start gap-2 border-b border-(--ui-stroke-secondary) px-3 py-2 last:border-b-0',
+                saving === skill.name && 'opacity-60'
+              )}
+              key={skill.name}
+            >
+              <input
+                checked={skill.enabled}
+                className="mt-0.5"
+                disabled={saving === skill.name}
+                onChange={event => void toggle(skill, event.currentTarget.checked)}
+                type="checkbox"
+              />
+              <span className="min-w-0">
+                <span className="block truncate text-xs font-medium">{skill.name}</span>
+                {skill.description && (
+                  <span className="mt-0.5 block line-clamp-2 text-[0.68rem] leading-4 text-muted-foreground">
+                    {skill.description}
+                  </span>
+                )}
+              </span>
+            </label>
+          ))
+        )}
+      </div>
+    </section>
+  )
+}
+
+function ProfileMcpManager({ profileName }: { profileName: string }) {
+  const { t } = useI18n()
+  const p = t.profiles
+  const [config, setConfig] = useState<VIGILConfigRecord | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState<null | string>(null)
+  const [error, setError] = useState<null | string>(null)
+
+  const load = useCallback(() => {
+    setLoading(true)
+    setError(null)
+
+    void getVIGILConfigRecord(profileName)
+      .then(setConfig)
+      .catch(err => setError(err instanceof Error ? err.message : p.failedLoadMcp))
+      .finally(() => setLoading(false))
+  }, [p.failedLoadMcp, profileName])
+
+  useEffect(() => {
+    load()
+  }, [load])
+
+  const servers = useMemo(() => getMcpServers(config), [config])
+  const names = useMemo(() => Object.keys(servers).sort(), [servers])
+  const enabled = names.filter(name => servers[name]?.disabled !== true).length
+
+  async function toggle(name: string, checked: boolean) {
+    if (!config) {
+      return
+    }
+
+    setSaving(name)
+    setError(null)
+
+    try {
+      const nextServers = { ...servers, [name]: { ...servers[name] } }
+
+      if (checked) {
+        delete nextServers[name].disabled
+      } else {
+        nextServers[name].disabled = true
+      }
+
+      const nextConfig = { ...config, mcp_servers: nextServers }
+      await saveVIGILConfig(nextConfig, profileName)
+      setConfig(nextConfig)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : p.failedSaveMcp)
+    } finally {
+      setSaving(null)
+    }
+  }
+
+  return (
+    <section className="space-y-2">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <div>
+          <h4 className="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">MCP</h4>
+          <p className="text-xs text-muted-foreground">{p.profileMcpDesc}</p>
+        </div>
+        <span className="text-[0.65rem] text-muted-foreground">{enabled}/{names.length}</span>
+      </div>
+
+      <div className="max-h-44 overflow-y-auto rounded-md border border-(--ui-stroke-secondary) bg-(--ui-bg-secondary)">
+        {loading ? (
+          <div className="px-3 py-4 text-xs text-muted-foreground">{p.loadingMcp}</div>
+        ) : error ? (
+          <div className="flex items-start gap-2 px-3 py-3 text-xs text-destructive">
+            <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
+            <span>{error}</span>
+          </div>
+        ) : names.length === 0 ? (
+          <div className="px-3 py-4 text-xs text-muted-foreground">{p.noProfileMcpAvailable}</div>
+        ) : (
+          names.map(name => {
+            const server = servers[name]
+
+            return (
+              <label
+                className={cn(
+                  'flex cursor-pointer items-start gap-2 border-b border-(--ui-stroke-secondary) px-3 py-2 last:border-b-0',
+                  saving === name && 'opacity-60'
+                )}
+                key={name}
+              >
+                <input
+                  checked={server.disabled !== true}
+                  className="mt-0.5"
+                  disabled={saving === name}
+                  onChange={event => void toggle(name, event.currentTarget.checked)}
+                  type="checkbox"
+                />
+                <span className="min-w-0">
+                  <span className="block truncate text-xs font-medium">{name}</span>
+                  <span className="mt-0.5 block truncate text-[0.68rem] leading-4 text-muted-foreground">
+                    {mcpTransportLabel(server)}
+                    {typeof server.command === 'string' ? ` · ${server.command}` : ''}
+                    {typeof server.url === 'string' ? ` · ${server.url}` : ''}
+                  </span>
+                </span>
+              </label>
+            )
+          })
+        )}
+      </div>
+    </section>
+  )
+}
+
 function CreateProfileDialog({
   onClose,
   onCreate,
@@ -468,7 +718,12 @@ function CreateProfileDialog({
   profiles
 }: {
   onClose: () => void
-  onCreate: (name: string, cloneFrom: null | string, skillSelection: ProfileSkillSelection) => Promise<void>
+  onCreate: (
+    name: string,
+    cloneFrom: null | string,
+    skillSelection: ProfileSkillSelection,
+    mcpSelection: ProfileMcpSelection
+  ) => Promise<void>
   open: boolean
   profiles: ProfileInfo[]
 }) {
@@ -477,6 +732,7 @@ function CreateProfileDialog({
   const [name, setName] = useState('')
   const [cloneFrom, setCloneFrom] = useState<null | string>('default')
   const [skillSelection, setSkillSelection] = useState<ProfileSkillSelection>({ selected: [], touched: false })
+  const [mcpSelection, setMcpSelection] = useState<ProfileMcpSelection>({ selected: [], servers: {}, touched: false })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<null | string>(null)
 
@@ -488,6 +744,7 @@ function CreateProfileDialog({
     setName('')
     setCloneFrom('default')
     setSkillSelection({ selected: [], touched: false })
+    setMcpSelection({ selected: [], servers: {}, touched: false })
     setError(null)
     setSaving(false)
   }, [open])
@@ -508,7 +765,7 @@ function CreateProfileDialog({
     setError(null)
 
     try {
-      await onCreate(trimmed, cloneFrom, skillSelection)
+      await onCreate(trimmed, cloneFrom, skillSelection, mcpSelection)
       onClose()
     } catch (err) {
       setError(err instanceof Error ? err.message : p.failedCreate)
@@ -570,6 +827,13 @@ function CreateProfileDialog({
             active={open}
             disabled={saving}
             onSelectionChange={setSkillSelection}
+            sourceProfile={cloneFrom}
+          />
+
+          <ProfileMcpPicker
+            active={open}
+            disabled={saving}
+            onSelectionChange={setMcpSelection}
             sourceProfile={cloneFrom}
           />
 

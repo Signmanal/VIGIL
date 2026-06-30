@@ -13,12 +13,13 @@ import {
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { createProfile, updateProfileSoul } from '@/vigil'
+import { createProfile, getVIGILConfigRecord, saveVIGILConfig, updateProfileSoul } from '@/vigil'
 import { useI18n } from '@/i18n'
 import { AlertTriangle } from '@/lib/icons'
 import { cn } from '@/lib/utils'
 import type { ProfileInfo } from '@/types/vigil'
 
+import { applyMcpSelectionToConfig, ProfileMcpPicker, type ProfileMcpSelection } from './profile-mcp-picker'
 import { ProfileSkillPicker, type ProfileSkillSelection } from './profile-skill-picker'
 
 const PROFILE_NAME_RE = /^[a-z0-9][a-z0-9_-]{0,63}$/
@@ -47,6 +48,7 @@ export function CreateProfileDialog({
   const [cloneFrom, setCloneFrom] = useState<null | string>('default')
   const [soul, setSoul] = useState('')
   const [skillSelection, setSkillSelection] = useState<ProfileSkillSelection>({ selected: [], touched: false })
+  const [mcpSelection, setMcpSelection] = useState<ProfileMcpSelection>({ selected: [], servers: {}, touched: false })
   const [status, setStatus] = useState<'done' | 'idle' | 'saving'>('idle')
   const [error, setError] = useState<null | string>(null)
 
@@ -59,6 +61,7 @@ export function CreateProfileDialog({
     setCloneFrom('default')
     setSoul('')
     setSkillSelection({ selected: [], touched: false })
+    setMcpSelection({ selected: [], servers: {}, touched: false })
     setError(null)
     setStatus('idle')
   }, [open])
@@ -85,6 +88,11 @@ export function CreateProfileDialog({
         clone_from: cloneFrom,
         ...(skillSelection.touched ? { keep_skills: skillSelection.selected } : {})
       })
+
+      if (mcpSelection.touched) {
+        const cfg = await getVIGILConfigRecord(trimmed)
+        await saveVIGILConfig(applyMcpSelectionToConfig(cfg, mcpSelection), trimmed)
+      }
 
       if (soul.trim()) {
         await updateProfileSoul(trimmed, soul)
@@ -152,6 +160,13 @@ export function CreateProfileDialog({
             active={open}
             disabled={busy}
             onSelectionChange={setSkillSelection}
+            sourceProfile={cloneFrom}
+          />
+
+          <ProfileMcpPicker
+            active={open}
+            disabled={busy}
+            onSelectionChange={setMcpSelection}
             sourceProfile={cloneFrom}
           />
 

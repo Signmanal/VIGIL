@@ -513,6 +513,11 @@ export interface Translations {
       change: string
       autoUseMain: string
       providerDefault: string
+      providerSetupRequired: string
+      setupProvider: (provider: string) => string
+      activateProvider: string
+      activatingProvider: string
+      pasteProviderKey: (key: string) => string
       tasks: Record<string, AuxTaskCopy>
     }
     providers: {
@@ -897,8 +902,14 @@ export interface Translations {
     cloneFromDesc: string
     startingSkills: string
     startingSkillsDesc: (source: string) => string
+    profileSkillsDesc: string
+    startingMcpDesc: (source: string) => string
+    profileMcpDesc: string
     loadingSkills: string
+    loadingMcp: string
     noSkillsAvailable: string
+    noMcpAvailable: string
+    noProfileMcpAvailable: string
     skillsSelected: (selected: number, total: number) => string
     selectAllSkills: string
     clearSkills: string
@@ -920,6 +931,8 @@ export interface Translations {
     soulSaved: string
     failedLoad: string
     failedLoadSkills: string
+    failedLoadMcp: string
+    failedSaveMcp: string
     failedDelete: string
     failedCopy: string
     failedLoadSoul: string
