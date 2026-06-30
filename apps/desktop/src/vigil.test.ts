@@ -7,7 +7,9 @@ import {
   installSkillHub,
   listAllProfileSessions,
   listSessions,
-  searchSkillHub
+  searchSkillHub,
+  speakText,
+  transcribeAudio
 } from './vigil'
 
 const emptySessionsResponse = {
@@ -106,6 +108,33 @@ describe('VIGIL REST session helpers', () => {
         method: 'POST',
         body: { identifier: 'owner/repo' },
         timeoutMs: 60_000
+      })
+    )
+  })
+
+  it('uses voice-specific timeouts for desktop transcription and speech', async () => {
+    await transcribeAudio('data:audio/webm;base64,AAAA', 'audio/webm')
+    await speakText('hello')
+
+    expect(api).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        path: '/api/audio/transcribe',
+        method: 'POST',
+        body: {
+          data_url: 'data:audio/webm;base64,AAAA',
+          mime_type: 'audio/webm'
+        },
+        timeoutMs: 600_000
+      })
+    )
+    expect(api).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        path: '/api/audio/speak',
+        method: 'POST',
+        body: { text: 'hello' },
+        timeoutMs: 120_000
       })
     )
   })

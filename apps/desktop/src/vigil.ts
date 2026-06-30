@@ -51,6 +51,8 @@ import type {
 const DEFAULT_GATEWAY_REQUEST_TIMEOUT_MS = 30_000
 const SESSION_LIST_REQUEST_TIMEOUT_MS = 60_000
 const SKILL_HUB_REQUEST_TIMEOUT_MS = 60_000
+const AUDIO_TRANSCRIPTION_REQUEST_TIMEOUT_MS = 600_000
+const AUDIO_TTS_REQUEST_TIMEOUT_MS = 120_000
 
 export type {
   ActionResponse,
@@ -869,7 +871,8 @@ export function transcribeAudio(dataUrl: string, mimeType?: string): Promise<Aud
     body: {
       data_url: dataUrl,
       mime_type: mimeType
-    }
+    },
+    timeoutMs: AUDIO_TRANSCRIPTION_REQUEST_TIMEOUT_MS
   })
 }
 
@@ -877,7 +880,8 @@ export function speakText(text: string): Promise<AudioSpeakResponse> {
   return window.vigilDesktop.api<AudioSpeakResponse>({
     path: '/api/audio/speak',
     method: 'POST',
-    body: { text }
+    body: { text },
+    timeoutMs: AUDIO_TTS_REQUEST_TIMEOUT_MS
   })
 }
 

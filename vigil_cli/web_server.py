@@ -796,6 +796,8 @@ _AUDIO_MIME_EXTENSIONS: Dict[str, str] = {
     "video/webm": ".webm",
 }
 _MAX_TRANSCRIPTION_UPLOAD_BYTES = 25 * 1024 * 1024
+_AUDIO_TRANSCRIPTION_TIMEOUT_SECONDS = 600
+_AUDIO_TTS_TIMEOUT_SECONDS = 120
 
 
 def _audio_extension_for_mime(mime_type: str) -> str:
@@ -2749,9 +2751,14 @@ async def transcribe_audio_upload(payload: AudioTranscriptionRequest):
         from tools.transcription_tools import transcribe_audio
 
         loop = asyncio.get_running_loop()
-        result = await loop.run_in_executor(None, transcribe_audio, temp_path)
+        result = await asyncio.wait_for(
+            loop.run_in_executor(None, transcribe_audio, temp_path),
+            timeout=_AUDIO_TRANSCRIPTION_TIMEOUT_SECONDS,
+        )
     except HTTPException:
         raise
+    except asyncio.TimeoutError:
+        raise HTTPException(status_code=504, detail="Transcription timed out")
     except Exception as exc:
         _log.exception("Desktop voice transcription failed")
         raise HTTPException(status_code=500, detail=f"Transcription failed: {exc}")
@@ -2852,7 +2859,12 @@ async def speak_text(payload: TTSSpeakRequest):
     try:
         from tools.tts_tool import text_to_speech_tool
         loop = asyncio.get_running_loop()
-        result_json = await loop.run_in_executor(None, text_to_speech_tool, text)
+        result_json = await asyncio.wait_for(
+            loop.run_in_executor(None, text_to_speech_tool, text),
+            timeout=_AUDIO_TTS_TIMEOUT_SECONDS,
+        )
+    except asyncio.TimeoutError:
+        raise HTTPException(status_code=504, detail="Speech synthesis timed out")
     except Exception as exc:
         _log.exception("Desktop voice TTS failed")
         raise HTTPException(status_code=500, detail=f"Speech synthesis failed: {exc}")
