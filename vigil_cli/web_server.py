@@ -9297,6 +9297,22 @@ def _installed_hub_identifiers(profile: Optional[str] = None) -> dict:
         return {}
 
 
+def _skill_hub_results_payload(results, limit: int, profile: Optional[str]) -> dict:
+    """Return deduped SkillMeta rows in the REST shape shared by browse/search."""
+    _rank = {"builtin": 2, "trusted": 1, "community": 0}
+    seen = {}
+    for item in results:
+        if item.identifier not in seen:
+            seen[item.identifier] = item
+        elif _rank.get(item.trust_level, 0) > _rank.get(seen[item.identifier].trust_level, 0):
+            seen[item.identifier] = item
+    deduped = list(seen.values())[:limit]
+    return {
+        "results": [_skill_meta_to_payload(m) for m in deduped],
+        "installed": _installed_hub_identifiers(profile),
+    }
+
+
 @app.get("/api/skills/hub/sources")
 async def list_skills_hub_sources(profile: Optional[str] = None):
     """List the configured skill-hub sources and installed-skill provenance.
@@ -9358,6 +9374,60 @@ async def list_skills_hub_sources(profile: Optional[str] = None):
         raise HTTPException(status_code=502, detail=f"Hub sources failed: {exc}")
 
 
+@app.get("/api/skills/hub/browse")
+async def browse_skills_hub(
+    source: str = "all", limit: int = 50, profile: Optional[str] = None
+):
+    """Browse the first page of skills exposed by a source without a query.
+
+    Unlike search, an empty query is meaningful here: source adapters use it as
+    a catalog/list operation where supported. Sources that need a concrete URL
+    or domain simply return no rows.
+    """
+    source_id = (source or "all").strip() or "all"
+
+    def _run():
+        from tools.skills_hub import create_source_router, parallel_search_sources
+
+        sources = create_source_router()
+        capped = min(max(limit, 1), 100)
+
+        if source_id != "all":
+            for src in sources:
+                if src.source_id() == source_id:
+                    rows = src.search("", limit=capped)
+                    payload = _skill_hub_results_payload(rows, capped, profile)
+                    payload["source_counts"] = {source_id: len(rows)}
+                    payload["timed_out"] = []
+                    return payload
+            return {
+                "results": [],
+                "source_counts": {},
+                "timed_out": [],
+                "installed": _installed_hub_identifiers(profile),
+            }
+
+        all_results, source_counts, timed_out = parallel_search_sources(
+            sources,
+            query="",
+            source_filter="all",
+            per_source_limits={},
+            overall_timeout=15,
+        )
+        payload = _skill_hub_results_payload(all_results, capped, profile)
+        payload["source_counts"] = source_counts
+        payload["timed_out"] = timed_out
+        return payload
+
+    try:
+        return await asyncio.to_thread(_run)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        _log.exception("skills hub browse failed")
+        raise HTTPException(status_code=502, detail=f"Hub browse failed: {exc}")
+
+
 @app.get("/api/skills/hub/search")
 async def search_skills_hub(
     q: str = "", source: str = "all", limit: int = 20, profile: Optional[str] = None
@@ -9382,22 +9452,10 @@ async def search_skills_hub(
             sources, query=query, source_filter=source or "all", overall_timeout=30
         )
 
-        # Dedupe by identifier, preferring higher trust (mirrors unified_search).
-        _rank = {"builtin": 2, "trusted": 1, "community": 0}
-        seen = {}
-        for r in all_results:
-            if r.identifier not in seen:
-                seen[r.identifier] = r
-            elif _rank.get(r.trust_level, 0) > _rank.get(seen[r.identifier].trust_level, 0):
-                seen[r.identifier] = r
-        deduped = list(seen.values())[:capped]
-
-        return {
-            "results": [_skill_meta_to_payload(m) for m in deduped],
-            "source_counts": source_counts,
-            "timed_out": timed_out,
-            "installed": _installed_hub_identifiers(profile),
-        }
+        payload = _skill_hub_results_payload(all_results, capped, profile)
+        payload["source_counts"] = source_counts
+        payload["timed_out"] = timed_out
+        return payload
 
     try:
         return await asyncio.to_thread(_run)

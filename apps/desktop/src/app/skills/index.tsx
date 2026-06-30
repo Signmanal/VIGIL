@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch'
 import { TextTab, TextTabMeta } from '@/components/ui/text-tab'
 import {
+  browseSkillHub,
   getSkillHubSources,
   getSkills,
   getToolsets,
@@ -384,7 +385,6 @@ function SkillMarketPanel({ onInstalled, query }: { onInstalled: () => Promise<v
   const { t } = useI18n()
   const [sources, setSources] = useState<SkillHubSourceInfo[]>([])
   const [source, setSource] = useState('all')
-  const [featured, setFeatured] = useState<SkillHubResult[]>([])
   const [results, setResults] = useState<SkillHubResult[]>([])
   const [installed, setInstalled] = useState<Record<string, unknown>>({})
   const [loadingSources, setLoadingSources] = useState(false)
@@ -404,7 +404,6 @@ function SkillMarketPanel({ onInstalled, query }: { onInstalled: () => Promise<v
         }
 
         setSources(payload.sources || [])
-        setFeatured(payload.featured || [])
         setInstalled(payload.installed || {})
       })
       .catch(err => {
@@ -425,10 +424,34 @@ function SkillMarketPanel({ onInstalled, query }: { onInstalled: () => Promise<v
 
   useEffect(() => {
     if (deferredQuery.length < 2) {
-      setResults([])
+      let cancelled = false
+      setSearching(true)
       setError(null)
 
-      return
+      void browseSkillHub(source)
+        .then(payload => {
+          if (cancelled) {
+            return
+          }
+
+          setResults(payload.results || [])
+          setInstalled(payload.installed || {})
+        })
+        .catch(err => {
+          if (!cancelled) {
+            setResults([])
+            setError(err instanceof Error ? err.message : t.skills.marketSearchFailed)
+          }
+        })
+        .finally(() => {
+          if (!cancelled) {
+            setSearching(false)
+          }
+        })
+
+      return () => {
+        cancelled = true
+      }
     }
 
     let cancelled = false
@@ -495,10 +518,6 @@ function SkillMarketPanel({ onInstalled, query }: { onInstalled: () => Promise<v
 
   const directIdentifier = isDirectSkillIdentifier(deferredQuery) ? deferredQuery : null
   const directAlreadyListed = directIdentifier ? results.some(result => result.identifier === directIdentifier) : false
-  const featuredForSource = useMemo(
-    () => (source === 'all' ? featured : featured.filter(item => item.source === source)),
-    [featured, source]
-  )
   const marketSources = sourceOptions.filter(option => option.id !== 'all')
 
   const sourceStatus = (option: SkillHubSourceInfo): string => {
@@ -643,24 +662,23 @@ function SkillMarketPanel({ onInstalled, query }: { onInstalled: () => Promise<v
           </div>
         )}
 
-        {deferredQuery.length < 2 ? (
-          featuredForSource.length > 0 ? (
-            <section className="space-y-3">
-              <div>
-                <h3 className="text-sm font-semibold">{t.skills.marketFeaturedTitle}</h3>
-                <p className="mt-1 text-xs leading-5 text-muted-foreground">{t.skills.marketFeaturedDesc}</p>
-              </div>
-              {renderResultCards(featuredForSource)}
-            </section>
-          ) : (
-            <EmptyState description={t.skills.marketEmptyDesc} title={t.skills.marketEmptyTitle} />
-          )
-        ) : searching ? (
+        {searching ? (
           <PageLoader className="min-h-52" label={t.skills.marketLoading} />
         ) : error ? (
           <EmptyState description={error} title={t.skills.marketSearchFailed} />
         ) : results.length === 0 ? (
-          <EmptyState description={t.skills.marketNoResultsDesc} title={t.skills.marketNoResultsTitle} />
+          <EmptyState
+            description={deferredQuery.length < 2 ? t.skills.marketEmptyDesc : t.skills.marketNoResultsDesc}
+            title={deferredQuery.length < 2 ? t.skills.marketEmptyTitle : t.skills.marketNoResultsTitle}
+          />
+        ) : deferredQuery.length < 2 ? (
+          <section className="space-y-3">
+            <div>
+              <h3 className="text-sm font-semibold">{t.skills.marketFeaturedTitle}</h3>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">{t.skills.marketFeaturedDesc}</p>
+            </div>
+            {renderResultCards(results)}
+          </section>
         ) : (
           renderResultCards(results)
         )}

@@ -39,6 +39,7 @@ import type {
   SessionInfo,
   SessionMessagesResponse,
   SessionSearchResponse,
+  SkillHubBrowseResponse,
   SkillHubSearchResponse,
   SkillHubSourcesResponse,
   SkillInfo,
@@ -530,6 +531,23 @@ export function searchSkillHub(
   return window.vigilDesktop.api<SkillHubSearchResponse>({
     ...(scopedProfile ? {} : profileScoped()),
     path: `/api/skills/hub/search?${params.toString()}`
+  })
+}
+
+export function browseSkillHub(source = 'all', limit = 100, profile?: string): Promise<SkillHubBrowseResponse> {
+  const params = new URLSearchParams({
+    source,
+    limit: String(Math.max(1, Math.floor(limit)))
+  })
+  const scopedProfile = profile?.trim()
+
+  if (scopedProfile) {
+    params.set('profile', scopedProfile)
+  }
+
+  return window.vigilDesktop.api<SkillHubBrowseResponse>({
+    ...(scopedProfile ? {} : profileScoped()),
+    path: `/api/skills/hub/browse?${params.toString()}`
   })
 }
 

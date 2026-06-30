@@ -588,6 +588,8 @@ export interface SkillHubSearchResponse {
   timed_out: string[]
 }
 
+export type SkillHubBrowseResponse = SkillHubSearchResponse
+
 export interface ToolsetInfo {
   configured: boolean
   description: string

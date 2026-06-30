@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 const getSkills = vi.fn()
 const getToolsets = vi.fn()
 const getSkillHubSources = vi.fn()
+const browseSkillHub = vi.fn()
 const searchSkillHub = vi.fn()
 const installSkillHub = vi.fn()
 const toggleSkill = vi.fn()
@@ -13,6 +14,7 @@ const getToolsetConfig = vi.fn()
 const selectToolsetProvider = vi.fn()
 
 vi.mock('@/vigil', () => ({
+  browseSkillHub: (source: string) => browseSkillHub(source),
   getSkills: () => getSkills(),
   getToolsets: () => getToolsets(),
   getSkillHubSources: () => getSkillHubSources(),
@@ -65,6 +67,7 @@ beforeEach(() => {
     installed: {},
     sources: [{ id: 'skills-sh', label: 'skills.sh' }]
   })
+  browseSkillHub.mockResolvedValue({ installed: {}, results: [], source_counts: {}, timed_out: [] })
   searchSkillHub.mockResolvedValue({ installed: {}, results: [], source_counts: {}, timed_out: [] })
   installSkillHub.mockResolvedValue({ ok: true, pid: 123, name: 'skills-install' })
   toggleToolset.mockResolvedValue({ ok: true, name: 'web', enabled: false })
@@ -125,9 +128,19 @@ describe('SkillsView toolset management', () => {
     await waitFor(() => expect(installSkillHub).toHaveBeenCalledWith('owner/repo'))
   })
 
-  it('shows configured market sources and featured skills before search', async () => {
+  it('browses configured market source skills before search', async () => {
     getSkillHubSources.mockResolvedValue({
-      featured: [
+      featured: [],
+      index_available: true,
+      installed: {},
+      sources: [
+        { available: true, id: 'vigil-index', label: 'VIGIL Index' },
+        { id: 'github', label: 'GitHub', rate_limited: true }
+      ]
+    })
+    browseSkillHub.mockResolvedValue({
+      installed: {},
+      results: [
         {
           description: 'Generate incident reports',
           identifier: 'security/incident-reporter',
@@ -138,12 +151,8 @@ describe('SkillsView toolset management', () => {
           trust_level: 'trusted'
         }
       ],
-      index_available: true,
-      installed: {},
-      sources: [
-        { available: true, id: 'vigil-index', label: 'VIGIL Index' },
-        { id: 'github', label: 'GitHub', rate_limited: true }
-      ]
+      source_counts: { all: 1 },
+      timed_out: []
     })
 
     await renderSkills('/skills?tab=market')
@@ -152,9 +161,30 @@ describe('SkillsView toolset management', () => {
     expect(screen.getByText('VIGIL Index')).toBeTruthy()
     expect(screen.getByText('GitHub')).toBeTruthy()
     expect(await screen.findByText('Incident Reporter')).toBeTruthy()
+    expect(browseSkillHub).toHaveBeenCalledWith('all')
 
     fireEvent.click(screen.getByRole('button', { name: 'Install' }))
 
     await waitFor(() => expect(installSkillHub).toHaveBeenCalledWith('security/incident-reporter'))
+  })
+
+  it('browses the selected source when a source card is clicked', async () => {
+    getSkillHubSources.mockResolvedValue({
+      featured: [],
+      index_available: true,
+      installed: {},
+      sources: [
+        { available: true, id: 'skills-sh', label: 'skills.sh' },
+        { available: true, id: 'browse-sh', label: 'browse.sh' }
+      ]
+    })
+    browseSkillHub.mockResolvedValue({ installed: {}, results: [], source_counts: {}, timed_out: [] })
+
+    await renderSkills('/skills?tab=market')
+
+    const browseCard = await screen.findByRole('button', { name: /browse\.sh/i })
+    fireEvent.click(browseCard)
+
+    await waitFor(() => expect(browseSkillHub).toHaveBeenCalledWith('browse-sh'))
   })
 })
