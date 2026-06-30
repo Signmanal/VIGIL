@@ -143,6 +143,44 @@ def test_cmd_update_on_git_install_does_not_print_docker_message(
     assert "doesn't apply inside the Docker container" not in capsys.readouterr().out
 
 
+def test_cmd_update_check_fetches_origin_not_stale_upstream(monkeypatch, tmp_path, capsys):
+    """``vigil update --check`` must compare the same ref the apply path updates.
+
+    Regression guard for local VIGIL checkouts that still have an old
+    ``upstream=NousResearch/hermes-agent`` remote: the check path used to probe
+    upstream/main first, so the UI/CLI could report or hang on the wrong repo.
+    """
+    import vigil_cli.main as main_mod
+
+    repo = tmp_path / "repo"
+    (repo / ".git").mkdir(parents=True)
+    calls = []
+
+    def fake_run(cmd, **kwargs):
+        calls.append(cmd)
+        if cmd == ["git", "rev-parse", "--is-shallow-repository"]:
+            return SimpleNamespace(returncode=0, stdout="false\n", stderr="")
+        if cmd == ["git", "fetch", "origin", "main"]:
+            return SimpleNamespace(returncode=0, stdout="", stderr="")
+        if cmd == ["git", "rev-parse", "--verify", "--quiet", "origin/main"]:
+            return SimpleNamespace(returncode=0, stdout="", stderr="")
+        if cmd == ["git", "rev-list", "HEAD..origin/main", "--count"]:
+            return SimpleNamespace(returncode=0, stdout="0\n", stderr="")
+        raise AssertionError(f"unexpected command: {cmd!r}")
+
+    monkeypatch.setattr(main_mod, "PROJECT_ROOT", repo)
+    monkeypatch.setattr("vigil_cli.config.detect_install_method", lambda _root: "git")
+    monkeypatch.setattr(main_mod.subprocess, "run", fake_run)
+
+    _cmd_update_check(branch="main")
+
+    out = capsys.readouterr().out
+    assert "Fetching from origin" in out
+    assert "Fetching from upstream" not in out
+    assert ["git", "fetch", "origin", "main"] in calls
+    assert not any(cmd[:3] == ["git", "fetch", "upstream"] for cmd in calls)
+
+
 @patch("vigil_cli.config.detect_install_method", return_value="pip")
 @patch("vigil_cli.banner.check_via_pypi", return_value=0)
 def test_cmd_update_check_on_pip_install_still_uses_pypi(
