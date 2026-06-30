@@ -1,61 +1,61 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="XCLAW app icon">
   <defs>
-    <linearGradient id="bg" x1="112" y1="72" x2="910" y2="940" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#030507"/>
-      <stop offset="0.48" stop-color="#07131b"/>
-      <stop offset="1" stop-color="#031d1f"/>
+    <linearGradient id="bg" x1="114" y1="70" x2="902" y2="948" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#08131d"/>
+      <stop offset=".45" stop-color="#031018"/>
+      <stop offset="1" stop-color="#021d19"/>
     </linearGradient>
-    <linearGradient id="edge" x1="128" y1="134" x2="880" y2="898" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#e8fbff"/>
-      <stop offset="0.48" stop-color="#f8fbff"/>
-      <stop offset="1" stop-color="#bdf7ef"/>
-    </linearGradient>
-    <linearGradient id="signal" x1="166" y1="174" x2="858" y2="854" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#38bdf8"/>
-      <stop offset="0.55" stop-color="#22d3ee"/>
-      <stop offset="1" stop-color="#34d399"/>
-    </linearGradient>
-    <radialGradient id="scan" cx="50%" cy="40%" r="62%">
-      <stop offset="0" stop-color="#0f2d3a" stop-opacity=".78"/>
-      <stop offset=".58" stop-color="#07131b" stop-opacity=".34"/>
-      <stop offset="1" stop-color="#020406" stop-opacity="0"/>
+    <radialGradient id="aura" cx="50%" cy="42%" r="58%">
+      <stop offset="0" stop-color="#1ce7ff" stop-opacity=".32"/>
+      <stop offset=".48" stop-color="#0b6b78" stop-opacity=".16"/>
+      <stop offset="1" stop-color="#02070a" stop-opacity="0"/>
     </radialGradient>
-    <filter id="softGlow" x="-24%" y="-24%" width="148%" height="148%">
+    <linearGradient id="ice" x1="328" y1="286" x2="696" y2="738" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f7fcff"/>
+      <stop offset=".5" stop-color="#ccf5ff"/>
+      <stop offset="1" stop-color="#76ffe4"/>
+    </linearGradient>
+    <linearGradient id="signal" x1="314" y1="290" x2="724" y2="762" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#26d9ff"/>
+      <stop offset=".58" stop-color="#41f0ff"/>
+      <stop offset="1" stop-color="#36f2a4"/>
+    </linearGradient>
+    <filter id="glow" x="-35%" y="-35%" width="170%" height="170%">
       <feGaussianBlur stdDeviation="18" result="blur"/>
       <feMerge>
         <feMergeNode in="blur"/>
         <feMergeNode in="SourceGraphic"/>
       </feMerge>
     </filter>
-    <filter id="hardShadow" x="-18%" y="-18%" width="136%" height="136%">
-      <feDropShadow dx="0" dy="18" stdDeviation="20" flood-color="#000000" flood-opacity=".46"/>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="22" stdDeviation="24" flood-color="#000000" flood-opacity=".55"/>
     </filter>
   </defs>
 
-  <rect width="1024" height="1024" rx="226" fill="url(#bg)"/>
-  <rect width="1024" height="1024" rx="226" fill="url(#scan)"/>
-  <rect x="28" y="28" width="968" height="968" rx="207" fill="none" stroke="url(#signal)" stroke-width="6" opacity=".52"/>
-  <path d="M149 188h128M747 188h128M149 836h128M747 836h128" stroke="url(#signal)" stroke-width="16" stroke-linecap="round" opacity=".58"/>
-  <path d="M188 149v128M836 149v128M188 747v128M836 747v128" stroke="url(#signal)" stroke-width="16" stroke-linecap="round" opacity=".58"/>
+  <g transform="translate(92 92) scale(.82)">
+    <rect width="1024" height="1024" rx="228" fill="url(#bg)"/>
+    <rect width="1024" height="1024" rx="228" fill="url(#aura)"/>
+    <path d="M176 256c126-88 248-132 366-132 114 0 216 36 306 108" stroke="#9df8ff" stroke-width="8" stroke-linecap="round" opacity=".16"/>
+    <path d="M164 768c116 82 235 123 357 123 120 0 232-38 337-114" stroke="#36f2a4" stroke-width="8" stroke-linecap="round" opacity=".16"/>
 
-  <path
-    d="M170 824 407 511 184 200h158l150 221 143-221h178L574 505l280 319H675L476 589 322 824H170Z"
-    fill="#22d3ee"
-    opacity=".28"
-    filter="url(#softGlow)"
-  />
-  <path
-    d="M170 824 407 511 184 200h158l150 221 143-221h178L574 505l280 319H675L476 589 322 824H170Z"
-    fill="url(#edge)"
-    filter="url(#hardShadow)"
-  />
+    <g filter="url(#shadow)">
+      <ellipse cx="512" cy="512" rx="254" ry="184" fill="none" stroke="url(#signal)" stroke-width="18" opacity=".34" transform="rotate(-13 512 512)"/>
+      <ellipse cx="512" cy="512" rx="184" ry="254" fill="none" stroke="#bafcff" stroke-width="10" opacity=".15" transform="rotate(43 512 512)"/>
 
-  <path d="M266 236 688 788h74L339 236h-73Z" fill="#020406" opacity=".72"/>
-  <path d="M642 236h91L548 470l-47-66 141-168Z" fill="#020406" opacity=".62"/>
-  <path d="M285 788h94l158-200 47 64-142 136H285Z" fill="#020406" opacity=".62"/>
+      <g filter="url(#glow)" opacity=".55">
+        <path d="M360 318 666 706" stroke="#25e5ff" stroke-width="92" stroke-linecap="round"/>
+        <path d="M668 318 358 706" stroke="#35f2a5" stroke-width="92" stroke-linecap="round"/>
+      </g>
 
-  <path d="M196 810 424 510 212 214h105l171 247 160-247h117L528 505l259 305H690L475 558 312 810H196Z" fill="none" stroke="url(#signal)" stroke-width="18" stroke-linejoin="round" opacity=".9"/>
-  <path d="M704 250h86l-42 54h-86l42-54ZM226 718h90l-48 58h-90l48-58ZM746 724h75l37 48h-74l-38-48Z" fill="#34d399" opacity=".82"/>
-  <path d="M332 178h360" stroke="#e8fbff" stroke-width="10" stroke-linecap="round" opacity=".26"/>
-  <path d="M332 846h360" stroke="#22d3ee" stroke-width="10" stroke-linecap="round" opacity=".24"/>
+      <path d="M360 318 666 706" stroke="url(#ice)" stroke-width="74" stroke-linecap="round"/>
+      <path d="M668 318 358 706" stroke="url(#ice)" stroke-width="74" stroke-linecap="round"/>
+      <path d="M384 348 642 676" stroke="#031018" stroke-width="30" stroke-linecap="round" opacity=".82"/>
+      <path d="M641 350 383 674" stroke="#031018" stroke-width="30" stroke-linecap="round" opacity=".82"/>
+
+      <path d="M675 267h100M716 316h88M326 708h-92M302 760h-58" stroke="url(#signal)" stroke-width="18" stroke-linecap="round" opacity=".9"/>
+      <path d="M716 266 674 318M766 266l-42 52M304 708l-42 52M254 708l-42 52" stroke="#021016" stroke-width="10" stroke-linecap="round" opacity=".78"/>
+    </g>
+
+    <rect x="42" y="42" width="940" height="940" rx="202" fill="none" stroke="#ccfbff" stroke-width="3" opacity=".16"/>
+  </g>
 </svg>

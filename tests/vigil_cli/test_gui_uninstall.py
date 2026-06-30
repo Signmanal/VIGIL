@@ -175,6 +175,19 @@ def test_gui_install_summary_shape(tmp_path, monkeypatch):
     assert summary["platform"] == sys.platform
 
 
+def test_packaged_gui_app_paths_include_xclaw_and_legacy_macos(monkeypatch):
+    home = Path("/home/tester")
+    monkeypatch.setattr(Path, "home", classmethod(lambda cls: home))
+    monkeypatch.setattr(gu.sys, "platform", "darwin")
+
+    paths = gu.packaged_gui_app_paths()
+
+    assert Path("/Applications/XCLAW.app") in paths
+    assert home / "Applications" / "XCLAW.app" in paths
+    assert Path("/Applications/VIGIL.app") in paths
+    assert home / "Applications" / "VIGIL.app" in paths
+
+
 def test_userdata_dir_per_platform(monkeypatch):
     """userData path matches Electron's app.getPath('userData') for "VIGIL"."""
     home = Path("/home/tester")

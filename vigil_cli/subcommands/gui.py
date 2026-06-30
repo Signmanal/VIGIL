@@ -17,7 +17,7 @@ def build_gui_parser(subparsers, *, cmd_gui: Callable) -> None:
         aliases=["gui", "destkop"],
         help="Build and launch the native desktop app",
         description=(
-            "Launch the VIGIL Electron desktop app. By default this installs "
+            "Launch the XCLAW Electron desktop app. By default this installs "
             "workspace Node dependencies, builds the current OS's unpacked "
             "Electron app, then launches that packaged artifact."
         ),

@@ -19,11 +19,18 @@ def _uses_desktop_node_engine_check(fn):
     return fn
 
 
+def _uses_desktop_user_app_migration(fn):
+    fn.uses_desktop_user_app_migration = True
+    return fn
+
+
 @pytest.fixture(autouse=True)
 def _disable_desktop_node_engine_check(monkeypatch, request):
     if getattr(request.node.function, "uses_desktop_node_engine_check", False):
         return
     monkeypatch.setattr(cli_main, "_ensure_desktop_node", lambda: None)
+    if not getattr(request.node.function, "uses_desktop_user_app_migration", False):
+        monkeypatch.setattr(cli_main, "_desktop_migrate_legacy_macos_user_app", lambda _exe: None)
 
 
 def _ns(**kw):
@@ -243,6 +250,29 @@ def test_gui_macos_pack_preserves_explicit_signing_identity(tmp_path, monkeypatc
     build_env = mock_run.call_args_list[0].kwargs["env"]
     assert build_env["APPLE_SIGNING_IDENTITY"] == "Developer ID Application: Example"
     assert "CSC_IDENTITY_AUTO_DISCOVERY" not in build_env
+
+
+@_uses_desktop_user_app_migration
+def test_desktop_migrates_legacy_macos_user_app(tmp_path, monkeypatch):
+    monkeypatch.setattr(cli_main.sys, "platform", "darwin")
+    monkeypatch.setattr(Path, "home", classmethod(lambda cls: tmp_path))
+
+    source_app = tmp_path / "release" / "mac-arm64" / "XCLAW.app"
+    source_exe = source_app / "Contents" / "MacOS" / "XCLAW"
+    source_exe.parent.mkdir(parents=True)
+    source_exe.write_text("", encoding="utf-8")
+    (source_app / "Contents" / "Info.plist").write_text("XCLAW", encoding="utf-8")
+
+    legacy_app = tmp_path / "Applications" / "VIGIL.app"
+    (legacy_app / "Contents").mkdir(parents=True)
+    (legacy_app / "Contents" / "Info.plist").write_text("VIGIL", encoding="utf-8")
+
+    target = cli_main._desktop_migrate_legacy_macos_user_app(source_exe)
+
+    assert target == tmp_path / "Applications" / "XCLAW.app"
+    assert not legacy_app.exists()
+    assert (target / "Contents" / "Info.plist").read_text(encoding="utf-8") == "XCLAW"
+    assert (tmp_path / "Applications" / ".VIGIL.app.legacy").exists()
 
 
 def test_gui_exits_when_npm_missing(tmp_path, monkeypatch, capsys):

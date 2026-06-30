@@ -17,8 +17,10 @@ the Python agent or the user's config/data:
   2. Packaged distributable (DMG / NSIS / AppImage / deb / rpm)
      Installed by the OS to a standard application location and carrying its
      own bundled Electron + a per-user Electron ``userData`` directory:
-       - macOS:   ``/Applications/VIGIL.app`` or ``~/Applications/VIGIL.app``
-       - Windows: ``%LOCALAPPDATA%\\Programs\\VIGIL`` (NSIS per-user)
+      - macOS:   ``/Applications/XCLAW.app`` or ``~/Applications/XCLAW.app``
+                 plus legacy ``VIGIL.app`` phase-1 bundles
+      - Windows: ``%LOCALAPPDATA%\\Programs\\XCLAW`` (NSIS per-user)
+                 plus legacy VIGIL layouts
        - Linux:   ``~/.local/share/applications`` .desktop entry + AppImage
 
 In both shapes the Electron runtime keeps a ``userData`` directory keyed on
@@ -113,12 +115,15 @@ def packaged_gui_app_paths() -> "list[Path]":
 
     Returns every candidate for the current OS; the caller filters to those
     that actually exist. We never glob system-wide — only the well-known
-    electron-builder output locations for the "VIGIL" product.
+    electron-builder output locations for the "XCLAW" product, plus the
+    legacy phase-1 VIGIL names still found on existing machines.
     """
     home = Path.home()
     paths: list[Path] = []
     if sys.platform == "darwin":
         paths += [
+            Path("/Applications/XCLAW.app"),
+            home / "Applications" / "XCLAW.app",
             Path("/Applications/VIGIL.app"),
             home / "Applications" / "VIGIL.app",
         ]
@@ -126,14 +131,18 @@ def packaged_gui_app_paths() -> "list[Path]":
         local = os.environ.get("LOCALAPPDATA")
         local_base = Path(local) if local else (home / "AppData" / "Local")
         paths += [
-            # NSIS per-user install (perMachine=false → Programs\VIGIL).
+            # NSIS per-user install (perMachine=false → Programs\XCLAW).
+            local_base / "Programs" / "XCLAW",
+            # Legacy phase-1 VIGIL layouts.
             local_base / "Programs" / "VIGIL",
+            local_base / "xclaw-desktop",
             # Older / alternate layout some builds used.
             local_base / "vigil-desktop",
         ]
         program_files = os.environ.get("ProgramFiles")
         if program_files:
             # NSIS per-machine fallback (needs admin to remove).
+            paths.append(Path(program_files) / "XCLAW")
             paths.append(Path(program_files) / "VIGIL")
     else:
         # Linux: AppImage is a single file the user placed somewhere; we can
@@ -145,6 +154,8 @@ def packaged_gui_app_paths() -> "list[Path]":
         data = os.environ.get("XDG_DATA_HOME")
         data_base = Path(data) if data else (home / ".local" / "share")
         paths += [
+            data_base / "applications" / "xclaw.desktop",
+            data_base / "applications" / "XCLAW.desktop",
             data_base / "applications" / "vigil.desktop",
             data_base / "applications" / "VIGIL.desktop",
         ]

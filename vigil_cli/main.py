@@ -5555,6 +5555,59 @@ def _desktop_macos_relaunchable_fixup(desktop_dir: Path) -> None:
         print(f"  (warning: macOS relaunch fixup skipped: {exc})")
 
 
+def _desktop_legacy_user_app_backup_path(legacy_app: Path) -> Path:
+    """Return a hidden, non-.app backup path for a legacy user app bundle."""
+    base = legacy_app.with_name(f".{legacy_app.name}.legacy")
+    if not base.exists():
+        return base
+    for index in range(1, 1000):
+        candidate = legacy_app.with_name(f".{legacy_app.name}.legacy-{index}")
+        if not candidate.exists():
+            return candidate
+    return legacy_app.with_name(f".{legacy_app.name}.legacy-last")
+
+
+def _desktop_migrate_legacy_macos_user_app(packaged_executable: Path) -> Optional[Path]:
+    """Replace a stale ``~/Applications/VIGIL.app`` with the current XCLAW app.
+
+    Phase 1 keeps bundle identifiers and core paths stable, but users may still
+    have an old user-installed app bundle whose Finder label is "VIGIL". When
+    launching the freshly built XCLAW bundle from source, mirror that bundle to
+    ``~/Applications/XCLAW.app`` and hide the old bundle as a backup.
+    """
+    if sys.platform != "darwin":
+        return None
+    try:
+        source_app = packaged_executable.parents[2]
+    except IndexError:
+        return None
+    if source_app.name != "XCLAW.app" or not source_app.is_dir():
+        return None
+
+    applications_dir = Path.home() / "Applications"
+    legacy_app = applications_dir / "VIGIL.app"
+    target_app = applications_dir / "XCLAW.app"
+    if not legacy_app.exists() or target_app.exists():
+        return None
+
+    backup_app = _desktop_legacy_user_app_backup_path(legacy_app)
+    try:
+        applications_dir.mkdir(parents=True, exist_ok=True)
+        shutil.move(str(legacy_app), str(backup_app))
+        shutil.copytree(source_app, target_app, symlinks=True)
+        return target_app
+    except Exception as exc:
+        try:
+            if target_app.exists():
+                shutil.rmtree(target_app, ignore_errors=True)
+            if backup_app.exists() and not legacy_app.exists():
+                shutil.move(str(backup_app), str(legacy_app))
+        except Exception:
+            pass
+        print(f"  ⚠ Could not migrate legacy VIGIL.app to XCLAW.app: {exc}")
+        return None
+
+
 def _desktop_linux_sandbox_fixup(packaged_executable: Path) -> bool:
     """Configure Electron's Linux SUID sandbox helper when required."""
     if sys.platform != "linux":
@@ -5776,7 +5829,7 @@ def cmd_gui(args: argparse.Namespace):
         return
 
     if source_mode:
-        print("→ Launching VIGIL Desktop from source build...")
+        print("→ Launching XCLAW Desktop from source build...")
         launch_result = subprocess.run([npm, "exec", "--", "electron", "."], cwd=desktop_dir, env=env, check=False)
         sys.exit(launch_result.returncode)
 
@@ -5788,7 +5841,11 @@ def cmd_gui(args: argparse.Namespace):
     if not _desktop_linux_sandbox_fixup(packaged_executable):
         sys.exit(1)
 
-    print(f"→ Launching packaged VIGIL Desktop: {packaged_executable}")
+    migrated_app = _desktop_migrate_legacy_macos_user_app(packaged_executable)
+    if migrated_app is not None:
+        print(f"✓ Migrated legacy user app install to: {migrated_app}")
+
+    print(f"→ Launching packaged XCLAW Desktop: {packaged_executable}")
     launch_result = subprocess.run([str(packaged_executable)], cwd=desktop_dir, env=env, check=False)
     sys.exit(launch_result.returncode)
 
