@@ -36,6 +36,7 @@ import type { SetStatusbarItemGroup } from '../shell/statusbar-controls'
 const SKILLS_MODES = ['skills', 'toolsets', 'market'] as const
 type SkillsMode = (typeof SKILLS_MODES)[number]
 const SKILLS_MARKET_URL = 'https://www.skills.sh/'
+const DEFAULT_MARKET_SOURCE = 'skills-sh'
 const DIRECT_SKILL_IDENTIFIER_RE = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/
 
 function categoryFor(skill: SkillInfo): string {
@@ -384,7 +385,7 @@ function isDirectSkillIdentifier(value: string): boolean {
 function SkillMarketPanel({ onInstalled, query }: { onInstalled: () => Promise<void>; query: string }) {
   const { t } = useI18n()
   const [sources, setSources] = useState<SkillHubSourceInfo[]>([])
-  const [source, setSource] = useState('all')
+  const [source, setSource] = useState(DEFAULT_MARKET_SOURCE)
   const [results, setResults] = useState<SkillHubResult[]>([])
   const [installed, setInstalled] = useState<Record<string, unknown>>({})
   const [loadingSources, setLoadingSources] = useState(false)
@@ -518,19 +519,6 @@ function SkillMarketPanel({ onInstalled, query }: { onInstalled: () => Promise<v
 
   const directIdentifier = isDirectSkillIdentifier(deferredQuery) ? deferredQuery : null
   const directAlreadyListed = directIdentifier ? results.some(result => result.identifier === directIdentifier) : false
-  const marketSources = sourceOptions.filter(option => option.id !== 'all')
-
-  const sourceStatus = (option: SkillHubSourceInfo): string => {
-    if (option.rate_limited) {
-      return t.skills.marketSourceRateLimited
-    }
-
-    if (option.available === false) {
-      return t.skills.marketSourceUnavailable
-    }
-
-    return t.skills.marketSourceReady
-  }
 
   const renderResultCards = (items: SkillHubResult[]) => (
     <div className="space-y-2">
@@ -606,41 +594,6 @@ function SkillMarketPanel({ onInstalled, query }: { onInstalled: () => Promise<v
             </Select>
             {loadingSources && <span className="text-xs text-muted-foreground">{t.skills.marketLoading}</span>}
           </div>
-
-          {marketSources.length > 0 && (
-            <div className="mt-4 space-y-2">
-              <div className="text-[0.68rem] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                {t.skills.marketSourcesTitle}
-              </div>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {marketSources.map(option => {
-                  const active = source === option.id
-
-                  return (
-                    <button
-                      className={cn(
-                        'rounded-md border px-3 py-2 text-left transition-colors',
-                        active
-                          ? 'border-primary/70 bg-primary/10 text-foreground'
-                          : 'border-(--ui-stroke-secondary) bg-(--ui-bg-primary) text-foreground/85 hover:bg-(--ui-bg-tertiary)'
-                      )}
-                      key={option.id}
-                      onClick={() => setSource(option.id)}
-                      type="button"
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="truncate text-sm font-medium">{option.label}</span>
-                        <Badge variant={option.rate_limited || option.available === false ? 'outline' : 'muted'}>
-                          {sourceStatus(option)}
-                        </Badge>
-                      </div>
-                      <div className="mt-1 truncate font-mono text-[0.68rem] text-muted-foreground">{option.id}</div>
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          )}
         </section>
 
         {directIdentifier && !directAlreadyListed && (

@@ -50,6 +50,7 @@ import type {
 
 const DEFAULT_GATEWAY_REQUEST_TIMEOUT_MS = 30_000
 const SESSION_LIST_REQUEST_TIMEOUT_MS = 60_000
+const SKILL_HUB_REQUEST_TIMEOUT_MS = 60_000
 
 export type {
   ActionResponse,
@@ -507,7 +508,8 @@ export function getSkillHubSources(profile?: string): Promise<SkillHubSourcesRes
     ...(scopedProfile ? {} : profileScoped()),
     path: scopedProfile
       ? `/api/skills/hub/sources?profile=${encodeURIComponent(scopedProfile)}`
-      : '/api/skills/hub/sources'
+      : '/api/skills/hub/sources',
+    timeoutMs: SKILL_HUB_REQUEST_TIMEOUT_MS
   })
 }
 
@@ -530,7 +532,8 @@ export function searchSkillHub(
 
   return window.vigilDesktop.api<SkillHubSearchResponse>({
     ...(scopedProfile ? {} : profileScoped()),
-    path: `/api/skills/hub/search?${params.toString()}`
+    path: `/api/skills/hub/search?${params.toString()}`,
+    timeoutMs: SKILL_HUB_REQUEST_TIMEOUT_MS
   })
 }
 
@@ -547,7 +550,8 @@ export function browseSkillHub(source = 'all', limit = 100, profile?: string): P
 
   return window.vigilDesktop.api<SkillHubBrowseResponse>({
     ...(scopedProfile ? {} : profileScoped()),
-    path: `/api/skills/hub/browse?${params.toString()}`
+    path: `/api/skills/hub/browse?${params.toString()}`,
+    timeoutMs: SKILL_HUB_REQUEST_TIMEOUT_MS
   })
 }
 
@@ -558,7 +562,8 @@ export function installSkillHub(identifier: string, profile?: string): Promise<A
     ...(scopedProfile ? {} : profileScoped()),
     path: '/api/skills/hub/install',
     method: 'POST',
-    body: scopedProfile ? { identifier, profile: scopedProfile } : { identifier }
+    body: scopedProfile ? { identifier, profile: scopedProfile } : { identifier },
+    timeoutMs: SKILL_HUB_REQUEST_TIMEOUT_MS
   })
 }
 

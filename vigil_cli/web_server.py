@@ -9393,13 +9393,19 @@ async def browse_skills_hub(
         capped = min(max(limit, 1), 100)
 
         if source_id != "all":
-            for src in sources:
-                if src.source_id() == source_id:
-                    rows = src.search("", limit=capped)
-                    payload = _skill_hub_results_payload(rows, capped, profile)
-                    payload["source_counts"] = {source_id: len(rows)}
-                    payload["timed_out"] = []
-                    return payload
+            matches = [src for src in sources if src.source_id() == source_id]
+            if matches:
+                rows, source_counts, timed_out = parallel_search_sources(
+                    matches,
+                    query="",
+                    source_filter=source_id,
+                    per_source_limits={source_id: capped},
+                    overall_timeout=20,
+                )
+                payload = _skill_hub_results_payload(rows, capped, profile)
+                payload["source_counts"] = source_counts
+                payload["timed_out"] = timed_out
+                return payload
             return {
                 "results": [],
                 "source_counts": {},

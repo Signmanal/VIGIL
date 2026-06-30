@@ -1,6 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { getSessionMessages, listAllProfileSessions, listSessions } from './vigil'
+import {
+  browseSkillHub,
+  getSessionMessages,
+  getSkillHubSources,
+  installSkillHub,
+  listAllProfileSessions,
+  listSessions,
+  searchSkillHub
+} from './vigil'
 
 const emptySessionsResponse = {
   limit: 0,
@@ -56,5 +64,49 @@ describe('VIGIL REST session helpers', () => {
       path: '/api/sessions/session-1/messages?profile=xiaoxuxu',
       profile: 'xiaoxuxu'
     })
+  })
+
+  it('uses a longer timeout for Skill Hub source listing', async () => {
+    await getSkillHubSources()
+
+    expect(api).toHaveBeenCalledWith(
+      expect.objectContaining({
+        path: '/api/skills/hub/sources',
+        timeoutMs: 60_000
+      })
+    )
+  })
+
+  it('uses a longer timeout for Skill Hub browse and search calls', async () => {
+    await browseSkillHub('skills-sh')
+    await searchSkillHub('browser', 'skills-sh')
+
+    expect(api).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        path: '/api/skills/hub/browse?source=skills-sh&limit=100',
+        timeoutMs: 60_000
+      })
+    )
+    expect(api).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        path: '/api/skills/hub/search?q=browser&source=skills-sh&limit=20',
+        timeoutMs: 60_000
+      })
+    )
+  })
+
+  it('uses a longer timeout for Skill Hub installs', async () => {
+    await installSkillHub('owner/repo')
+
+    expect(api).toHaveBeenCalledWith(
+      expect.objectContaining({
+        path: '/api/skills/hub/install',
+        method: 'POST',
+        body: { identifier: 'owner/repo' },
+        timeoutMs: 60_000
+      })
+    )
   })
 })
