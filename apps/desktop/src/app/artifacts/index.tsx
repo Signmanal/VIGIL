@@ -22,10 +22,12 @@ import { getSessionMessages, listAllProfileSessions } from '@/vigil'
 import { type Translations, useI18n } from '@/i18n'
 import { sessionTitle } from '@/lib/chat-runtime'
 import { ExternalLink, ExternalLinkIcon, hostPathLabel, urlSlugTitleLabel, useLinkTitle } from '@/lib/external-link'
-import { FileImage, FileText, FolderOpen, Link2 } from '@/lib/icons'
+import { FileImage, FileText, FolderOpen, Link2, MonitorPlay } from '@/lib/icons'
+import { normalizeOrLocalPreviewTarget } from '@/lib/local-preview'
 import { mediaExternalUrl } from '@/lib/media'
 import { cn } from '@/lib/utils'
 import { notifyError } from '@/store/notifications'
+import { setSessionPreviewTarget } from '@/store/preview'
 import type { SessionInfo, SessionMessage } from '@/types/vigil'
 
 import { useRefreshHotkey } from '../hooks/use-refresh-hotkey'
@@ -45,6 +47,7 @@ interface ArtifactRecord {
   value: string
   href: string
   label: string
+  cwd?: null | string
   sessionId: string
   sessionTitle: string
   timestamp: number
@@ -295,6 +298,7 @@ export function collectArtifactsForSession(session: SessionInfo, messages: Sessi
         value,
         href: artifactHref(value),
         label: artifactLabel(value),
+        cwd: session.cwd ?? null,
         sessionId: session.id,
         sessionTitle: title,
         timestamp: message.timestamp || session.last_active || session.started_at || Date.now()
@@ -349,6 +353,7 @@ function paginationItems(page: number, pageCount: number): Array<number | 'ellip
 type CellCtx = {
   onOpen: (href: string) => void | Promise<void>
   onOpenChat: (sessionId: string) => void
+  onPreview: (artifact: ArtifactRecord) => void | Promise<void>
 }
 
 interface ArtifactColumn {
@@ -477,17 +482,40 @@ export function ArtifactsView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
     }
   }, [artifacts])
 
-  const openArtifact = useCallback(async (href: string) => {
-    try {
-      if (window.vigilDesktop?.openExternal) {
-        await window.vigilDesktop.openExternal(href)
-      } else {
-        window.open(href, '_blank', 'noopener,noreferrer')
+  const openArtifact = useCallback(
+    async (href: string) => {
+      try {
+        if (window.vigilDesktop?.openExternal) {
+          await window.vigilDesktop.openExternal(href)
+        } else {
+          window.open(href, '_blank', 'noopener,noreferrer')
+        }
+      } catch (err) {
+        notifyError(err, a.openFailed)
       }
-    } catch (err) {
-      notifyError(err, a.openFailed)
-    }
-  }, [a])
+    },
+    [a]
+  )
+
+  const previewArtifact = useCallback(
+    async (artifact: ArtifactRecord) => {
+      const rawTarget = artifact.kind === 'link' ? artifact.href : artifact.value
+
+      try {
+        const preview = await normalizeOrLocalPreviewTarget(rawTarget, artifact.cwd || undefined)
+
+        if (!preview) {
+          throw new Error(`Could not open preview target: ${rawTarget}`)
+        }
+
+        setSessionPreviewTarget(artifact.sessionId, preview, 'explicit-link', rawTarget)
+        navigate(sessionRoute(artifact.sessionId))
+      } catch (err) {
+        notifyError(err, a.previewFailed)
+      }
+    },
+    [a, navigate]
+  )
 
   const markImageFailed = useCallback((id: string) => {
     setFailedImageIds(current => {
@@ -501,7 +529,8 @@ export function ArtifactsView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
 
   const cellCtx: CellCtx = {
     onOpen: openArtifact,
-    onOpenChat: sessionId => navigate(sessionRoute(sessionId))
+    onOpenChat: sessionId => navigate(sessionRoute(sessionId)),
+    onPreview: previewArtifact
   }
 
   return (
@@ -580,6 +609,7 @@ export function ArtifactsView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
                       key={artifact.id}
                       onImageError={markImageFailed}
                       onOpenChat={sessionId => navigate(sessionRoute(sessionId))}
+                      onPreview={previewArtifact}
                     />
                   ))}
                 </div>
@@ -674,9 +704,10 @@ interface ArtifactImageCardProps {
   failedImage: boolean
   onImageError: (id: string) => void
   onOpenChat: (sessionId: string) => void
+  onPreview: (artifact: ArtifactRecord) => void | Promise<void>
 }
 
-function ArtifactImageCard({ artifact, failedImage, onImageError, onOpenChat }: ArtifactImageCardProps) {
+function ArtifactImageCard({ artifact, failedImage, onImageError, onOpenChat, onPreview }: ArtifactImageCardProps) {
   const { t } = useI18n()
   const a = t.artifacts
   const kindLabel = artifact.kind === 'image' ? a.kindImage : artifact.kind === 'file' ? a.kindFile : a.kindLink
@@ -720,6 +751,10 @@ function ArtifactImageCard({ artifact, failedImage, onImageError, onOpenChat }: 
         </div>
 
         <div className="flex flex-wrap gap-1.5">
+          <Button onClick={() => void onPreview(artifact)} size="xs" type="button" variant="textStrong">
+            <MonitorPlay className="size-3" />
+            {a.preview}
+          </Button>
           <Button onClick={() => onOpenChat(artifact.sessionId)} size="xs" type="button" variant="textStrong">
             <FolderOpen className="size-3" />
             {a.chat}
@@ -777,7 +812,7 @@ function PrimaryCell({ artifact, ctx }: { artifact: ArtifactRecord; ctx: CellCtx
   return (
     <ArtifactCellAction
       href={isLink ? artifact.href : undefined}
-      onClick={isLink ? undefined : () => void ctx.onOpen(artifact.href)}
+      onClick={isLink ? undefined : () => void ctx.onPreview(artifact)}
       title={label}
     >
       <span className="mt-0.5 grid size-6 shrink-0 place-items-center self-start rounded-md bg-(--ui-bg-tertiary) text-(--ui-text-tertiary)">

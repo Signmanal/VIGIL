@@ -293,7 +293,7 @@ function ToolEntry({ part }: ToolEntryProps) {
     return buildToolView(p, inlineDiff)
   }, [inlineDiff, isPending, result, stablePart])
 
-  // Surface a previewable artifact (HTML file / localhost URL) as a compact link
+  // Surface a previewable artifact (reports, HTML files, localhost URLs) as a compact link
   // in the composer status stack rather than a bulky inline card. Uses the same
   // detected target the old inline card did, keyed to the active session the
   // stack reads from. Idempotent + dedup'd, so re-renders don't churn.

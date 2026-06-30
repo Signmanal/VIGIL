@@ -1,8 +1,10 @@
 import { useStore } from '@nanostores/react'
 import { type ReactNode, useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 import { useElapsedSeconds } from '@/components/chat/activity-timer'
 import { ActivityTimerText } from '@/components/chat/activity-timer-text'
+import { Button } from '@/components/ui/button'
 import { FadeText } from '@/components/ui/fade-text'
 import { GlyphSpinner } from '@/components/ui/glyph-spinner'
 import { type Translations, useI18n } from '@/i18n'
@@ -19,6 +21,7 @@ import {
 } from '@/store/subagents'
 
 import { OverlayView } from '../overlays/overlay-view'
+import { PROFILES_ROUTE } from '../routes'
 
 // Mirrors statusGlyph() in tool-fallback.tsx so subagent rows speak the
 // same visual vocabulary as the chat tool blocks.
@@ -77,6 +80,7 @@ interface AgentsViewProps {
 
 export function AgentsView({ onClose }: AgentsViewProps) {
   const { t } = useI18n()
+  const navigate = useNavigate()
   const subagentsBySession = useStore($subagentsBySession)
 
   // Aggregate every session, matching the status-bar indicator — a subagent
@@ -91,9 +95,25 @@ export function AgentsView({ onClose }: AgentsViewProps) {
       onClose={onClose}
       rootClassName="mx-auto max-w-3xl"
     >
-      <header className="mb-3 shrink-0">
-        <h2 className="text-sm font-semibold text-foreground">{t.agents.title}</h2>
-        <p className="text-xs text-muted-foreground/80">{t.agents.subtitle}</p>
+      <header className="mb-3 flex shrink-0 items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h2 className="text-sm font-semibold text-foreground">{t.agents.title}</h2>
+          <p className="text-xs text-muted-foreground/80">{t.agents.subtitle}</p>
+          <p className="mt-1 max-w-2xl text-[0.68rem] leading-relaxed text-muted-foreground/70">
+            {t.agents.roleHint}
+          </p>
+        </div>
+        <Button
+          className="shrink-0"
+          onClick={() => {
+            navigate(PROFILES_ROUTE)
+          }}
+          size="sm"
+          type="button"
+          variant="secondary"
+        >
+          {t.agents.manageRoles}
+        </Button>
       </header>
       <SubagentTree tree={tree} />
     </OverlayView>

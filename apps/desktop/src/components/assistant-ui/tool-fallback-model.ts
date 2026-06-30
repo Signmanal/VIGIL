@@ -727,12 +727,17 @@ function looksLikePath(value: string): boolean {
   return /^file:\/\//i.test(value) || /^(?:\/|\.{1,2}\/|~\/).+/.test(value)
 }
 
+const REPORT_PREVIEW_EXT_RE =
+  /\.(?:html?|md|markdown|pdf|txt|log|json|jsonl|csv|tsv|xml|ya?ml|toml)(?:[?#].*)?$/i
+
 export function isPreviewableTarget(target: string): boolean {
+  const value = target.trim()
+
   return Boolean(
-    target &&
-    (/^file:\/\//i.test(target) ||
-      /^(?:\/|\.{1,2}\/|~\/).+\.html?$/i.test(target) ||
-      /^https?:\/\/(?:localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])/i.test(target))
+    value &&
+      (/^file:\/\//i.test(value) ||
+        (/^(?:\/|\.{1,2}\/|~\/).+/i.test(value) && REPORT_PREVIEW_EXT_RE.test(value)) ||
+        /^https?:\/\/(?:localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])/i.test(value))
   )
 }
 

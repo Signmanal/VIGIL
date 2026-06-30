@@ -3,7 +3,7 @@ import { atom } from 'nanostores'
 import { previewName } from '@/lib/preview-targets'
 
 /**
- * Session-scoped feed of previewable artifacts (HTML files, localhost dev URLs)
+ * Session-scoped feed of previewable artifacts (reports, HTML files, localhost dev URLs)
  * a tool produced. Surfaced as compact links in the composer status stack —
  * NOT auto-opened and NOT a bulky inline card. Click opens the rail preview or
  * the browser; both are manual.

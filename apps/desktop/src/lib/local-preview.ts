@@ -3,6 +3,7 @@ import type { PreviewTarget } from '@/store/preview'
 
 const HTML_EXTENSIONS = new Set(['.htm', '.html'])
 const IMAGE_EXTENSIONS = new Set(['.bmp', '.gif', '.jpeg', '.jpg', '.png', '.svg', '.webp'])
+const WEBVIEW_EXTENSIONS = new Set(['.pdf'])
 
 const LANGUAGE_BY_EXT: Record<string, string> = {
   '.c': 'c',
@@ -93,6 +94,7 @@ export function localPreviewTarget(rawTarget: string, cwd?: string | null): Prev
   const ext = extension(path)
   const isHtml = HTML_EXTENSIONS.has(ext)
   const isImage = IMAGE_EXTENSIONS.has(ext)
+  const isWebview = WEBVIEW_EXTENSIONS.has(ext)
 
   return {
     kind: 'file',
@@ -102,7 +104,7 @@ export function localPreviewTarget(rawTarget: string, cwd?: string | null): Prev
     // Renderer fallback can't stat/sniff without reading; assume text unless
     // image/html extension says otherwise. LocalFilePreview still guards
     // binary/large files when readFileText/readFileDataUrl returns metadata.
-    previewKind: isHtml ? 'html' : isImage ? 'image' : 'text',
+    previewKind: isHtml || isWebview ? 'html' : isImage ? 'image' : 'text',
     source: raw,
     url: pathToFileUrl(path)
   }

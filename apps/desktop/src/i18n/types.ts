@@ -629,6 +629,8 @@ export interface Translations {
     close: string
     title: string
     subtitle: string
+    manageRoles: string
+    roleHint: string
     emptyTitle: string
     emptyDesc: string
     running: string
@@ -973,6 +975,8 @@ export interface Translations {
     noArtifactsDesc: string
     failedLoad: string
     openFailed: string
+    preview: string
+    previewFailed: string
     itemsImage: string
     itemsLink: string
     itemsFile: string

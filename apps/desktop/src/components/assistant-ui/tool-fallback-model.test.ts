@@ -7,6 +7,7 @@ import {
   clampForDisplay,
   countDiffLineStats,
   inlineDiffFromResult,
+  isPreviewableTarget,
   MAX_TOOL_RENDER_CHARS,
   type ToolPart
 } from './tool-fallback-model'
@@ -44,6 +45,20 @@ describe('buildToolView image handling', () => {
     const url = 'https://example.com/pic.webp'
 
     expect(buildToolView(part({ result: { url } }), '').imageUrl).toBe(url)
+  })
+})
+
+describe('isPreviewableTarget', () => {
+  it('accepts generated report file formats', () => {
+    expect(isPreviewableTarget('/tmp/vigil-report.md')).toBe(true)
+    expect(isPreviewableTarget('/tmp/vigil-report.pdf')).toBe(true)
+    expect(isPreviewableTarget('./reports/weekly-summary.csv')).toBe(true)
+    expect(isPreviewableTarget('~/reports/task-output.json')).toBe(true)
+  })
+
+  it('keeps arbitrary non-report paths out of the preview status stack', () => {
+    expect(isPreviewableTarget('/tmp/archive.zip')).toBe(false)
+    expect(isPreviewableTarget('https://example.com/report.md')).toBe(false)
   })
 })
 
