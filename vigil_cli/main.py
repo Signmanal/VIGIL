@@ -5214,19 +5214,19 @@ def _desktop_packaged_executable(desktop_dir: Path) -> Optional[Path]:
     """Return the current platform's unpacked Electron app executable."""
     release_dir = desktop_dir / "release"
     if sys.platform == "darwin":
-        candidates = list(release_dir.glob("mac*/VIGIL.app/Contents/MacOS/VIGIL"))
+        candidates = list(release_dir.glob("mac*/XCLAW.app/Contents/MacOS/XCLAW"))
     elif sys.platform == "win32":
         candidates = [
-            release_dir / "win-unpacked" / "VIGIL.exe",
-            release_dir / "win-ia32-unpacked" / "VIGIL.exe",
-            release_dir / "win-arm64-unpacked" / "VIGIL.exe",
+            release_dir / "win-unpacked" / "XCLAW.exe",
+            release_dir / "win-ia32-unpacked" / "XCLAW.exe",
+            release_dir / "win-arm64-unpacked" / "XCLAW.exe",
         ]
     else:
         candidates = [
-            release_dir / "linux-unpacked" / "vigil",
-            release_dir / "linux-unpacked" / "VIGIL",
-            release_dir / "linux-arm64-unpacked" / "vigil",
-            release_dir / "linux-arm64-unpacked" / "VIGIL",
+            release_dir / "linux-unpacked" / "xclaw",
+            release_dir / "linux-unpacked" / "XCLAW",
+            release_dir / "linux-arm64-unpacked" / "xclaw",
+            release_dir / "linux-arm64-unpacked" / "XCLAW",
         ]
 
     existing = [p for p in candidates if p.exists()]
@@ -5444,9 +5444,9 @@ def _stop_desktop_processes_locking_build(desktop_dir: Path) -> list[int]:
     """Terminate any running desktop app executing from this build's ``release``
     dir so a rebuild can replace its (otherwise locked) executable.
 
-    On Windows a running ``VIGIL.exe`` keeps an exclusive lock on
-    ``release/win-unpacked/VIGIL.exe``. electron-builder's pack then can't
-    delete the stale binary and dies with ``remove …\\VIGIL.exe: Access is
+    On Windows a running ``XCLAW.exe`` keeps an exclusive lock on
+    ``release/win-unpacked/XCLAW.exe``. electron-builder's pack then can't
+    delete the stale binary and dies with ``remove …\\XCLAW.exe: Access is
     denied`` / ``ERR_ELECTRON_BUILDER_CANNOT_EXECUTE`` (before-pack hits the same
     EPERM cleaning the dir). The retry path repeats the failure because the lock
     is still held. POSIX lets you unlink a running binary, so this is a no-op
@@ -5454,7 +5454,7 @@ def _stop_desktop_processes_locking_build(desktop_dir: Path) -> list[int]:
 
     Scope is deliberately narrow: only processes whose executable lives *inside*
     this desktop's ``release`` tree are stopped — a packaged install elsewhere or
-    an unrelated "VIGIL" process is never touched. Best-effort: never raises.
+    an unrelated "XCLAW" process is never touched. Best-effort: never raises.
     Returns the PIDs we asked to stop.
     """
     if sys.platform != "win32":
@@ -5541,7 +5541,7 @@ def _desktop_macos_relaunchable_fixup(desktop_dir: Path) -> None:
     exe = _desktop_packaged_executable(desktop_dir)
     if exe is None:
         return
-    # exe = .../VIGIL.app/Contents/MacOS/VIGIL  ->  app bundle = .../VIGIL.app
+    # exe = .../XCLAW.app/Contents/MacOS/XCLAW  ->  app bundle = .../XCLAW.app
     app = exe.parents[2]
     if not str(app).endswith(".app") or not app.is_dir():
         return
@@ -5700,7 +5700,7 @@ def cmd_gui(args: argparse.Namespace):
             build_script = "build" if source_mode else "pack"
             if not source_mode:
                 # A running desktop instance launched from release/win-unpacked
-                # holds VIGIL.exe locked on Windows, so the pack can't replace
+                # holds XCLAW.exe locked on Windows, so the pack can't replace
                 # it ("Access is denied" / ERR_ELECTRON_BUILDER_CANNOT_EXECUTE).
                 # Stop it first so the rebuild — including the installer's
                 # headless --update rebuild — succeeds instead of failing cryptically.
@@ -5721,7 +5721,7 @@ def cmd_gui(args: argparse.Namespace):
                     print("  ⚠ Desktop build failed; refreshed the Electron download and retrying once...")
                     for p in purged:
                         print(f"    - {p}")
-                    # The purge can't remove a win-unpacked tree whose VIGIL.exe
+                    # The purge can't remove a win-unpacked tree whose XCLAW.exe
                     # is still locked by a running instance; stop it before retry.
                     _stop_desktop_processes_locking_build(desktop_dir)
                     build_result = subprocess.run([npm, "run", build_script], cwd=desktop_dir, env=env, check=False)
@@ -5740,8 +5740,8 @@ def cmd_gui(args: argparse.Namespace):
                 print("✗ Desktop GUI build failed")
                 print(f"  Run manually:  cd apps/desktop && npm run {build_script}")
                 if sys.platform == "win32":
-                    print("  If this says \"Access is denied\" on VIGIL.exe, close any")
-                    print("  running VIGIL desktop window and retry.")
+                    print("  If this says \"Access is denied\" on XCLAW.exe, close any")
+                    print("  running XCLAW desktop window and retry.")
                 print("  If the log shows Electron download retries, rebuild via a mirror:")
                 print("    ELECTRON_MIRROR=<mirror-base-url> vigil desktop --force-build")
                 sys.exit(build_result.returncode or 1)

@@ -34,7 +34,7 @@
  * on every pack; nothing else depends on its prior contents.
  *
  * Cross-platform: the same partial-state trap exists on macOS
- * (the mac-unpacked VIGIL.app bundle) and Windows (win-unpacked), so we
+ * (the mac-unpacked XCLAW.app bundle) and Windows (win-unpacked), so we
  * clean whatever `appOutDir` electron-builder hands us regardless of platform.
  *
  * Best-effort: a cleanup failure must never mask the real build. We log and
@@ -47,6 +47,7 @@
  */
 
 const fs = require('node:fs')
+const path = require('node:path')
 
 function cleanStaleAppOutDir(appOutDir) {
   if (!appOutDir || typeof appOutDir !== 'string') {
@@ -62,13 +63,29 @@ function cleanStaleAppOutDir(appOutDir) {
   return true
 }
 
+function legacyAppOutDirs(appOutDir, electronPlatformName) {
+  if (!appOutDir || typeof appOutDir !== 'string' || electronPlatformName !== 'darwin') {
+    return []
+  }
+  const parent = path.dirname(appOutDir)
+  const legacy = path.join(parent, 'VIGIL.app')
+  return legacy === appOutDir ? [] : [legacy]
+}
+
 exports.cleanStaleAppOutDir = cleanStaleAppOutDir
+exports.legacyAppOutDirs = legacyAppOutDirs
 
 exports.default = async function beforePack(context) {
   const appOutDir = context && context.appOutDir
+  const electronPlatformName = context && context.electronPlatformName
   try {
     if (cleanStaleAppOutDir(appOutDir)) {
       console.log(`[before-pack] removed stale unpacked dir before staging: ${appOutDir}`)
+    }
+    for (const legacyAppOutDir of legacyAppOutDirs(appOutDir, electronPlatformName)) {
+      if (cleanStaleAppOutDir(legacyAppOutDir)) {
+        console.log(`[before-pack] removed legacy unpacked dir before staging: ${legacyAppOutDir}`)
+      }
     }
   } catch (err) {
     // Never fail the build over cleanup; surface why so a genuinely stuck

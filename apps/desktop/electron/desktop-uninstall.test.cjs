@@ -56,12 +56,12 @@ test('mode predicates classify what each mode removes', () => {
 
 test('resolveRemovableAppPath finds the .app bundle on macOS', () => {
   assert.equal(
-    resolveRemovableAppPath('/Applications/VIGIL.app/Contents/MacOS/VIGIL', 'darwin'),
-    '/Applications/VIGIL.app'
+    resolveRemovableAppPath('/Applications/XCLAW.app/Contents/MacOS/XCLAW', 'darwin'),
+    '/Applications/XCLAW.app'
   )
   assert.equal(
-    resolveRemovableAppPath('/Users/x/Applications/VIGIL.app/Contents/MacOS/VIGIL', 'darwin'),
-    '/Users/x/Applications/VIGIL.app'
+    resolveRemovableAppPath('/Users/x/Applications/XCLAW.app/Contents/MacOS/XCLAW', 'darwin'),
+    '/Users/x/Applications/XCLAW.app'
   )
 })
 
@@ -80,33 +80,33 @@ test('resolveRemovableAppPath: dev-run .app resolves (safety is shouldRemoveAppB
 
 test('resolveRemovableAppPath finds the install dir on Windows', () => {
   assert.equal(
-    resolveRemovableAppPath('C:\\Users\\x\\AppData\\Local\\Programs\\VIGIL\\VIGIL.exe', 'win32'),
-    'C:\\Users\\x\\AppData\\Local\\Programs\\VIGIL'
+    resolveRemovableAppPath('C:\\Users\\x\\AppData\\Local\\Programs\\XCLAW\\XCLAW.exe', 'win32'),
+    'C:\\Users\\x\\AppData\\Local\\Programs\\XCLAW'
   )
   assert.equal(
-    resolveRemovableAppPath('C:\\Users\\x\\AppData\\Local\\vigil-desktop\\VIGIL.exe', 'win32'),
+    resolveRemovableAppPath('C:\\Users\\x\\AppData\\Local\\vigil-desktop\\XCLAW.exe', 'win32'),
     'C:\\Users\\x\\AppData\\Local\\vigil-desktop'
   )
 })
 
 test('resolveRemovableAppPath returns null for an unrecognized Windows dir', () => {
-  assert.equal(resolveRemovableAppPath('C:\\Temp\\foo\\VIGIL.exe', 'win32'), null)
+  assert.equal(resolveRemovableAppPath('C:\\Temp\\foo\\XCLAW.exe', 'win32'), null)
 })
 
 test('resolveRemovableAppPath uses APPIMAGE on Linux when set', () => {
   assert.equal(
-    resolveRemovableAppPath('/tmp/.mount_VIGILXXXX/vigil', 'linux', { APPIMAGE: '/home/x/Apps/VIGIL.AppImage' }),
-    '/home/x/Apps/VIGIL.AppImage'
+    resolveRemovableAppPath('/tmp/.mount_XCLAWXXXX/xclaw', 'linux', { APPIMAGE: '/home/x/Apps/XCLAW.AppImage' }),
+    '/home/x/Apps/XCLAW.AppImage'
   )
 })
 
 test('resolveRemovableAppPath finds the unpacked dir on Linux', () => {
   assert.equal(
-    resolveRemovableAppPath('/opt/vigil/linux-unpacked/vigil', 'linux', {}),
-    '/opt/vigil/linux-unpacked'
+    resolveRemovableAppPath('/opt/xclaw/linux-unpacked/xclaw', 'linux', {}),
+    '/opt/xclaw/linux-unpacked'
   )
   // A system-package install (/usr/bin) → null, left to apt/dnf.
-  assert.equal(resolveRemovableAppPath('/usr/bin/vigil', 'linux', {}), null)
+  assert.equal(resolveRemovableAppPath('/usr/bin/xclaw', 'linux', {}), null)
 })
 
 test('resolveRemovableAppPath returns null for an empty exe path', () => {
@@ -117,8 +117,8 @@ test('resolveRemovableAppPath returns null for an empty exe path', () => {
 // --- shouldRemoveAppBundle ---
 
 test('shouldRemoveAppBundle requires packaged AND a resolved path', () => {
-  assert.equal(shouldRemoveAppBundle(true, '/Applications/VIGIL.app'), true)
-  assert.equal(shouldRemoveAppBundle(false, '/Applications/VIGIL.app'), false)
+  assert.equal(shouldRemoveAppBundle(true, '/Applications/XCLAW.app'), true)
+  assert.equal(shouldRemoveAppBundle(false, '/Applications/XCLAW.app'), false)
   assert.equal(shouldRemoveAppBundle(true, null), false)
   assert.equal(shouldRemoveAppBundle(false, null), false)
 })

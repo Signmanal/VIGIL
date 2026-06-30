@@ -58,8 +58,8 @@ function modeRemovesUserData(mode) {
  * Resolve the on-disk app bundle/dir to remove for the running desktop app,
  * given the path to the running executable (`process.execPath`) and platform.
  *
- *   macOS:   …/VIGIL.app/Contents/MacOS/VIGIL  → …/VIGIL.app
- *   Windows: …\VIGIL\VIGIL.exe                 → …\VIGIL  (install dir)
+ *   macOS:   …/XCLAW.app/Contents/MacOS/XCLAW  → …/XCLAW.app
+ *   Windows: …\XCLAW\XCLAW.exe                 → …\XCLAW  (install dir)
  *   Linux:   AppImage → the APPIMAGE env path; unpacked → the *-unpacked dir
  *
  * Returns null when we can't confidently identify a removable bundle (e.g.
@@ -75,24 +75,24 @@ function resolveRemovableAppPath(execPath, platform, env = {}) {
   const p = platform === 'win32' ? path.win32 : path.posix
 
   if (platform === 'darwin') {
-    // …/VIGIL.app/Contents/MacOS/VIGIL → strip 3 segments to the .app
+    // …/XCLAW.app/Contents/MacOS/XCLAW → strip 3 segments to the .app
     const macOsDir = p.dirname(exe) // …/Contents/MacOS
     const contents = p.dirname(macOsDir) // …/Contents
-    const appBundle = p.dirname(contents) // …/VIGIL.app
+    const appBundle = p.dirname(contents) // …/XCLAW.app
     if (appBundle.endsWith('.app')) return appBundle
     return null
   }
 
   if (platform === 'win32') {
-    // NSIS per-user installs VIGIL.exe directly in the install dir.
+    // NSIS per-user installs XCLAW.exe directly in the install dir.
     const dir = p.dirname(exe)
-    if (/[\\/]VIGIL$/i.test(dir) || /[\\/]vigil-desktop$/i.test(dir)) return dir
+    if (/[\\/]XCLAW$/i.test(dir) || /[\\/]VIGIL$/i.test(dir) || /[\\/]vigil-desktop$/i.test(dir)) return dir
     return null
   }
 
   // Linux: an AppImage exposes its own path via the APPIMAGE env var.
   if (env.APPIMAGE) return env.APPIMAGE
-  // Unpacked electron-builder tree: …/linux-unpacked/vigil
+  // Unpacked electron-builder tree: …/linux-unpacked/xclaw
   const dir = p.dirname(exe)
   if (/-unpacked$/.test(dir)) return dir
   return null

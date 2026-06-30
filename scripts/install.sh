@@ -172,7 +172,7 @@ while [[ $# -gt 0 ]]; do
             echo "  --stage NAME   Run one desktop bootstrap stage"
             echo "  --json         Print a JSON result frame for --stage"
             echo "  --non-interactive  Skip stages that require user input"
-            echo "  --include-desktop  Also build the desktop app (apps/desktop -> VIGIL.app)"
+            echo "  --include-desktop  Also build the desktop app (apps/desktop -> XCLAW.app)"
             echo "  --dir PATH     Installation directory"
             echo "                   default (non-root):  ~/.vigil/vigil-agent"
             echo "                   default (root, Linux): /usr/local/lib/vigil-agent"
@@ -2587,16 +2587,16 @@ install_desktop() {
 
     local app=""
     if [ "$OS" = "linux" ]; then
-        if [ -x "$desktop_dir/release/linux-unpacked/VIGIL" ]; then
-            app="$desktop_dir/release/linux-unpacked/VIGIL"
-        elif [ -x "$desktop_dir/release/linux-unpacked/vigil" ]; then
-            app="$desktop_dir/release/linux-unpacked/vigil"
+        if [ -x "$desktop_dir/release/linux-unpacked/XCLAW" ]; then
+            app="$desktop_dir/release/linux-unpacked/XCLAW"
+        elif [ -x "$desktop_dir/release/linux-unpacked/xclaw" ]; then
+            app="$desktop_dir/release/linux-unpacked/xclaw"
         fi
     else
         local cand
         for cand in \
-            "$desktop_dir/release/mac-arm64/VIGIL.app" \
-            "$desktop_dir/release/mac/VIGIL.app"; do
+            "$desktop_dir/release/mac-arm64/XCLAW.app" \
+            "$desktop_dir/release/mac/XCLAW.app"; do
             if [ -d "$cand" ]; then
                 app="$cand"
                 break

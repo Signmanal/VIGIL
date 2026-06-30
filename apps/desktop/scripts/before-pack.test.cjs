@@ -4,7 +4,7 @@ const os = require('node:os')
 const path = require('node:path')
 const test = require('node:test')
 
-const { cleanStaleAppOutDir } = require('../scripts/before-pack.cjs')
+const { cleanStaleAppOutDir, legacyAppOutDirs } = require('../scripts/before-pack.cjs')
 
 test('cleanStaleAppOutDir removes a populated unpacked directory', () => {
   const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'vigil-before-pack-'))
@@ -42,6 +42,33 @@ test('cleanStaleAppOutDir ignores empty or invalid input', () => {
   assert.equal(cleanStaleAppOutDir(undefined), false)
   assert.equal(cleanStaleAppOutDir(null), false)
   assert.equal(cleanStaleAppOutDir(42), false)
+})
+
+test('legacyAppOutDirs returns old macOS bundle beside the new XCLAW bundle', () => {
+  const appOutDir = path.join('/tmp', 'release', 'mac-arm64', 'XCLAW.app')
+  assert.deepEqual(legacyAppOutDirs(appOutDir, 'darwin'), [
+    path.join('/tmp', 'release', 'mac-arm64', 'VIGIL.app')
+  ])
+  assert.deepEqual(legacyAppOutDirs(appOutDir, 'linux'), [])
+})
+
+test('beforePack removes legacy macOS VIGIL.app bundle', async () => {
+  const { default: beforePack } = require('../scripts/before-pack.cjs')
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'vigil-before-pack-'))
+  try {
+    const appOutDir = path.join(tempRoot, 'mac-arm64', 'XCLAW.app')
+    const legacy = path.join(tempRoot, 'mac-arm64', 'VIGIL.app')
+    fs.mkdirSync(appOutDir, { recursive: true })
+    fs.mkdirSync(legacy, { recursive: true })
+    fs.writeFileSync(path.join(legacy, 'stale'), 'x', 'utf8')
+
+    await beforePack({ appOutDir, electronPlatformName: 'darwin' })
+
+    assert.equal(fs.existsSync(appOutDir), false)
+    assert.equal(fs.existsSync(legacy), false)
+  } finally {
+    fs.rmSync(tempRoot, { recursive: true, force: true })
+  }
 })
 
 test('beforePack default export resolves even when cleanup throws', async () => {

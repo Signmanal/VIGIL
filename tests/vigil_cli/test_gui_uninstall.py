@@ -147,7 +147,7 @@ def test_uninstall_gui_keeps_userdata_when_requested(tmp_path, monkeypatch):
 def test_uninstall_gui_removes_packaged_bundle(tmp_path, monkeypatch):
     vigil_home = tmp_path / ".vigil"
     _make_agent(vigil_home)
-    bundle = tmp_path / "VIGIL.app"
+    bundle = tmp_path / "XCLAW.app"
     (bundle / "Contents").mkdir(parents=True)
 
     monkeypatch.setattr(gu, "packaged_gui_app_paths", lambda: [bundle])
@@ -345,4 +345,3 @@ def test_uninstall_args_namespace_mode_mapping():
 
     full = uninstall._UninstallArgs(mode="full")
     assert full.gui is False and full.full is True and full.yes is True
-
