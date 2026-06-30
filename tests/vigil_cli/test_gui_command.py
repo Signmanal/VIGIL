@@ -200,6 +200,51 @@ def test_gui_forwards_desktop_environment_overrides(tmp_path, monkeypatch):
     assert launch_env["VIGIL_DESKTOP_CWD"] == str(cwd)
 
 
+def test_gui_macos_pack_disables_signing_auto_discovery_by_default(tmp_path, monkeypatch):
+    root = _make_desktop_tree(tmp_path)
+    desktop_dir = root / "apps" / "desktop"
+    monkeypatch.setattr(cli_main, "PROJECT_ROOT", root)
+    _make_packaged_executable(root, monkeypatch, platform="darwin")
+    for key in ("CSC_IDENTITY_AUTO_DISCOVERY", "CSC_LINK", "CSC_NAME", "APPLE_SIGNING_IDENTITY"):
+        monkeypatch.delenv(key, raising=False)
+
+    ok = subprocess.CompletedProcess(["npm", "run", "pack"], 0)
+
+    with patch("vigil_cli.main.shutil.which", return_value="/usr/bin/npm"), \
+         patch("vigil_cli.main._run_npm_install_deterministic", return_value=ok), \
+         patch("vigil_cli.main._desktop_build_needed", return_value=True), \
+         patch("vigil_cli.main._write_desktop_build_stamp"), \
+         patch("vigil_cli.main._desktop_macos_relaunchable_fixup"), \
+         patch("vigil_cli.main.subprocess.run", return_value=ok) as mock_run:
+        cli_main.cmd_gui(_ns(build_only=True))
+
+    assert mock_run.call_args_list[0].args[0] == ["/usr/bin/npm", "run", "pack"]
+    assert mock_run.call_args_list[0].kwargs["cwd"] == desktop_dir
+    assert mock_run.call_args_list[0].kwargs["env"]["CSC_IDENTITY_AUTO_DISCOVERY"] == "false"
+
+
+def test_gui_macos_pack_preserves_explicit_signing_identity(tmp_path, monkeypatch):
+    root = _make_desktop_tree(tmp_path)
+    monkeypatch.setattr(cli_main, "PROJECT_ROOT", root)
+    _make_packaged_executable(root, monkeypatch, platform="darwin")
+    monkeypatch.delenv("CSC_IDENTITY_AUTO_DISCOVERY", raising=False)
+    monkeypatch.setenv("APPLE_SIGNING_IDENTITY", "Developer ID Application: Example")
+
+    ok = subprocess.CompletedProcess(["npm", "run", "pack"], 0)
+
+    with patch("vigil_cli.main.shutil.which", return_value="/usr/bin/npm"), \
+         patch("vigil_cli.main._run_npm_install_deterministic", return_value=ok), \
+         patch("vigil_cli.main._desktop_build_needed", return_value=True), \
+         patch("vigil_cli.main._write_desktop_build_stamp"), \
+         patch("vigil_cli.main._desktop_macos_relaunchable_fixup"), \
+         patch("vigil_cli.main.subprocess.run", return_value=ok) as mock_run:
+        cli_main.cmd_gui(_ns(build_only=True))
+
+    build_env = mock_run.call_args_list[0].kwargs["env"]
+    assert build_env["APPLE_SIGNING_IDENTITY"] == "Developer ID Application: Example"
+    assert "CSC_IDENTITY_AUTO_DISCOVERY" not in build_env
+
+
 def test_gui_exits_when_npm_missing(tmp_path, monkeypatch, capsys):
     root = _make_desktop_tree(tmp_path)
     monkeypatch.setattr(cli_main, "PROJECT_ROOT", root)

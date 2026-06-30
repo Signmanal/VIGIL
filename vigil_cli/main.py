@@ -5513,6 +5513,11 @@ def _stop_desktop_processes_locking_build(desktop_dir: Path) -> list[int]:
     return stopped
 
 
+def _desktop_macos_explicit_signing_configured(env=None) -> bool:
+    values = env if env is not None else os.environ
+    return any(values.get(key) for key in ("CSC_LINK", "CSC_NAME", "APPLE_SIGNING_IDENTITY"))
+
+
 def _desktop_macos_relaunchable_fixup(desktop_dir: Path) -> None:
     """Make a locally-built (unsigned) macOS desktop app survive in-place self-update.
 
@@ -5531,7 +5536,7 @@ def _desktop_macos_relaunchable_fixup(desktop_dir: Path) -> None:
     """
     if sys.platform != "darwin":
         return
-    if os.environ.get("CSC_LINK") or os.environ.get("APPLE_SIGNING_IDENTITY"):
+    if _desktop_macos_explicit_signing_configured():
         return
     exe = _desktop_packaged_executable(desktop_dir)
     if exe is None:
@@ -5614,6 +5619,15 @@ def cmd_gui(args: argparse.Namespace):
 
     # with_vigil_node_path() copies os.environ when called with no arg.
     env = with_vigil_node_path()
+    if (
+        sys.platform == "darwin"
+        and "CSC_IDENTITY_AUTO_DISCOVERY" not in env
+        and not _desktop_macos_explicit_signing_configured(env)
+    ):
+        # Local `vigil desktop` / `vigil update` rebuilds should not hang on a
+        # keychain-discovered Apple Development identity; release builds can
+        # still opt into signing by exporting an explicit identity.
+        env["CSC_IDENTITY_AUTO_DISCOVERY"] = "false"
     if getattr(args, "fake_boot", False):
         env["VIGIL_DESKTOP_BOOT_FAKE"] = "1"
     if getattr(args, "ignore_existing", False):
