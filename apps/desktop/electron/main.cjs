@@ -41,7 +41,7 @@ const { adoptServedDashboardToken } = require('./dashboard-token.cjs')
 const { waitForDashboardPort } = require('./backend-ready.cjs')
 const { serializeJsonBody, setJsonRequestHeaders } = require('./oauth-net-request.cjs')
 const { fetchMarketplaceThemes, searchMarketplaceThemes } = require('./vscode-marketplace.cjs')
-const { buildDesktopBackendEnv, normalizeVIGILHomeRoot } = require('./backend-env.cjs')
+const { buildDesktopBackendEnv, buildDesktopLookupPath, normalizeVIGILHomeRoot } = require('./backend-env.cjs')
 const { readWindowsUserEnvVar } = require('./windows-user-env.cjs')
 const { readDirForIpc } = require('./fs-read-dir.cjs')
 const { readLiveUpdateMarker } = require('./update-marker.cjs')
@@ -1233,7 +1233,13 @@ function findOnPath(command) {
     return command
   }
 
-  const pathEntries = String(process.env.PATH || '')
+  const lookupPath = buildDesktopLookupPath({
+    hermesHome: VIGIL_HOME,
+    currentPath: process.env.PATH || '',
+    platform: process.platform,
+    pathModule: path
+  })
+  const pathEntries = lookupPath
     .split(path.delimiter)
     .filter(Boolean)
   const extensions = IS_WINDOWS

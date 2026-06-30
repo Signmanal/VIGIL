@@ -7,6 +7,7 @@ const {
   appendUniquePathEntries,
   buildDesktopBackendEnv,
   buildDesktopBackendPath,
+  buildDesktopLookupPath,
   normalizeVIGILHomeRoot,
   pathEnvKey
 } = require('./backend-env.cjs')
@@ -14,6 +15,7 @@ const {
 test('desktop backend PATH adds VIGIL-managed bins and missing POSIX sane entries', () => {
   const result = buildDesktopBackendPath({
     hermesHome: '/Users/test/.vigil',
+    homeDir: '/Users/test',
     venvRoot: '/Users/test/.vigil/vigil-agent/venv',
     currentPath: '/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin',
     platform: 'darwin',
@@ -26,10 +28,29 @@ test('desktop backend PATH adds VIGIL-managed bins and missing POSIX sane entrie
   assert.ok(entries.includes('/opt/homebrew/bin'), 'Apple Silicon Homebrew bin is added')
   assert.ok(entries.includes('/opt/homebrew/sbin'), 'Apple Silicon Homebrew sbin is added')
   assert.ok(entries.includes('/usr/local/sbin'), 'missing standard sbin is added')
+  assert.ok(entries.includes('/Users/test/.vigil/bin'), 'VIGIL user bin is added')
+  assert.ok(entries.includes('/Users/test/.local/bin'), 'user-local bin is added')
 
   for (const expected of POSIX_SANE_PATH_ENTRIES) {
     assert.ok(entries.includes(expected), `${expected} should be present`)
   }
+})
+
+test('desktop lookup PATH finds user-installed CLI locations when Finder PATH is sparse', () => {
+  const result = buildDesktopLookupPath({
+    hermesHome: '/Users/test/.vigil',
+    homeDir: '/Users/test',
+    currentPath: '/usr/bin:/bin:/usr/sbin:/sbin',
+    platform: 'darwin',
+    pathModule: path.posix
+  })
+
+  const entries = result.split(':')
+  assert.equal(entries[0], '/usr/bin')
+  assert.ok(entries.includes('/Users/test/.vigil/bin'), 'VIGIL_HOME/bin is searched')
+  assert.ok(entries.includes('/Users/test/.local/bin'), '~/.local/bin is searched')
+  assert.ok(entries.includes('/Users/test/bin'), '~/bin is searched')
+  assert.ok(entries.includes('/opt/homebrew/bin'), 'Homebrew is searched even when Finder omits it')
 })
 
 test('desktop backend PATH preserves first occurrence and avoids duplicates', () => {

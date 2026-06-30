@@ -51,6 +51,7 @@ function appendUniquePathEntries(entries, { delimiter = path.delimiter } = {}) {
 
 function buildDesktopBackendPath({
   hermesHome,
+  homeDir = process.env.HOME || '',
   venvRoot,
   currentPath = '',
   platform = process.platform,
@@ -58,11 +59,38 @@ function buildDesktopBackendPath({
 } = {}) {
   const delimiter = delimiterForPlatform(platform)
   const hermesNodeBin = hermesHome ? pathModule.join(hermesHome, 'node', 'bin') : null
+  const hermesUserBin = hermesHome ? pathModule.join(hermesHome, 'bin') : null
+  const homeLocalBin = homeDir ? pathModule.join(homeDir, '.local', 'bin') : null
+  const homeBin = homeDir ? pathModule.join(homeDir, 'bin') : null
   const venvBin = venvRoot ? pathModule.join(venvRoot, platform === 'win32' ? 'Scripts' : 'bin') : null
   const saneEntries = platform === 'win32' ? [] : POSIX_SANE_PATH_ENTRIES
+  const userEntries = platform === 'win32' ? [] : [hermesUserBin, homeLocalBin, homeBin]
 
   return appendUniquePathEntries(
-    [hermesNodeBin, venvBin, currentPath, saneEntries],
+    [hermesNodeBin, venvBin, currentPath, userEntries, saneEntries],
+    { delimiter }
+  )
+}
+
+function buildDesktopLookupPath({
+  hermesHome,
+  homeDir = process.env.HOME || '',
+  currentPath = '',
+  platform = process.platform,
+  pathModule = pathModuleForPlatform(platform)
+} = {}) {
+  const delimiter = delimiterForPlatform(platform)
+  const saneEntries = platform === 'win32' ? [] : POSIX_SANE_PATH_ENTRIES
+  const userEntries = platform === 'win32'
+    ? []
+    : [
+        hermesHome ? pathModule.join(hermesHome, 'bin') : null,
+        homeDir ? pathModule.join(homeDir, '.local', 'bin') : null,
+        homeDir ? pathModule.join(homeDir, 'bin') : null
+      ]
+
+  return appendUniquePathEntries(
+    [currentPath, userEntries, saneEntries],
     { delimiter }
   )
 }
@@ -106,6 +134,7 @@ module.exports = {
   appendUniquePathEntries,
   buildDesktopBackendEnv,
   buildDesktopBackendPath,
+  buildDesktopLookupPath,
   delimiterForPlatform,
   normalizeVIGILHomeRoot,
   pathEnvKey
