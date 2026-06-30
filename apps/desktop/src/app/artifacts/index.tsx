@@ -37,9 +37,9 @@ import { PageSearchShell } from '../page-search-shell'
 import { sessionRoute } from '../routes'
 import type { SetStatusbarItemGroup } from '../shell/statusbar-controls'
 
-type ArtifactKind = 'image' | 'file' | 'link'
+type ArtifactKind = 'report' | 'image' | 'file' | 'link'
 type ArtifactFilter = 'all' | ArtifactKind
-const ARTIFACT_FILTERS: readonly ArtifactFilter[] = ['all', 'image', 'file', 'link']
+const ARTIFACT_FILTERS: readonly ArtifactFilter[] = ['report', 'all', 'image', 'file', 'link']
 
 interface ArtifactRecord {
   id: string
@@ -58,8 +58,13 @@ const MARKDOWN_LINK_RE = /\[([^\]]+)\]\(([^)\s]+)\)/g
 const URL_RE = /https?:\/\/[^\s<>"')]+/g
 const PATH_RE = /(^|[\s("'`])((?:\/|~\/|\.\.?\/)[^\s"'`<>]+(?:\.[a-z0-9]{1,8})?)/gi
 const IMAGE_EXT_RE = /\.(?:png|jpe?g|gif|webp|svg|bmp)(?:\?.*)?$/i
-const FILE_EXT_RE = /\.(?:png|jpe?g|gif|webp|svg|bmp|pdf|txt|json|md|csv|zip|tar|gz|mp3|wav|mp4|mov)(?:\?.*)?$/i
-const KEY_HINT_RE = /(path|file|url|image|artifact|output|download|result|target)/i
+const REPORT_EXT_RE = /\.(?:html?|md|markdown|pdf|txt|log|jsonl?|csv|tsv|xml|ya?ml|toml|docx?|xlsx?|pptx?)(?:\?.*)?$/i
+const FILE_EXT_RE =
+  /\.(?:png|jpe?g|gif|webp|svg|bmp|html?|md|markdown|pdf|txt|log|jsonl?|csv|tsv|xml|ya?ml|toml|docx?|xlsx?|pptx?|zip|tar|gz|mp3|wav|mp4|mov)(?:\?.*)?$/i
+const REPORT_HINT_RE =
+  /(report|summary|analysis|audit|findings|review|assessment|diagnostic|diagnosis|investigation|brief|insight|报告|報告|分析|总结|總結|汇总|匯總|审计|審計|稽核|复盘|復盤|诊断|診斷)/i
+const ALWAYS_REPORT_EXT_RE = /\.(?:html?|md|markdown|pdf|docx?|pptx?)(?:\?.*)?$/i
+const KEY_HINT_RE = /(path|file|url|image|artifact|output|download|result|target|report|summary|analysis)/i
 
 const ARTIFACT_TIME_FMT = new Intl.DateTimeFormat(undefined, {
   day: 'numeric',
@@ -109,9 +114,31 @@ function looksLikeArtifact(value: string): boolean {
   return value.startsWith('/') && value.includes('.')
 }
 
+function looksLikeReport(value: string): boolean {
+  if (value.startsWith('data:image/') || IMAGE_EXT_RE.test(value)) {
+    return false
+  }
+
+  if (!REPORT_EXT_RE.test(value)) {
+    return false
+  }
+
+  if (ALWAYS_REPORT_EXT_RE.test(value)) {
+    return true
+  }
+
+  const label = artifactLabel(value)
+
+  return REPORT_HINT_RE.test(label) || REPORT_HINT_RE.test(value)
+}
+
 function artifactKind(value: string): ArtifactKind {
   if (value.startsWith('data:image/') || IMAGE_EXT_RE.test(value)) {
     return 'image'
+  }
+
+  if (looksLikeReport(value)) {
+    return 'report'
   }
 
   if (
@@ -365,7 +392,7 @@ interface ArtifactColumn {
 }
 
 const itemsLabel = (f: ArtifactFilter, a: Translations['artifacts']) =>
-  f === 'link' ? a.itemsLink : f === 'file' ? a.itemsFile : a.itemsGeneric
+  f === 'report' ? a.itemsReport : f === 'link' ? a.itemsLink : f === 'file' ? a.itemsFile : a.itemsGeneric
 
 interface ArtifactsViewProps extends React.ComponentProps<'section'> {
   setStatusbarItemGroup?: SetStatusbarItemGroup
@@ -379,7 +406,7 @@ export function ArtifactsView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
   const [query, setQuery] = useState('')
   const [refreshing, setRefreshing] = useState(false)
 
-  const [kindFilter, setKindFilter] = useRouteEnumParam('tab', ARTIFACT_FILTERS, 'all')
+  const [kindFilter, setKindFilter] = useRouteEnumParam('tab', ARTIFACT_FILTERS, 'report')
 
   const [failedImageIds, setFailedImageIds] = useState<Set<string>>(() => new Set())
   const [imagePage, setImagePage] = useState(1)
@@ -476,10 +503,19 @@ export function ArtifactsView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
 
     return {
       all: all.length,
+      report: all.filter(artifact => artifact.kind === 'report').length,
       image: all.filter(artifact => artifact.kind === 'image').length,
       file: all.filter(artifact => artifact.kind === 'file').length,
       link: all.filter(artifact => artifact.kind === 'link').length
     }
+  }, [artifacts])
+
+  const reportSessionCount = useMemo(() => {
+    const reportSessionIds = new Set(
+      (artifacts || []).filter(artifact => artifact.kind === 'report').map(artifact => artifact.sessionId)
+    )
+
+    return reportSessionIds.size
   }, [artifacts])
 
   const openArtifact = useCallback(
@@ -556,6 +592,9 @@ export function ArtifactsView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
       searchValue={query}
       tabs={
         <>
+          <TextTab active={kindFilter === 'report'} onClick={() => setKindFilter('report')}>
+            {a.tabReports} <TextTabMeta>({counts.report})</TextTabMeta>
+          </TextTab>
           <TextTab active={kindFilter === 'all'} onClick={() => setKindFilter('all')}>
             {a.tabAll} <TextTabMeta>({counts.all})</TextTabMeta>
           </TextTab>
@@ -583,6 +622,20 @@ export function ArtifactsView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
       ) : (
         <div className="h-full overflow-y-auto">
           <div className={cn('flex flex-col gap-3 pb-2', PAGE_INSET_X)}>
+            <div className="grid grid-cols-1 gap-2 pt-2 sm:grid-cols-3">
+              <ReportStatCard icon={<FileText className="size-4" />} label={a.statReports} value={counts.report} />
+              <ReportStatCard
+                icon={<FolderOpen className="size-4" />}
+                label={a.statSessions}
+                value={reportSessionCount}
+              />
+              <ReportStatCard
+                icon={<Link2 className="size-4" />}
+                label={a.statRelated}
+                value={Math.max(0, counts.all - counts.report)}
+              />
+            </div>
+
             {visibleImageArtifacts.length > 0 && (
               <section className="flex flex-col">
                 <div
@@ -643,6 +696,20 @@ export function ArtifactsView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
         </div>
       )}
     </PageSearchShell>
+  )
+}
+
+function ReportStatCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: number }) {
+  return (
+    <div className="flex items-center gap-3 rounded-lg border border-(--ui-stroke-tertiary) bg-(--ui-chat-bubble-background) px-3 py-2">
+      <div className="grid size-8 shrink-0 place-items-center rounded-lg bg-(--ui-bg-tertiary) text-(--ui-text-tertiary)">
+        {icon}
+      </div>
+      <div className="min-w-0">
+        <div className="text-[0.65rem] uppercase tracking-[0.08em] text-(--ui-text-tertiary)">{label}</div>
+        <div className="text-base font-semibold tabular-nums text-(--ui-text-primary)">{value}</div>
+      </div>
+    </div>
   )
 }
 
@@ -710,7 +777,14 @@ interface ArtifactImageCardProps {
 function ArtifactImageCard({ artifact, failedImage, onImageError, onOpenChat, onPreview }: ArtifactImageCardProps) {
   const { t } = useI18n()
   const a = t.artifacts
-  const kindLabel = artifact.kind === 'image' ? a.kindImage : artifact.kind === 'file' ? a.kindFile : a.kindLink
+  const kindLabel =
+    artifact.kind === 'image'
+      ? a.kindImage
+      : artifact.kind === 'report'
+        ? a.kindReport
+        : artifact.kind === 'file'
+          ? a.kindFile
+          : a.kindLink
 
   return (
     <article className="group/artifact overflow-hidden rounded-lg border border-(--ui-stroke-tertiary) bg-(--ui-chat-bubble-background)">
@@ -828,9 +902,9 @@ function PrimaryCell({ artifact, ctx }: { artifact: ArtifactRecord; ctx: CellCtx
 
 function LocationCell({ artifact }: { artifact: ArtifactRecord; ctx: CellCtx }) {
   const { t } = useI18n()
-  const isLink = artifact.kind === 'link'
-  const value = isLink ? hostPathLabel(artifact.value) : artifact.value
-  const copyLabel = isLink ? t.artifacts.copyUrl : t.artifacts.copyPath
+  const isUrl = /^https?:\/\//i.test(artifact.value)
+  const value = isUrl ? hostPathLabel(artifact.value) : artifact.value
+  const copyLabel = isUrl ? t.artifacts.copyUrl : t.artifacts.copyPath
 
   return (
     <div className="group/location flex min-w-0 items-center gap-1.5">
@@ -838,7 +912,7 @@ function LocationCell({ artifact }: { artifact: ArtifactRecord; ctx: CellCtx }) 
         <div
           className={cn(
             'min-w-0 flex-1 truncate text-[length:var(--conversation-caption-font-size)] text-(--ui-text-tertiary)',
-            isLink ? 'font-normal' : 'font-mono'
+            isUrl ? 'font-normal' : 'font-mono'
           )}
         >
           {value}
@@ -874,7 +948,14 @@ const ARTIFACT_COLUMNS: readonly ArtifactColumn[] = [
   {
     Cell: PrimaryCell,
     bodyClassName: 'p-0',
-    header: (filter, a) => (filter === 'link' ? a.colTitleLink : filter === 'file' ? a.colTitleFile : a.colTitleDefault),
+    header: (filter, a) =>
+      filter === 'report'
+        ? a.colTitleReport
+        : filter === 'link'
+          ? a.colTitleLink
+          : filter === 'file'
+            ? a.colTitleFile
+            : a.colTitleDefault,
     id: 'primary',
     width: filter => (filter === 'link' ? 'w-[50%]' : 'w-[35%]')
   },
@@ -882,7 +963,13 @@ const ARTIFACT_COLUMNS: readonly ArtifactColumn[] = [
     Cell: LocationCell,
     bodyClassName: 'px-2.5 py-1.5',
     header: (filter, a) =>
-      filter === 'link' ? a.colLocationLink : filter === 'file' ? a.colLocationFile : a.colLocationDefault,
+      filter === 'report'
+        ? a.colLocationReport
+        : filter === 'link'
+          ? a.colLocationLink
+          : filter === 'file'
+            ? a.colLocationFile
+            : a.colLocationDefault,
     id: 'location',
     width: filter => (filter === 'link' ? 'w-[30%]' : 'w-[41%]')
   },

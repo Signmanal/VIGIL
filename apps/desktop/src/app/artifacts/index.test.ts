@@ -59,4 +59,43 @@ describe('collectArtifactsForSession', () => {
       value: 'https://example.com/changelog/latest'
     })
   })
+
+  it('classifies generated report paths separately from generic files', () => {
+    const session = makeSession({ cwd: '/Users/alice/work' })
+    const artifacts = collectArtifactsForSession(session, [
+      {
+        content: 'Saved report: ./reports/incident-summary.md\nArchive: ./dist/bundle.zip',
+        role: 'assistant',
+        timestamp: 4000
+      }
+    ])
+
+    expect(artifacts).toHaveLength(2)
+    expect(artifacts.find(artifact => artifact.value === './reports/incident-summary.md')).toMatchObject({
+      cwd: '/Users/alice/work',
+      kind: 'report',
+      label: 'incident-summary.md'
+    })
+    expect(artifacts.find(artifact => artifact.value === './dist/bundle.zip')).toMatchObject({
+      kind: 'file',
+      label: 'bundle.zip'
+    })
+  })
+
+  it('classifies report tool outputs as reports', () => {
+    const artifacts = collectArtifactsForSession(makeSession(), [
+      {
+        content: JSON.stringify({ report_path: '/tmp/vigil-audit-report.html' }),
+        role: 'tool',
+        timestamp: 5000
+      }
+    ])
+
+    expect(artifacts).toHaveLength(1)
+    expect(artifacts[0]).toMatchObject({
+      href: 'file:///tmp/vigil-audit-report.html',
+      kind: 'report',
+      label: 'vigil-audit-report.html'
+    })
+  })
 })

@@ -967,6 +967,7 @@ export interface Translations {
     refresh: string
     refreshing: string
     indexing: string
+    tabReports: string
     tabAll: string
     tabImages: string
     tabFiles: string
@@ -977,6 +978,10 @@ export interface Translations {
     openFailed: string
     preview: string
     previewFailed: string
+    statReports: string
+    statSessions: string
+    statRelated: string
+    itemsReport: string
     itemsImage: string
     itemsLink: string
     itemsFile: string
@@ -984,13 +989,16 @@ export interface Translations {
     zero: string
     rangeOf: (start: number, end: number, total: number) => string
     goToPage: (itemLabel: string, page: number) => string
+    colTitleReport: string
     colTitleLink: string
     colTitleFile: string
     colTitleDefault: string
+    colLocationReport: string
     colLocationLink: string
     colLocationFile: string
     colLocationDefault: string
     colSession: string
+    kindReport: string
     kindImage: string
     kindFile: string
     kindLink: string
