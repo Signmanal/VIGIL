@@ -43,7 +43,7 @@ const effortLabelKey = (v: string) => (v === 'xhigh' ? 'max' : v) as 'high' | 'l
 // provider), so unconfigured providers come back with `authenticated:false`
 // and an empty `models` list — those need a setup step before a model exists.
 function isProviderReady(p?: ModelOptionProvider): boolean {
-  return !!p && (p.authenticated !== false || (p.models?.length ?? 0) > 0)
+  return !!p && (p.authenticated === true || (p.models?.length ?? 0) > 0)
 }
 
 function auxProviderNeedsSetup(slot: StaleAuxAssignment, providers: readonly ModelOptionProvider[]): boolean {

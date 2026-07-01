@@ -227,7 +227,7 @@ describe('refreshOnboarding', () => {
     expect(ready).toBe(false)
     expect(api).toHaveBeenCalledTimes(1)
     expect($desktopOnboarding.get().configured).toBe(false)
-    expect($desktopOnboarding.get().reason).toContain('request timed out')
+    expect($desktopOnboarding.get().reason).toContain('Runtime health check timed out')
   })
 
   it('deduplicates concurrent provider refresh calls', async () => {

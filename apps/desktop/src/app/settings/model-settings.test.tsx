@@ -114,6 +114,24 @@ describe('ModelSettings', () => {
     await waitFor(() => expect(setEnvVar).toHaveBeenCalledWith('DEEPSEEK_API_KEY', 'sk-test-123'))
   })
 
+  it('does not treat an empty provider row as usable when authentication is unknown', async () => {
+    getGlobalModelOptions.mockResolvedValueOnce({
+      providers: [
+        { name: 'Nous', slug: 'nous', models: ['vigil-4'], authenticated: true },
+        { name: 'Mystery Provider', slug: 'mystery', models: [], auth_type: 'oauth' }
+      ]
+    })
+
+    await renderModelSettings()
+    await waitFor(() => expect(getGlobalModelOptions).toHaveBeenCalled())
+
+    const triggers = screen.getAllByRole('combobox')
+    fireEvent.click(triggers[0])
+    fireEvent.click(await screen.findByText(/Mystery Provider/))
+
+    expect(await screen.findByRole('button', { name: /Set up Mystery Provider/ })).toBeTruthy()
+  })
+
   it('writes the profile default speed (service_tier) when the fast switch is toggled', async () => {
     await renderModelSettings()
     await waitFor(() => expect(getVIGILConfigRecord).toHaveBeenCalled())

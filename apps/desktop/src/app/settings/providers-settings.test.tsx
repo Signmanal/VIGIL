@@ -88,12 +88,12 @@ describe('ProvidersSettings', () => {
     expect(listOAuthProviders).toHaveBeenCalledTimes(2)
   })
 
-  it('keeps provider selection separate from account removal', async () => {
+  it('does not restart OAuth when a connected provider row is clicked', async () => {
     await renderProvidersSettings()
 
     fireEvent.click(await screen.findByText('XCLAW Portal'))
 
-    expect(startManualProviderOAuth).toHaveBeenCalledWith('nous')
+    expect(startManualProviderOAuth).not.toHaveBeenCalled()
     expect(disconnectOAuthProvider).not.toHaveBeenCalled()
   })
 

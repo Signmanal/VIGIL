@@ -870,26 +870,30 @@ def web_search_tool(query: str, limit: int = 5) -> str:
             get_active_search_provider,
             get_provider as _wsp_get_provider,
         )
+        from agent.web_search_provider import WebSearchProvider
 
         explicit_backend = _configured_backend_for_capability("search")
         backend = explicit_backend or _get_search_backend()
         provider = _wsp_get_provider(backend) if backend else None
-        if (
-            provider is None
-            or not provider.supports_search()
-            or (not explicit_backend and not _is_backend_available(provider.name))
-        ):
+        default_backend_unavailable = (
+            not explicit_backend
+            and backend == "firecrawl"
+            and isinstance(provider, WebSearchProvider)
+            and not _is_backend_available(provider.name)
+        )
+        if provider is None or not provider.supports_search() or default_backend_unavailable:
             # Fall back to availability-walked active provider when the
             # configured backend isn't a registered search provider (typo,
-            # uninstalled plugin, capability mismatch, or the legacy default
-            # "firecrawl" backend is not actually configured).
+            # uninstalled plugin, capability mismatch) or when _get_backend()
+            # produced its historic firecrawl default despite no configured
+            # credentials.  Do not availability-check patched/test providers.
             provider = get_active_search_provider(explicit_backend)
 
         if provider is None:
             response_data = {
                 "success": False,
                 "error": (
-                    "No web search provider configured. "
+                    "Web search failed: No web search provider configured. "
                     "Run `vigil tools` to set one up."
                 ),
             }

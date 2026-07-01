@@ -179,7 +179,6 @@ function OAuthPicker({
               disconnecting={disconnecting === p.id}
               key={p.id}
               onDisconnect={onDisconnect}
-              onSelect={select}
               onTerminalDisconnect={onTerminalDisconnect}
               provider={p}
             />
@@ -216,20 +215,17 @@ function OAuthPicker({
 function ConnectedProviderRow({
   disconnecting,
   onDisconnect,
-  onSelect,
   onTerminalDisconnect,
   provider
 }: {
   disconnecting: boolean
   onDisconnect: (provider: OAuthProvider) => void
-  onSelect: (provider: OAuthProvider) => void
   onTerminalDisconnect: (provider: OAuthProvider) => void
   provider: OAuthProvider
 }) {
   const { t } = useI18n()
   const copy = t.settings.providers
   const title = providerTitle(provider)
-  const Trail = provider.flow === 'external' ? Terminal : ChevronRight
   // VIGIL can clear this provider's creds via the API.
   const canDisconnect = provider.disconnectable ?? provider.flow !== 'external'
   // External (CLI-managed) provider VIGIL can't clear via the API, but ships a
@@ -240,7 +236,7 @@ function ConnectedProviderRow({
 
   return (
     <div className="group grid grid-cols-[minmax(0,1fr)_auto] items-center gap-1 rounded-[6px] transition-colors hover:bg-(--ui-control-hover-background)">
-      <button className="min-w-0 px-3 py-2.5 text-left" onClick={() => onSelect(provider)} type="button">
+      <div className="min-w-0 px-3 py-2.5 text-left">
         <div className="flex min-w-0 items-center gap-2">
           <span className="truncate text-[length:var(--conversation-text-font-size)] font-semibold">{title}</span>
           <span className="inline-flex shrink-0 items-center gap-1 bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
@@ -254,9 +250,8 @@ function ConnectedProviderRow({
             {provider.flow === 'external' ? copy.removeExternalGeneric(title) : copy.removeKeyManaged(title)}
           </p>
         )}
-      </button>
+      </div>
       <div className="flex items-center gap-1 pr-2">
-        <Trail className="size-4 text-muted-foreground transition group-hover:text-foreground" />
         {canDisconnect && (
           <Button
             aria-label={`${t.common.remove} ${title}`}
