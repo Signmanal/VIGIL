@@ -21,7 +21,6 @@ const crypto = require('node:crypto')
 const fs = require('node:fs')
 const http = require('node:http')
 const https = require('node:https')
-const net = require('node:net')
 const path = require('node:path')
 const { pathToFileURL } = require('node:url')
 const { execFileSync, spawn } = require('node:child_process')
@@ -86,6 +85,7 @@ const {
   normAuthMode,
   normalizeRemoteBaseUrl,
   pathWithGlobalRemoteProfile,
+  pathWithLocalProfileScope,
   profileRemoteOverride,
   resolveAuthMode,
   resolveTestWsUrl,
@@ -6204,12 +6204,17 @@ ipcMain.handle('vigil:api', async (_event, request) => {
   await prepareProfileDeleteRequest(request)
 
   const profile = request?.profile
-  const connection = await ensureBackend(profile)
-  const timeoutMs = resolveTimeoutMs(request?.timeoutMs, DEFAULT_FETCH_TIMEOUT_MS)
-  const requestPath = pathWithGlobalRemoteProfile(request.path, profile, {
+  const remoteRouting = {
     globalRemote: globalRemoteActive(),
     profileRemoteOverride: profileHasRemoteOverride(profile)
+  }
+  const localProfilePath = pathWithLocalProfileScope(request.path, profile, {
+    ...remoteRouting,
+    primaryProfile: primaryProfileKey()
   })
+  const connection = await ensureBackend(localProfilePath ? null : profile)
+  const timeoutMs = resolveTimeoutMs(request?.timeoutMs, DEFAULT_FETCH_TIMEOUT_MS)
+  const requestPath = localProfilePath || pathWithGlobalRemoteProfile(request.path, profile, remoteRouting)
   const url = `${connection.baseUrl}${requestPath}`
   // OAuth gateways authenticate REST via the HttpOnly session cookie held in
   // the OAuth partition — route through Electron's net stack bound to that
