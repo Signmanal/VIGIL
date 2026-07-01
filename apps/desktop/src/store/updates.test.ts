@@ -204,6 +204,28 @@ describe('checkBackendUpdates', () => {
     expect($backendUpdateStatus.get()?.commits?.[0]?.summary).toBe('feat: x')
   })
 
+  it('surfaces unknown backend update counts as available updates', async () => {
+    setRemote(true)
+    checkVIGILUpdateSpy.mockResolvedValue({
+      install_method: 'git',
+      current_version: '0.16.0',
+      behind: -1,
+      update_available: true,
+      can_apply: true,
+      update_command: 'vigil update',
+      message: null,
+      commits: [
+        { sha: 'abc1234', summary: 'fix: a', author: 'a', at: 1 },
+        { sha: 'def5678', summary: 'fix: b', author: 'b', at: 2 }
+      ]
+    })
+
+    const result = await checkBackendUpdates()
+
+    expect(result?.behind).toBe(2)
+    expect(result?.targetSha).toBe('backend:0.16.0')
+  })
+
   it('honours can_apply=false (docker/nix): not supported, carries message', async () => {
     setRemote(true)
     checkVIGILUpdateSpy.mockResolvedValue({

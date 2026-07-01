@@ -242,12 +242,14 @@ function isRemoteMode(): boolean {
 }
 
 function mapBackendCheck(res: BackendUpdateCheckResponse): DesktopUpdateStatus {
-  const behind = res.behind ?? 0
+  const rawBehind = res.behind ?? 0
+  const inferredUnknownBehind = res.update_available ? Math.max(1, res.commits?.length ?? 0) : 0
+  const behind = rawBehind > 0 ? rawBehind : rawBehind < 0 ? inferredUnknownBehind : 0
 
   return {
     supported: res.can_apply,
     message: res.message ?? undefined,
-    behind: behind > 0 ? behind : 0,
+    behind,
     targetSha: res.update_available ? `backend:${res.current_version}` : undefined,
     commits: res.commits,
     fetchedAt: Date.now()
