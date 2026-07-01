@@ -36,6 +36,7 @@ from vigil_cli.profiles import (
     NO_BUNDLED_SKILLS_MARKER,
     backfill_profile_envs,
     profiles_to_serve,
+    write_profile_meta,
 )
 from vigil_cli.config import DEFAULT_CONFIG
 
@@ -616,6 +617,15 @@ class TestListProfiles:
         profiles = list_profiles()
         assert profiles[0].name == "default"
         assert profiles[0].is_default is True
+
+    def test_default_profile_surfaces_display_name(self, profile_env):
+        default_home = profile_env / ".vigil"
+        write_profile_meta(default_home, display_name="SOC Command")
+
+        profiles = list_profiles()
+        default = next(p for p in profiles if p.name == "default")
+
+        assert default.display_name == "SOC Command"
 
 
 # ===================================================================

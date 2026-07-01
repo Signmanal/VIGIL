@@ -541,6 +541,7 @@ class ProfileInfo:
     path: Path
     is_default: bool
     gateway_running: bool
+    display_name: str = ""
     model: Optional[str] = None
     provider: Optional[str] = None
     has_env: bool = False
@@ -678,23 +679,24 @@ def _profile_yaml_path(profile_dir: Path) -> Path:
 def read_profile_meta(profile_dir: Path) -> dict:
     """Read ``<profile_dir>/profile.yaml`` and return a dict.
 
-    Returns ``{"description": "", "description_auto": False}`` when the
+    Returns empty metadata defaults when the
     file is missing or unreadable. Never raises — a corrupt
     profile.yaml on an unrelated profile must not break
     ``vigil profile list``.
     """
     path = _profile_yaml_path(profile_dir)
     if not path.is_file():
-        return {"description": "", "description_auto": False}
+        return {"display_name": "", "description": "", "description_auto": False}
     try:
         import yaml
         with open(path, "r", encoding="utf-8") as f:
             data = yaml.safe_load(f) or {}
     except Exception:
-        return {"description": "", "description_auto": False}
+        return {"display_name": "", "description": "", "description_auto": False}
     if not isinstance(data, dict):
-        return {"description": "", "description_auto": False}
+        return {"display_name": "", "description": "", "description_auto": False}
     return {
+        "display_name": str(data.get("display_name") or "").strip(),
         "description": str(data.get("description") or "").strip(),
         "description_auto": bool(data.get("description_auto", False)),
     }
@@ -703,6 +705,7 @@ def read_profile_meta(profile_dir: Path) -> dict:
 def write_profile_meta(
     profile_dir: Path,
     *,
+    display_name: Optional[str] = None,
     description: Optional[str] = None,
     description_auto: Optional[bool] = None,
 ) -> None:
@@ -725,6 +728,8 @@ def write_profile_meta(
                 existing = loaded
         except Exception:
             existing = {}
+    if display_name is not None:
+        existing["display_name"] = display_name.strip()
     if description is not None:
         existing["description"] = description.strip()
     if description_auto is not None:
@@ -753,6 +758,7 @@ def list_profiles() -> List[ProfileInfo]:
             path=default_home,
             is_default=True,
             gateway_running=_check_gateway_running(default_home),
+            display_name=meta.get("display_name", ""),
             model=model,
             provider=provider,
             has_env=(default_home / ".env").exists(),
@@ -789,6 +795,7 @@ def list_profiles() -> List[ProfileInfo]:
                 path=entry,
                 is_default=False,
                 gateway_running=_check_gateway_running(entry),
+                display_name=meta.get("display_name", ""),
                 model=model,
                 provider=provider,
                 has_env=(entry / ".env").exists(),

@@ -3379,6 +3379,22 @@ class TestNewEndpoints:
         )
         assert resp.status_code == 404
 
+    def test_profile_display_name_round_trip(self, monkeypatch):
+        import vigil_cli.profiles as profiles_mod
+        monkeypatch.setattr(profiles_mod, "create_wrapper_script", lambda name: None)
+
+        self.client.post("/api/profiles", json={"name": "display-prof"})
+
+        put = self.client.put(
+            "/api/profiles/display-prof/display-name",
+            json={"display_name": "SOC Analyst"},
+        )
+        assert put.status_code == 200
+        assert put.json()["display_name"] == "SOC Analyst"
+
+        profiles = {p["name"]: p for p in self.client.get("/api/profiles").json()["profiles"]}
+        assert profiles["display-prof"]["display_name"] == "SOC Analyst"
+
     def test_profile_model_round_trip(self, monkeypatch):
         from vigil_constants import get_vigil_home
         import vigil_cli.profiles as profiles_mod

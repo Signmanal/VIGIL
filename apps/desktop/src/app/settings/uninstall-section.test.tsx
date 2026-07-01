@@ -38,11 +38,11 @@ afterEach(() => {
 })
 
 describe('UninstallSection', () => {
-  it('explains that the uninstall controls are not an error and keeps options collapsed by default', async () => {
+  it('describes local removal controls and keeps options collapsed by default', async () => {
     installUninstallBridge()
     renderUninstallSection()
 
-    expect(await screen.findByText('这里不是错误提示。')).toBeTruthy()
+    expect(await screen.findByText('本机组件清理')).toBeTruthy()
     expect(screen.queryByText('仅卸载桌面应用')).toBeNull()
   })
 

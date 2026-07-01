@@ -56,6 +56,12 @@ import { PROFILES_ROUTE } from '../../routes'
 
 const RAIL_GAP = 4 // px — matches gap-1 between squares.
 
+function getProfileDisplayName(profile: ProfileInfo): string {
+  const displayName = profile.display_name?.trim()
+
+  return displayName || profile.name
+}
+
 // easeOutBack — a little overshoot so squares spring into their new slot rather
 // than sliding in flat. Neighbors reflow on RAIL_TRANSITION; the dragged square
 // glides between snapped cells on the snappier DRAG_TRANSITION.
@@ -131,7 +137,11 @@ export function ProfileRail() {
   const defaultProfile = profiles.find(profile => profile.is_default)
   const onDefault = !isAll && activeKey === 'default'
 
-  const named = sortByProfileOrder(profiles.filter(profile => !profile.is_default), order)
+  const named = sortByProfileOrder(
+    profiles.filter(profile => !profile.is_default),
+    order
+  )
+
   const multiProfile = profiles.length > 1
 
   // distance constraint: a small drag reorders, a tap still selects the profile.
@@ -206,7 +216,7 @@ export function ProfileRail() {
           <ProfilePill
             active={isAll || onDefault}
             glyph={isAll ? 'layers' : 'home'}
-            label={onDefault ? p.showAllProfiles : p.switchToProfile(defaultProfile.name)}
+            label={onDefault ? p.showAllProfiles : p.switchToProfile(getProfileDisplayName(defaultProfile))}
             onSelect={() => (onDefault ? setShowAllProfiles(true) : selectProfile(defaultProfile.name))}
           />
         ) : (
@@ -218,7 +228,7 @@ export function ProfileRail() {
         <ProfilePill
           active
           glyph="home"
-          label={defaultProfile.name}
+          label={getProfileDisplayName(defaultProfile)}
           onSelect={() => selectProfile(defaultProfile.name)}
         />
       )}
@@ -245,7 +255,7 @@ export function ProfileRail() {
                     active={!isAll && normalizeProfileKey(profile.name) === activeKey}
                     color={resolveProfileColor(profile.name, colors)}
                     key={profile.name}
-                    label={profile.name}
+                    label={getProfileDisplayName(profile)}
                     onDelete={() => setPendingDelete(profile)}
                     onRecolor={color => setProfileColor(profile.name, color)}
                     onRename={() => setPendingRename(profile)}
@@ -481,7 +491,11 @@ function ProfileSquare({ active, color, label, onDelete, onRecolor, onRename, on
             <Codicon name="edit" size="0.875rem" />
             <span>{p.rename}</span>
           </ContextMenuItem>
-          <ContextMenuItem className="text-destructive focus:text-destructive" onSelect={onDelete} variant="destructive">
+          <ContextMenuItem
+            className="text-destructive focus:text-destructive"
+            onSelect={onDelete}
+            variant="destructive"
+          >
             <Codicon name="trash" size="0.875rem" />
             <span>{t.common.delete}</span>
           </ContextMenuItem>

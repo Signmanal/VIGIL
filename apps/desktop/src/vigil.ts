@@ -15,8 +15,6 @@ import type {
   CronJobUpdates,
   ElevenLabsVoicesResponse,
   EnvVarInfo,
-  VIGILConfig,
-  VIGILConfigRecord,
   LogsResponse,
   MemoryProviderConfig,
   MemoryProviderOAuthStatus,
@@ -45,7 +43,9 @@ import type {
   SkillInfo,
   StatusResponse,
   ToolsetConfig,
-  ToolsetInfo
+  ToolsetInfo,
+  VIGILConfig,
+  VIGILConfigRecord
 } from '@/types/vigil'
 
 const DEFAULT_GATEWAY_REQUEST_TIMEOUT_MS = 30_000
@@ -80,8 +80,6 @@ export type {
   ElevenLabsVoicesResponse,
   EnvVarInfo,
   GatewayReadyPayload,
-  VIGILConfig,
-  VIGILConfigRecord,
   LogsResponse,
   MemoryProviderConfig,
   MemoryProviderOAuthStatus,
@@ -120,7 +118,9 @@ export type {
   StaleAuxAssignment,
   StatusResponse,
   ToolsetConfig,
-  ToolsetInfo
+  ToolsetInfo,
+  VIGILConfig,
+  VIGILConfigRecord
 } from '@/types/vigil'
 
 export class VIGILGateway extends JsonRpcGatewayClient {
@@ -532,6 +532,7 @@ export function searchSkillHub(
     source,
     limit: String(Math.max(1, Math.floor(limit)))
   })
+
   const scopedProfile = profile?.trim()
 
   if (scopedProfile) {
@@ -550,6 +551,7 @@ export function browseSkillHub(source = 'all', limit = 100, profile?: string): P
     source,
     limit: String(Math.max(1, Math.floor(limit)))
   })
+
   const scopedProfile = profile?.trim()
 
   if (scopedProfile) {
@@ -744,6 +746,17 @@ export function renameProfile(name: string, newName: string): Promise<{ name: st
     path: `/api/profiles/${encodeURIComponent(name)}`,
     method: 'PATCH',
     body: { new_name: newName }
+  })
+}
+
+export function updateProfileDisplayName(
+  name: string,
+  displayName: string
+): Promise<{ display_name: string; ok: boolean }> {
+  return window.vigilDesktop.api<{ display_name: string; ok: boolean }>({
+    path: `/api/profiles/${encodeURIComponent(name)}/display-name`,
+    method: 'PUT',
+    body: { display_name: displayName }
   })
 }
 

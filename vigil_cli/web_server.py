@@ -9708,6 +9708,10 @@ class ProfileDescriptionUpdate(BaseModel):
     description: str = ""
 
 
+class ProfileDisplayNameUpdate(BaseModel):
+    display_name: str = ""
+
+
 class ProfileModelUpdate(BaseModel):
     provider: str
     model: str
@@ -9727,6 +9731,7 @@ def _profile_attr(info, name: str, default: Any = None) -> Any:
 def _profile_to_dict(info) -> Dict[str, Any]:
     return {
         "name": _profile_attr(info, "name", ""),
+        "display_name": _profile_attr(info, "display_name", "") or "",
         "path": str(_profile_attr(info, "path", "")),
         "is_default": bool(_profile_attr(info, "is_default", False)),
         "model": _profile_attr(info, "model"),
@@ -9756,6 +9761,7 @@ def _fallback_profile_dicts(profiles_mod) -> List[Dict[str, Any]]:
         model, provider = _safe(lambda: profiles_mod._read_config_model(default_home), (None, None))
         profiles.append({
             "name": "default",
+            "display_name": _safe(lambda: profiles_mod.read_profile_meta(default_home).get("display_name", ""), ""),
             "path": str(default_home),
             "is_default": True,
             "model": model,
@@ -9779,6 +9785,7 @@ def _fallback_profile_dicts(profiles_mod) -> List[Dict[str, Any]]:
             model, provider = _safe(lambda entry=entry: profiles_mod._read_config_model(entry), (None, None))
             profiles.append({
                 "name": entry.name,
+                "display_name": _safe(lambda entry=entry: profiles_mod.read_profile_meta(entry).get("display_name", ""), ""),
                 "path": str(entry),
                 "is_default": False,
                 "model": model,
@@ -10229,6 +10236,24 @@ async def update_profile_description_endpoint(name: str, body: ProfileDescriptio
         _log.exception("PUT /api/profiles/%s/description failed", name)
         raise HTTPException(status_code=500, detail=str(e))
     return {"ok": True, "description": text, "description_auto": False}
+
+
+@app.put("/api/profiles/{name}/display-name")
+async def update_profile_display_name_endpoint(name: str, body: ProfileDisplayNameUpdate):
+    """Set or clear a profile's user-facing display name.
+
+    This never renames the profile id or directory. The default profile remains
+    ``default`` internally so paths, wrappers, and config isolation stay stable.
+    """
+    from vigil_cli import profiles as profiles_mod
+    profile_dir = _resolve_profile_dir(name)
+    text = (body.display_name or "").strip()
+    try:
+        profiles_mod.write_profile_meta(profile_dir, display_name=text)
+    except Exception as e:
+        _log.exception("PUT /api/profiles/%s/display-name failed", name)
+        raise HTTPException(status_code=500, detail=str(e))
+    return {"ok": True, "display_name": text}
 
 
 @app.put("/api/profiles/{name}/model")

@@ -435,7 +435,7 @@ export const en: Translations = {
       justNowSuffix: ' · just now',
       automaticUpdates: 'Automatic updates',
       automaticUpdatesDesc:
-        'XCLAW checks for updates automatically in the background and lets you know when one is ready.',
+        'XCLAW checks quietly in the background and shows a prompt here when a new version is ready. Installation only starts after you confirm.',
       branchCommit: (branch, commit) => `Branch ${branch} · Commit ${commit}`,
       never: 'never',
       justNow: 'just now',
@@ -444,8 +444,8 @@ export const en: Translations = {
       daysAgo: count => `${count} days ago`,
       uninstall: {
         heading: 'Uninstall and data management',
-        summaryTitle: 'This is not an error.',
-        summaryDesc: 'These controls are only for intentionally removing the desktop app, agent, or local data.',
+        summaryTitle: 'Local removal controls',
+        summaryDesc: 'Choose exactly what to remove: the desktop app only, the local agent, or all local XCLAW data.',
         showOptions: 'Show uninstall options',
         hideOptions: 'Hide uninstall options',
         checking: "Checking what's installed...",
@@ -1135,7 +1135,8 @@ export const en: Translations = {
     saveProfile: 'Save profile',
     saveSoul: 'Save SOUL.md',
     resetChanges: 'Reset changes',
-    defaultNameLocked: 'default is the root profile and cannot be renamed; create a new profile to customize its name.',
+    defaultNameLocked:
+      'The default profile keeps its internal id, path, and commands as default; this field changes the display name only.',
     deleteTitle: 'Delete profile?',
     deleteDescPrefix: 'This will delete ',
     deleteDescMid: ' and remove its ',

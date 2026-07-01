@@ -554,7 +554,8 @@ export const ja = defineLocale({
       lastChecked: age => `前回確認: ${age}`,
       justNowSuffix: ' · たった今',
       automaticUpdates: '自動更新',
-      automaticUpdatesDesc: 'XCLAW はバックグラウンドで自動的に更新を確認し、利用可能になったら通知します。',
+      automaticUpdatesDesc:
+        'XCLAW はバックグラウンドで新しいバージョンを確認し、利用可能になったらここに表示します。インストールは確認後に開始されます。',
       branchCommit: (branch, commit) => `ブランチ ${branch} · コミット ${commit}`,
       never: '未確認',
       justNow: 'たった今',
@@ -563,8 +564,9 @@ export const ja = defineLocale({
       daysAgo: count => `${count} 日前`,
       uninstall: {
         heading: 'アンインストールとデータ管理',
-        summaryTitle: 'これはエラー表示ではありません。',
-        summaryDesc: 'デスクトップアプリ、Agent、またはローカルデータを意図的に削除するときだけ使う操作です。',
+        summaryTitle: 'ローカルコンポーネントの削除',
+        summaryDesc:
+          'デスクトップアプリのみ、Agent まで、またはすべてのローカルデータを削除するか選べます。既定では削除は実行されません。',
         showOptions: 'アンインストールオプションを表示',
         hideOptions: 'アンインストールオプションを隠す',
         checking: 'インストール済みの内容を確認中...',
@@ -1254,7 +1256,7 @@ export const ja = defineLocale({
     saveSoul: 'SOUL を保存',
     resetChanges: '変更をリセット',
     defaultNameLocked:
-      'default はルートプロファイルのため名前を変更できません。名前を変えるには新しいプロファイルを作成してください。',
+      'default は内部 ID、パス、コマンドを default のまま保持します。この欄で変更するのは表示名だけです。',
     deleteTitle: 'プロファイルを削除しますか？',
     deleteDescPrefix: 'これにより ',
     deleteDescMid: ' が削除され、その ',

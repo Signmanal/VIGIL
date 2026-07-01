@@ -15,6 +15,12 @@ import {
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import { useI18n } from '@/i18n'
+import { AlertTriangle, Save, Terminal, Trash2, Users } from '@/lib/icons'
+import { cn } from '@/lib/utils'
+import { notify, notifyError } from '@/store/notifications'
+import { selectProfile } from '@/store/profile'
+import type { SkillInfo, VIGILConfigRecord } from '@/types/vigil'
 import {
   createProfile,
   deleteProfile,
@@ -28,19 +34,15 @@ import {
   saveVIGILConfig,
   setApiRequestProfile,
   toggleSkill,
+  updateProfileDisplayName,
   updateProfileSoul
 } from '@/vigil'
-import { useI18n } from '@/i18n'
-import { AlertTriangle, Save, Terminal, Trash2, Users } from '@/lib/icons'
-import { cn } from '@/lib/utils'
-import { notify, notifyError } from '@/store/notifications'
-import { selectProfile } from '@/store/profile'
-import type { SkillInfo, VIGILConfigRecord } from '@/types/vigil'
 
 import { useRefreshHotkey } from '../hooks/use-refresh-hotkey'
 import { OverlayMain, OverlayNewButton, OverlaySidebar, OverlaySplitLayout } from '../overlays/overlay-split-layout'
 import { OverlayView } from '../overlays/overlay-view'
 import { SETTINGS_ROUTE, SKILLS_ROUTE } from '../routes'
+
 import {
   applyMcpSelectionToConfig,
   enabledMcpServerNames,
@@ -55,6 +57,18 @@ const PROFILE_NAME_RE = /^[a-z0-9][a-z0-9_-]{0,63}$/
 
 function isValidProfileName(name: string): boolean {
   return PROFILE_NAME_RE.test(name.trim())
+}
+
+function profileDisplayName(profile: ProfileInfo): string {
+  const displayName = profile.display_name?.trim()
+
+  return displayName || profile.name
+}
+
+function profileOptionLabel(profile: ProfileInfo): string {
+  const displayName = profileDisplayName(profile)
+
+  return displayName === profile.name ? profile.name : `${displayName} (${profile.name})`
 }
 
 interface ProfilesViewProps {
@@ -118,10 +132,12 @@ export function ProfilesView({ onClose }: ProfilesViewProps) {
         clone_from: cloneFrom,
         ...(skillSelection?.touched ? { keep_skills: skillSelection.selected } : {})
       })
+
       if (mcpSelection?.touched) {
         const cfg = await getVIGILConfigRecord(trimmed)
         await saveVIGILConfig(applyMcpSelectionToConfig(cfg, mcpSelection), trimmed)
       }
+
       notify({ kind: 'success', title: p.created, message: trimmed })
       setSelectedName(trimmed)
       await refresh()
@@ -158,7 +174,7 @@ export function ProfilesView({ onClose }: ProfilesViewProps) {
 
     try {
       await deleteProfile(pendingDelete.name)
-      notify({ kind: 'success', title: p.deleted, message: pendingDelete.name })
+      notify({ kind: 'success', title: p.deleted, message: profileDisplayName(pendingDelete) })
       setPendingDelete(null)
       setSelectedName(null)
       await refresh()
@@ -195,8 +211,8 @@ export function ProfilesView({ onClose }: ProfilesViewProps) {
               <ProfileDetail
                 key={selected.name}
                 onDelete={() => setPendingDelete(selected)}
-                onRename={newName => handleRename(selected.name, newName)}
                 onRefresh={() => void refresh()}
+                onRename={newName => handleRename(selected.name, newName)}
                 profile={selected}
               />
             ) : (
@@ -228,7 +244,7 @@ export function ProfilesView({ onClose }: ProfilesViewProps) {
               {pendingDelete ? (
                 <>
                   {p.deleteDescPrefix}
-                  <span className="font-medium text-foreground">{pendingDelete.name}</span>
+                  <span className="font-medium text-foreground">{profileDisplayName(pendingDelete)}</span>
                   {p.deleteDescMid}
                   <span className="font-mono text-xs">{pendingDelete.path}</span>
                   {p.deleteDescSuffix}
@@ -253,6 +269,8 @@ export function ProfilesView({ onClose }: ProfilesViewProps) {
 function ProfileRow({ active, onSelect, profile }: { active: boolean; onSelect: () => void; profile: ProfileInfo }) {
   const { t } = useI18n()
   const p = t.profiles
+  const displayName = profileDisplayName(profile)
+  const showsAlias = displayName !== profile.name
 
   return (
     <button
@@ -264,10 +282,11 @@ function ProfileRow({ active, onSelect, profile }: { active: boolean; onSelect: 
       type="button"
     >
       <span className="flex w-full items-center justify-between gap-2">
-        <span className="truncate text-sm font-medium">{profile.name}</span>
+        <span className="truncate text-sm font-medium">{displayName}</span>
         {profile.is_default && <span className="text-[0.6rem] text-primary">{p.default}</span>}
       </span>
       <span className="text-[0.66rem] text-muted-foreground">
+        {showsAlias ? `${profile.name} · ` : ''}
         {p.skills(profile.skill_count)}
         {profile.has_env ? ` · ${p.env}` : ''}
       </span>
@@ -290,6 +309,8 @@ function ProfileDetail({
   const { t } = useI18n()
   const p = t.profiles
   const [copying, setCopying] = useState(false)
+  const displayName = profileDisplayName(profile)
+  const showsAlias = displayName !== profile.name
 
   const openProfileScoped = useCallback(
     (path: string) => {
@@ -322,7 +343,7 @@ function ProfileDetail({
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="text-xl font-semibold tracking-tight">{profile.name}</h3>
+                  <h3 className="text-xl font-semibold tracking-tight">{displayName}</h3>
                   {profile.is_default && (
                     <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[0.65rem] font-medium text-primary">
                       {p.defaultBadge}
@@ -333,6 +354,7 @@ function ProfileDetail({
                       .env
                     </span>
                   )}
+                  {showsAlias && <span className="font-mono text-xs text-muted-foreground">{profile.name}</span>}
                 </div>
                 <p className="mt-1 font-mono text-[0.7rem] text-muted-foreground" title={profile.path}>
                   {profile.path}
@@ -432,7 +454,8 @@ function ProfileEditor({
 }) {
   const { t } = useI18n()
   const p = t.profiles
-  const [name, setName] = useState(profile.name)
+  const initialName = profileDisplayName(profile)
+  const [name, setName] = useState(initialName)
   const [soul, setSoul] = useState('')
   const [originalSoul, setOriginalSoul] = useState('')
   const [skills, setSkills] = useState<SkillInfo[]>([])
@@ -449,7 +472,7 @@ function ProfileEditor({
 
     setLoading(true)
     setError(null)
-    setName(profile.name)
+    setName(initialName)
     setSoul('')
     setOriginalSoul('')
     setSkills([])
@@ -491,14 +514,14 @@ function ProfileEditor({
     return () => {
       cancelled = true
     }
-  }, [p.failedLoad, profile.name])
+  }, [initialName, p.failedLoad, profile.name])
 
   const servers = useMemo(() => getMcpServers(config), [config])
   const mcpNames = useMemo(() => Object.keys(servers).sort(), [servers])
   const selectedSkillNames = useMemo(() => sortedSkillNames(skills), [skills])
   const trimmedName = name.trim()
-  const nameDirty = !profile.is_default && trimmedName !== profile.name
-  const nameInvalid = nameDirty && (!trimmedName || !isValidProfileName(trimmedName))
+  const nameDirty = profile.is_default ? trimmedName !== initialName : trimmedName !== profile.name
+  const nameInvalid = nameDirty && (!trimmedName || (!profile.is_default && !isValidProfileName(trimmedName)))
   const skillsDirty = !sameStringList(selectedSkillNames, sortedSetValues(originalSkills))
   const mcpDirty = !sameStringSet(mcpEnabled, originalMcp)
   const soulDirty = soul !== originalSoul
@@ -506,7 +529,7 @@ function ProfileEditor({
   const selectedMcpCount = mcpEnabled.size
 
   function resetDrafts() {
-    setName(profile.name)
+    setName(initialName)
     setSoul(originalSoul)
     setSkills(prev => prev.map(skill => ({ ...skill, enabled: originalSkills.has(skill.name) })))
     setMcpEnabled(new Set(originalMcp))
@@ -555,19 +578,23 @@ function ProfileEditor({
       }
 
       const changedSkills = skills.filter(skill => originalSkills.has(skill.name) !== skill.enabled)
+
       for (const skill of changedSkills) {
         await toggleSkill(skill.name, skill.enabled, profile.name)
       }
 
       if (config && mcpDirty) {
         const nextServers = { ...servers }
+
         for (const serverName of mcpNames) {
           const nextServer = { ...servers[serverName] }
+
           if (mcpEnabled.has(serverName)) {
             delete nextServer.disabled
           } else {
             nextServer.disabled = true
           }
+
           nextServers[serverName] = nextServer
         }
 
@@ -576,14 +603,22 @@ function ProfileEditor({
         setConfig(nextConfig)
       }
 
-      if (nameDirty) {
+      if (nameDirty && profile.is_default) {
+        await updateProfileDisplayName(profile.name, trimmedName)
+      }
+
+      if (nameDirty && !profile.is_default) {
         await onRename(trimmedName)
       } else {
         const nextSkillSet = new Set(selectedSkillNames)
         setOriginalSoul(soul)
         setOriginalSkills(nextSkillSet)
         setOriginalMcp(new Set(mcpEnabled))
-        notify({ kind: 'success', title: p.profileSaved, message: profile.name })
+        notify({
+          kind: 'success',
+          title: p.profileSaved,
+          message: nameDirty ? trimmedName : profileDisplayName(profile)
+        })
         onRefresh()
       }
     } catch (err) {
@@ -624,17 +659,12 @@ function ProfileEditor({
             </label>
             <Input
               aria-invalid={nameInvalid}
-              disabled={profile.is_default || saving}
+              disabled={saving}
               id="profile-edit-name"
               onChange={event => setName(event.target.value)}
               value={name}
             />
-            <p
-              className={cn(
-                'text-[0.66rem] leading-4',
-                nameInvalid ? 'text-destructive' : 'text-muted-foreground'
-              )}
-            >
+            <p className={cn('text-[0.66rem] leading-4', nameInvalid ? 'text-destructive' : 'text-muted-foreground')}>
               {profile.is_default ? p.defaultNameLocked : p.nameHint}
             </p>
           </div>
@@ -710,9 +740,7 @@ function ProfileEditor({
             <section className="space-y-2">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <div>
-                  <h5 className="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                    MCP
-                  </h5>
+                  <h5 className="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">MCP</h5>
                   <p className="text-xs text-muted-foreground">{p.profileMcpDesc}</p>
                 </div>
                 <span className="text-[0.65rem] text-muted-foreground">
@@ -781,9 +809,7 @@ function ProfileEditor({
 
           <section className="space-y-2">
             <div>
-              <h5 className="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                SOUL.md
-              </h5>
+              <h5 className="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">SOUL.md</h5>
               <p className="text-xs text-muted-foreground">{p.soulDesc}</p>
             </div>
             <Textarea
@@ -911,7 +937,7 @@ function CreateProfileDialog({
                 <SelectItem value="__none__">{p.cloneFromNone}</SelectItem>
                 {profiles.map(profile => (
                   <SelectItem key={profile.name} value={profile.name}>
-                    {profile.name}
+                    {profileOptionLabel(profile)}
                   </SelectItem>
                 ))}
               </SelectContent>
