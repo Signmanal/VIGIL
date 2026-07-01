@@ -365,6 +365,29 @@ export interface Translations {
       minAgo: (count: number) => string
       hoursAgo: (count: number) => string
       daysAgo: (count: number) => string
+      uninstall: {
+        heading: string
+        summaryTitle: string
+        summaryDesc: string
+        showOptions: string
+        hideOptions: string
+        checking: string
+        confirmTitle: string
+        confirmDesc: (consequence: string) => string
+        appPath: (path: string) => string
+        startFailed: string
+        running: string
+        confirmAction: string
+        cancel: string
+        options: Record<
+          'gui' | 'lite' | 'full',
+          {
+            title: string
+            description: string
+            consequence: string
+          }
+        >
+      }
     }
     config: {
       none: string

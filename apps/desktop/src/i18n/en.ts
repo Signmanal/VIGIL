@@ -441,7 +441,40 @@ export const en: Translations = {
       justNow: 'just now',
       minAgo: count => `${count} min ago`,
       hoursAgo: count => `${count} hours ago`,
-      daysAgo: count => `${count} days ago`
+      daysAgo: count => `${count} days ago`,
+      uninstall: {
+        heading: 'Uninstall and data management',
+        summaryTitle: 'This is not an error.',
+        summaryDesc: 'These controls are only for intentionally removing the desktop app, agent, or local data.',
+        showOptions: 'Show uninstall options',
+        hideOptions: 'Hide uninstall options',
+        checking: "Checking what's installed...",
+        confirmTitle: 'Confirm uninstall',
+        confirmDesc: consequence => `This removes ${consequence}. This cannot be undone.`,
+        appPath: path => `App: ${path}`,
+        startFailed: 'Uninstall could not start.',
+        running: 'Uninstalling...',
+        confirmAction: 'Yes, uninstall',
+        cancel: 'Cancel',
+        options: {
+          gui: {
+            title: 'Uninstall desktop app only',
+            description: 'Remove this desktop app. The XCLAW agent, your config, and chats all stay.',
+            consequence: 'the desktop app and its local app data'
+          },
+          lite: {
+            title: 'Uninstall app + agent, keep my data',
+            description:
+              'Remove the app and the XCLAW agent, but keep config, chats, and secrets for a future reinstall.',
+            consequence: 'the desktop app and the XCLAW agent; config, chats, and secrets are kept'
+          },
+          full: {
+            title: 'Uninstall everything',
+            description: 'Remove the app, the agent, and all user data: config, chats, scheduled jobs, secrets, logs.',
+            consequence: 'the desktop app, the XCLAW agent, and all local config, chats, secrets, and logs'
+          }
+        }
+      }
     },
     config: {
       none: 'None',

@@ -548,7 +548,39 @@ export const zhHant = defineLocale({
       justNow: '剛剛',
       minAgo: count => `${count} 分鐘前`,
       hoursAgo: count => `${count} 小時前`,
-      daysAgo: count => `${count} 天前`
+      daysAgo: count => `${count} 天前`,
+      uninstall: {
+        heading: '解除安裝與資料管理',
+        summaryTitle: '這裡不是錯誤提示。',
+        summaryDesc: '這些操作只在你主動移除桌面應用程式、Agent 或本機資料時才需要使用。',
+        showOptions: '顯示解除安裝選項',
+        hideOptions: '收合解除安裝選項',
+        checking: '正在檢查已安裝內容...',
+        confirmTitle: '確認解除安裝',
+        confirmDesc: consequence => `這會移除${consequence}，且無法復原。`,
+        appPath: path => `應用程式路徑：${path}`,
+        startFailed: '無法啟動解除安裝流程。',
+        running: '正在解除安裝...',
+        confirmAction: '確認解除安裝',
+        cancel: '取消',
+        options: {
+          gui: {
+            title: '僅解除安裝桌面應用程式',
+            description: '只移除此桌面應用程式。XCLAW Agent、設定和對話都會保留。',
+            consequence: '桌面應用程式及其本機應用資料'
+          },
+          lite: {
+            title: '解除安裝應用程式和 Agent，保留資料',
+            description: '移除桌面應用程式和 XCLAW Agent，但保留設定、對話和金鑰，方便日後重新安裝。',
+            consequence: '桌面應用程式和 XCLAW Agent；設定、對話和金鑰會保留'
+          },
+          full: {
+            title: '解除安裝全部內容',
+            description: '移除桌面應用程式、Agent 和全部使用者資料：設定、對話、排程工作、金鑰、日誌。',
+            consequence: '桌面應用程式、XCLAW Agent，以及全部本機設定、對話、金鑰和日誌'
+          }
+        }
+      }
     },
     config: {
       none: '無',

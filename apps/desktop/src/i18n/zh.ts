@@ -637,7 +637,39 @@ export const zh: Translations = {
       justNow: '刚刚',
       minAgo: count => `${count} 分钟前`,
       hoursAgo: count => `${count} 小时前`,
-      daysAgo: count => `${count} 天前`
+      daysAgo: count => `${count} 天前`,
+      uninstall: {
+        heading: '卸载与数据管理',
+        summaryTitle: '这里不是错误提示。',
+        summaryDesc: '这些操作只在你主动卸载桌面应用、Agent 或本地数据时才需要使用。',
+        showOptions: '显示卸载选项',
+        hideOptions: '收起卸载选项',
+        checking: '正在检查已安装内容...',
+        confirmTitle: '确认卸载',
+        confirmDesc: consequence => `这会移除${consequence}，且无法撤销。`,
+        appPath: path => `应用路径：${path}`,
+        startFailed: '无法启动卸载流程。',
+        running: '正在卸载...',
+        confirmAction: '确认卸载',
+        cancel: '取消',
+        options: {
+          gui: {
+            title: '仅卸载桌面应用',
+            description: '只移除此桌面应用。XCLAW Agent、配置和会话都会保留。',
+            consequence: '桌面应用及其本地应用数据'
+          },
+          lite: {
+            title: '卸载应用和 Agent，保留数据',
+            description: '移除桌面应用和 XCLAW Agent，但保留配置、会话和密钥，便于以后重新安装。',
+            consequence: '桌面应用和 XCLAW Agent；配置、会话和密钥会保留'
+          },
+          full: {
+            title: '卸载全部内容',
+            description: '移除桌面应用、Agent 和全部用户数据：配置、会话、计划任务、密钥、日志。',
+            consequence: '桌面应用、XCLAW Agent，以及全部本地配置、会话、密钥和日志'
+          }
+        }
+      }
     },
     config: {
       none: '无',

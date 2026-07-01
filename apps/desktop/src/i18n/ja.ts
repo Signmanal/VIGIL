@@ -560,7 +560,41 @@ export const ja = defineLocale({
       justNow: 'たった今',
       minAgo: count => `${count} 分前`,
       hoursAgo: count => `${count} 時間前`,
-      daysAgo: count => `${count} 日前`
+      daysAgo: count => `${count} 日前`,
+      uninstall: {
+        heading: 'アンインストールとデータ管理',
+        summaryTitle: 'これはエラー表示ではありません。',
+        summaryDesc: 'デスクトップアプリ、Agent、またはローカルデータを意図的に削除するときだけ使う操作です。',
+        showOptions: 'アンインストールオプションを表示',
+        hideOptions: 'アンインストールオプションを隠す',
+        checking: 'インストール済みの内容を確認中...',
+        confirmTitle: 'アンインストールを確認',
+        confirmDesc: consequence => `${consequence} を削除します。この操作は元に戻せません。`,
+        appPath: path => `アプリ: ${path}`,
+        startFailed: 'アンインストールを開始できませんでした。',
+        running: 'アンインストール中...',
+        confirmAction: 'アンインストールする',
+        cancel: 'キャンセル',
+        options: {
+          gui: {
+            title: 'デスクトップアプリのみアンインストール',
+            description: 'このデスクトップアプリだけを削除します。XCLAW Agent、設定、チャットは残ります。',
+            consequence: 'デスクトップアプリとそのローカルアプリデータ'
+          },
+          lite: {
+            title: 'アプリと Agent を削除し、データは保持',
+            description:
+              'アプリと XCLAW Agent を削除しますが、将来の再インストール用に設定、チャット、シークレットは残します。',
+            consequence: 'デスクトップアプリと XCLAW Agent。設定、チャット、シークレットは保持されます'
+          },
+          full: {
+            title: 'すべてアンインストール',
+            description:
+              'アプリ、Agent、すべてのユーザーデータ（設定、チャット、スケジュール、シークレット、ログ）を削除します。',
+            consequence: 'デスクトップアプリ、XCLAW Agent、すべてのローカル設定、チャット、シークレット、ログ'
+          }
+        }
+      }
     },
     config: {
       none: 'なし',
@@ -1219,7 +1253,8 @@ export const ja = defineLocale({
     saveProfile: 'プロファイルを保存',
     saveSoul: 'SOUL を保存',
     resetChanges: '変更をリセット',
-    defaultNameLocked: 'default はルートプロファイルのため名前を変更できません。名前を変えるには新しいプロファイルを作成してください。',
+    defaultNameLocked:
+      'default はルートプロファイルのため名前を変更できません。名前を変えるには新しいプロファイルを作成してください。',
     deleteTitle: 'プロファイルを削除しますか？',
     deleteDescPrefix: 'これにより ',
     deleteDescMid: ' が削除され、その ',
