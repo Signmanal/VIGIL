@@ -183,6 +183,11 @@ export interface VIGILTerminalExit {
 
 export interface DesktopVersionInfo {
   appVersion: string
+  buildBranch?: null | string
+  buildCommit?: null | string
+  buildCommitShort?: null | string
+  buildDirty?: boolean
+  builtAt?: null | string
   electronVersion: string
   nodeVersion: string
   platform: string

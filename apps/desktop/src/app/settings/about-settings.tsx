@@ -65,6 +65,12 @@ export function AboutSettings() {
   const supported = status?.supported !== false
   const applying = apply.applying || apply.stage === 'restart'
 
+  const buildLabel = version?.buildCommitShort
+    ? version.buildBranch
+      ? a.branchCommit(version.buildBranch, version.buildCommitShort)
+      : a.buildCommit(version.buildCommitShort)
+    : null
+
   const handleCheck = async () => {
     setJustChecked(false)
     const next = await checkUpdates()
@@ -101,6 +107,7 @@ export function AboutSettings() {
           <p className="mt-1 text-xs text-muted-foreground">
             {version?.appVersion ? a.version(version.appVersion) : a.versionUnavailable}
           </p>
+          {buildLabel ? <p className="mt-1 text-xs text-muted-foreground">{buildLabel}</p> : null}
         </div>
       </div>
 

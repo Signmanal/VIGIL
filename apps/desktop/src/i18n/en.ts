@@ -436,6 +436,7 @@ export const en: Translations = {
       automaticUpdates: 'Automatic updates',
       automaticUpdatesDesc:
         'XCLAW checks quietly in the background and shows a prompt here when a new version is ready. Installation only starts after you confirm.',
+      buildCommit: commit => `Build ${commit}`,
       branchCommit: (branch, commit) => `Branch ${branch} · Commit ${commit}`,
       never: 'never',
       justNow: 'just now',

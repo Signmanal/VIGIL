@@ -556,6 +556,7 @@ export const ja = defineLocale({
       automaticUpdates: '自動更新',
       automaticUpdatesDesc:
         'XCLAW はバックグラウンドで新しいバージョンを確認し、利用可能になったらここに表示します。インストールは確認後に開始されます。',
+      buildCommit: commit => `ビルド ${commit}`,
       branchCommit: (branch, commit) => `ブランチ ${branch} · コミット ${commit}`,
       never: '未確認',
       justNow: 'たった今',

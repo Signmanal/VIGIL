@@ -6786,6 +6786,11 @@ function showAboutPanelFresh() {
 
 ipcMain.handle('vigil:version', async () => ({
   appVersion: resolveVIGILVersion(),
+  buildBranch: INSTALL_STAMP?.branch || null,
+  buildCommit: INSTALL_STAMP?.commit || null,
+  buildCommitShort: INSTALL_STAMP?.commit ? INSTALL_STAMP.commit.slice(0, 7) : null,
+  buildDirty: Boolean(INSTALL_STAMP?.dirty),
+  builtAt: INSTALL_STAMP?.builtAt || null,
   electronVersion: process.versions.electron,
   nodeVersion: process.versions.node,
   platform: process.platform,

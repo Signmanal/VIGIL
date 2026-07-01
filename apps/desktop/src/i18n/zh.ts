@@ -632,6 +632,7 @@ export const zh: Translations = {
       justNowSuffix: ' · 刚刚',
       automaticUpdates: '自动更新',
       automaticUpdatesDesc: 'XCLAW 会定期在后台检查新版本；发现可用更新后会在这里提示，确认后才会开始安装。',
+      buildCommit: commit => `构建 ${commit}`,
       branchCommit: (branch, commit) => `分支 ${branch} · 提交 ${commit}`,
       never: '从未',
       justNow: '刚刚',

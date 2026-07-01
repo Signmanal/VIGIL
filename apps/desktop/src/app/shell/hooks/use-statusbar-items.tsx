@@ -167,7 +167,7 @@ export function useStatusbarItems({
 
   const clientVersionItem = useMemo<StatusbarItem>(() => {
     const appVersion = desktopVersion?.appVersion
-    const sha = updateStatus?.currentSha?.slice(0, 7) ?? null
+    const sha = updateStatus?.currentSha?.slice(0, 7) ?? desktopVersion?.buildCommitShort ?? null
     const behind = updateStatus?.behind ?? 0
     const applying = updateApply.applying || updateApply.stage === 'restart'
     const remote = connection?.mode === 'remote'
@@ -203,6 +203,7 @@ export function useStatusbarItems({
     }
   }, [
     desktopVersion?.appVersion,
+    desktopVersion?.buildCommitShort,
     connection?.mode,
     copy,
     updateApply.applying,

@@ -543,6 +543,7 @@ export const zhHant = defineLocale({
       justNowSuffix: ' · 剛剛',
       automaticUpdates: '自動更新',
       automaticUpdatesDesc: 'XCLAW 會定期在背景檢查新版本；發現可用更新後會在這裡提示，確認後才會開始安裝。',
+      buildCommit: commit => `建置 ${commit}`,
       branchCommit: (branch, commit) => `分支 ${branch} · 提交 ${commit}`,
       never: '從未',
       justNow: '剛剛',
