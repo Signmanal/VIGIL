@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
-import { getSkills } from '@/vigil'
+import { Input } from '@/components/ui/input'
 import { useI18n } from '@/i18n'
 import { AlertTriangle } from '@/lib/icons'
 import { cn } from '@/lib/utils'
 import type { SkillInfo } from '@/types/vigil'
+import { getSkills } from '@/vigil'
 
 export interface ProfileSkillSelection {
   selected: string[]
@@ -23,6 +24,10 @@ function selectedNames(skills: SkillInfo[]): string[] {
   return skills.filter(skill => skill.enabled).map(skill => skill.name)
 }
 
+function searchTextMatches(value: string | undefined, query: string): boolean {
+  return (value ?? '').toLowerCase().includes(query)
+}
+
 export function ProfileSkillPicker({
   active,
   disabled = false,
@@ -33,6 +38,7 @@ export function ProfileSkillPicker({
   const p = t.profiles
   const [skills, setSkills] = useState<SkillInfo[]>([])
   const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<null | string>(null)
 
@@ -46,6 +52,7 @@ export function ProfileSkillPicker({
     let cancelled = false
     setLoading(true)
     setError(null)
+    setSearch('')
 
     void getSkills(source)
       .then(nextSkills => {
@@ -80,6 +87,21 @@ export function ProfileSkillPicker({
   }, [active, onSelectionChange, p, source])
 
   const sortedSkills = useMemo(() => [...skills].sort((a, b) => a.name.localeCompare(b.name)), [skills])
+
+  const filteredSkills = useMemo(() => {
+    const query = search.trim().toLowerCase()
+
+    if (!query) {
+      return sortedSkills
+    }
+
+    return sortedSkills.filter(
+      skill =>
+        searchTextMatches(skill.name, query) ||
+        searchTextMatches(skill.description, query) ||
+        searchTextMatches(skill.category, query)
+    )
+  }, [search, sortedSkills])
 
   function publish(next: Set<string>) {
     const value = sortedSkills.map(skill => skill.name).filter(name => next.has(name))
@@ -120,6 +142,13 @@ export function ProfileSkillPicker({
         <span className="shrink-0 text-[0.66rem] text-muted-foreground">{p.skillsSelected(count, total)}</span>
       </div>
 
+      <Input
+        disabled={disabled || loading || total === 0}
+        onChange={event => setSearch(event.target.value)}
+        placeholder={p.searchProfileSkills}
+        value={search}
+      />
+
       <div className="flex gap-2">
         <Button
           disabled={disabled || loading || total === 0}
@@ -151,8 +180,10 @@ export function ProfileSkillPicker({
           </div>
         ) : total === 0 ? (
           <div className="px-3 py-4 text-xs text-muted-foreground">{p.noSkillsAvailable}</div>
+        ) : filteredSkills.length === 0 ? (
+          <div className="px-3 py-4 text-xs text-muted-foreground">{p.noSkillSearchResults}</div>
         ) : (
-          sortedSkills.map(skill => (
+          filteredSkills.map(skill => (
             <label
               className={cn(
                 'flex cursor-pointer items-start gap-2 border-b border-(--ui-stroke-secondary) px-3 py-2 last:border-b-0',

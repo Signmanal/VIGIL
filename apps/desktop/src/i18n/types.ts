@@ -896,6 +896,7 @@ export interface Translations {
     refreshing: string
     default: string
     skills: (count: number) => string
+    enabledSkills: (enabled: number, total: number) => string
     env: string
     defaultBadge: string
     rename: string
@@ -935,11 +936,15 @@ export interface Translations {
     profileSkillsDesc: string
     startingMcpDesc: (source: string) => string
     profileMcpDesc: string
+    searchProfileSkills: string
+    searchProfileMcp: string
     loadingSkills: string
     loadingMcp: string
     noSkillsAvailable: string
+    noSkillSearchResults: string
     noMcpAvailable: string
     noProfileMcpAvailable: string
+    noMcpSearchResults: string
     skillsSelected: (selected: number, total: number) => string
     selectAllSkills: string
     clearSkills: string

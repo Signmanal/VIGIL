@@ -3158,6 +3158,7 @@ class TestNewEndpoints:
         assert seeded_skill.exists()
         profiles = {p["name"]: p for p in self.client.get("/api/profiles").json()["profiles"]}
         assert profiles["fresh"]["skill_count"] == 1
+        assert profiles["fresh"]["enabled_skill_count"] == 1
 
     def test_profiles_create_builder_fields_model_mcp_and_keep_skills(self, monkeypatch):
         """Profile-builder create: model + MCP servers + keep-skills selection
@@ -3258,6 +3259,12 @@ class TestNewEndpoints:
             assert {"drop-me", "keep-me"}.issubset(disabled)
         finally:
             reset_vigil_home_override(token)
+
+        profiles = {p["name"]: p for p in self.client.get("/api/profiles").json()["profiles"]}
+        assert profiles["builder"]["skill_count"] == 2
+        assert profiles["builder"]["enabled_skill_count"] == 1
+        assert profiles["empty-skills"]["skill_count"] == 2
+        assert profiles["empty-skills"]["enabled_skill_count"] == 0
 
     def test_profile_open_terminal_uses_macos_terminal(self, monkeypatch):
         from vigil_constants import get_vigil_home

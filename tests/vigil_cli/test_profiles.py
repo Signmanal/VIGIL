@@ -1429,6 +1429,24 @@ class TestEdgeCases:
         assert default.is_default is True
         assert default.gateway_running is False
         assert default.skill_count == 0
+        assert default.enabled_skill_count == 0
+
+    def test_list_profiles_separates_installed_and_enabled_skill_counts(self, profile_env):
+        default_home = profile_env / ".vigil"
+        for skill in ("keep-me", "drop-me"):
+            skill_dir = default_home / "skills" / "custom" / skill
+            skill_dir.mkdir(parents=True)
+            (skill_dir / "SKILL.md").write_text(f"---\nname: {skill}\n---\n", encoding="utf-8")
+        (default_home / "config.yaml").write_text(
+            yaml.safe_dump({"skills": {"disabled": ["drop-me"]}}),
+            encoding="utf-8",
+        )
+
+        profiles = list_profiles()
+        default = [p for p in profiles if p.name == "default"][0]
+
+        assert default.skill_count == 2
+        assert default.enabled_skill_count == 1
 
     def test_gateway_running_check_with_pid_file(self, profile_env):
         """Verify _check_gateway_running uses the shared gateway PID validator."""

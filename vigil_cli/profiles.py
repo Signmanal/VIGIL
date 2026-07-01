@@ -546,6 +546,7 @@ class ProfileInfo:
     provider: Optional[str] = None
     has_env: bool = False
     skill_count: int = 0
+    enabled_skill_count: int = 0
     alias_path: Optional[Path] = None
     # Custom alias name (the wrapper file name) when it differs from ``name``;
     # falls back to ``name`` when a profile-named wrapper exists. None if no
@@ -645,17 +646,44 @@ def _check_gateway_running(profile_dir: Path) -> bool:
         return False
 
 
-def _count_skills(profile_dir: Path) -> int:
-    """Count installed skills in a profile."""
+def _installed_skill_names(profile_dir: Path) -> List[str]:
+    """Return installed skill names in a profile."""
     skills_dir = profile_dir / "skills"
     if not skills_dir.is_dir():
-        return 0
-    count = 0
+        return []
+    names = []
     for md in skills_dir.rglob("SKILL.md"):
         if is_excluded_skill_path(md):
             continue
-        count += 1
-    return count
+        names.append(md.parent.name)
+    return names
+
+
+def _count_skills(profile_dir: Path) -> int:
+    """Count installed skills in a profile."""
+    return len(_installed_skill_names(profile_dir))
+
+
+def _count_enabled_skills(profile_dir: Path) -> int:
+    """Count installed skills that are not disabled in a profile config."""
+    installed = _installed_skill_names(profile_dir)
+    if not installed:
+        return 0
+    try:
+        import yaml
+        from vigil_cli.skills_config import get_disabled_skills
+
+        config_path = profile_dir / "config.yaml"
+        if not config_path.is_file():
+            return len(installed)
+        with open(config_path, "r", encoding="utf-8") as f:
+            cfg = yaml.safe_load(f) or {}
+        if not isinstance(cfg, dict):
+            return len(installed)
+        disabled = get_disabled_skills(cfg)
+        return sum(1 for name in installed if name not in disabled)
+    except Exception:
+        return len(installed)
 
 
 # ---------------------------------------------------------------------------
@@ -763,6 +791,7 @@ def list_profiles() -> List[ProfileInfo]:
             provider=provider,
             has_env=(default_home / ".env").exists(),
             skill_count=_count_skills(default_home),
+            enabled_skill_count=_count_enabled_skills(default_home),
             distribution_name=dist_name,
             distribution_version=dist_version,
             distribution_source=dist_source,
@@ -800,6 +829,7 @@ def list_profiles() -> List[ProfileInfo]:
                 provider=provider,
                 has_env=(entry / ".env").exists(),
                 skill_count=_count_skills(entry),
+                enabled_skill_count=_count_enabled_skills(entry),
                 alias_path=alias_path if (alias_path and alias_path.exists()) else None,
                 alias_name=alias_name,
                 distribution_name=dist_name,

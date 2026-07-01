@@ -71,6 +71,14 @@ function profileOptionLabel(profile: ProfileInfo): string {
   return displayName === profile.name ? profile.name : `${displayName} (${profile.name})`
 }
 
+function enabledSkillCount(profile: ProfileInfo): number {
+  return profile.enabled_skill_count ?? profile.skill_count
+}
+
+function searchTextMatches(value: string | undefined, query: string): boolean {
+  return (value ?? '').toLowerCase().includes(query)
+}
+
 interface ProfilesViewProps {
   onClose: () => void
 }
@@ -287,7 +295,7 @@ function ProfileRow({ active, onSelect, profile }: { active: boolean; onSelect: 
       </span>
       <span className="text-[0.66rem] text-muted-foreground">
         {showsAlias ? `${profile.name} · ` : ''}
-        {p.skills(profile.skill_count)}
+        {p.enabledSkills(enabledSkillCount(profile), profile.skill_count)}
         {profile.has_env ? ` · ${p.env}` : ''}
       </span>
     </button>
@@ -400,7 +408,9 @@ function ProfileDetail({
                   <span className="text-muted-foreground">{p.notSet}</span>
                 )}
               </DetailRow>
-              <DetailRow label={p.skillsLabel}>{profile.skill_count}</DetailRow>
+              <DetailRow label={p.skillsLabel}>
+                {p.enabledSkills(enabledSkillCount(profile), profile.skill_count)}
+              </DetailRow>
             </dl>
           </header>
 
@@ -463,6 +473,8 @@ function ProfileEditor({
   const [config, setConfig] = useState<VIGILConfigRecord | null>(null)
   const [mcpEnabled, setMcpEnabled] = useState<Set<string>>(new Set())
   const [originalMcp, setOriginalMcp] = useState<Set<string>>(new Set())
+  const [skillSearch, setSkillSearch] = useState('')
+  const [mcpSearch, setMcpSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<null | string>(null)
@@ -480,6 +492,8 @@ function ProfileEditor({
     setConfig(null)
     setMcpEnabled(new Set())
     setOriginalMcp(new Set())
+    setSkillSearch('')
+    setMcpSearch('')
 
     void Promise.all([getProfileSoul(profile.name), getSkills(profile.name), getVIGILConfigRecord(profile.name)])
       .then(([loadedSoul, loadedSkills, loadedConfig]) => {
@@ -519,6 +533,41 @@ function ProfileEditor({
   const servers = useMemo(() => getMcpServers(config), [config])
   const mcpNames = useMemo(() => Object.keys(servers).sort(), [servers])
   const selectedSkillNames = useMemo(() => sortedSkillNames(skills), [skills])
+
+  const filteredSkills = useMemo(() => {
+    const query = skillSearch.trim().toLowerCase()
+
+    if (!query) {
+      return skills
+    }
+
+    return skills.filter(
+      skill =>
+        searchTextMatches(skill.name, query) ||
+        searchTextMatches(skill.description, query) ||
+        searchTextMatches(skill.category, query)
+    )
+  }, [skillSearch, skills])
+
+  const filteredMcpNames = useMemo(() => {
+    const query = mcpSearch.trim().toLowerCase()
+
+    if (!query) {
+      return mcpNames
+    }
+
+    return mcpNames.filter(name => {
+      const server = servers[name]
+
+      return (
+        searchTextMatches(name, query) ||
+        searchTextMatches(typeof server.command === 'string' ? server.command : undefined, query) ||
+        searchTextMatches(typeof server.url === 'string' ? server.url : undefined, query) ||
+        searchTextMatches(mcpTransportLabel(server), query)
+      )
+    })
+  }, [mcpNames, mcpSearch, servers])
+
   const trimmedName = name.trim()
   const nameDirty = profile.is_default ? trimmedName !== initialName : trimmedName !== profile.name
   const nameInvalid = nameDirty && (!trimmedName || (!profile.is_default && !isValidProfileName(trimmedName)))
@@ -683,6 +732,13 @@ function ProfileEditor({
                 </span>
               </div>
 
+              <Input
+                disabled={saving || skills.length === 0}
+                onChange={event => setSkillSearch(event.target.value)}
+                placeholder={p.searchProfileSkills}
+                value={skillSearch}
+              />
+
               <div className="flex gap-2">
                 <Button
                   disabled={saving || skills.length === 0}
@@ -707,8 +763,10 @@ function ProfileEditor({
               <div className="max-h-56 overflow-y-auto rounded-md border border-(--ui-stroke-secondary) bg-background/30">
                 {skills.length === 0 ? (
                   <div className="px-3 py-4 text-xs text-muted-foreground">{p.noSkillsAvailable}</div>
+                ) : filteredSkills.length === 0 ? (
+                  <div className="px-3 py-4 text-xs text-muted-foreground">{p.noSkillSearchResults}</div>
                 ) : (
-                  skills.map(skill => (
+                  filteredSkills.map(skill => (
                     <label
                       className={cn(
                         'flex cursor-pointer items-start gap-2 border-b border-(--ui-stroke-secondary) px-3 py-2 last:border-b-0',
@@ -748,6 +806,13 @@ function ProfileEditor({
                 </span>
               </div>
 
+              <Input
+                disabled={saving || mcpNames.length === 0}
+                onChange={event => setMcpSearch(event.target.value)}
+                placeholder={p.searchProfileMcp}
+                value={mcpSearch}
+              />
+
               <div className="flex gap-2">
                 <Button
                   disabled={saving || mcpNames.length === 0}
@@ -772,8 +837,10 @@ function ProfileEditor({
               <div className="max-h-56 overflow-y-auto rounded-md border border-(--ui-stroke-secondary) bg-background/30">
                 {mcpNames.length === 0 ? (
                   <div className="px-3 py-4 text-xs text-muted-foreground">{p.noProfileMcpAvailable}</div>
+                ) : filteredMcpNames.length === 0 ? (
+                  <div className="px-3 py-4 text-xs text-muted-foreground">{p.noMcpSearchResults}</div>
                 ) : (
-                  mcpNames.map(name => {
+                  filteredMcpNames.map(name => {
                     const server = servers[name]
 
                     return (

@@ -537,6 +537,7 @@ export interface ProfileCreateMcpServer {
 
 export interface ProfileInfo {
   display_name?: string
+  enabled_skill_count?: number
   has_env: boolean
   is_default: boolean
   model: null | string
