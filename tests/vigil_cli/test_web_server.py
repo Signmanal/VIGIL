@@ -2520,19 +2520,18 @@ class TestWebServerEndpoints:
         assert model_cfg["base_url"] == "https://token-plan-ams.xiaomimimo.com/v1"
 
     def test_set_model_main_reports_stale_auxiliary_pins(self):
-        """Switching the main provider must report auxiliary slots still pinned
-        to a *different* provider so the UI can warn the user their helper tasks
-        aren't following the switch (the silent credit-burn path)."""
+        """Switching the main provider reports auxiliary slots pinned to
+        providers that are not currently configured/connected."""
         from vigil_cli.config import load_config, save_config
 
         cfg = load_config()
         cfg["model"] = {"provider": "nous", "default": "vigil-4"}
         cfg["auxiliary"] = {
-            # Pinned to nous — same as the OLD main, becomes stale after switch.
+            # Pinned to nous — unavailable in this fixture after the switch.
             "compression": {"provider": "nous", "model": "anthropic/claude-sonnet-4.6"},
             # Auto — follows main, never stale.
             "vision": {"provider": "auto", "model": ""},
-            # Pinned to a third provider — also stale vs the new main.
+            # Pinned to a third unavailable provider.
             "curator": {"provider": "deepseek", "model": "deepseek-chat"},
         }
         save_config(cfg)
@@ -2574,6 +2573,28 @@ class TestWebServerEndpoints:
         model_cfg = load_config().get("model")
         assert model_cfg["provider"] == "openrouter"
         assert model_cfg.get("base_url", "") == ""
+
+    def test_set_model_main_no_stale_when_aux_provider_is_ready(self, monkeypatch):
+        """Aux slots pinned to a ready provider can intentionally differ from main."""
+        import vigil_cli.web_server as ws
+        from vigil_cli.config import load_config, save_config
+
+        monkeypatch.setattr(ws, "_ready_model_provider_slugs", lambda: {"xai-oauth"})
+
+        cfg = load_config()
+        cfg["model"] = {"provider": "nous", "default": "vigil-4"}
+        cfg["auxiliary"] = {
+            "web_extract": {"provider": "xai-oauth", "model": "grok-4.3"},
+            "vision": {"provider": "auto", "model": ""},
+        }
+        save_config(cfg)
+
+        resp = self.client.post(
+            "/api/model/set",
+            json={"scope": "main", "provider": "openai-codex", "model": "gpt-5.5"},
+        )
+        assert resp.status_code == 200
+        assert resp.json()["stale_aux"] == []
 
     def test_set_model_main_gateway_failure_does_not_block_save(self, monkeypatch):
         """A Portal/gateway hiccup must never prevent saving the model."""

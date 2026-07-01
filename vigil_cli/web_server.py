@@ -3859,6 +3859,33 @@ async def set_model_assignment(body: ModelAssignment, profile: Optional[str] = N
         raise HTTPException(status_code=500, detail="Failed to save model assignment")
 
 
+def _ready_model_provider_slugs() -> set[str]:
+    """Return provider slugs that the model picker considers usable."""
+    try:
+        from vigil_cli.inventory import build_models_payload, load_picker_context
+
+        payload = build_models_payload(
+            load_picker_context(),
+            include_unconfigured=True,
+            picker_hints=True,
+            canonical_order=True,
+        )
+    except Exception:
+        _log.debug("ready provider probe failed", exc_info=True)
+        return set()
+
+    ready: set[str] = set()
+    for row in payload.get("providers") or []:
+        if not isinstance(row, dict):
+            continue
+        slug = str(row.get("slug") or "").strip().lower()
+        models = row.get("models")
+        authenticated = row.get("authenticated")
+        if slug and (authenticated is not False or (isinstance(models, list) and len(models) > 0)):
+            ready.add(slug)
+    return ready
+
+
 def _apply_model_assignment_sync(
     scope: str, provider: str, model: str, task: str, base_url: str, api_key: str = ""
 ):
@@ -3931,16 +3958,11 @@ def _apply_model_assignment_sync(
                 # model.* is already persisted and routable.
                 _log.debug("custom_providers registration skipped", exc_info=True)
 
-        # Surface auxiliary slots still pinned to a *different* provider than
-        # the new main one. Switching the main model does NOT touch aux pins
-        # (they're independent, sticky per-task overrides — see
-        # auxiliary_client._resolve_auto). A user who switches main away from
-        # a now-unpaid provider (e.g. nous with $0 balance) keeps paying 402s
-        # on every background aux call until they reset those pins. We never
-        # auto-clear them — pinning aux to a cheaper/different model is a
-        # legitimate config — but we tell the caller so the UI can offer a
-        # "reset to main" nudge instead of silently burning credits.
-        new_provider = provider.strip().lower()
+        # Surface auxiliary slots pinned to providers that are no longer usable.
+        # A different provider is valid for aux work; it is only actionable when
+        # the provider has disappeared from the authenticated/configured picker.
+        ready_providers = _ready_model_provider_slugs()
+        ready_providers.add(provider.strip().lower())
         stale_aux: list[dict] = []
         aux_cfg = cfg.get("auxiliary", {})
         if isinstance(aux_cfg, dict):
@@ -3952,7 +3974,7 @@ def _apply_model_assignment_sync(
                 if (
                     slot_provider
                     and slot_provider.lower() not in {"auto", ""}
-                    and slot_provider.lower() != new_provider
+                    and slot_provider.lower() not in ready_providers
                 ):
                     stale_aux.append({
                         "task": slot,

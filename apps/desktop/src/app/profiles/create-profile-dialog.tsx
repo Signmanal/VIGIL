@@ -109,7 +109,7 @@ export function CreateProfileDialog({
 
   return (
     <Dialog onOpenChange={value => !value && !busy && onClose()} open={open}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-h-[85vh] max-w-md overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{p.newProfile}</DialogTitle>
           <DialogDescription>{p.createDesc}</DialogDescription>

@@ -46,6 +46,16 @@ function isProviderReady(p?: ModelOptionProvider): boolean {
   return !!p && (p.authenticated !== false || (p.models?.length ?? 0) > 0)
 }
 
+function auxProviderNeedsSetup(slot: StaleAuxAssignment, providers: readonly ModelOptionProvider[]): boolean {
+  const provider = (slot.provider ?? '').trim().toLowerCase()
+
+  if (!provider || provider === 'auto') {
+    return false
+  }
+
+  return !isProviderReady(providers.find(row => row.slug.toLowerCase() === provider))
+}
+
 // Mirrors `_AUX_TASK_SLOTS` in vigil_cli/web_server.py. Friendly labels and
 // hints make the assignments readable; raw task keys (vision, mcp, …) are
 // opaque to most users.
@@ -67,17 +77,17 @@ const AUX_TASKS: readonly AuxTaskMeta[] = [
 const NO_PROVIDERS: readonly ModelOptionProvider[] = [{ name: '—', slug: '', models: [] }]
 
 interface StaleAuxWarningProps {
+  actionLabel: string
   applying: boolean
+  message: (count: number, tasks: string, provider: string) => string
   onReset: () => void
   slots: readonly StaleAuxAssignment[]
   taskLabel: (key: string) => string
 }
 
-// Shared notice: auxiliary tasks still pinned to a provider that isn't the
-// current main. Surfaces the silent credit-burn path (e.g. aux pinned to a
-// $0-balance provider after switching main away from it) and offers the
-// existing one-click reset rather than auto-clearing legitimate pins.
-function StaleAuxWarning({ applying, onReset, slots, taskLabel }: StaleAuxWarningProps) {
+// Shared notice: auxiliary tasks pinned to a provider that is not currently
+// connected/configured. A different connected provider is a valid override.
+function StaleAuxWarning({ actionLabel, applying, message, onReset, slots, taskLabel }: StaleAuxWarningProps) {
   if (!slots.length) {
     return null
   }
@@ -90,11 +100,10 @@ function StaleAuxWarning({ applying, onReset, slots, taskLabel }: StaleAuxWarnin
     <div className="flex flex-wrap items-center gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
       <AlertTriangle className="size-3.5 shrink-0" />
       <span className="grow">
-        {slots.length} auxiliary task{slots.length === 1 ? '' : 's'} ({names}) still run on{' '}
-        <span className="font-mono">{allSameProvider ? provider : 'other providers'}</span>, not your main model.
+        {message(slots.length, names, allSameProvider ? provider : 'other providers')}
       </span>
       <Button disabled={applying} onClick={onReset} size="sm" variant="textStrong">
-        Reset all to main
+        {actionLabel}
       </Button>
     </div>
   )
@@ -121,8 +130,9 @@ export function ModelSettings({ onMainModelChanged }: ModelSettingsProps) {
   const [applying, setApplying] = useState(false)
   const [editingAuxTask, setEditingAuxTask] = useState<null | string>(null)
   const [auxDraft, setAuxDraft] = useState<{ model: string; provider: string }>({ model: '', provider: '' })
-  // Aux slots reported stale by the backend immediately after a main-model
-  // switch (provider differs from the new main). Cleared on next switch/reset.
+  // Aux slots reported by the backend immediately after a main-model switch.
+  // The backend can report a different provider; the UI only warns if that
+  // provider is no longer connected/configured.
   const [switchStaleAux, setSwitchStaleAux] = useState<StaleAuxAssignment[]>([])
   // Inline API-key entry for picking an unconfigured `api_key` provider in
   // place — mirrors the onboarding ApiKeyForm but scoped to the model picker.
@@ -199,24 +209,23 @@ export function ModelSettings({ onMainModelChanged }: ModelSettingsProps) {
 
   const auxiliaryTaskLabel = useCallback((key: string) => m.tasks[key]?.label ?? key, [m.tasks])
 
-  // Persistent mismatch: any aux slot pinned to a provider different from the
-  // current main, regardless of whether the user just switched. Catches the
-  // "I pinned aux months ago and forgot, now it bills a dead provider" case.
-  const persistentStaleAux = useMemo<StaleAuxAssignment[]>(() => {
-    const mainProvider = (mainModel?.provider ?? '').toLowerCase()
+  const visibleSwitchStaleAux = useMemo(
+    () => switchStaleAux.filter(slot => auxProviderNeedsSetup(slot, providers)),
+    [providers, switchStaleAux]
+  )
 
-    if (!mainProvider || !auxiliary) {
+  // Persistent setup issue: any aux slot pinned to a provider that is not ready
+  // to serve models. Connected providers intentionally remain valid overrides,
+  // even when they differ from the current main model.
+  const persistentStaleAux = useMemo<StaleAuxAssignment[]>(() => {
+    if (!auxiliary) {
       return []
     }
 
     return auxiliary.tasks
-      .filter(entry => {
-        const p = (entry.provider ?? '').toLowerCase()
-
-        return p && p !== 'auto' && p !== mainProvider
-      })
       .map(entry => ({ task: entry.task, provider: entry.provider, model: entry.model }))
-  }, [auxiliary, mainModel])
+      .filter(entry => auxProviderNeedsSetup(entry, providers))
+  }, [auxiliary, providers])
 
   // Capabilities of the APPLIED main model — gates the profile-default
   // reasoning/speed controls the same way the composer picker gates per-model
@@ -378,7 +387,12 @@ export function ModelSettings({ onMainModelChanged }: ModelSettingsProps) {
     setError('')
 
     try {
-      const result = await setModelAssignment({ model: selectedModel, provider: selectedProvider, scope: 'main' })
+      const result = await setModelAssignment({
+        confirm_expensive_model: true,
+        model: selectedModel,
+        provider: selectedProvider,
+        scope: 'main'
+      })
       const provider = result.provider || selectedProvider
       const model = result.model || selectedModel
       setMainModel({ provider, model })
@@ -402,7 +416,8 @@ export function ModelSettings({ onMainModelChanged }: ModelSettingsProps) {
       setError('')
 
       try {
-        await setModelAssignment({ model: mainModel.model, provider: mainModel.provider, scope: 'auxiliary', task })
+        await setModelAssignment({ model: '', provider: 'auto', scope: 'auxiliary', task })
+        setSwitchStaleAux(prev => prev.filter(slot => slot.task !== task))
         await refresh()
       } catch (err) {
         setError(err instanceof Error ? err.message : String(err))
@@ -423,7 +438,13 @@ export function ModelSettings({ onMainModelChanged }: ModelSettingsProps) {
       setError('')
 
       try {
-        await setModelAssignment({ model: auxDraft.model, provider: auxDraft.provider, scope: 'auxiliary', task })
+        await setModelAssignment({
+          confirm_expensive_model: true,
+          model: auxDraft.model,
+          provider: auxDraft.provider,
+          scope: 'auxiliary',
+          task
+        })
         setEditingAuxTask(null)
         await refresh()
       } catch (err) {
@@ -459,6 +480,7 @@ export function ModelSettings({ onMainModelChanged }: ModelSettingsProps) {
 
     try {
       await setModelAssignment({
+        confirm_expensive_model: true,
         model: mainModel.model,
         provider: mainModel.provider,
         scope: 'auxiliary',
@@ -598,12 +620,14 @@ export function ModelSettings({ onMainModelChanged }: ModelSettingsProps) {
           </div>
         )}
         {error && <div className="mt-2 text-xs text-destructive">{error}</div>}
-        {switchStaleAux.length > 0 && (
+        {visibleSwitchStaleAux.length > 0 && (
           <div className="mt-2">
             <StaleAuxWarning
+              actionLabel={m.resetUnavailableAux}
               applying={applying}
+              message={m.auxiliaryProviderUnavailable}
               onReset={() => void resetAuxiliaryModels()}
-              slots={switchStaleAux}
+              slots={visibleSwitchStaleAux}
               taskLabel={auxiliaryTaskLabel}
             />
           </div>
@@ -625,10 +649,12 @@ export function ModelSettings({ onMainModelChanged }: ModelSettingsProps) {
         <p className="mb-2 text-xs text-muted-foreground">
           {m.auxiliaryDesc}
         </p>
-        {switchStaleAux.length === 0 && persistentStaleAux.length > 0 && (
+        {visibleSwitchStaleAux.length === 0 && persistentStaleAux.length > 0 && (
           <div className="mb-2.5">
             <StaleAuxWarning
+              actionLabel={m.resetUnavailableAux}
               applying={applying}
+              message={m.auxiliaryProviderUnavailable}
               onReset={() => void resetAuxiliaryModels()}
               slots={persistentStaleAux}
               taskLabel={auxiliaryTaskLabel}

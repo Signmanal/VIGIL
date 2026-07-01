@@ -81,6 +81,10 @@ def _build_agent_with_db(db: SessionDB, session_id: str, compress_side_effect=No
     compressor._last_aux_model_failure_model = None
     compressor._last_aux_model_failure_error = None
     agent.context_compressor = compressor
+    # This regression test is about the state.db session-compression lock, not
+    # auxiliary provider discovery.  Skip the lazy aux feasibility probe so the
+    # test cannot be influenced by machine-local provider/auth state.
+    agent._compression_feasibility_checked = True
     return agent
 
 

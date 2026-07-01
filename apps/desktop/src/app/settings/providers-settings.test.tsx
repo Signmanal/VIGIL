@@ -97,6 +97,19 @@ describe('ProvidersSettings', () => {
     expect(disconnectOAuthProvider).not.toHaveBeenCalled()
   })
 
+  it('expands the other providers list from the account picker disclosure', async () => {
+    await renderProvidersSettings()
+
+    await screen.findByText('XCLAW Portal')
+    expect(screen.queryByText('MiniMax')).toBeNull()
+
+    const disclosure = screen.getByRole('button', { name: /Connect another provider/i })
+    fireEvent.click(disclosure)
+
+    expect(await screen.findByText('MiniMax')).toBeTruthy()
+    expect(disclosure.getAttribute('aria-expanded')).toBe('true')
+  })
+
   it('does not offer removal for externally managed providers', async () => {
     listOAuthProviders.mockResolvedValue({
       providers: [

@@ -20,6 +20,7 @@ POSIX-only: Windows has its own grandchild lifecycle (no shared session,
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import os
 import subprocess
@@ -36,6 +37,18 @@ import pytest
 # so concurrent invocations of the suite don't clobber each other.
 _HANDOFF_DIR = Path(os.environ.get("TMPDIR", "/tmp")) / "vigil-isolation-probe"
 _HANDOFF_DIR.mkdir(exist_ok=True)
+
+
+def _load_runner_module():
+    repo_root = Path(__file__).resolve().parent.parent
+    runner = repo_root / "scripts" / "run_tests_parallel.py"
+    spec = importlib.util.spec_from_file_location("run_tests_parallel", runner)
+    assert spec is not None
+    assert spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
 
 
 def _handoff_path_for(nonce: str) -> Path:
@@ -185,3 +198,34 @@ def test_grandchild_leak_is_killed_by_runner(tmp_path: Path) -> None:
             f"diag={diag!r} test_pid={test_pid} test_pgid={test_pgid}; "
             f"runner output:\n{proc.stdout}"
         )
+
+
+def test_known_oversized_run_agent_suite_is_split_by_nodeid(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The large run_agent suite must not run as one 600s-capped file job."""
+    runner = _load_runner_module()
+    repo_root = tmp_path
+    test_file = repo_root / "tests" / "run_agent" / "test_run_agent.py"
+    test_file.parent.mkdir(parents=True)
+    test_file.write_text("\n")
+    rel = "tests/run_agent/test_run_agent.py"
+    nodeids = [f"{rel}::test_{i}" for i in range(301)]
+
+    monkeypatch.setattr(
+        runner,
+        "_collect_nodeids_for_file",
+        lambda _file, _repo_root, _pytest_passthrough: nodeids,
+    )
+
+    jobs = runner._build_test_jobs(  # noqa: SLF001 - runner helper regression test
+        [test_file],
+        {test_file: len(nodeids)},
+        repo_root,
+        [],
+    )
+
+    assert [job.test_count for job in jobs] == [130, 130, 41]
+    assert jobs[0].label == f"{rel}::chunk1/3"
+    assert jobs[1].targets[0] == nodeids[130]
+    assert jobs[2].targets[-1] == nodeids[-1]

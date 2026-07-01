@@ -788,14 +788,15 @@ export interface ModelAssignmentRequest {
   /** OpenAI-compatible endpoint URL. Only honored for custom/local providers
    *  on the main slot — wires a self-hosted endpoint into runtime resolution. */
   base_url?: string
+  confirm_expensive_model?: boolean
   model: string
   provider: string
   scope: 'main' | 'auxiliary'
   task?: string
 }
 
-/** An auxiliary task still pinned to a provider that differs from the
- *  newly-selected main provider after a main-model switch. */
+/** An auxiliary task still pinned to a provider that is no longer available
+ *  after a main-model switch. */
 export interface StaleAuxAssignment {
   task: string
   provider: string
@@ -805,6 +806,8 @@ export interface StaleAuxAssignment {
 export interface ModelAssignmentResponse {
   /** Persisted endpoint URL for custom/local providers (echoed back). */
   base_url?: string
+  confirm_message?: string
+  confirm_required?: boolean
   /** Toolset keys auto-routed through the Nous Tool Gateway as a result of
    *  switching the main provider to Nous. Empty unless provider === 'nous'
    *  and the user is a paid subscriber with unconfigured tools. */
@@ -814,9 +817,9 @@ export interface ModelAssignmentResponse {
   provider?: string
   reset?: boolean
   scope?: string
-  /** Auxiliary slots still pinned to a different provider than the new main.
-   *  Switching main never clears aux pins; this lets the UI warn the user
-   *  their helper tasks aren't following the switch. Only set on scope:'main'. */
+  /** Auxiliary slots still pinned to unavailable providers. Switching main
+   *  never clears aux pins; this lets the UI warn only when a helper task
+   *  cannot use its configured provider. Only set on scope:'main'. */
   stale_aux?: StaleAuxAssignment[]
   tasks?: string[]
 }

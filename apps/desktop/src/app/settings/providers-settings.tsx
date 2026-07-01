@@ -133,7 +133,7 @@ function OAuthPicker({
 }) {
   const { t } = useI18n()
   const p = t.settings.providers
-  const [showAll, setShowAll] = useState(true)
+  const [showAll, setShowAll] = useState(false)
   const ordered = useMemo(() => sortProviders(providers), [providers])
 
   if (ordered.length === 0) {
@@ -150,7 +150,8 @@ function OAuthPicker({
   const connected = rest.filter(p => p.status?.logged_in)
   const others = rest.filter(p => !p.status?.logged_in)
   const collapsible = others.length > 0
-  const showOthers = !collapsible || showAll
+  const canToggleOthers = collapsible && connected.length > 0
+  const showOthers = !canToggleOthers || showAll
 
   return (
     <section className="mb-5 grid gap-2">
@@ -186,7 +187,7 @@ function OAuthPicker({
         </>
       )}
       {showOthers && (
-        <div className="contents" id="settings-other-providers">
+        <div className="grid gap-2" id="settings-other-providers">
           {connected.length > 0 && <GroupLabel>{p.otherProviders}</GroupLabel>}
           {others.map(p => (
             <ProviderRow key={p.id} onSelect={select} provider={p} />
@@ -194,7 +195,7 @@ function OAuthPicker({
           <KeyProviderRow onClick={onWantApiKey} />
         </div>
       )}
-      {collapsible && (
+      {canToggleOthers && (
         <Button
           aria-controls="settings-other-providers"
           aria-expanded={showAll}

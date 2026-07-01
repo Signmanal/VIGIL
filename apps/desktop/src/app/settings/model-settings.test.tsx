@@ -155,8 +155,8 @@ describe('ModelSettings', () => {
 
     await waitFor(() =>
       expect(setModelAssignment).toHaveBeenCalledWith({
-        model: 'vigil-4',
-        provider: 'nous',
+        model: '',
+        provider: 'auto',
         scope: 'auxiliary',
         task: 'vision'
       })
@@ -184,12 +184,12 @@ describe('ModelSettings', () => {
     await waitFor(() => expect(setEnvVar).toHaveBeenCalledWith('DEEPSEEK_API_KEY', 'sk-aux-123'))
   })
 
-  it('warns when a main switch leaves auxiliary tasks pinned to another provider', async () => {
+  it('warns when a main switch leaves auxiliary tasks pinned to an unavailable provider', async () => {
     setModelAssignment.mockResolvedValueOnce({
       provider: 'openrouter',
       model: 'anthropic/claude-opus-4.7',
       gateway_tools: [],
-      stale_aux: [{ task: 'compression', provider: 'nous', model: 'vigil-4' }]
+      stale_aux: [{ task: 'compression', provider: 'missing-oauth', model: 'vigil-4' }]
     })
 
     await renderModelSettings()
@@ -198,20 +198,44 @@ describe('ModelSettings', () => {
     const applyButton = await screen.findByRole('button', { name: 'Apply' })
     fireEvent.click(applyButton)
 
-    // The switch-time notice names the pinned provider and offers a reset.
-    expect(await screen.findByText(/still run on/)).toBeTruthy()
-    expect(screen.getByText('nous')).toBeTruthy()
+    await waitFor(() =>
+      expect(setModelAssignment).toHaveBeenCalledWith(
+        expect.objectContaining({ confirm_expensive_model: true, scope: 'main' })
+      )
+    )
+    // The switch-time notice only appears when the pinned provider is not ready.
+    expect(await screen.findByText(/not connected or configured/)).toBeTruthy()
+    expect(screen.getByText(/missing-oauth/)).toBeTruthy()
   })
 
-  it('shows a persistent banner when a loaded aux slot mismatches the main provider', async () => {
+  it('does not warn when a loaded aux slot uses a connected provider different from the main provider', async () => {
+    getGlobalModelOptions.mockResolvedValueOnce({
+      providers: [
+        { name: 'Nous', slug: 'nous', models: ['vigil-4'], authenticated: true },
+        { name: 'xAI Grok', slug: 'xai-oauth', models: ['grok-4.3'], authenticated: true }
+      ]
+    })
     getAuxiliaryModels.mockResolvedValueOnce({
       main: { provider: 'nous', model: 'vigil-4' },
-      tasks: [{ task: 'curator', provider: 'openrouter', model: 'anthropic/claude-opus-4.7', base_url: '' }]
+      tasks: [{ task: 'web_extract', provider: 'xai-oauth', model: 'grok-4.3', base_url: '' }]
+    })
+
+    await renderModelSettings()
+    await waitFor(() => expect(getAuxiliaryModels).toHaveBeenCalled())
+
+    expect(screen.queryByText(/not connected or configured/)).toBeNull()
+    expect(await screen.findByText(/xai-oauth · grok-4.3/)).toBeTruthy()
+  })
+
+  it('shows a persistent banner when a loaded aux slot uses an unavailable provider', async () => {
+    getAuxiliaryModels.mockResolvedValueOnce({
+      main: { provider: 'nous', model: 'vigil-4' },
+      tasks: [{ task: 'curator', provider: 'retired-provider', model: 'old-model', base_url: '' }]
     })
 
     await renderModelSettings()
 
-    // Banner present on load, no switch required.
-    expect(await screen.findByText(/still run on/)).toBeTruthy()
+    expect(await screen.findByText(/not connected or configured/)).toBeTruthy()
+    expect(screen.getAllByText(/retired-provider/).length).toBeGreaterThan(0)
   })
 })

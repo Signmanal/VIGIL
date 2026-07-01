@@ -1,5 +1,5 @@
 import type * as React from 'react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { PageLoader } from '@/components/page-loader'
@@ -31,7 +31,7 @@ import {
   updateProfileSoul
 } from '@/vigil'
 import { useI18n } from '@/i18n'
-import { AlertTriangle, Pencil, Save, Terminal, Trash2, Users } from '@/lib/icons'
+import { AlertTriangle, Save, Terminal, Trash2, Users } from '@/lib/icons'
 import { cn } from '@/lib/utils'
 import { notify, notifyError } from '@/store/notifications'
 import { selectProfile } from '@/store/profile'
@@ -43,6 +43,7 @@ import { OverlayView } from '../overlays/overlay-view'
 import { SETTINGS_ROUTE, SKILLS_ROUTE } from '../routes'
 import {
   applyMcpSelectionToConfig,
+  enabledMcpServerNames,
   getMcpServers,
   mcpTransportLabel,
   ProfileMcpPicker,
@@ -288,7 +289,6 @@ function ProfileDetail({
   const navigate = useNavigate()
   const { t } = useI18n()
   const p = t.profiles
-  const [renameOpen, setRenameOpen] = useState(false)
   const [copying, setCopying] = useState(false)
 
   const openProfileScoped = useCallback(
@@ -339,12 +339,6 @@ function ProfileDetail({
                 </p>
               </div>
               <div className="flex shrink-0 items-center gap-1">
-                {!profile.is_default && (
-                  <Button onClick={() => setRenameOpen(true)} size="sm" variant="outline">
-                    <Pencil />
-                    {p.rename}
-                  </Button>
-                )}
                 <Button disabled={copying} onClick={() => void handleCopySetup()} size="sm" variant="outline">
                   <Terminal />
                   {copying ? p.copying : p.copySetup}
@@ -388,21 +382,9 @@ function ProfileDetail({
             </dl>
           </header>
 
-          <SoulEditor profileName={profile.name} />
-          <ProfileSkillManager onChanged={onRefresh} profileName={profile.name} />
-          <ProfileMcpManager profileName={profile.name} />
+          <ProfileEditor onRefresh={onRefresh} onRename={onRename} profile={profile} />
         </div>
       </div>
-
-      <RenameProfileDialog
-        currentName={profile.name}
-        onClose={() => setRenameOpen(false)}
-        onRename={async newName => {
-          await onRename(newName)
-          setRenameOpen(false)
-        }}
-        open={renameOpen}
-      />
     </div>
   )
 }
@@ -416,80 +398,403 @@ function DetailRow({ children, label }: { children: React.ReactNode; label: stri
   )
 }
 
-function SoulEditor({ profileName }: { profileName: string }) {
+function sortedSkillNames(skills: readonly SkillInfo[]): string[] {
+  return skills
+    .filter(skill => skill.enabled)
+    .map(skill => skill.name)
+    .sort()
+}
+
+function sortedSetValues(values: ReadonlySet<string>): string[] {
+  return [...values].sort()
+}
+
+function sameStringList(a: readonly string[], b: readonly string[]): boolean {
+  if (a.length !== b.length) {
+    return false
+  }
+
+  return a.every((value, index) => value === b[index])
+}
+
+function sameStringSet(a: ReadonlySet<string>, b: ReadonlySet<string>): boolean {
+  return sameStringList(sortedSetValues(a), sortedSetValues(b))
+}
+
+function ProfileEditor({
+  onRefresh,
+  onRename,
+  profile
+}: {
+  onRefresh: () => void
+  onRename: (newName: string) => Promise<void>
+  profile: ProfileInfo
+}) {
   const { t } = useI18n()
   const p = t.profiles
-  const [content, setContent] = useState('')
-  const [original, setOriginal] = useState('')
+  const [name, setName] = useState(profile.name)
+  const [soul, setSoul] = useState('')
+  const [originalSoul, setOriginalSoul] = useState('')
+  const [skills, setSkills] = useState<SkillInfo[]>([])
+  const [originalSkills, setOriginalSkills] = useState<Set<string>>(new Set())
+  const [config, setConfig] = useState<VIGILConfigRecord | null>(null)
+  const [mcpEnabled, setMcpEnabled] = useState<Set<string>>(new Set())
+  const [originalMcp, setOriginalMcp] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<null | string>(null)
-  const requestRef = useRef<string>(profileName)
 
   useEffect(() => {
-    requestRef.current = profileName
+    let cancelled = false
+
     setLoading(true)
     setError(null)
-    setContent('')
-    setOriginal('')
+    setName(profile.name)
+    setSoul('')
+    setOriginalSoul('')
+    setSkills([])
+    setOriginalSkills(new Set())
+    setConfig(null)
+    setMcpEnabled(new Set())
+    setOriginalMcp(new Set())
 
-    void (async () => {
-      try {
-        const soul = await getProfileSoul(profileName)
+    void Promise.all([getProfileSoul(profile.name), getSkills(profile.name), getVIGILConfigRecord(profile.name)])
+      .then(([loadedSoul, loadedSkills, loadedConfig]) => {
+        if (cancelled) {
+          return
+        }
 
-        if (requestRef.current === profileName) {
-          setContent(soul.content)
-          setOriginal(soul.content)
+        const sortedSkills = [...loadedSkills].sort((a, b) => a.name.localeCompare(b.name))
+        const enabledSkills = new Set(sortedSkillNames(sortedSkills))
+        const servers = getMcpServers(loadedConfig)
+        const enabledMcp = new Set(enabledMcpServerNames(servers))
+
+        setSoul(loadedSoul.content)
+        setOriginalSoul(loadedSoul.content)
+        setSkills(sortedSkills)
+        setOriginalSkills(enabledSkills)
+        setConfig(loadedConfig)
+        setMcpEnabled(enabledMcp)
+        setOriginalMcp(enabledMcp)
+      })
+      .catch(err => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : p.failedLoad)
         }
-      } catch (err) {
-        if (requestRef.current === profileName) {
-          setError(err instanceof Error ? err.message : p.failedLoadSoul)
-        }
-      } finally {
-        if (requestRef.current === profileName) {
+      })
+      .finally(() => {
+        if (!cancelled) {
           setLoading(false)
         }
-      }
-    })()
-  }, [p, profileName])
+      })
 
-  const dirty = content !== original
-  const isEmpty = !content.trim()
+    return () => {
+      cancelled = true
+    }
+  }, [p.failedLoad, profile.name])
+
+  const servers = useMemo(() => getMcpServers(config), [config])
+  const mcpNames = useMemo(() => Object.keys(servers).sort(), [servers])
+  const selectedSkillNames = useMemo(() => sortedSkillNames(skills), [skills])
+  const trimmedName = name.trim()
+  const nameDirty = !profile.is_default && trimmedName !== profile.name
+  const nameInvalid = nameDirty && (!trimmedName || !isValidProfileName(trimmedName))
+  const skillsDirty = !sameStringList(selectedSkillNames, sortedSetValues(originalSkills))
+  const mcpDirty = !sameStringSet(mcpEnabled, originalMcp)
+  const soulDirty = soul !== originalSoul
+  const dirty = nameDirty || skillsDirty || mcpDirty || soulDirty
+  const selectedMcpCount = mcpEnabled.size
+
+  function resetDrafts() {
+    setName(profile.name)
+    setSoul(originalSoul)
+    setSkills(prev => prev.map(skill => ({ ...skill, enabled: originalSkills.has(skill.name) })))
+    setMcpEnabled(new Set(originalMcp))
+    setError(null)
+  }
+
+  function toggleSkillDraft(skillName: string, enabled: boolean) {
+    setSkills(prev => prev.map(skill => (skill.name === skillName ? { ...skill, enabled } : skill)))
+  }
+
+  function toggleMcpDraft(name: string, enabled: boolean) {
+    setMcpEnabled(prev => {
+      const next = new Set(prev)
+
+      if (enabled) {
+        next.add(name)
+      } else {
+        next.delete(name)
+      }
+
+      return next
+    })
+  }
+
+  function setAllSkills(enabled: boolean) {
+    setSkills(prev => prev.map(skill => ({ ...skill, enabled })))
+  }
+
+  function setAllMcp(enabled: boolean) {
+    setMcpEnabled(enabled ? new Set(mcpNames) : new Set())
+  }
 
   async function handleSave() {
+    if (nameInvalid) {
+      setError(p.invalidName(p.nameHint))
+
+      return
+    }
+
     setSaving(true)
     setError(null)
 
     try {
-      await updateProfileSoul(profileName, content)
-      setOriginal(content)
-      notify({ kind: 'success', title: p.soulSaved, message: profileName })
+      if (soulDirty) {
+        await updateProfileSoul(profile.name, soul)
+      }
+
+      const changedSkills = skills.filter(skill => originalSkills.has(skill.name) !== skill.enabled)
+      for (const skill of changedSkills) {
+        await toggleSkill(skill.name, skill.enabled, profile.name)
+      }
+
+      if (config && mcpDirty) {
+        const nextServers = { ...servers }
+        for (const serverName of mcpNames) {
+          const nextServer = { ...servers[serverName] }
+          if (mcpEnabled.has(serverName)) {
+            delete nextServer.disabled
+          } else {
+            nextServer.disabled = true
+          }
+          nextServers[serverName] = nextServer
+        }
+
+        const nextConfig = { ...config, mcp_servers: nextServers }
+        await saveVIGILConfig(nextConfig, profile.name)
+        setConfig(nextConfig)
+      }
+
+      if (nameDirty) {
+        await onRename(trimmedName)
+      } else {
+        const nextSkillSet = new Set(selectedSkillNames)
+        setOriginalSoul(soul)
+        setOriginalSkills(nextSkillSet)
+        setOriginalMcp(new Set(mcpEnabled))
+        notify({ kind: 'success', title: p.profileSaved, message: profile.name })
+        onRefresh()
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : p.failedSaveSoul)
+      setError(err instanceof Error ? err.message : p.failedSaveProfile)
     } finally {
       setSaving(false)
     }
   }
 
   return (
-    <section className="space-y-2">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
+    <section className="space-y-4 rounded-lg border border-(--ui-stroke-secondary) bg-(--ui-bg-secondary) p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h4 className="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">SOUL.md</h4>
-          <p className="text-xs text-muted-foreground">{p.soulDesc}</p>
+          <h4 className="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+            {p.editProfile}
+          </h4>
+          <p className="mt-1 text-xs text-muted-foreground">{p.editProfileDesc}</p>
         </div>
-        {dirty && <span className="text-[0.65rem] text-muted-foreground">{p.unsavedChanges}</span>}
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          {dirty && <span className="text-[0.65rem] text-muted-foreground">{p.unsavedChanges}</span>}
+          <Button disabled={!dirty || saving || loading} onClick={resetDrafts} size="sm" variant="outline">
+            {p.resetChanges}
+          </Button>
+          <Button disabled={!dirty || nameInvalid || saving || loading} onClick={() => void handleSave()} size="sm">
+            <Save />
+            {saving ? p.saving : p.saveProfile}
+          </Button>
+        </div>
       </div>
 
       {loading ? (
-        <PageLoader className="min-h-44" label={p.loadingSoul} />
+        <PageLoader className="min-h-44" label={p.loading} />
       ) : (
-        <Textarea
-          className="min-h-72 font-mono text-xs leading-5"
-          onChange={event => setContent(event.target.value)}
-          placeholder={isEmpty ? p.emptySoul : undefined}
-          value={content}
-        />
+        <>
+          <div className="grid gap-1.5">
+            <label className="text-xs font-medium" htmlFor="profile-edit-name">
+              {p.nameLabel}
+            </label>
+            <Input
+              aria-invalid={nameInvalid}
+              disabled={profile.is_default || saving}
+              id="profile-edit-name"
+              onChange={event => setName(event.target.value)}
+              value={name}
+            />
+            <p
+              className={cn(
+                'text-[0.66rem] leading-4',
+                nameInvalid ? 'text-destructive' : 'text-muted-foreground'
+              )}
+            >
+              {profile.is_default ? p.defaultNameLocked : p.nameHint}
+            </p>
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            <section className="space-y-2">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <div>
+                  <h5 className="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                    {p.startingSkills}
+                  </h5>
+                  <p className="text-xs text-muted-foreground">{p.profileSkillsDesc}</p>
+                </div>
+                <span className="text-[0.65rem] text-muted-foreground">
+                  {p.skillsSelected(selectedSkillNames.length, skills.length)}
+                </span>
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  disabled={saving || skills.length === 0}
+                  onClick={() => setAllSkills(true)}
+                  size="xs"
+                  type="button"
+                  variant="outline"
+                >
+                  {p.selectAllSkills}
+                </Button>
+                <Button
+                  disabled={saving || skills.length === 0}
+                  onClick={() => setAllSkills(false)}
+                  size="xs"
+                  type="button"
+                  variant="outline"
+                >
+                  {p.clearSkills}
+                </Button>
+              </div>
+
+              <div className="max-h-56 overflow-y-auto rounded-md border border-(--ui-stroke-secondary) bg-background/30">
+                {skills.length === 0 ? (
+                  <div className="px-3 py-4 text-xs text-muted-foreground">{p.noSkillsAvailable}</div>
+                ) : (
+                  skills.map(skill => (
+                    <label
+                      className={cn(
+                        'flex cursor-pointer items-start gap-2 border-b border-(--ui-stroke-secondary) px-3 py-2 last:border-b-0',
+                        saving && 'cursor-not-allowed opacity-60'
+                      )}
+                      key={skill.name}
+                    >
+                      <input
+                        checked={skill.enabled}
+                        className="mt-0.5"
+                        disabled={saving}
+                        onChange={event => toggleSkillDraft(skill.name, event.currentTarget.checked)}
+                        type="checkbox"
+                      />
+                      <span className="min-w-0">
+                        <span className="block truncate text-xs font-medium">{skill.name}</span>
+                        {skill.description && (
+                          <span className="mt-0.5 block line-clamp-2 text-[0.68rem] leading-4 text-muted-foreground">
+                            {skill.description}
+                          </span>
+                        )}
+                      </span>
+                    </label>
+                  ))
+                )}
+              </div>
+            </section>
+
+            <section className="space-y-2">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <div>
+                  <h5 className="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                    MCP
+                  </h5>
+                  <p className="text-xs text-muted-foreground">{p.profileMcpDesc}</p>
+                </div>
+                <span className="text-[0.65rem] text-muted-foreground">
+                  {p.skillsSelected(selectedMcpCount, mcpNames.length)}
+                </span>
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  disabled={saving || mcpNames.length === 0}
+                  onClick={() => setAllMcp(true)}
+                  size="xs"
+                  type="button"
+                  variant="outline"
+                >
+                  {p.selectAllSkills}
+                </Button>
+                <Button
+                  disabled={saving || mcpNames.length === 0}
+                  onClick={() => setAllMcp(false)}
+                  size="xs"
+                  type="button"
+                  variant="outline"
+                >
+                  {p.clearSkills}
+                </Button>
+              </div>
+
+              <div className="max-h-56 overflow-y-auto rounded-md border border-(--ui-stroke-secondary) bg-background/30">
+                {mcpNames.length === 0 ? (
+                  <div className="px-3 py-4 text-xs text-muted-foreground">{p.noProfileMcpAvailable}</div>
+                ) : (
+                  mcpNames.map(name => {
+                    const server = servers[name]
+
+                    return (
+                      <label
+                        className={cn(
+                          'flex cursor-pointer items-start gap-2 border-b border-(--ui-stroke-secondary) px-3 py-2 last:border-b-0',
+                          saving && 'cursor-not-allowed opacity-60'
+                        )}
+                        key={name}
+                      >
+                        <input
+                          checked={mcpEnabled.has(name)}
+                          className="mt-0.5"
+                          disabled={saving}
+                          onChange={event => toggleMcpDraft(name, event.currentTarget.checked)}
+                          type="checkbox"
+                        />
+                        <span className="min-w-0">
+                          <span className="block truncate text-xs font-medium">{name}</span>
+                          <span className="mt-0.5 block truncate text-[0.68rem] leading-4 text-muted-foreground">
+                            {mcpTransportLabel(server)}
+                            {typeof server.command === 'string' ? ` · ${server.command}` : ''}
+                            {typeof server.url === 'string' ? ` · ${server.url}` : ''}
+                          </span>
+                        </span>
+                      </label>
+                    )
+                  })
+                )}
+              </div>
+            </section>
+          </div>
+
+          <section className="space-y-2">
+            <div>
+              <h5 className="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                SOUL.md
+              </h5>
+              <p className="text-xs text-muted-foreground">{p.soulDesc}</p>
+            </div>
+            <Textarea
+              className="min-h-72 font-mono text-xs leading-5"
+              disabled={saving}
+              onChange={event => setSoul(event.target.value)}
+              placeholder={!soul.trim() ? p.emptySoul : undefined}
+              value={soul}
+            />
+          </section>
+        </>
       )}
 
       {error && (
@@ -498,215 +803,6 @@ function SoulEditor({ profileName }: { profileName: string }) {
           <span>{error}</span>
         </div>
       )}
-
-      <div className="flex justify-end">
-        <Button disabled={!dirty || saving || loading} onClick={() => void handleSave()} size="sm">
-          <Save />
-          {saving ? p.saving : p.saveSoul}
-        </Button>
-      </div>
-    </section>
-  )
-}
-
-function ProfileSkillManager({ onChanged, profileName }: { onChanged: () => void; profileName: string }) {
-  const { t } = useI18n()
-  const p = t.profiles
-  const [skills, setSkills] = useState<SkillInfo[]>([])
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState<null | string>(null)
-  const [error, setError] = useState<null | string>(null)
-
-  const load = useCallback(() => {
-    setLoading(true)
-    setError(null)
-
-    void getSkills(profileName)
-      .then(next => setSkills([...next].sort((a, b) => a.name.localeCompare(b.name))))
-      .catch(err => setError(err instanceof Error ? err.message : p.failedLoadSkills))
-      .finally(() => setLoading(false))
-  }, [p.failedLoadSkills, profileName])
-
-  useEffect(() => {
-    load()
-  }, [load])
-
-  async function toggle(skill: SkillInfo, enabled: boolean) {
-    setSaving(skill.name)
-    setError(null)
-
-    try {
-      await toggleSkill(skill.name, enabled, profileName)
-      setSkills(prev => prev.map(row => (row.name === skill.name ? { ...row, enabled } : row)))
-      onChanged()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : p.failedLoadSkills)
-    } finally {
-      setSaving(null)
-    }
-  }
-
-  const selected = skills.filter(skill => skill.enabled).length
-
-  return (
-    <section className="space-y-2">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <div>
-          <h4 className="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-            {p.startingSkills}
-          </h4>
-          <p className="text-xs text-muted-foreground">{p.profileSkillsDesc}</p>
-        </div>
-        <span className="text-[0.65rem] text-muted-foreground">{p.skillsSelected(selected, skills.length)}</span>
-      </div>
-
-      <div className="max-h-56 overflow-y-auto rounded-md border border-(--ui-stroke-secondary) bg-(--ui-bg-secondary)">
-        {loading ? (
-          <div className="px-3 py-4 text-xs text-muted-foreground">{p.loadingSkills}</div>
-        ) : error ? (
-          <div className="flex items-start gap-2 px-3 py-3 text-xs text-destructive">
-            <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
-            <span>{error}</span>
-          </div>
-        ) : skills.length === 0 ? (
-          <div className="px-3 py-4 text-xs text-muted-foreground">{p.noSkillsAvailable}</div>
-        ) : (
-          skills.map(skill => (
-            <label
-              className={cn(
-                'flex cursor-pointer items-start gap-2 border-b border-(--ui-stroke-secondary) px-3 py-2 last:border-b-0',
-                saving === skill.name && 'opacity-60'
-              )}
-              key={skill.name}
-            >
-              <input
-                checked={skill.enabled}
-                className="mt-0.5"
-                disabled={saving === skill.name}
-                onChange={event => void toggle(skill, event.currentTarget.checked)}
-                type="checkbox"
-              />
-              <span className="min-w-0">
-                <span className="block truncate text-xs font-medium">{skill.name}</span>
-                {skill.description && (
-                  <span className="mt-0.5 block line-clamp-2 text-[0.68rem] leading-4 text-muted-foreground">
-                    {skill.description}
-                  </span>
-                )}
-              </span>
-            </label>
-          ))
-        )}
-      </div>
-    </section>
-  )
-}
-
-function ProfileMcpManager({ profileName }: { profileName: string }) {
-  const { t } = useI18n()
-  const p = t.profiles
-  const [config, setConfig] = useState<VIGILConfigRecord | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState<null | string>(null)
-  const [error, setError] = useState<null | string>(null)
-
-  const load = useCallback(() => {
-    setLoading(true)
-    setError(null)
-
-    void getVIGILConfigRecord(profileName)
-      .then(setConfig)
-      .catch(err => setError(err instanceof Error ? err.message : p.failedLoadMcp))
-      .finally(() => setLoading(false))
-  }, [p.failedLoadMcp, profileName])
-
-  useEffect(() => {
-    load()
-  }, [load])
-
-  const servers = useMemo(() => getMcpServers(config), [config])
-  const names = useMemo(() => Object.keys(servers).sort(), [servers])
-  const enabled = names.filter(name => servers[name]?.disabled !== true).length
-
-  async function toggle(name: string, checked: boolean) {
-    if (!config) {
-      return
-    }
-
-    setSaving(name)
-    setError(null)
-
-    try {
-      const nextServers = { ...servers, [name]: { ...servers[name] } }
-
-      if (checked) {
-        delete nextServers[name].disabled
-      } else {
-        nextServers[name].disabled = true
-      }
-
-      const nextConfig = { ...config, mcp_servers: nextServers }
-      await saveVIGILConfig(nextConfig, profileName)
-      setConfig(nextConfig)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : p.failedSaveMcp)
-    } finally {
-      setSaving(null)
-    }
-  }
-
-  return (
-    <section className="space-y-2">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <div>
-          <h4 className="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">MCP</h4>
-          <p className="text-xs text-muted-foreground">{p.profileMcpDesc}</p>
-        </div>
-        <span className="text-[0.65rem] text-muted-foreground">{enabled}/{names.length}</span>
-      </div>
-
-      <div className="max-h-44 overflow-y-auto rounded-md border border-(--ui-stroke-secondary) bg-(--ui-bg-secondary)">
-        {loading ? (
-          <div className="px-3 py-4 text-xs text-muted-foreground">{p.loadingMcp}</div>
-        ) : error ? (
-          <div className="flex items-start gap-2 px-3 py-3 text-xs text-destructive">
-            <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
-            <span>{error}</span>
-          </div>
-        ) : names.length === 0 ? (
-          <div className="px-3 py-4 text-xs text-muted-foreground">{p.noProfileMcpAvailable}</div>
-        ) : (
-          names.map(name => {
-            const server = servers[name]
-
-            return (
-              <label
-                className={cn(
-                  'flex cursor-pointer items-start gap-2 border-b border-(--ui-stroke-secondary) px-3 py-2 last:border-b-0',
-                  saving === name && 'opacity-60'
-                )}
-                key={name}
-              >
-                <input
-                  checked={server.disabled !== true}
-                  className="mt-0.5"
-                  disabled={saving === name}
-                  onChange={event => void toggle(name, event.currentTarget.checked)}
-                  type="checkbox"
-                />
-                <span className="min-w-0">
-                  <span className="block truncate text-xs font-medium">{name}</span>
-                  <span className="mt-0.5 block truncate text-[0.68rem] leading-4 text-muted-foreground">
-                    {mcpTransportLabel(server)}
-                    {typeof server.command === 'string' ? ` · ${server.command}` : ''}
-                    {typeof server.url === 'string' ? ` · ${server.url}` : ''}
-                  </span>
-                </span>
-              </label>
-            )
-          })
-        )}
-      </div>
     </section>
   )
 }
@@ -776,7 +872,7 @@ function CreateProfileDialog({
 
   return (
     <Dialog onOpenChange={value => !value && !saving && onClose()} open={open}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-h-[85vh] max-w-md overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{p.newProfile}</DialogTitle>
           <DialogDescription>{p.createDesc}</DialogDescription>
@@ -850,114 +946,6 @@ function CreateProfileDialog({
             </Button>
             <Button disabled={saving || !trimmed || invalid} type="submit">
               {saving ? p.creating : p.createAction}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  )
-}
-
-function RenameProfileDialog({
-  currentName,
-  onClose,
-  onRename,
-  open
-}: {
-  currentName: string
-  onClose: () => void
-  onRename: (newName: string) => Promise<void>
-  open: boolean
-}) {
-  const { t } = useI18n()
-  const p = t.profiles
-  const [name, setName] = useState(currentName)
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<null | string>(null)
-
-  useEffect(() => {
-    if (!open) {
-      return
-    }
-
-    setName(currentName)
-    setError(null)
-    setSaving(false)
-  }, [currentName, open])
-
-  const trimmed = name.trim()
-  const unchanged = trimmed === currentName
-  const invalid = trimmed !== '' && !unchanged && !isValidProfileName(trimmed)
-
-  async function handleSubmit(event: React.FormEvent) {
-    event.preventDefault()
-
-    if (unchanged) {
-      onClose()
-
-      return
-    }
-
-    if (!trimmed || invalid) {
-      setError(invalid ? p.invalidName(p.nameHint) : p.nameRequired)
-
-      return
-    }
-
-    setSaving(true)
-    setError(null)
-
-    try {
-      await onRename(trimmed)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : p.failedRename)
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  return (
-    <Dialog onOpenChange={value => !value && !saving && onClose()} open={open}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>{p.renameTitle}</DialogTitle>
-          <DialogDescription>
-            {p.renameDescPrefix}
-            <span className="font-mono">~/.local/bin</span>
-            {p.renameDescSuffix}
-          </DialogDescription>
-        </DialogHeader>
-
-        <form className="grid gap-3" onSubmit={handleSubmit}>
-          <div className="grid gap-1.5">
-            <label className="text-xs font-medium" htmlFor="rename-profile-name">
-              {p.newNameLabel}
-            </label>
-            <Input
-              aria-invalid={invalid}
-              autoFocus
-              id="rename-profile-name"
-              onChange={event => setName(event.target.value)}
-              value={name}
-            />
-            <p className={cn('text-[0.66rem] leading-4', invalid ? 'text-destructive' : 'text-muted-foreground')}>
-              {p.nameHint}
-            </p>
-          </div>
-
-          {error && (
-            <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
-              <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
-              <span>{error}</span>
-            </div>
-          )}
-
-          <DialogFooter>
-            <Button disabled={saving} onClick={onClose} type="button" variant="outline">
-              {t.common.cancel}
-            </Button>
-            <Button disabled={saving || invalid || unchanged} type="submit">
-              {saving ? p.renaming : p.rename}
             </Button>
           </DialogFooter>
         </form>

@@ -508,6 +508,8 @@ export interface Translations {
       defaultsFailed: string
       auxiliaryTitle: string
       resetAllToMain: string
+      resetUnavailableAux: string
+      auxiliaryProviderUnavailable: (count: number, tasks: string, provider: string) => string
       auxiliaryDesc: string
       setToMain: string
       change: string
@@ -885,11 +887,16 @@ export interface Translations {
     soulPlaceholder: (mode: string) => string
     soulPlaceholderCloned: string
     soulPlaceholderEmpty: string
+    editProfile: string
+    editProfileDesc: string
     unsavedChanges: string
     loadingSoul: string
     emptySoul: string
     saving: string
+    saveProfile: string
     saveSoul: string
+    resetChanges: string
+    defaultNameLocked: string
     deleteTitle: string
     deleteDescPrefix: string
     deleteDescMid: string
@@ -928,6 +935,7 @@ export interface Translations {
     renamed: string
     deleted: string
     setupCopied: string
+    profileSaved: string
     soulSaved: string
     failedLoad: string
     failedLoadSkills: string
@@ -937,6 +945,7 @@ export interface Translations {
     failedCopy: string
     failedLoadSoul: string
     failedSaveSoul: string
+    failedSaveProfile: string
     failedCreate: string
     failedRename: string
   }

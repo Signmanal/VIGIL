@@ -46,6 +46,7 @@ import sys
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, Future
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Tuple
 
@@ -75,20 +76,38 @@ _SKIP_PARTS = {"integration", "e2e", "docker"}
 # via --file-timeout or VIGIL_TEST_FILE_TIMEOUT.
 _DEFAULT_FILE_TIMEOUT_SECONDS = 600.0  # Large run_agent suites can exceed 5 min on loaded macOS runners.
 
+# Only split known oversized suites. Splitting arbitrary files can expose
+# order-dependent module state, so keep this opt-in and surgical.
+_NODEID_SPLIT_FILES = {"tests/run_agent/test_run_agent.py"}
+_NODEIDS_PER_SPLIT_JOB = 130
+
 # Duration cache: maps relative file paths to last-observed subprocess
 # wall-clock seconds. Used by ``--slice`` to distribute files across
 # CI jobs by estimated total time, so no one job gets all the slow files.
 _DURATIONS_FILE = "test_durations.json"
 
 
-def _pytest_basetemp_for_file(file: Path, repo_root: Path) -> Path:
+@dataclass(frozen=True)
+class TestJob:
+    file: Path
+    label: str
+    targets: Tuple[str, ...]
+    test_count: int
+
+
+def _pytest_basetemp_for_file(
+    file: Path, repo_root: Path, label_override: str | None = None
+) -> Path:
     """Return a stable, per-file pytest temp root for this runner process."""
-    resolved_file = file.resolve()
-    resolved_root = repo_root.resolve()
-    try:
-        label = resolved_file.relative_to(resolved_root).as_posix()
-    except ValueError:
-        label = resolved_file.as_posix()
+    if label_override is None:
+        resolved_file = file.resolve()
+        resolved_root = repo_root.resolve()
+        try:
+            label = resolved_file.relative_to(resolved_root).as_posix()
+        except ValueError:
+            label = resolved_file.as_posix()
+    else:
+        label = label_override
     digest = hashlib.sha1(label.encode("utf-8")).hexdigest()[:12]
     return Path(os.getenv("TMPDIR") or "/tmp") / f"agt-{os.getpid()}" / digest
 
@@ -198,6 +217,84 @@ def _discover_files(roots: List[Path]) -> List[Path]:
     return sorted(out)
 
 
+def _collect_nodeids_for_file(
+    file: Path, repo_root: Path, pytest_passthrough: List[str]
+) -> List[str]:
+    """Collect nodeids for one file so a known-large suite can be chunked."""
+    cmd = [
+        sys.executable,
+        "-m",
+        "pytest",
+        "--co",
+        "-q",
+        str(file),
+        *pytest_passthrough,
+    ]
+    try:
+        result = subprocess.run(
+            cmd,
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+    except (subprocess.TimeoutExpired, OSError):
+        return []
+    if result.returncode not in (0, 5):
+        return []
+
+    nodeids: List[str] = []
+    for line in result.stdout.splitlines():
+        line = line.strip()
+        if "::" not in line:
+            continue
+        file_part = line.split("::", 1)[0]
+        if file_part.endswith(".py"):
+            nodeids.append(line)
+    return nodeids
+
+
+def _chunked(items: List[str], size: int) -> List[List[str]]:
+    return [items[i : i + size] for i in range(0, len(items), size)]
+
+
+def _build_test_jobs(
+    files: List[Path],
+    test_counts: dict[Path, int],
+    repo_root: Path,
+    pytest_passthrough: List[str],
+) -> List[TestJob]:
+    jobs: List[TestJob] = []
+    for file in files:
+        rel = _format_file(file, repo_root)
+        n_tests = test_counts.get(file, 0)
+        if rel in _NODEID_SPLIT_FILES and n_tests > _NODEIDS_PER_SPLIT_JOB:
+            nodeids = _collect_nodeids_for_file(file, repo_root, pytest_passthrough)
+            if len(nodeids) == n_tests:
+                chunks = _chunked(nodeids, _NODEIDS_PER_SPLIT_JOB)
+                total_chunks = len(chunks)
+                for idx, chunk in enumerate(chunks, start=1):
+                    jobs.append(
+                        TestJob(
+                            file=file,
+                            label=f"{rel}::chunk{idx}/{total_chunks}",
+                            targets=tuple(chunk),
+                            test_count=len(chunk),
+                        )
+                    )
+                continue
+
+        jobs.append(
+            TestJob(
+                file=file,
+                label=rel,
+                targets=(str(file),),
+                test_count=n_tests,
+            )
+        )
+    return jobs
+
+
 def _kill_tree(proc: "subprocess.Popen", pgid: int | None = None) -> None:
     """Kill the pytest subprocess and every descendant it spawned.
 
@@ -256,15 +353,15 @@ def _kill_tree(proc: "subprocess.Popen", pgid: int | None = None) -> None:
         pass
 
 
-def _run_one_file(
-    file: Path,
+def _run_one_job(
+    job: TestJob,
     pytest_args: List[str],
     repo_root: Path,
     file_timeout: float,
-) -> Tuple[Path, int, str, dict[str, int], float]:
-    """Run ``python -m pytest <file> <pytest_args>`` in a fresh subprocess.
+) -> Tuple[TestJob, int, str, dict[str, int], float]:
+    """Run one pytest job in a fresh subprocess.
 
-    Returns (file, returncode, captured_combined_output, summary_counts, subprocess_wall_seconds).
+    Returns (job, returncode, captured_combined_output, summary_counts, subprocess_wall_seconds).
 
     ``summary_counts`` is the result of ``_parse_pytest_summary(output)`` —
 
@@ -289,10 +386,10 @@ def _run_one_file(
     """
     basetemp_arg = []
     if not any(arg == "--basetemp" or arg.startswith("--basetemp=") for arg in pytest_args):
-        basetemp = _pytest_basetemp_for_file(file, repo_root)
+        basetemp = _pytest_basetemp_for_file(job.file, repo_root, job.label)
         basetemp.parent.mkdir(parents=True, exist_ok=True)
         basetemp_arg = [f"--basetemp={basetemp}"]
-    cmd = [sys.executable, "-m", "pytest", str(file), *basetemp_arg, *pytest_args]
+    cmd = [sys.executable, "-m", "pytest", *job.targets, *basetemp_arg, *pytest_args]
     
     subproc_start = time.monotonic()
     # launch the pytest process
@@ -355,7 +452,7 @@ def _run_one_file(
         rc = 0
     summary = _parse_pytest_summary(output)
     subproc_wall = time.monotonic() - subproc_start
-    return file, rc, output, summary, subproc_wall
+    return job, rc, output, summary, subproc_wall
 
 
 def _parse_pytest_summary(output: str) -> dict[str, int]:
@@ -409,13 +506,12 @@ def _format_file(file: Path, repo_root: Path) -> str:
 def _print_progress(
     tests_done: int,
     total_tests: int,
-    file: Path,
+    job: TestJob,
     rc: int,
     dur: float,
     repo_root: Path,
     tests_passed: int,
     tests_failed: int,
-    test_counts: dict[Path, int],
     file_summary: dict[str, int] | None = None,
     subproc_wall: float | None = None,
 ) -> None:
@@ -457,8 +553,7 @@ def _print_progress(
             parts.append(f"{xp}xp")
         test_str = " ".join(parts) + ", " if parts else ""
     else:
-        n_tests = test_counts.get(file, 0)
-        test_str = f"{n_tests} tests, " if n_tests else ""
+        test_str = f"{job.test_count} tests, " if job.test_count else ""
     # Show subprocess time when available; fall back to queue-inclusive dur.
     if subproc_wall is not None:
         time_str = f"{subproc_wall:.1f}s"
@@ -467,7 +562,7 @@ def _print_progress(
     msg = (
         f"[{pct:5.1f}% | {tests_done:>5}/{total_tests}"
         f" | ✓{tests_passed:>{fw}} | ✗{tests_failed:>{fw}}] "
-        f"{status} {_format_file(file, repo_root)} ({test_str}{time_str})"
+        f"{status} {job.label} ({test_str}{time_str})"
     )
     # Truncate to terminal width if available (no clobbering ANSI lines).
     try:
@@ -480,7 +575,7 @@ def _print_progress(
 
 
 def _print_inline_failure(
-    file: Path, output: str, repo_root: Path, pytest_passthrough: List[str]
+    job: TestJob, output: str, repo_root: Path, pytest_passthrough: List[str]
 ) -> None:
     """Print a compact failure summary immediately when a file fails.
 
@@ -488,10 +583,11 @@ def _print_inline_failure(
     traces) and a ready-to-run repro command, so the developer doesn't
     have to wait for the full run to finish before seeing what broke.
     """
-    rel = _format_file(file, repo_root)
+    rel = job.label
+    base_rel = _format_file(job.file, repo_root)
     # Build a repro command the developer can copy-paste.
     passthrough_str = " ".join(pytest_passthrough) if pytest_passthrough else ""
-    repro = f"python -m pytest {rel}"
+    repro = f"python -m pytest {base_rel}"
     if passthrough_str:
         repro += f" {passthrough_str}"
 
@@ -538,7 +634,10 @@ def _save_durations(
     and CI runners.
     """
     data: dict[str, float] = _load_durations(repo_root)
+    totals: dict[Path, float] = {}
     for f, t in file_times:
+        totals[f] = totals.get(f, 0.0) + t
+    for f, t in totals.items():
         key = _format_file(f, repo_root)
         data[key] = round(t, 3)
     path = repo_root / _DURATIONS_FILE
@@ -733,10 +832,17 @@ def main() -> int:
         f"running with -j {args.jobs}",
         flush=True,
     )
+    jobs = _build_test_jobs(files, test_counts, repo_root, pytest_passthrough)
+    if len(jobs) != len(files):
+        print(
+            f"Split {len(files)} test files into {len(jobs)} isolated pytest jobs "
+            f"({ _NODEIDS_PER_SPLIT_JOB } nodeids/job for known oversized suites)",
+            flush=True,
+        )
 
     # Capture and print on completion (out-of-order is fine — keeps the
     # terminal clean rather than interleaving N parallel pytest outputs).
-    failures: List[Tuple[Path, str, Dict[str, int]]] = []
+    failures: List[Tuple[TestJob, str, Dict[str, int]]] = []
     file_times: List[Tuple[Path, float]] = []  # (file, subprocess_wall) for distribution
     started = time.monotonic()
     files_done = 0
@@ -747,56 +853,53 @@ def main() -> int:
     tests_failed = 0
     lock = threading.Lock()
 
-    def _on_done(file: Path, started_at: float, fut: "Future[Tuple[Path, int, str, dict[str, int], float]]") -> None:
+    def _on_done(job: TestJob, started_at: float, fut: "Future[Tuple[TestJob, int, str, dict[str, int], float]]") -> None:
         nonlocal files_done, tests_done, pass_count, fail_count, tests_passed, tests_failed
-        n_tests = test_counts.get(file, 0)
         try:
-            fpath, rc, output, summary, subproc_wall = fut.result()
+            finished_job, rc, output, summary, subproc_wall = fut.result()
         except Exception as exc:  # noqa: BLE001 — must always advance counter
             with lock:
                 files_done += 1
-                tests_done += n_tests
+                tests_done += job.test_count
                 fail_count += 1
-                failures.append((file, f"runner crashed: {exc!r}", {}))
+                failures.append((job, f"runner crashed: {exc!r}", {}))
                 _print_progress(
-                    tests_done, total_tests, file, 1,
+                    tests_done, total_tests, job, 1,
                     time.monotonic() - started_at,
                     repo_root, tests_passed, tests_failed,
-                    test_counts,
                     subproc_wall=0.0,
                 )
             return
         with lock:
             files_done += 1
-            tests_done += n_tests
+            tests_done += finished_job.test_count
             # Accumulate test-level counts from parsed summary.
             tests_passed += summary.get("passed", 0)
             tests_failed += summary.get("failed", 0)
-            file_times.append((fpath, subproc_wall))
+            file_times.append((finished_job.file, subproc_wall))
             if rc == 0:
                 pass_count += 1
             else:
                 fail_count += 1
-                failures.append((fpath, output, summary))
+                failures.append((finished_job, output, summary))
             _print_progress(
-                tests_done, total_tests, fpath, rc,
+                tests_done, total_tests, finished_job, rc,
                 time.monotonic() - started_at,
                 repo_root, tests_passed, tests_failed,
-                test_counts,
                 file_summary=summary,
                 subproc_wall=subproc_wall,
             )
             if rc != 0:
-                _print_inline_failure(fpath, output, repo_root, pytest_passthrough)
+                _print_inline_failure(finished_job, output, repo_root, pytest_passthrough)
 
     with ThreadPoolExecutor(max_workers=args.jobs) as pool:
         futures: List[Future] = []
-        for file in files:
+        for job in jobs:
             t0 = time.monotonic()
             fut = pool.submit(
-                _run_one_file, file, pytest_passthrough, repo_root, args.file_timeout
+                _run_one_job, job, pytest_passthrough, repo_root, args.file_timeout
             )
-            fut.add_done_callback(lambda f, file=file, t0=t0: _on_done(file, t0, f))
+            fut.add_done_callback(lambda f, job=job, t0=t0: _on_done(job, t0, f))
             futures.append(fut)
         # Block until everything's done. ThreadPoolExecutor.__exit__ waits
         # for all submitted work, but doing it explicitly here makes the
@@ -807,7 +910,7 @@ def main() -> int:
     elapsed = time.monotonic() - started
     print()
     pct = (tests_done / total_tests * 100) if total_tests else 0
-    print(f"=== Summary: {len(files)} files, {tests_passed} tests passed, {tests_failed} failed ({pct:.0f}% complete) in {elapsed:.1f}s ({args.jobs} workers) ===")
+    print(f"=== Summary: {len(files)} files / {len(jobs)} jobs, {tests_passed} tests passed, {tests_failed} failed ({pct:.0f}% complete) in {elapsed:.1f}s ({args.jobs} workers) ===")
 
     # Save durations for future --slice runs. Each slice writes its own
     # partial test_durations.json; a CI merge step joins them later.
@@ -846,9 +949,9 @@ def main() -> int:
     if failures:
         print()
         print("=== Failure output ===")
-        for file, output, _summary in failures:
+        for job, output, _summary in failures:
             print()
-            print(f"--- {_format_file(file, repo_root)} ---")
+            print(f"--- {job.label} ---")
             print(output.rstrip())
         print()
         # Split: files with actual test failures vs non-zero exit for other reasons
@@ -860,17 +963,17 @@ def main() -> int:
         if test_fail_files:
             total_tf = sum(s.get("failed", 0) for _, s in test_fail_files)
             print(f"=== {len(test_fail_files)} file{'s' if len(test_fail_files) != 1 else ''} with test failures ({total_tf} test{'s' if total_tf != 1 else ''} failed) ===")
-            for file, s in test_fail_files:
+            for job, s in test_fail_files:
                 nf = s.get("failed", 0)
-                print(f"  {_format_file(file, repo_root)}  ({nf} test{'s' if nf != 1 else ''} failed)")
+                print(f"  {job.label}  ({nf} test{'s' if nf != 1 else ''} failed)")
         if all_passed_but_nonzero:
             print(f"=== {len(all_passed_but_nonzero)} file{'s' if len(all_passed_but_nonzero) != 1 else ''} where all tests passed but pytest exited non-zero (warnings-as-errors, hook failures, etc.) ===")
-            for file, s in all_passed_but_nonzero:
-                print(f"  {_format_file(file, repo_root)}  ({s.get('passed', 0)} passed)")
+            for job, s in all_passed_but_nonzero:
+                print(f"  {job.label}  ({s.get('passed', 0)} passed)")
         if no_tests_ran:
             print(f"=== {len(no_tests_ran)} file{'s' if len(no_tests_ran) != 1 else ''} where no tests ran (collection/import error, timeout before collection, etc.) ===")
-            for file, s in no_tests_ran:
-                print(f"  {_format_file(file, repo_root)}")
+            for job, s in no_tests_ran:
+                print(f"  {job.label}")
         return 1
 
     return 0

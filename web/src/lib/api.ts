@@ -2072,8 +2072,8 @@ export interface ModelAssignmentRequest {
   task?: string;
 }
 
-/** An auxiliary task still pinned to a provider that differs from the
- *  newly-selected main provider after a main-model switch. */
+/** An auxiliary task still pinned to a provider that is no longer available
+ *  after a main-model switch. */
 export interface StaleAuxAssignment {
   task: string;
   provider: string;
@@ -2089,9 +2089,9 @@ export interface ModelAssignmentResponse {
   model?: string;
   tasks?: string[];
   reset?: boolean;
-  /** Auxiliary slots still pinned to a different provider than the new main.
-   *  Switching main never clears aux pins; this lets the UI warn the user
-   *  their helper tasks aren't following the switch. Only set on scope:'main'. */
+  /** Auxiliary slots still pinned to unavailable providers. Switching main
+   *  never clears aux pins; this lets the UI warn only when a helper task
+   *  cannot use its configured provider. Only set on scope:'main'. */
   stale_aux?: StaleAuxAssignment[];
 }
 
