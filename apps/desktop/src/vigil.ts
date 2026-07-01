@@ -50,6 +50,7 @@ import type {
 
 const DEFAULT_GATEWAY_REQUEST_TIMEOUT_MS = 30_000
 const SESSION_LIST_REQUEST_TIMEOUT_MS = 60_000
+const SETTINGS_REQUEST_TIMEOUT_MS = 60_000
 const SKILL_HUB_REQUEST_TIMEOUT_MS = 60_000
 const AUDIO_TRANSCRIPTION_REQUEST_TIMEOUT_MS = 600_000
 const AUDIO_TTS_REQUEST_TIMEOUT_MS = 120_000
@@ -279,14 +280,16 @@ export function renameSession(
 export function getGlobalModelInfo(): Promise<ModelInfoResponse> {
   return window.vigilDesktop.api<ModelInfoResponse>({
     ...profileScoped(),
-    path: '/api/model/info'
+    path: '/api/model/info',
+    timeoutMs: SETTINGS_REQUEST_TIMEOUT_MS
   })
 }
 
 export function getStatus(): Promise<StatusResponse> {
   return window.vigilDesktop.api<StatusResponse>({
     ...profileScoped(),
-    path: '/api/status'
+    path: '/api/status',
+    timeoutMs: SETTINGS_REQUEST_TIMEOUT_MS
   })
 }
 
@@ -325,7 +328,8 @@ export function getLogs(params: {
 export function getVIGILConfig(): Promise<VIGILConfig> {
   return window.vigilDesktop.api<VIGILConfig>({
     ...profileScoped(),
-    path: '/api/config'
+    path: '/api/config',
+    timeoutMs: SETTINGS_REQUEST_TIMEOUT_MS
   })
 }
 
@@ -334,21 +338,24 @@ export function getVIGILConfigRecord(profileOrContext?: unknown): Promise<VIGILC
 
   return window.vigilDesktop.api<VIGILConfigRecord>({
     ...(profile ? { profile } : profileScoped()),
-    path: '/api/config'
+    path: '/api/config',
+    timeoutMs: SETTINGS_REQUEST_TIMEOUT_MS
   })
 }
 
 export function getVIGILConfigDefaults(): Promise<VIGILConfigRecord> {
   return window.vigilDesktop.api<VIGILConfigRecord>({
     ...profileScoped(),
-    path: '/api/config/defaults'
+    path: '/api/config/defaults',
+    timeoutMs: SETTINGS_REQUEST_TIMEOUT_MS
   })
 }
 
 export function getVIGILConfigSchema(): Promise<ConfigSchemaResponse> {
   return window.vigilDesktop.api<ConfigSchemaResponse>({
     ...profileScoped(),
-    path: '/api/config/schema'
+    path: '/api/config/schema',
+    timeoutMs: SETTINGS_REQUEST_TIMEOUT_MS
   })
 }
 
@@ -357,7 +364,8 @@ export function saveVIGILConfig(config: VIGILConfigRecord, profile?: string): Pr
     ...(profile ? { profile } : profileScoped()),
     path: '/api/config',
     method: 'PUT',
-    body: { config }
+    body: { config },
+    timeoutMs: SETTINGS_REQUEST_TIMEOUT_MS
   })
 }
 
@@ -797,7 +805,8 @@ export function getUsageAnalytics(days = 30): Promise<AnalyticsResponse> {
 export function getGlobalModelOptions(opts?: { refresh?: boolean }): Promise<ModelOptionsResponse> {
   return window.vigilDesktop.api<ModelOptionsResponse>({
     ...profileScoped(),
-    path: opts?.refresh ? '/api/model/options?refresh=1' : '/api/model/options'
+    path: opts?.refresh ? '/api/model/options?refresh=1' : '/api/model/options',
+    timeoutMs: SETTINGS_REQUEST_TIMEOUT_MS
   })
 }
 
@@ -814,7 +823,8 @@ export interface RecommendedDefaultModel {
 export function getRecommendedDefaultModel(provider: string): Promise<RecommendedDefaultModel> {
   return window.vigilDesktop.api<RecommendedDefaultModel>({
     ...profileScoped(),
-    path: `/api/model/recommended-default?provider=${encodeURIComponent(provider)}`
+    path: `/api/model/recommended-default?provider=${encodeURIComponent(provider)}`,
+    timeoutMs: SETTINGS_REQUEST_TIMEOUT_MS
   })
 }
 
@@ -830,14 +840,16 @@ export function setGlobalModel(
       scope: 'main',
       provider,
       model
-    }
+    },
+    timeoutMs: SETTINGS_REQUEST_TIMEOUT_MS
   })
 }
 
 export function getAuxiliaryModels(): Promise<AuxiliaryModelsResponse> {
   return window.vigilDesktop.api<AuxiliaryModelsResponse>({
     ...profileScoped(),
-    path: '/api/model/auxiliary'
+    path: '/api/model/auxiliary',
+    timeoutMs: SETTINGS_REQUEST_TIMEOUT_MS
   })
 }
 
@@ -846,7 +858,8 @@ export function setModelAssignment(body: ModelAssignmentRequest): Promise<ModelA
     ...profileScoped(),
     path: '/api/model/set',
     method: 'POST',
-    body
+    body,
+    timeoutMs: SETTINGS_REQUEST_TIMEOUT_MS
   })
 }
 

@@ -2,12 +2,19 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   browseSkillHub,
+  getAuxiliaryModels,
+  getGlobalModelInfo,
+  getGlobalModelOptions,
   getSessionMessages,
   getSkillHubSources,
+  getVIGILConfigDefaults,
+  getVIGILConfigRecord,
+  getVIGILConfigSchema,
   installSkillHub,
   listAllProfileSessions,
   listSessions,
   searchSkillHub,
+  setApiRequestProfile,
   speakText,
   transcribeAudio
 } from './vigil'
@@ -31,6 +38,7 @@ describe('VIGIL REST session helpers', () => {
   })
 
   afterEach(() => {
+    setApiRequestProfile(null)
     vi.restoreAllMocks()
     Reflect.deleteProperty(window, 'vigilDesktop')
   })
@@ -110,6 +118,26 @@ describe('VIGIL REST session helpers', () => {
         timeoutMs: 60_000
       })
     )
+  })
+
+  it('uses a longer timeout for profile-scoped settings/model reads', async () => {
+    setApiRequestProfile('pentest')
+
+    await getGlobalModelInfo()
+    await getGlobalModelOptions()
+    await getAuxiliaryModels()
+    await getVIGILConfigRecord()
+    await getVIGILConfigDefaults()
+    await getVIGILConfigSchema()
+
+    for (const call of api.mock.calls) {
+      expect(call[0]).toEqual(
+        expect.objectContaining({
+          profile: 'pentest',
+          timeoutMs: 60_000
+        })
+      )
+    }
   })
 
   it('uses voice-specific timeouts for desktop transcription and speech', async () => {

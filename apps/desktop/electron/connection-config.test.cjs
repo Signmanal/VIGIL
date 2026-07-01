@@ -25,6 +25,7 @@ const {
   normAuthMode,
   normalizeRemoteBaseUrl,
   pathWithGlobalRemoteProfile,
+  pathWithLocalProfileScope,
   profileRemoteOverride,
   resolveAuthMode,
   resolveTestWsUrl,
@@ -155,6 +156,48 @@ test('pathWithGlobalRemoteProfile skips empty profile/path safely', () => {
     }),
     ''
   )
+})
+
+// --- pathWithLocalProfileScope ---
+
+test('pathWithLocalProfileScope appends profile for local named-profile settings paths', () => {
+  assert.equal(
+    pathWithLocalProfileScope('/api/model/info', 'pentest', {
+      globalRemote: false,
+      profileRemoteOverride: false,
+      primaryProfile: 'default'
+    }),
+    '/api/model/info?profile=pentest'
+  )
+  assert.equal(
+    pathWithLocalProfileScope('/api/config?view=raw', 'pentest', {
+      globalRemote: false,
+      profileRemoteOverride: false,
+      primaryProfile: 'default'
+    }),
+    '/api/config?view=raw&profile=pentest'
+  )
+})
+
+test('pathWithLocalProfileScope preserves explicit profile query parameters', () => {
+  assert.equal(
+    pathWithLocalProfileScope('/api/skills?profile=redteam', 'pentest', {
+      globalRemote: false,
+      profileRemoteOverride: false,
+      primaryProfile: 'default'
+    }),
+    '/api/skills?profile=redteam'
+  )
+})
+
+test('pathWithLocalProfileScope skips default, primary, remote, and non-settings paths', () => {
+  const localOpts = { globalRemote: false, profileRemoteOverride: false, primaryProfile: 'default' }
+  assert.equal(pathWithLocalProfileScope('/api/model/info', 'default', localOpts), null)
+  assert.equal(pathWithLocalProfileScope('/api/model/info', 'work', { ...localOpts, primaryProfile: 'work' }), null)
+  assert.equal(pathWithLocalProfileScope('/api/model/info', 'work', { ...localOpts, globalRemote: true }), null)
+  assert.equal(pathWithLocalProfileScope('/api/model/info', 'work', { ...localOpts, profileRemoteOverride: true }), null)
+  assert.equal(pathWithLocalProfileScope('/api/sessions/abc/messages', 'work', localOpts), null)
+  assert.equal(pathWithLocalProfileScope('', 'work', localOpts), null)
 })
 
 // --- normalizeRemoteBaseUrl ---

@@ -199,6 +199,82 @@ function pathWithGlobalRemoteProfile(path, profile, opts = {}) {
   return `${parsed.pathname}${parsed.search}${parsed.hash}`
 }
 
+const LOCAL_PROFILE_SCOPED_EXACT_PATHS = new Set([
+  '/api/status',
+  '/api/logs',
+  '/api/config',
+  '/api/config/defaults',
+  '/api/config/schema',
+  '/api/config/raw',
+  '/api/model/info',
+  '/api/model/options',
+  '/api/model/recommended-default',
+  '/api/model/auxiliary',
+  '/api/model/set',
+  '/api/env',
+  '/api/env/reveal',
+  '/api/providers/validate',
+  '/api/providers/oauth',
+  '/api/memory',
+  '/api/memory/provider',
+  '/api/memory/reset',
+  '/api/tools/computer-use/status',
+  '/api/tools/computer-use/permissions/grant'
+])
+
+const LOCAL_PROFILE_SCOPED_PREFIXES = [
+  '/api/analytics/',
+  '/api/mcp/',
+  '/api/memory/providers/',
+  '/api/providers/oauth/',
+  '/api/skills',
+  '/api/tools/toolsets'
+]
+
+function isLocalProfileScopedRestPath(pathname) {
+  return (
+    LOCAL_PROFILE_SCOPED_EXACT_PATHS.has(pathname) ||
+    LOCAL_PROFILE_SCOPED_PREFIXES.some(prefix => pathname === prefix || pathname.startsWith(prefix))
+  )
+}
+
+/**
+ * Local named-profile settings pages can be served by the primary backend with
+ * ?profile=<name>. That avoids spawning/waiting on a chat backend just to read
+ * config/model/skills/MCP state. Remote profiles still need their remote host,
+ * and the primary/default profile should keep the legacy direct path.
+ */
+function pathWithLocalProfileScope(path, profile, opts = {}) {
+  const scopedProfile = connectionScopeKey(profile)
+  const primaryProfile = connectionScopeKey(opts.primaryProfile) || 'default'
+
+  if (!scopedProfile || scopedProfile === primaryProfile || opts.globalRemote || opts.profileRemoteOverride) {
+    return null
+  }
+
+  const rawPath = String(path || '')
+  if (!rawPath) {
+    return null
+  }
+
+  let parsed
+  try {
+    parsed = new URL(rawPath, 'http://vigil.local')
+  } catch {
+    return null
+  }
+
+  if (!isLocalProfileScopedRestPath(parsed.pathname)) {
+    return null
+  }
+
+  if (!parsed.searchParams.has('profile')) {
+    parsed.searchParams.set('profile', scopedProfile)
+  }
+
+  return `${parsed.pathname}${parsed.search}${parsed.hash}`
+}
+
 function tokenPreview(value) {
   const raw = String(value || '')
 
@@ -281,6 +357,7 @@ module.exports = {
   normAuthMode,
   normalizeRemoteBaseUrl,
   pathWithGlobalRemoteProfile,
+  pathWithLocalProfileScope,
   profileRemoteOverride,
   resolveAuthMode,
   resolveTestWsUrl,
