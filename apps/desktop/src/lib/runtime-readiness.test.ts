@@ -60,13 +60,27 @@ describe('interpretRuntimeReadiness', () => {
 
     expect(result.ready).toBe(false)
     expect(result.source).toBe('fallback')
-    expect(result.reason).toBe('setup.runtime_check timeout')
+    expect(result.reason).toContain('Runtime health check timed out')
+  })
+
+  it('keeps non-health-check fallback errors unchanged', () => {
+    const result = interpretRuntimeReadiness({
+      setup: null,
+      setupError: null,
+      runtime: null,
+      runtimeError: 'Could not resolve provider'
+    })
+
+    expect(result.ready).toBe(false)
+    expect(result.source).toBe('fallback')
+    expect(result.reason).toBe('Could not resolve provider')
   })
 })
 
 describe('fetchRuntimeReadinessSignals', () => {
   it('scopes setup.runtime_check to the requested provider', async () => {
     const calls: Array<{ method: string; params?: Record<string, unknown> }> = []
+
     const requestGateway = async <T = unknown>(method: string, params?: Record<string, unknown>) => {
       calls.push({ method, params })
 

@@ -31,6 +31,9 @@ export type RuntimeReadinessRequester = <T = unknown>(method: string, params?: R
 
 const DEFAULT_NOT_READY_REASON = 'Add a provider credential before sending your first message.'
 
+const HEALTH_CHECK_TIMEOUT_REASON =
+  'Runtime health check timed out. The backend is connected, but the selected model provider may still be retrying or blocked by the network/proxy.'
+
 function toErrorMessage(error: unknown): null | string {
   if (error instanceof Error) {
     return error.message
@@ -51,6 +54,20 @@ function normalizeMessage(value: null | string | undefined): null | string {
   const next = value?.trim()
 
   return next ? next : null
+}
+
+function normalizeRuntimeFailure(value: null | string | undefined): null | string {
+  const message = normalizeMessage(value)
+
+  if (!message) {
+    return null
+  }
+
+  if (/\btimeout\b|request timed out|timed out/i.test(message) && /setup\.(runtime_check|status)/.test(message)) {
+    return HEALTH_CHECK_TIMEOUT_REASON
+  }
+
+  return message
 }
 
 async function requestWithFallback<T>(
@@ -97,8 +114,8 @@ export function interpretRuntimeReadiness(
     typeof signals.setup?.provider_configured === 'boolean' ? Boolean(signals.setup.provider_configured) : undefined
 
   const runtimeOk = typeof signals.runtime?.ok === 'boolean' ? Boolean(signals.runtime.ok) : undefined
-  const runtimeFailure = normalizeMessage(signals.runtime?.error) ?? normalizeMessage(signals.runtimeError)
-  const setupFailure = normalizeMessage(signals.setupError)
+  const runtimeFailure = normalizeRuntimeFailure(signals.runtime?.error) ?? normalizeRuntimeFailure(signals.runtimeError)
+  const setupFailure = normalizeRuntimeFailure(signals.setupError)
 
   const checksDisagree =
     typeof setupConfigured === 'boolean' && typeof runtimeOk === 'boolean' && setupConfigured !== runtimeOk
