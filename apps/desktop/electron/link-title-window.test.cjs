@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict')
 const test = require('node:test')
 
-const { createLinkTitleWindow, linkTitleWindowOptions } = require('./link-title-window.cjs')
+const { createLinkTitleWindow, linkTitleWindowOptions, readLinkTitle } = require('./link-title-window.cjs')
 
 function makeFakeBrowserWindow() {
   const calls = { audioMuted: [] }
@@ -53,4 +53,44 @@ test('createLinkTitleWindow still returns the window if muting throws', () => {
   const window = createLinkTitleWindow(ThrowingBrowserWindow, { id: 'link-titles' })
 
   assert.ok(window instanceof ThrowingBrowserWindow)
+})
+
+test('readLinkTitle returns the current title from a live window', () => {
+  assert.equal(
+    readLinkTitle({
+      isDestroyed: () => false,
+      webContents: {
+        isDestroyed: () => false,
+        getTitle: () => ' Example '
+      }
+    }),
+    ' Example '
+  )
+})
+
+test('readLinkTitle tolerates windows destroyed before delayed title reads', () => {
+  assert.equal(readLinkTitle({ isDestroyed: () => true }), '')
+  assert.equal(
+    readLinkTitle({
+      isDestroyed: () => false,
+      webContents: {
+        isDestroyed: () => true,
+        getTitle: () => {
+          throw new Error('should not read a destroyed webContents')
+        }
+      }
+    }),
+    ''
+  )
+})
+
+test('readLinkTitle swallows Electron destroyed-object races', () => {
+  const destroyedWindow = {
+    isDestroyed: () => false,
+    get webContents() {
+      throw new TypeError('Object has been destroyed')
+    }
+  }
+
+  assert.equal(readLinkTitle(destroyedWindow), '')
 })

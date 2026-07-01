@@ -34,7 +34,7 @@ const {
   SESSION_WINDOW_MIN_WIDTH
 } = require('./session-windows.cjs')
 const { canImportVIGILCli, verifyVIGILCli } = require('./backend-probes.cjs')
-const { createLinkTitleWindow } = require('./link-title-window.cjs')
+const { createLinkTitleWindow, readLinkTitle } = require('./link-title-window.cjs')
 const { probeGatewayWebSocket } = require('./gateway-ws-probe.cjs')
 const { adoptServedDashboardToken } = require('./dashboard-token.cjs')
 const { waitForDashboardPort } = require('./backend-ready.cjs')
@@ -3315,7 +3315,7 @@ function runRenderTitleJob(rawUrl) {
       return finish('')
     }
 
-    const readTitle = () => window?.webContents?.getTitle?.() || ''
+    const readTitle = () => readLinkTitle(window)
     const scheduleGrace = () => {
       if (graceTimer) clearTimeout(graceTimer)
       graceTimer = setTimeout(() => finish(readTitle()), RENDER_TITLE_GRACE_MS)
