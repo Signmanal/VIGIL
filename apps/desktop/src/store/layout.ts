@@ -28,6 +28,8 @@ const SIDEBAR_SESSION_ORDER_STORAGE_KEY = 'vigil.desktop.sessionOrder'
 const SIDEBAR_SESSION_ORDER_MANUAL_STORAGE_KEY = 'vigil.desktop.sessionOrder.manual'
 const SIDEBAR_WORKSPACE_ORDER_STORAGE_KEY = 'vigil.desktop.workspaceOrder'
 const SIDEBAR_WORKSPACE_PARENT_ORDER_STORAGE_KEY = 'vigil.desktop.workspaceParentOrder'
+const SIDEBAR_PROJECTS_STORAGE_KEY = 'vigil.desktop.sidebarProjects'
+const SIDEBAR_PROJECTS_OPEN_STORAGE_KEY = 'vigil.desktop.sidebarProjectsOpen'
 const PANES_FLIPPED_STORAGE_KEY = 'vigil.desktop.panesFlipped'
 
 export const CHAT_SIDEBAR_PANE_ID = 'chat-sidebar'
@@ -66,6 +68,7 @@ export const $sidebarWorkspaceOrderIds = atom(storedStringArray(SIDEBAR_WORKSPAC
 // Order of the top-level repo "parent" groups in the worktree tree (worktrees
 // within a parent reuse $sidebarWorkspaceOrderIds).
 export const $sidebarWorkspaceParentOrderIds = atom(storedStringArray(SIDEBAR_WORKSPACE_PARENT_ORDER_STORAGE_KEY))
+export const $sidebarProjectPaths = atom(storedStringArray(SIDEBAR_PROJECTS_STORAGE_KEY))
 export const $sidebarPinsOpen = atom(true)
 // Set by the PaneShell hover-reveal overlay while the sidebar is collapsed; kept
 // true the whole time it's a floating overlay (not just while shown) so the
@@ -73,6 +76,7 @@ export const $sidebarPinsOpen = atom(true)
 // rows on `sidebarOpen || this`.
 export const $sidebarOverlayMounted = atom(false)
 export const $sidebarRecentsOpen = atom(true)
+export const $sidebarProjectsOpen = atom(storedBoolean(SIDEBAR_PROJECTS_OPEN_STORAGE_KEY, true))
 // Cron-job sessions live in their own section below recents, collapsed by
 // default (it only renders at all when cron sessions exist) so the
 // scheduler's `[IMPORTANT: …]` first-message previews don't spam recents.
@@ -97,8 +101,22 @@ $sidebarWorkspaceOrderIds.subscribe(ids => persistStringArray(SIDEBAR_WORKSPACE_
 $sidebarWorkspaceParentOrderIds.subscribe(ids =>
   persistStringArray(SIDEBAR_WORKSPACE_PARENT_ORDER_STORAGE_KEY, [...ids])
 )
+$sidebarProjectPaths.subscribe(paths => persistStringArray(SIDEBAR_PROJECTS_STORAGE_KEY, [...paths]))
+$sidebarProjectsOpen.subscribe(open => persistBoolean(SIDEBAR_PROJECTS_OPEN_STORAGE_KEY, open))
 $sidebarAgentsGrouped.subscribe(grouped => persistBoolean(SIDEBAR_AGENTS_GROUPED_STORAGE_KEY, grouped))
 $panesFlipped.subscribe(flipped => persistBoolean(PANES_FLIPPED_STORAGE_KEY, flipped))
+
+export function normalizeSidebarProjectPath(path: string): string {
+  const trimmed = path.trim()
+
+  if (!trimmed) {
+    return ''
+  }
+
+  const normalized = trimmed.replace(/[/\\]+$/, '')
+
+  return normalized || trimmed
+}
 
 export function setSidebarWidth(width: number) {
   const bounded = Math.min(SIDEBAR_MAX_WIDTH, Math.max(SIDEBAR_DEFAULT_WIDTH, width))
@@ -151,6 +169,36 @@ export function setSidebarOverlayMounted(mounted: boolean) {
 
 export function setSidebarRecentsOpen(open: boolean) {
   $sidebarRecentsOpen.set(open)
+}
+
+export function setSidebarProjectsOpen(open: boolean) {
+  $sidebarProjectsOpen.set(open)
+}
+
+export function addSidebarProjectPath(path: string) {
+  const normalized = normalizeSidebarProjectPath(path)
+
+  if (!normalized) {
+    return
+  }
+
+  const prev = $sidebarProjectPaths.get()
+  const key = normalized.replace(/\\/g, '/')
+
+  if (prev.some(item => normalizeSidebarProjectPath(item).replace(/\\/g, '/') === key)) {
+    return
+  }
+
+  $sidebarProjectPaths.set([...prev, normalized])
+}
+
+export function removeSidebarProjectPath(path: string) {
+  const key = normalizeSidebarProjectPath(path).replace(/\\/g, '/')
+  const next = $sidebarProjectPaths.get().filter(item => normalizeSidebarProjectPath(item).replace(/\\/g, '/') !== key)
+
+  if (!arraysEqual($sidebarProjectPaths.get(), next)) {
+    $sidebarProjectPaths.set(next)
+  }
 }
 
 export function setSidebarCronOpen(open: boolean) {

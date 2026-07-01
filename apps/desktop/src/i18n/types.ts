@@ -1074,6 +1074,10 @@ export interface Translations {
     noMatch: (query: string) => string
     results: string
     pinned: string
+    projects: string
+    addProject: string
+    addProjectPathPrompt: string
+    noProjects: string
     sessions: string
     cronJobs: string
     groupAriaGrouped: string
@@ -1084,6 +1088,7 @@ export interface Translations {
     shiftClickHint: string
     noWorkspace: string
     newSessionIn: (label: string) => string
+    removeProject: (label: string) => string
     reorderWorkspace: (label: string) => string
     showMoreIn: (count: number, label: string) => string
     loading: string

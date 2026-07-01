@@ -3,7 +3,13 @@ import { describe, expect, it } from 'vitest'
 import type { VIGILWorktreeInfo } from '@/global'
 import type { SessionInfo } from '@/types/vigil'
 
-import { uniqueCwds, workspaceGroupsFor, workspaceTreeFor, type WorktreeResolver } from './workspace-groups'
+import {
+  projectGroupsFor,
+  uniqueCwds,
+  workspaceGroupsFor,
+  workspaceTreeFor,
+  type WorktreeResolver
+} from './workspace-groups'
 
 let nextId = 0
 
@@ -68,7 +74,38 @@ describe('workspaceGroupsFor', () => {
   })
 })
 
-const info = (over: Partial<VIGILWorktreeInfo> & Pick<VIGILWorktreeInfo, 'repoRoot' | 'worktreeRoot'>): VIGILWorktreeInfo => ({
+describe('projectGroupsFor', () => {
+  it('renders manually-added projects even before they have sessions', () => {
+    const groups = projectGroupsFor(['/workspace/xclaw'], [])
+
+    expect(groups).toHaveLength(1)
+    expect(groups[0]).toMatchObject({
+      label: 'xclaw',
+      mode: 'project',
+      path: '/workspace/xclaw',
+      sessions: []
+    })
+  })
+
+  it('groups sessions in the project root and descendants', () => {
+    const groups = projectGroupsFor(
+      ['/workspace/xclaw'],
+      [makeSession('/workspace/xclaw'), makeSession('/workspace/xclaw/apps/desktop'), makeSession('/workspace/other')]
+    )
+
+    expect(groups[0].sessions).toHaveLength(2)
+  })
+
+  it('dedupes equivalent project paths', () => {
+    const groups = projectGroupsFor(['/workspace/xclaw/', '/workspace/xclaw'], [])
+
+    expect(groups).toHaveLength(1)
+  })
+})
+
+const info = (
+  over: Partial<VIGILWorktreeInfo> & Pick<VIGILWorktreeInfo, 'repoRoot' | 'worktreeRoot'>
+): VIGILWorktreeInfo => ({
   branch: null,
   isMainWorktree: false,
   ...over
@@ -89,7 +126,12 @@ describe('workspaceTreeFor', () => {
   it('git metadata is authoritative — worktrees group by repoRoot regardless of directory naming', () => {
     const resolver: WorktreeResolver = cwd => {
       if (cwd === '/www/vigil-agent') {
-        return info({ repoRoot: '/www/vigil-agent', worktreeRoot: '/www/vigil-agent', isMainWorktree: true, branch: 'main' })
+        return info({
+          repoRoot: '/www/vigil-agent',
+          worktreeRoot: '/www/vigil-agent',
+          isMainWorktree: true,
+          branch: 'main'
+        })
       }
 
       if (cwd === '/elsewhere/ha-rtl') {

@@ -9,7 +9,7 @@ export interface SidebarSessionGroup {
   // Profile color for the ALL-profiles view; absent for workspace groups.
   color?: null | string
   loadingMore?: boolean
-  mode?: 'profile' | 'source' | 'workspace'
+  mode?: 'profile' | 'project' | 'source' | 'workspace'
   onLoadMore?: () => void
   sourceId?: string
   totalCount?: number
@@ -18,10 +18,45 @@ export interface SidebarSessionGroup {
 const NO_WORKSPACE_ID = '__no_workspace__'
 
 /** Path split into segments, ignoring trailing slashes and mixed separators. */
-const segments = (path: string): string[] => path.replace(/[/\\]+$/, '').split(/[/\\]/).filter(Boolean)
+const segments = (path: string): string[] =>
+  path
+    .replace(/[/\\]+$/, '')
+    .split(/[/\\]/)
+    .filter(Boolean)
 
 /** Last path segment. */
 export const baseName = (path: string): string | undefined => segments(path).pop()
+
+export function normalizeProjectPath(path: string): string {
+  const trimmed = path.trim()
+
+  if (!trimmed) {
+    return ''
+  }
+
+  const normalized = trimmed.replace(/[/\\]+$/, '')
+
+  return normalized || trimmed
+}
+
+const comparablePath = (path: string): string => normalizeProjectPath(path).replace(/\\/g, '/')
+
+function isSessionInsideProject(sessionPath: null | string | undefined, projectPath: string): boolean {
+  const sessionKey = comparablePath(sessionPath ?? '')
+  const projectKey = comparablePath(projectPath)
+
+  if (!sessionKey || !projectKey) {
+    return false
+  }
+
+  if (sessionKey === projectKey) {
+    return true
+  }
+
+  const boundary = projectKey.endsWith('/') ? projectKey : `${projectKey}/`
+
+  return sessionKey.startsWith(boundary)
+}
 
 /** The segments above the basename. */
 const parentSegments = (path: string): string[] => segments(path).slice(0, -1)
@@ -123,6 +158,33 @@ export function workspaceGroupsFor(
   return result
 }
 
+export function projectGroupsFor(projectPaths: string[], sessions: SessionInfo[]): SidebarSessionGroup[] {
+  const groups: SidebarSessionGroup[] = []
+  const seen = new Set<string>()
+
+  for (const rawPath of projectPaths) {
+    const path = normalizeProjectPath(rawPath)
+    const key = comparablePath(path)
+
+    if (!path || seen.has(key)) {
+      continue
+    }
+
+    seen.add(key)
+    groups.push({
+      id: `project:${key}`,
+      label: baseName(path) || path,
+      mode: 'project',
+      path,
+      sessions: sessions.filter(session => isSessionInsideProject(session.cwd, path))
+    })
+  }
+
+  disambiguateLabels(groups)
+
+  return groups
+}
+
 /**
  * A worktree's main repo and all its linked worktrees collapse into ONE parent
  * (keyed by the repo root); each worktree is a child group; sessions hang off
@@ -149,8 +211,7 @@ interface WorkspacePlacement {
 }
 
 /** Replace a path's final segment, preserving its prefix + separators. */
-const withBaseName = (path: string, name: string): string =>
-  path.replace(/[/\\]+$/, '').replace(/[^/\\]+$/, name)
+const withBaseName = (path: string, name: string): string => path.replace(/[/\\]+$/, '').replace(/[^/\\]+$/, name)
 
 /**
  * Path-only fallback for when git metadata is unavailable (remote backends,
@@ -271,7 +332,12 @@ export function workspaceTreeFor(
 
     if (!entry) {
       entry = {
-        group: { id: placement.worktreeKey, label: placement.worktreeLabel, path: placement.worktreePath, sessions: [] },
+        group: {
+          id: placement.worktreeKey,
+          label: placement.worktreeLabel,
+          path: placement.worktreePath,
+          sessions: []
+        },
         parentKey: placement.parentKey,
         parentLabel: placement.parentLabel,
         parentPath: placement.parentPath
