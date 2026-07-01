@@ -224,48 +224,133 @@ class TestDefaultConfig:
 
 
 # ---------------------------------------------------------------------------
-# web_search_tool uses _get_search_backend
+# web_search_tool active provider resolution
 # ---------------------------------------------------------------------------
 
 
-class TestWebSearchUsesSearchBackend:
-    """web_search_tool dispatches through _get_search_backend not _get_backend."""
+class TestWebSearchActiveProviderResolution:
+    """web_search availability and dispatch share the same provider rules."""
 
-    def test_search_tool_calls_search_backend(self, monkeypatch):
+    def test_check_web_api_key_does_not_use_implicit_xai(self, monkeypatch):
         from tools import web_tools
 
-        called_with = []
-        original_get_search = web_tools._get_search_backend
+        monkeypatch.setattr(web_tools, "_load_web_config", lambda: {})
+        monkeypatch.setattr(
+            web_tools,
+            "_is_backend_available",
+            lambda backend: backend == "xai",
+        )
 
-        def tracking_get_search():
-            result = original_get_search()
-            called_with.append(("search", result))
-            return result
+        assert web_tools.check_web_api_key() is False
 
-        monkeypatch.setattr(web_tools, "_get_search_backend", tracking_get_search)
-        monkeypatch.setattr(web_tools, "_load_web_config", lambda: {"backend": "firecrawl"})
-        monkeypatch.setenv("FIRECRAWL_API_KEY", "fake")
+    def test_check_web_api_key_allows_explicit_xai(self, monkeypatch):
+        from tools import web_tools
 
-        # The function will fail at Firecrawl client level but we just
-        # need to verify _get_search_backend was called
+        monkeypatch.setattr(
+            web_tools,
+            "_load_web_config",
+            lambda: {"search_backend": "xai"},
+        )
+        monkeypatch.setattr(
+            web_tools,
+            "_is_backend_available",
+            lambda backend: backend == "xai",
+        )
+
+        assert web_tools.check_web_api_key() is True
+
+    def test_registry_does_not_use_xai_as_implicit_single_provider(self):
+        from agent import web_search_registry
+        from agent.web_search_provider import WebSearchProvider
+
+        class FakeXAI(WebSearchProvider):
+            @property
+            def name(self) -> str:
+                return "xai"
+
+            @property
+            def display_name(self) -> str:
+                return "Fake xAI"
+
+            def is_available(self) -> bool:
+                return True
+
+            def supports_search(self) -> bool:
+                return True
+
+            def search(self, query: str, limit: int = 5) -> Dict[str, Any]:
+                return {"success": True, "data": {"web": []}}
+
+        with web_search_registry._lock:
+            original = dict(web_search_registry._providers)
+            web_search_registry._providers.clear()
+
         try:
-            web_tools.web_search_tool("test", 1)
-        except Exception:
-            pass
+            web_search_registry.register_provider(FakeXAI())
 
-        assert len(called_with) > 0
-        assert called_with[0][0] == "search"
+            assert web_search_registry.get_active_search_provider() is None
+            explicit = web_search_registry.get_active_search_provider("xai")
+            assert explicit is not None
+            assert explicit.name == "xai"
+        finally:
+            with web_search_registry._lock:
+                web_search_registry._providers.clear()
+                web_search_registry._providers.update(original)
+
+    def test_search_tool_does_not_dispatch_to_implicit_xai(self, monkeypatch):
+        from agent import web_search_registry
+        from agent.web_search_provider import WebSearchProvider
+        from tools import web_tools
+
+        class FakeXAI(WebSearchProvider):
+            @property
+            def name(self) -> str:
+                return "xai"
+
+            @property
+            def display_name(self) -> str:
+                return "Fake xAI"
+
+            def is_available(self) -> bool:
+                return True
+
+            def supports_search(self) -> bool:
+                return True
+
+            def search(self, query: str, limit: int = 5) -> Dict[str, Any]:
+                raise AssertionError("implicit xAI fallback must not run")
+
+        with web_search_registry._lock:
+            original = dict(web_search_registry._providers)
+            web_search_registry._providers.clear()
+
+        try:
+            web_search_registry.register_provider(FakeXAI())
+            monkeypatch.setattr(web_tools, "_ensure_web_plugins_loaded", lambda: None)
+            monkeypatch.setattr(web_tools, "_load_web_config", lambda: {})
+            monkeypatch.setattr(
+                web_tools,
+                "_is_backend_available",
+                lambda backend: backend == "xai",
+            )
+
+            result = json.loads(web_tools.web_search_tool("hello", limit=1))
+
+            assert result["success"] is False
+            assert "No web search provider configured" in result["error"]
+        finally:
+            with web_search_registry._lock:
+                web_search_registry._providers.clear()
+                web_search_registry._providers.update(original)
 
 
 class TestUnconfiguredErrorEnvelopeParity:
-    """Regression tests for PR #25182: the post-migration dispatcher must
-    emit the same top-level error envelope as pre-migration main when no
-    web backend is configured.
+    """Regression tests for unconfigured web_search dispatch.
 
-    Plugin-level error wrapping is correct for in-flight errors (per-page
-    SDK exceptions, scrape timeouts) but PRE-FLIGHT configuration errors
-    must surface at the top level so function-calling models that check
-    ``result.get("error")`` detect the failure cleanly.
+    PRE-FLIGHT configuration errors must surface at the top level so
+    function-calling models that check ``result.get("error")`` detect the
+    failure cleanly. Fresh installs must not pass availability via implicit
+    xAI/Grok auth and then fail later in the legacy Firecrawl path.
     """
 
     _register_providers = staticmethod(register_all_web_providers)
@@ -288,13 +373,12 @@ class TestUnconfiguredErrorEnvelopeParity:
             "FIRECRAWL_API_URL",
             "FIRECRAWL_GATEWAY_URL",
             "TOOL_GATEWAY_DOMAIN",
+            "XAI_API_KEY",
         ):
             monkeypatch.delenv(k, raising=False)
 
     def test_unconfigured_search_emits_top_level_error(self, monkeypatch):
-        """``web_search_tool`` with no creds returns ``{"error": "Error searching web: ..."}``
-        — matching main's ``tool_error()`` envelope, not a per-result shape.
-        """
+        """``web_search_tool`` with no creds returns a clear top-level error."""
         from tools import web_tools
 
         self._clear_web_creds(monkeypatch)
@@ -303,12 +387,15 @@ class TestUnconfiguredErrorEnvelopeParity:
         monkeypatch.setattr(web_tools, "_firecrawl_client_config", None, raising=False)
         monkeypatch.setattr(web_tools, "_ddgs_package_importable", lambda: False)
         monkeypatch.setattr(web_tools, "_load_web_config", lambda: {})
+        monkeypatch.setattr(
+            "plugins.web.xai.provider.has_xai_credentials",
+            lambda: False,
+        )
 
         result = json.loads(web_tools.web_search_tool("hello world", limit=3))
+        assert result["success"] is False
         assert "error" in result, f"expected top-level 'error' key, got {result}"
-        # ``Error searching web:`` prefix comes from web_tools' top-level except handler
-        assert "Error searching web:" in result["error"]
-        assert "FIRECRAWL_API_KEY" in result["error"]
+        assert "No web search provider configured" in result["error"]
         # No per-result burying
         assert "results" not in result
 
@@ -492,4 +579,3 @@ class TestDispatchersTriggerPluginDiscovery:
             assert web_search_registry.get_provider("brave-free") is not None
         finally:
             restore()
-

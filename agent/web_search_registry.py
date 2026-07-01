@@ -129,6 +129,8 @@ _LEGACY_PREFERENCE = (
     "ddgs",
 )
 
+_EXPLICIT_ONLY_FALLBACK = frozenset({"xai"})
+
 
 def _resolve(configured: Optional[str], *, capability: str) -> Optional[WebSearchProvider]:
     """Resolve the active provider for a capability ("search" | "extract").
@@ -144,7 +146,8 @@ def _resolve(configured: Optional[str], *, capability: str) -> Optional[WebSearc
        :func:`tools.web_tools._get_backend` behavior for configured names.
 
     2. **Single-provider shortcut.** When only one registered provider
-       supports *capability* AND ``is_available()`` reports True, return it.
+       supports *capability*, is not explicit-only, AND ``is_available()``
+       reports True, return it.
 
     3. **Legacy preference walk, filtered by availability.** Walk the
        :data:`_LEGACY_PREFERENCE` order (firecrawl → parallel → tavily →
@@ -178,6 +181,12 @@ def _resolve(configured: Optional[str], *, capability: str) -> Optional[WebSearc
             logger.debug("provider %s.is_available() raised %s", p.name, exc)
             return False
 
+    def _implicit_fallback_allowed(p: WebSearchProvider) -> bool:
+        # xAI/Grok search is model-generated and account-entitlement-dependent.
+        # Keep it explicit opt-in so a logged-in Grok account does not silently
+        # become the default search provider on fresh installs.
+        return p.name not in _EXPLICIT_ONLY_FALLBACK
+
     # 1. Explicit config wins — return regardless of is_available() so the
     #    user gets a precise downstream error message rather than a silent
     #    backend switch. Matches _get_backend() in web_tools.py.
@@ -202,7 +211,7 @@ def _resolve(configured: Optional[str], *, capability: str) -> Optional[WebSearc
     #    a fresh install with no API keys at all.
     eligible = [
         p for p in snapshot.values()
-        if _capable(p) and _is_available_safe(p)
+        if _capable(p) and _implicit_fallback_allowed(p) and _is_available_safe(p)
     ]
     if len(eligible) == 1:
         return eligible[0]
@@ -219,23 +228,37 @@ def _resolve(configured: Optional[str], *, capability: str) -> Optional[WebSearc
     return None
 
 
-def get_active_search_provider() -> Optional[WebSearchProvider]:
+def get_active_search_provider(
+    configured: Optional[str] = None,
+) -> Optional[WebSearchProvider]:
     """Resolve the currently-active web search provider.
 
     Reads ``web.search_backend`` (preferred) or ``web.backend`` (shared
     fallback) from config.yaml; falls back per the module docstring.
     """
-    explicit = _read_config_key("web", "search_backend") or _read_config_key("web", "backend")
+    explicit = configured
+    if explicit is None:
+        explicit = _read_config_key("web", "search_backend") or _read_config_key(
+            "web",
+            "backend",
+        )
     return _resolve(explicit, capability="search")
 
 
-def get_active_extract_provider() -> Optional[WebSearchProvider]:
+def get_active_extract_provider(
+    configured: Optional[str] = None,
+) -> Optional[WebSearchProvider]:
     """Resolve the currently-active web extract provider.
 
     Reads ``web.extract_backend`` (preferred) or ``web.backend`` (shared
     fallback) from config.yaml; falls back per the module docstring.
     """
-    explicit = _read_config_key("web", "extract_backend") or _read_config_key("web", "backend")
+    explicit = configured
+    if explicit is None:
+        explicit = _read_config_key("web", "extract_backend") or _read_config_key(
+            "web",
+            "backend",
+        )
     return _resolve(explicit, capability="extract")
 
 

@@ -226,6 +226,16 @@ def _get_capability_backend(capability: str) -> str:
     return _get_backend()
 
 
+def _configured_backend_for_capability(capability: str) -> str:
+    """Return explicit backend config for a capability, if any."""
+    cfg = _load_web_config()
+    return (
+        cfg.get(f"{capability}_backend")
+        or cfg.get("backend")
+        or ""
+    ).lower().strip()
+
+
 def _is_backend_available(backend: str) -> bool:
     """Return True when the selected backend is currently usable."""
     if backend == "exa":
@@ -852,23 +862,28 @@ def web_search_tool(query: str, limit: int = 5) -> str:
         if is_interrupted():
             return tool_error("Interrupted", success=False)
 
-        # Dispatch through the web search registry. All 7 providers
-        # (brave-free, ddgs, searxng, exa, parallel, tavily, firecrawl)
-        # now live as plugins; the dispatcher is just a registry lookup +
-        # delegation. Sync only — every provider's search() is sync.
+        # Dispatch through the web search registry. Built-in providers live
+        # as plugins; the dispatcher is just a registry lookup + delegation.
+        # Sync only — every provider's search() is sync.
         _ensure_web_plugins_loaded()
         from agent.web_search_registry import (
             get_active_search_provider,
             get_provider as _wsp_get_provider,
         )
 
-        backend = _get_search_backend()
+        explicit_backend = _configured_backend_for_capability("search")
+        backend = explicit_backend or _get_search_backend()
         provider = _wsp_get_provider(backend) if backend else None
-        if provider is None or not provider.supports_search():
+        if (
+            provider is None
+            or not provider.supports_search()
+            or (not explicit_backend and not _is_backend_available(provider.name))
+        ):
             # Fall back to availability-walked active provider when the
             # configured backend isn't a registered search provider (typo,
-            # uninstalled plugin, or capability mismatch).
-            provider = get_active_search_provider()
+            # uninstalled plugin, capability mismatch, or the legacy default
+            # "firecrawl" backend is not actually configured).
+            provider = get_active_search_provider(explicit_backend)
 
         if provider is None:
             response_data = {
@@ -1112,7 +1127,8 @@ async def web_extract_tool(
         elif not backend_urls:
             results = local_results
         else:
-            backend = _get_extract_backend()
+            explicit_backend = _configured_backend_for_capability("extract")
+            backend = explicit_backend or _get_extract_backend()
 
             # All seven providers (brave-free, ddgs, searxng, exa, parallel,
             # tavily, firecrawl) now live as plugins. The dispatcher is a
@@ -1128,7 +1144,14 @@ async def web_extract_tool(
             )
 
             provider = _wsp_get_provider(backend) if backend else None
-            if provider is None or not provider.supports_extract():
+            if (
+                provider is None
+                or not provider.supports_extract()
+                or (
+                    not explicit_backend
+                    and not _is_backend_available(provider.name)
+                )
+            ):
                 # When the configured name IS registered but doesn't support
                 # extract (search-only providers like brave-free / ddgs /
                 # searxng), surface that as a typed "search-only" error
@@ -1148,7 +1171,7 @@ async def web_extract_tool(
                         },
                         ensure_ascii=False,
                     )
-                provider = get_active_extract_provider()
+                provider = get_active_extract_provider(explicit_backend)
                 if provider is None:
                     return json.dumps(
                         {
@@ -1318,21 +1341,35 @@ async def web_extract_tool(
         return tool_error(error_msg)
 
 
-# Convenience function to check Firecrawl credentials
+# Legacy name kept for callers/tests: this now checks search-provider availability.
 def check_web_api_key() -> bool:
-    """Check whether the configured web backend is available."""
-    configured = _load_web_config().get("backend", "").lower().strip()
+    """Check whether a web search backend is available."""
+    configured = _configured_backend_for_capability("search")
     if configured in {"exa", "parallel", "firecrawl", "tavily", "searxng", "brave-free", "ddgs", "xai"}:
         return _is_backend_available(configured)
     return any(
         _is_backend_available(backend)
-        for backend in ("exa", "parallel", "firecrawl", "tavily", "searxng", "brave-free", "ddgs", "xai")
+        for backend in ("exa", "parallel", "firecrawl", "tavily", "searxng", "brave-free", "ddgs")
     )
 
 
 def check_web_extract_available() -> bool:
     """Web extraction is available via provider or local private-URL fetch."""
-    return check_web_api_key() or _global_allow_private_urls()
+    configured = _configured_backend_for_capability("extract")
+    provider_available = False
+    if configured:
+        provider_available = configured in {
+            "exa",
+            "parallel",
+            "firecrawl",
+            "tavily",
+        } and _is_backend_available(configured)
+    else:
+        provider_available = any(
+            _is_backend_available(backend)
+            for backend in ("exa", "parallel", "firecrawl", "tavily")
+        )
+    return provider_available or _global_allow_private_urls()
 
 
 def check_auxiliary_model() -> bool:
@@ -1458,7 +1495,7 @@ from tools.registry import registry, tool_error
 
 WEB_SEARCH_SCHEMA = {
     "name": "web_search",
-    "description": "Search the web for information. Returns up to 5 results by default with titles, URLs, and descriptions. The query is passed through to the configured backend, so operators such as site:domain, filetype:pdf, intitle:word, -term, and \"exact phrase\" may work when the backend supports them.",
+    "description": "Search indexed/public web providers for information. Returns up to 5 results by default with titles, URLs, and descriptions. Use web_extract, browser, or terminal curl for a known URL, private IP, localhost, or LAN/intranet page. The query is passed through to the configured backend, so operators such as site:domain, filetype:pdf, intitle:word, -term, and \"exact phrase\" may work when the backend supports them.",
     "parameters": {
         "type": "object",
         "properties": {
@@ -1480,7 +1517,7 @@ WEB_SEARCH_SCHEMA = {
 
 WEB_EXTRACT_SCHEMA = {
     "name": "web_extract",
-    "description": "Extract content from web page URLs. Returns page content in markdown format. Also works with PDF URLs (arxiv papers, documents, etc.) — pass the PDF link directly and it converts to markdown text. Private, localhost, and LAN URLs allowed by config are fetched directly from this machine instead of a cloud web provider. Pages under 5000 chars return full markdown; larger pages are LLM-summarized and capped at ~5000 chars per page. Pages over 2M chars are refused. If a URL fails or times out, use the browser tool or terminal curl from this machine instead.",
+    "description": "Extract content from known web page URLs. Returns page content in markdown format. Also works with PDF URLs (arxiv papers, documents, etc.) — pass the PDF link directly and it converts to markdown text. Private IP, localhost, and LAN/intranet URLs allowed by config are fetched directly from this machine instead of a cloud web provider. Pages under 5000 chars return full markdown; larger pages are LLM-summarized and capped at ~5000 chars per page. Pages over 2M chars are refused. If a URL fails or times out, use the browser tool or terminal curl from this machine instead.",
     "parameters": {
         "type": "object",
         "properties": {

@@ -60,8 +60,55 @@ class TestChromiumInstalled:
         (tmp_path / "chromium_headless_shell-1208").mkdir()
         assert bt._chromium_installed() is True
 
+    def test_true_when_agent_browser_chrome_for_testing_present(
+        self,
+        monkeypatch,
+        tmp_path,
+    ):
+        monkeypatch.delenv("AGENT_BROWSER_EXECUTABLE_PATH", raising=False)
+        monkeypatch.setattr(bt.shutil, "which", lambda name: None)
+        monkeypatch.setattr(
+            bt.os.path,
+            "expanduser",
+            lambda p: str(tmp_path) if p == "~" else p,
+        )
 
+        chrome_bin = (
+            tmp_path
+            / ".agent-browser"
+            / "browsers"
+            / "chrome-150.0.7871.24"
+            / "Google Chrome for Testing.app"
+            / "Contents"
+            / "MacOS"
+            / "Google Chrome for Testing"
+        )
+        chrome_bin.parent.mkdir(parents=True)
+        chrome_bin.write_text("#!/bin/sh\n")
+        chrome_bin.chmod(0o755)
 
+        assert bt._chromium_installed() is True
+
+    def test_false_when_agent_browser_chrome_dir_has_no_executable(
+        self,
+        monkeypatch,
+        tmp_path,
+    ):
+        monkeypatch.delenv("AGENT_BROWSER_EXECUTABLE_PATH", raising=False)
+        monkeypatch.setattr(bt.shutil, "which", lambda name: None)
+        monkeypatch.setattr(
+            bt.os.path,
+            "expanduser",
+            lambda p: str(tmp_path) if p == "~" else p,
+        )
+        (
+            tmp_path
+            / ".agent-browser"
+            / "browsers"
+            / "chrome-150.0.7871.24"
+        ).mkdir(parents=True)
+
+        assert bt._chromium_installed() is False
 
     def test_result_cached(self, monkeypatch, tmp_path):
         monkeypatch.setenv("PLAYWRIGHT_BROWSERS_PATH", str(tmp_path))
@@ -81,6 +128,40 @@ class TestCheckBrowserRequirementsChromium:
         monkeypatch.setattr(bt, "_get_cloud_provider", lambda: None)
         monkeypatch.setenv("PLAYWRIGHT_BROWSERS_PATH", str(tmp_path))
         (tmp_path / "chromium-1208").mkdir()
+
+        assert bt.check_browser_requirements() is True
+
+    def test_local_mode_with_agent_browser_chrome_cache_returns_true(
+        self,
+        monkeypatch,
+        tmp_path,
+    ):
+        monkeypatch.setattr(bt, "_is_camofox_mode", lambda: False)
+        monkeypatch.setattr(bt, "_get_cdp_override", lambda: "")
+        monkeypatch.setattr(bt, "_find_agent_browser", lambda: "/usr/local/bin/agent-browser")
+        monkeypatch.setattr(bt, "_requires_real_termux_browser_install", lambda _: False)
+        monkeypatch.setattr(bt, "_get_cloud_provider", lambda: None)
+        monkeypatch.setattr(bt, "_using_lightpanda_engine", lambda: False)
+        monkeypatch.setattr(bt.shutil, "which", lambda name: None)
+        monkeypatch.setattr(
+            bt.os.path,
+            "expanduser",
+            lambda p: str(tmp_path) if p == "~" else p,
+        )
+
+        chrome_bin = (
+            tmp_path
+            / ".agent-browser"
+            / "browsers"
+            / "chrome-150.0.7871.24"
+            / "Google Chrome for Testing.app"
+            / "Contents"
+            / "MacOS"
+            / "Google Chrome for Testing"
+        )
+        chrome_bin.parent.mkdir(parents=True)
+        chrome_bin.write_text("#!/bin/sh\n")
+        chrome_bin.chmod(0o755)
 
         assert bt.check_browser_requirements() is True
 
@@ -115,5 +196,3 @@ class TestRunBrowserCommandChromiumGuard:
     """Verify _run_browser_command fails fast (no timeout hang) when
     Chromium is missing in local mode.
     """
-
-

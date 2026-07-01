@@ -3684,7 +3684,8 @@ _cached_chromium_installed: Optional[bool] = None
 def _chromium_search_roots() -> List[str]:
     """Directories to scan for a Chromium / headless-shell build.
 
-    Order mirrors what agent-browser and Playwright actually probe:
+    Includes the legacy Playwright locations plus agent-browser's newer
+    Chrome for Testing cache:
 
     1. ``PLAYWRIGHT_BROWSERS_PATH`` when set (Docker image sets this to
        ``/opt/vigil/.playwright``).
@@ -3692,6 +3693,8 @@ def _chromium_search_roots() -> List[str]:
     3. ``~/Library/Caches/ms-playwright`` — Playwright's default on macOS.
     4. ``%USERPROFILE%\\AppData\\Local\\ms-playwright`` — Playwright's default
        on Windows.
+    5. ``~/.agent-browser/browsers`` — agent-browser's Chrome for Testing
+       cache as of 0.26.x.
     """
     roots: List[str] = []
     env_path = os.environ.get("PLAYWRIGHT_BROWSERS_PATH", "").strip()
@@ -3706,7 +3709,49 @@ def _chromium_search_roots() -> List[str]:
             home, "AppData", "Local"
         )
         roots.append(os.path.join(local, "ms-playwright"))
+    roots.append(os.path.join(home, ".agent-browser", "browsers"))
     return roots
+
+
+def _has_agent_browser_chrome_executable(path: str) -> bool:
+    """Return True for agent-browser Chrome for Testing cache entries."""
+    candidates = (
+        os.path.join(
+            path,
+            "Google Chrome for Testing.app",
+            "Contents",
+            "MacOS",
+            "Google Chrome for Testing",
+        ),
+        os.path.join(
+            path,
+            "chrome-mac-arm64",
+            "Google Chrome for Testing.app",
+            "Contents",
+            "MacOS",
+            "Google Chrome for Testing",
+        ),
+        os.path.join(
+            path,
+            "chrome-mac-x64",
+            "Google Chrome for Testing.app",
+            "Contents",
+            "MacOS",
+            "Google Chrome for Testing",
+        ),
+        os.path.join(path, "chrome-linux64", "chrome"),
+        os.path.join(path, "chrome-linux", "chrome"),
+        os.path.join(path, "chrome-win64", "chrome.exe"),
+        os.path.join(path, "chrome-win", "chrome.exe"),
+        os.path.join(path, "chrome.exe"),
+        os.path.join(path, "chrome"),
+    )
+    for candidate in candidates:
+        if not os.path.isfile(candidate):
+            continue
+        if os.name == "nt" or os.access(candidate, os.X_OK):
+            return True
+    return False
 
 
 def _chromium_installed() -> bool:
@@ -3718,15 +3763,16 @@ def _chromium_installed() -> bool:
        agent-browser at a pre-installed Chrome/Chromium.
     2. System Chrome/Chromium in PATH (``google-chrome``, ``chromium``,
        ``chromium-browser``, ``chrome``).
-    3. Playwright's browser cache (current logic) — directories containing
+    3. Playwright's browser cache — directories containing
        ``chromium-*`` or ``chromium_headless_shell-*``.
+    4. agent-browser's Chrome for Testing cache — ``chrome-*`` directories
+       containing a platform Chrome executable.
 
-    agent-browser (0.26+) downloads Playwright's chromium / headless-shell
-    builds into ``PLAYWRIGHT_BROWSERS_PATH`` and won't start without at least
-    one of the three above being present.  Without a browser binary the CLI
-    hangs on first use until the command timeout fires (often ~30s).  Guarding
-    the tool behind this check prevents advertising a capability that will
-    fail at runtime.
+    agent-browser 0.26.x stores Chrome for Testing under ``~/.agent-browser``.
+    Older installs may still use Playwright's chromium / headless-shell cache.
+    Without a browser binary the CLI hangs on first use until the command
+    timeout fires (often ~30s). Guarding the tool behind this check prevents
+    advertising a capability that will fail at runtime.
     """
     global _cached_chromium_installed
     if _cached_chromium_installed is not None:
@@ -3763,6 +3809,11 @@ def _chromium_installed() -> bool:
         for entry in entries:
             if entry.startswith("chromium-") or entry.startswith(
                 "chromium_headless_shell-"
+            ):
+                _cached_chromium_installed = True
+                return True
+            if entry.startswith("chrome-") and _has_agent_browser_chrome_executable(
+                os.path.join(root, entry)
             ):
                 _cached_chromium_installed = True
                 return True

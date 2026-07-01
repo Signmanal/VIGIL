@@ -700,11 +700,9 @@ class TestXAIBackendWiring:
         and we don't want a stray ``XAI_API_KEY`` (perhaps set for chat
         inference) to silently re-route web_search through Grok.
 
-        Note: this does NOT prevent the registry's single-provider
-        shortcut (``agent.web_search_registry._resolve``) from selecting
-        xAI when it's the only available web provider. That path is the
-        normal "pick the one provider the user actually configured"
-        behavior shared by every other backend.
+        Note: this does NOT prevent explicit config from selecting xAI via
+        ``web.search_backend: xai`` or ``web.backend: xai``. It only blocks
+        the no-config fallback path.
         """
         from tools import web_tools
 
