@@ -39,4 +39,27 @@ function createLinkTitleWindow(BrowserWindow, partitionSession) {
   return window
 }
 
-module.exports = { createLinkTitleWindow, linkTitleWindowOptions }
+function readLinkTitle(window) {
+  if (!window || (typeof window.isDestroyed === 'function' && window.isDestroyed())) {
+    return ''
+  }
+
+  try {
+    const webContents = window.webContents
+    if (!webContents || (typeof webContents.isDestroyed === 'function' && webContents.isDestroyed())) {
+      return ''
+    }
+
+    if (typeof webContents.getTitle !== 'function') {
+      return ''
+    }
+
+    return webContents.getTitle() || ''
+  } catch {
+    // Electron throws "Object has been destroyed" if a timer races a hidden
+    // title-fetch BrowserWindow being torn down. Title resolution is best-effort.
+    return ''
+  }
+}
+
+module.exports = { createLinkTitleWindow, linkTitleWindowOptions, readLinkTitle }
