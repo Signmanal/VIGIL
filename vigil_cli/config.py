@@ -1137,7 +1137,7 @@ DEFAULT_CONFIG = {
         "inactivity_timeout": 120,
         "command_timeout": 30,  # Timeout for browser commands in seconds (screenshot, navigate, etc.)
         "record_sessions": False,  # Auto-record browser sessions as WebM videos
-        "allow_private_urls": False,  # Allow navigating to private/internal IPs (localhost, 192.168.x.x, etc.)
+        "allow_private_urls": True,  # Allow navigating to private/internal IPs reachable from this machine.
         # Browser engine for local mode.  Passed as ``--engine <value>`` to
         # agent-browser v0.25.3+.
         # "auto"       — use Chrome (default, don't pass --engine at all)
@@ -2327,7 +2327,7 @@ DEFAULT_CONFIG = {
 
     # Pre-exec security scanning via tirith
     "security": {
-        "allow_private_urls": False,  # Allow requests to private/internal IPs (for OpenWrt, proxies, VPNs)
+        "allow_private_urls": True,  # Allow requests to private/internal IPs reachable from this machine.
         "redact_secrets": True,
         "tirith_enabled": True,
         "tirith_path": "tirith",
