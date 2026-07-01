@@ -41,7 +41,9 @@ import logging
 import os
 import re
 import asyncio
+from html import unescape
 from typing import List, Dict, Any, Optional, TYPE_CHECKING
+from urllib.parse import urljoin
 import httpx  # noqa: F401 — kept at module top so tests can patch tools.web_tools.httpx
 # After the web-provider plugin migration (PR #25182), the Firecrawl SDK
 # proxy, client construction, and response-shape normalizers all live in
@@ -102,10 +104,20 @@ from tools.tool_backend_helpers import (  # noqa: F401
     nous_tool_gateway_unavailable_message,
     prefers_gateway,
 )
-from tools.url_safety import async_is_safe_url, normalize_url_for_request
+from tools.url_safety import (
+    _global_allow_private_urls,
+    async_is_safe_url,
+    is_always_blocked_url,
+    normalize_url_for_request,
+    url_targets_private_network,
+)
 import sys
 
 logger = logging.getLogger(__name__)
+
+_LOCAL_EXTRACT_MAX_BYTES = 2_000_000
+_LOCAL_EXTRACT_TIMEOUT = 20.0
+_LOCAL_EXTRACT_MAX_REDIRECTS = 5
 
 
 # ─── Backend Selection ────────────────────────────────────────────────────────
@@ -891,6 +903,110 @@ def web_search_tool(query: str, limit: int = 5) -> str:
         return tool_error(error_msg)
 
 
+def _html_to_text(content: str) -> str:
+    """Convert a small HTML page to readable text without adding a parser dep."""
+    text = re.sub(r"(?is)<(script|style|noscript)\b.*?</\1>", " ", content)
+    text = re.sub(r"(?is)<br\s*/?>", "\n", text)
+    text = re.sub(r"(?is)</(p|div|section|article|header|footer|li|h[1-6])>", "\n", text)
+    text = re.sub(r"(?is)<[^>]+>", " ", text)
+    text = unescape(text)
+    text = re.sub(r"[ \t\r\f\v]+", " ", text)
+    text = re.sub(r"\n\s+", "\n", text)
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text.strip()
+
+
+def _extract_html_title(content: str) -> str:
+    match = re.search(r"(?is)<title[^>]*>(.*?)</title>", content)
+    if not match:
+        return ""
+    return re.sub(r"\s+", " ", unescape(match.group(1))).strip()
+
+
+def _local_extract_content(response: httpx.Response, output_format: Optional[str]) -> tuple[str, str]:
+    content_type = response.headers.get("content-type", "").lower()
+    text = response.text
+    if "text/html" not in content_type and "<html" not in text[:500].lower():
+        return "", text
+    title = _extract_html_title(text)
+    if (output_format or "").lower() == "html":
+        return title, text
+    return title, _html_to_text(text)
+
+
+async def _local_extract_url(url: str, output_format: Optional[str]) -> Dict[str, Any]:
+    """Extract one URL directly from this machine for LAN/localhost targets."""
+    current_url = url
+    headers = {"user-agent": "VIGIL web_extract local fetch"}
+
+    async with httpx.AsyncClient(
+        timeout=_LOCAL_EXTRACT_TIMEOUT,
+        verify=False,
+        follow_redirects=False,
+        headers=headers,
+    ) as client:
+        for _ in range(_LOCAL_EXTRACT_MAX_REDIRECTS + 1):
+            if is_always_blocked_url(current_url) or not await async_is_safe_url(current_url):
+                return {
+                    "url": current_url,
+                    "title": "",
+                    "content": "",
+                    "error": "Blocked: URL targets a protected internal metadata address",
+                }
+
+            response = await client.get(current_url)
+            if response.is_redirect:
+                location = response.headers.get("location", "").strip()
+                if not location:
+                    return {
+                        "url": current_url,
+                        "title": "",
+                        "content": "",
+                        "error": "Redirect response did not include a Location header",
+                    }
+                current_url = normalize_url_for_request(urljoin(current_url, location))
+                continue
+
+            response.raise_for_status()
+            if int(response.headers.get("content-length") or 0) > _LOCAL_EXTRACT_MAX_BYTES:
+                return {
+                    "url": current_url,
+                    "title": "",
+                    "content": "",
+                    "error": "Page is too large for local extraction",
+                }
+            if len(response.content) > _LOCAL_EXTRACT_MAX_BYTES:
+                return {
+                    "url": current_url,
+                    "title": "",
+                    "content": "",
+                    "error": "Page is too large for local extraction",
+                }
+
+            title, content = _local_extract_content(response, output_format)
+            return {
+                "url": current_url,
+                "title": title,
+                "content": content,
+                "raw_content": content,
+                "metadata": {"source": "local_fetch"},
+            }
+
+    return {
+        "url": current_url,
+        "title": "",
+        "content": "",
+        "error": "Too many redirects during local extraction",
+    }
+
+
+async def _should_extract_locally(url: str) -> bool:
+    """Return True for allowed private/LAN URLs reachable from this machine."""
+    if is_always_blocked_url(url):
+        return False
+    return await asyncio.to_thread(url_targets_private_network, url)
+
+
 async def web_extract_tool(
     urls: List[str],
     format: str = None,
@@ -972,9 +1088,29 @@ async def web_extract_tool(
             else:
                 safe_urls.append(url)
 
-        # Dispatch only safe URLs to the configured backend
+        local_urls: List[str] = []
+        backend_urls: List[str] = []
+        for url in safe_urls:
+            if await _should_extract_locally(url):
+                local_urls.append(url)
+            else:
+                backend_urls.append(url)
+
+        local_results: List[Dict[str, Any]] = []
+        if local_urls:
+            logger.info(
+                "Web extract via local network fetch: %d URL(s)", len(local_urls)
+            )
+            local_results = await asyncio.gather(
+                *[_local_extract_url(url, format) for url in local_urls]
+            )
+            debug_call_data["processing_applied"].append("local_network_fetch")
+
+        # Dispatch only non-local safe URLs to the configured backend.
         if not safe_urls:
             results = []
+        elif not backend_urls:
+            results = local_results
         else:
             backend = _get_extract_backend()
 
@@ -1027,20 +1163,21 @@ async def web_extract_tool(
                     )
 
             logger.info(
-                "Web extract via %s: %d URL(s)", provider.name, len(safe_urls)
+                "Web extract via %s: %d URL(s)", provider.name, len(backend_urls)
             )
 
             # Async-or-sync dispatch: parallel + firecrawl have async
             # extract(); exa + tavily are sync.
             import inspect
             if inspect.iscoroutinefunction(provider.extract):
-                results = await provider.extract(safe_urls, format=format)
+                backend_results = await provider.extract(backend_urls, format=format)
             else:
                 # Run sync extract() in a thread so we don't block the
                 # event loop on network I/O.
-                results = await asyncio.to_thread(
-                    provider.extract, safe_urls, format=format
+                backend_results = await asyncio.to_thread(
+                    provider.extract, backend_urls, format=format
                 )
+            results = local_results + backend_results
 
         # Merge any SSRF-blocked results back in
         if ssrf_blocked:
@@ -1193,6 +1330,11 @@ def check_web_api_key() -> bool:
     )
 
 
+def check_web_extract_available() -> bool:
+    """Web extraction is available via provider or local private-URL fetch."""
+    return check_web_api_key() or _global_allow_private_urls()
+
+
 def check_auxiliary_model() -> bool:
     """Check if an auxiliary text model is available for LLM content processing."""
     client, _, _ = _resolve_web_extract_auxiliary()
@@ -1338,7 +1480,7 @@ WEB_SEARCH_SCHEMA = {
 
 WEB_EXTRACT_SCHEMA = {
     "name": "web_extract",
-    "description": "Extract content from web page URLs. Returns page content in markdown format. Also works with PDF URLs (arxiv papers, documents, etc.) — pass the PDF link directly and it converts to markdown text. Pages under 5000 chars return full markdown; larger pages are LLM-summarized and capped at ~5000 chars per page. Pages over 2M chars are refused. If a URL fails or times out, use the browser tool to access it instead.",
+    "description": "Extract content from web page URLs. Returns page content in markdown format. Also works with PDF URLs (arxiv papers, documents, etc.) — pass the PDF link directly and it converts to markdown text. Private, localhost, and LAN URLs allowed by config are fetched directly from this machine instead of a cloud web provider. Pages under 5000 chars return full markdown; larger pages are LLM-summarized and capped at ~5000 chars per page. Pages over 2M chars are refused. If a URL fails or times out, use the browser tool or terminal curl from this machine instead.",
     "parameters": {
         "type": "object",
         "properties": {
@@ -1369,7 +1511,7 @@ registry.register(
     schema=WEB_EXTRACT_SCHEMA,
     handler=lambda args, **kw: web_extract_tool(
         args.get("urls", [])[:5] if isinstance(args.get("urls"), list) else [], "markdown"),
-    check_fn=check_web_api_key,
+    check_fn=check_web_extract_available,
     requires_env=_web_requires_env(),
     is_async=True,
     emoji="📄",

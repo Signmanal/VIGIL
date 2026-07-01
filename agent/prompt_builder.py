@@ -391,6 +391,8 @@ OPENAI_MODEL_EXECUTION_GUIDANCE = (
     "- File contents, sizes, line counts → use read_file, search_files, or terminal\n"
     "- Git history, branches, diffs → use terminal\n"
     "- Current facts (weather, news, versions) → use web_search\n"
+    "- URL reachability or page contents → use web_extract, browser, or terminal; "
+    "do not infer that private/internal IP URLs are unreachable without checking\n"
     "Your memory and user profile describe the USER, not the system you are "
     "running on. The execution environment may differ from what the user profile "
     "says about their personal setup.\n"

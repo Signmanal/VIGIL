@@ -314,6 +314,50 @@ def _allows_private_ip_resolution(hostname: str, scheme: str) -> bool:
     return scheme == "https" and hostname in _TRUSTED_PRIVATE_IP_HOSTS
 
 
+def url_targets_private_network(url: str) -> bool:
+    """Return True when a URL resolves to a private/internal network target.
+
+    This is a routing helper, not an allow/deny decision. Callers must still
+    enforce :func:`is_safe_url` or :func:`is_always_blocked_url` before fetching.
+    """
+    try:
+        parsed = urlparse(url)
+        hostname = (parsed.hostname or "").strip().lower().rstrip(".")
+        scheme = (parsed.scheme or "").strip().lower()
+        if scheme not in {"http", "https"} or not hostname:
+            return False
+
+        try:
+            ip = ipaddress.ip_address(hostname)
+        except ValueError:
+            ip = None
+
+        if ip is not None:
+            return _is_blocked_ip(ip)
+
+        try:
+            addr_info = socket.getaddrinfo(
+                hostname, None, socket.AF_UNSPEC, socket.SOCK_STREAM
+            )
+        except socket.gaierror:
+            return False
+
+        for _family, _, _, _, sockaddr in addr_info:
+            ip_str = sockaddr[0]
+            if "%" in ip_str:
+                ip_str = ip_str.split("%")[0]
+            try:
+                resolved = ipaddress.ip_address(ip_str)
+            except ValueError:
+                continue
+            if _is_blocked_ip(resolved):
+                return True
+        return False
+    except Exception as exc:
+        logger.debug("url_targets_private_network error for %s: %s", url, exc)
+        return False
+
+
 def is_safe_url(url: str) -> bool:
     """Return True if the URL target is not a private/internal address.
 
