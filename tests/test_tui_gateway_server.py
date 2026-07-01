@@ -3882,6 +3882,63 @@ def test_prompt_submit_expands_context_refs(monkeypatch):
     assert captured["prompt"] == "expanded prompt"
 
 
+def test_prompt_submit_injects_local_url_precheck_but_persists_original(monkeypatch):
+    captured = {}
+
+    class _Agent:
+        def run_conversation(
+            self,
+            prompt,
+            conversation_history=None,
+            stream_callback=None,
+            persist_user_message=None,
+        ):
+            captured["prompt"] = prompt
+            captured["persist_user_message"] = persist_user_message
+            return {
+                "final_response": "ok",
+                "messages": [{"role": "assistant", "content": "ok"}],
+            }
+
+    class _ImmediateThread:
+        def __init__(self, target=None, daemon=None):
+            self._target = target
+
+        def start(self):
+            self._target()
+
+    fake_url_ctx = types.ModuleType("agent.url_reachability_context")
+    fake_url_ctx.build_url_reachability_context = lambda message: types.SimpleNamespace(
+        injected=True,
+        message=f"{message}\n\n[XCLAW local URL check]\nStatus: reachable from this machine",
+        original_message=message,
+        checked_urls=["https://10.50.2.44/threatConvergence"],
+    )
+
+    server._sessions["sid"] = _session(agent=_Agent())
+    monkeypatch.setattr(server.threading, "Thread", _ImmediateThread)
+    monkeypatch.setattr(server, "_emit", lambda *args, **kwargs: None)
+    monkeypatch.setattr(server, "make_stream_renderer", lambda cols: None)
+    monkeypatch.setattr(server, "render_message", lambda raw, cols: None)
+    monkeypatch.setitem(sys.modules, "agent.url_reachability_context", fake_url_ctx)
+
+    server.handle_request(
+        {
+            "id": "1",
+            "method": "prompt.submit",
+            "params": {
+                "session_id": "sid",
+                "text": "你可以访问这个网站吗？ https://10.50.2.44/threatConvergence",
+            },
+        }
+    )
+
+    assert "XCLAW local URL check" in captured["prompt"]
+    assert captured["persist_user_message"] == (
+        "你可以访问这个网站吗？ https://10.50.2.44/threatConvergence"
+    )
+
+
 def test_image_attach_appends_local_image(monkeypatch):
     fake_cli = types.ModuleType("cli")
     fake_cli._IMAGE_EXTENSIONS = {".png"}

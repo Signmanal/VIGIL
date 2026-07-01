@@ -7747,6 +7747,7 @@ def _run_prompt_submit(rid, sid: str, session: dict, text: Any) -> None:
             cols = session.get("cols", 80)
             streamer = make_stream_renderer(cols)
             prompt = text
+            persist_user_message_override = None
 
             if isinstance(prompt, str) and "@" in prompt:
                 from agent.context_references import preprocess_context_references
@@ -7778,6 +7779,32 @@ def _run_prompt_submit(rid, sid: str, session: dict, text: Any) -> None:
                     )
                     return
                 prompt = ctx.message
+
+            if isinstance(prompt, str) and not images:
+                try:
+                    from agent.url_reachability_context import (
+                        build_url_reachability_context,
+                    )
+
+                    url_ctx = build_url_reachability_context(prompt)
+                    if url_ctx.injected:
+                        prompt = url_ctx.message
+                        persist_user_message_override = url_ctx.original_message
+                        _emit(
+                            "status.update",
+                            sid,
+                            {
+                                "kind": "activity",
+                                "text": (
+                                    "Checked local/private URL reachability from this machine"
+                                ),
+                            },
+                        )
+                except Exception as exc:
+                    print(
+                        f"[tui_gateway] local URL reachability precheck skipped: {exc}",
+                        file=sys.stderr,
+                    )
 
             # Decide image routing per-turn based on active provider/model.
             # "native" → pass pixels to the main model as OpenAI-style content
@@ -7848,6 +7875,8 @@ def _run_prompt_submit(rid, sid: str, session: dict, text: Any) -> None:
                 "conversation_history": list(history),
                 "stream_callback": _stream,
             }
+            if persist_user_message_override is not None:
+                run_kwargs["persist_user_message"] = persist_user_message_override
             try:
                 if "task_id" in inspect.signature(agent.run_conversation).parameters:
                     run_kwargs["task_id"] = session["session_key"]
