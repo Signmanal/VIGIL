@@ -69,3 +69,44 @@ def test_extract_http_urls_strips_common_cjk_trailing_punctuation():
     assert _extract_http_urls("访问 https://10.50.2.44/threatConvergence。") == [
         "https://10.50.2.44/threatConvergence"
     ]
+
+
+@pytest.mark.asyncio
+async def test_bare_private_host_assignment_injects_local_probe_result(monkeypatch):
+    from agent import url_reachability_context as ctx
+
+    async def fake_probe_private_hosts(candidates):
+        assert [candidate.host for candidate in candidates] == ["192.168.30.39"]
+        return [
+            {
+                "host": "192.168.30.39",
+                "port": 443,
+                "reachable": True,
+                "probed_ports": [443, 80, 8443, 8080],
+                "suggested_url": "https://192.168.30.39",
+            }
+        ]
+
+    monkeypatch.setattr(ctx, "_probe_private_hosts", fake_probe_private_hosts)
+
+    result = await ctx.build_url_reachability_context_async(
+        "UEBA_HOST=192.168.30.39 为内网 IP，本地可以访问"
+    )
+
+    assert result.injected is True
+    assert "XCLAW local host check" in result.message
+    assert "Host: 192.168.30.39" in result.message
+    assert "reachable from this machine on port 443" in result.message
+    assert "do not say that a private/internal host is unreachable" in result.message
+
+
+def test_extract_private_host_candidates_handles_assignment_and_dedupes():
+    from agent.url_reachability_context import _extract_private_host_candidates
+
+    candidates = _extract_private_host_candidates(
+        "UEBA_HOST=192.168.30.39，另外 192.168.30.39 也可以访问"
+    )
+
+    assert [(candidate.host, candidate.port) for candidate in candidates] == [
+        ("192.168.30.39", None)
+    ]
