@@ -1,7 +1,10 @@
 import { type ToolTitleKey, translateNow } from '@/i18n'
 import { normalizeExternalUrl } from '@/lib/external-link'
+import { isPreviewableTarget } from '@/lib/preview-targets'
 import { summarizeShellCommand } from '@/lib/summarize-command'
 import { extractToolErrorMessage, formatToolResultSummary } from '@/lib/tool-result-summary'
+
+export { isPreviewableTarget } from '@/lib/preview-targets'
 
 export type ToolTone = 'agent' | 'browser' | 'default' | 'file' | 'image' | 'terminal' | 'web'
 export type ToolStatus = 'error' | 'running' | 'success' | 'warning'
@@ -725,20 +728,6 @@ function looksLikeUrl(value: string): boolean {
 
 function looksLikePath(value: string): boolean {
   return /^file:\/\//i.test(value) || /^(?:\/|\.{1,2}\/|~\/).+/.test(value)
-}
-
-const REPORT_PREVIEW_EXT_RE =
-  /\.(?:html?|md|markdown|pdf|txt|log|json|jsonl|csv|tsv|xml|ya?ml|toml)(?:[?#].*)?$/i
-
-export function isPreviewableTarget(target: string): boolean {
-  const value = target.trim()
-
-  return Boolean(
-    value &&
-      (/^file:\/\//i.test(value) ||
-        (/^(?:\/|\.{1,2}\/|~\/).+/i.test(value) && REPORT_PREVIEW_EXT_RE.test(value)) ||
-        /^https?:\/\/(?:localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])/i.test(value))
-  )
 }
 
 function stableHash(value: string): string {

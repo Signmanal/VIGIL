@@ -115,4 +115,40 @@ describe('collectArtifactsForSession', () => {
       label: 'index.html'
     })
   })
+
+  it('indexes generated workspace-relative report artifacts from assistant text', () => {
+    const session = makeSession({ cwd: '/Users/alice/.vigil/skills/xsiam-cli' })
+    const artifacts = collectArtifactsForSession(session, [
+      {
+        content: [
+          '报告文件：',
+          '- HTML 报告：`workspace/ailog_analysis/artifacts/raw-log-analysis-report-admin.html`',
+          '- Markdown 报告：`workspace/ailog_analysis/artifacts/raw-log-analysis-report-admin.md`',
+          '- 证据包：`workspace/ailog_analysis/artifacts/evidence-package-admin.json`',
+          '- 原始采样：`workspace/ailog_analysis/artifacts/raw-log-sample-admin.ndjson`'
+        ].join('\n'),
+        role: 'assistant',
+        timestamp: 7000
+      }
+    ])
+
+    expect(artifacts).toHaveLength(4)
+    expect(artifacts.find(artifact => artifact.value.endsWith('.html'))).toMatchObject({
+      cwd: '/Users/alice/.vigil/skills/xsiam-cli',
+      kind: 'report',
+      label: 'raw-log-analysis-report-admin.html'
+    })
+    expect(artifacts.find(artifact => artifact.value.endsWith('.md'))).toMatchObject({
+      kind: 'report',
+      label: 'raw-log-analysis-report-admin.md'
+    })
+    expect(artifacts.find(artifact => artifact.value.endsWith('.json'))).toMatchObject({
+      kind: 'file',
+      label: 'evidence-package-admin.json'
+    })
+    expect(artifacts.find(artifact => artifact.value.endsWith('.ndjson'))).toMatchObject({
+      kind: 'file',
+      label: 'raw-log-sample-admin.ndjson'
+    })
+  })
 })

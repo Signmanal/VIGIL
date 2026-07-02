@@ -41,6 +41,7 @@ const groupLabel = (group: StatusGroup, s: Translations['statusStack']) => {
 interface ComposerStatusStackProps {
   /** The queue, built by the composer (it owns the queue's callbacks). Rendered
    *  as the last group so it stays fused to the composer like before. */
+  previewSessionId: null | string
   queue: ReactNode
   sessionId: null | string
 }
@@ -50,7 +51,7 @@ interface ComposerStatusStackProps {
  * every session-scoped status — subagents, background tasks, queue — grouped by
  * type and separated by light dividers. Collapses to nothing when empty.
  */
-export function ComposerStatusStack({ queue, sessionId }: ComposerStatusStackProps) {
+export function ComposerStatusStack({ previewSessionId, queue, sessionId }: ComposerStatusStackProps) {
   const { t } = useI18n()
   const navigate = useNavigate()
   const itemsBySession = useStore($statusItemsBySession)
@@ -62,7 +63,7 @@ export function ComposerStatusStack({ queue, sessionId }: ComposerStatusStackPro
     [itemsBySession, sessionId]
   )
 
-  const previews = sessionId ? (previewsBySession[sessionId] ?? []) : []
+  const previews = previewSessionId ? (previewsBySession[previewSessionId] ?? []) : []
 
   // Seed from the registry on session open; event-driven refreshes (terminal /
   // process tool completions) live in use-message-stream.
@@ -127,7 +128,7 @@ export function ComposerStatusStack({ queue, sessionId }: ComposerStatusStackPro
     )
   }))
 
-  if (previews.length > 0 && sessionId) {
+  if (previews.length > 0 && previewSessionId) {
     sections.push({
       key: 'preview',
       // Not a collapsible group — preview links just sit there, one line each,
@@ -135,7 +136,11 @@ export function ComposerStatusStack({ queue, sessionId }: ComposerStatusStackPro
       node: (
         <div className="px-1 py-0.5">
           {previews.map(item => (
-            <PreviewStatusRow item={item} key={item.id} onDismiss={id => dismissPreviewArtifact(sessionId, id)} />
+            <PreviewStatusRow
+              item={item}
+              key={item.id}
+              onDismiss={id => dismissPreviewArtifact(previewSessionId, id)}
+            />
           ))}
         </div>
       )

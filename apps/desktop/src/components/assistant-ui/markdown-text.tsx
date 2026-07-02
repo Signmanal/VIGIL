@@ -7,6 +7,7 @@ import {
   StreamdownTextPrimitive,
   type SyntaxHighlighterProps
 } from '@assistant-ui/react-streamdown'
+import { useStore } from '@nanostores/react'
 import { code } from '@streamdown/code'
 import {
   type ComponentProps,
@@ -23,8 +24,10 @@ import { ExpandableBlock } from '@/components/chat/expandable-block'
 import { PreviewAttachment } from '@/components/chat/preview-attachment'
 import { chunkByLines, SyntaxHighlighter } from '@/components/chat/shiki-highlighter'
 import { ZoomableImage } from '@/components/chat/zoomable-image'
+import { useI18n } from '@/i18n'
 import { normalizeExternalUrl, openExternalLink, PrettyLink } from '@/lib/external-link'
 import { createMemoizedMathPlugin } from '@/lib/katex-memo'
+import { normalizeOrLocalPreviewTarget } from '@/lib/local-preview'
 import { preprocessMarkdown } from '@/lib/markdown-preprocess'
 import {
   filePathFromMediaPath,
@@ -36,9 +39,12 @@ import {
   mediaPathFromMarkdownHref,
   mediaStreamUrl
 } from '@/lib/media'
-import { previewTargetFromMarkdownHref } from '@/lib/preview-targets'
+import { previewTargetFromInlineText, previewTargetFromMarkdownHref } from '@/lib/preview-targets'
 import { tailBoundedRemend } from '@/lib/remend-tail'
 import { cn } from '@/lib/utils'
+import { notifyError } from '@/store/notifications'
+import { $previewTarget, dismissPreviewTarget, setCurrentSessionPreviewTarget } from '@/store/preview'
+import { $currentCwd } from '@/store/session'
 
 // Math rendering plugin (KaTeX). Configured once at module scope — the
 // plugin is stateless beyond its internal cache so re-creating per-render
@@ -237,6 +243,89 @@ function childrenToText(children: unknown): string {
   return ''
 }
 
+function InlinePreviewTarget({
+  children,
+  className,
+  codeStyle = false,
+  target
+}: {
+  children: ReactNode
+  className?: string
+  codeStyle?: boolean
+  target: string
+}) {
+  const { t } = useI18n()
+  const cwd = useStore($currentCwd)
+  const activePreview = useStore($previewTarget)
+  const [opening, setOpening] = useState(false)
+  const isActive = activePreview?.source === target
+
+  async function openPreview() {
+    if (opening) {
+      return
+    }
+
+    if (isActive) {
+      dismissPreviewTarget()
+
+      return
+    }
+
+    setOpening(true)
+
+    try {
+      const preview = await normalizeOrLocalPreviewTarget(target, cwd || undefined)
+
+      if (!preview) {
+        throw new Error(`Could not open preview target: ${target}`)
+      }
+
+      setCurrentSessionPreviewTarget(preview, 'explicit-link', target)
+    } catch (error) {
+      notifyError(error, t.preview.unavailable)
+    } finally {
+      setOpening(false)
+    }
+  }
+
+  return (
+    <button
+      aria-label={`${opening ? t.preview.opening : isActive ? t.preview.hide : t.preview.openPreview}: ${target}`}
+      className={cn(
+        'cursor-pointer border-0 bg-transparent p-0 text-left underline decoration-current/20 underline-offset-4 hover:text-foreground',
+        codeStyle &&
+          'rounded-[0.25rem] bg-muted/55 px-[0.1875rem] py-px font-mono text-[0.9em] font-normal text-foreground/95',
+        !codeStyle && 'font-semibold text-foreground',
+        opening && 'animate-pulse',
+        className
+      )}
+      onClick={() => void openPreview()}
+      title={target}
+      type="button"
+    >
+      {children}
+    </button>
+  )
+}
+
+function MarkdownInlineCode({ children, className, ...props }: ComponentProps<'code'>) {
+  const target = previewTargetFromInlineText(childrenToText(children))
+
+  if (target) {
+    return (
+      <InlinePreviewTarget className={className} codeStyle target={target}>
+        {children}
+      </InlinePreviewTarget>
+    )
+  }
+
+  return (
+    <code className={className} dir="ltr" {...props}>
+      {children}
+    </code>
+  )
+}
+
 function MarkdownLink({ children, className, href, ...props }: ComponentProps<'a'>) {
   const mediaPath = mediaPathFromMarkdownHref(href)
 
@@ -248,6 +337,16 @@ function MarkdownLink({ children, className, href, ...props }: ComponentProps<'a
 
   if (previewTarget) {
     return <PreviewAttachment source="explicit-link" target={previewTarget} />
+  }
+
+  const inlinePreviewTarget = href ? previewTargetFromInlineText(href) : null
+
+  if (inlinePreviewTarget) {
+    return (
+      <InlinePreviewTarget className={className} target={inlinePreviewTarget}>
+        {children}
+      </InlinePreviewTarget>
+    )
   }
 
   const target = href ? normalizeExternalUrl(href) : href
@@ -521,9 +620,7 @@ function MarkdownTextSurface({ containerClassName, containerProps }: MarkdownTex
         // mirroring the CSS isolate that already keeps it out of the
         // plaintext scan. Fenced code never reaches this override; it goes
         // through the code plugin's CodeCard path.
-        inlineCode: ({ className, ...props }: ComponentProps<'code'>) => (
-          <code className={className} dir="ltr" {...props} />
-        ),
+        inlineCode: MarkdownInlineCode,
         // `---` as quiet spacing, not a heavy full-width rule.
         hr: (_props: ComponentProps<'hr'>) => <div aria-hidden className="my-3" />,
         // Lists and blockquotes have chrome that sits *beside* the text
