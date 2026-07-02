@@ -151,4 +151,55 @@ describe('collectArtifactsForSession', () => {
       label: 'raw-log-sample-admin.ndjson'
     })
   })
+
+  it('orders artifacts newest first, including same-timestamp later outputs', () => {
+    const artifacts = collectArtifactsForSession(makeSession(), [
+      {
+        content: '旧产物：`workspace/reports/old-report.md`',
+        role: 'assistant',
+        timestamp: 8000
+      },
+      {
+        content: [
+          '同一时间的早产物：`workspace/reports/same-time-first.md`',
+          '同一时间的晚产物：`workspace/reports/same-time-second.md`'
+        ].join('\n'),
+        role: 'assistant',
+        timestamp: 9000
+      },
+      {
+        content: '最新产物：`workspace/reports/new-report.md`',
+        role: 'assistant',
+        timestamp: 10000
+      }
+    ])
+
+    expect(artifacts.map(artifact => artifact.label)).toEqual([
+      'new-report.md',
+      'same-time-second.md',
+      'same-time-first.md',
+      'old-report.md'
+    ])
+  })
+
+  it('keeps the latest occurrence when the same artifact is mentioned again', () => {
+    const artifacts = collectArtifactsForSession(makeSession(), [
+      {
+        content: '第一次：`workspace/reports/reused-report.md`',
+        role: 'assistant',
+        timestamp: 11000
+      },
+      {
+        content: '第二次：`workspace/reports/reused-report.md`',
+        role: 'assistant',
+        timestamp: 12000
+      }
+    ])
+
+    expect(artifacts).toHaveLength(1)
+    expect(artifacts[0]).toMatchObject({
+      label: 'reused-report.md',
+      timestamp: 12000
+    })
+  })
 })
