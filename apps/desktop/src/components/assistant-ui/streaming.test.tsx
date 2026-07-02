@@ -488,6 +488,12 @@ describe('assistant-ui streaming renderer', () => {
     expect(container.textContent).not.toContain('```ts')
   })
 
+  it('renders previewable inline file paths as clickable preview controls', async () => {
+    render(<MessageHarness message={assistantMessage('Open `workspace/report/final.html`', false)} />)
+
+    expect(screen.getByRole('button', { name: /workspace\/report\/final\.html/ })).toBeTruthy()
+  })
+
   it('renders an incomplete streaming reasoning fenced code block as a code card', async () => {
     const { container } = render(<RunningReasoningHarness />)
     const ui = within(container)

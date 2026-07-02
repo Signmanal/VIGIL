@@ -24,6 +24,7 @@ const LANGUAGE_BY_EXT: Record<string, string> = {
   '.lua': 'lua',
   '.md': 'markdown',
   '.mjs': 'javascript',
+  '.ndjson': 'json',
   '.py': 'python',
   '.rb': 'ruby',
   '.rs': 'rust',

@@ -25,6 +25,7 @@ import { ExternalLink, ExternalLinkIcon, hostPathLabel, urlSlugTitleLabel, useLi
 import { FileImage, FileText, FolderOpen, Link2, MonitorPlay } from '@/lib/icons'
 import { normalizeOrLocalPreviewTarget } from '@/lib/local-preview'
 import { mediaExternalUrl } from '@/lib/media'
+import { isPreviewableTarget, previewTargetsFromChatText } from '@/lib/preview-targets'
 import { cn } from '@/lib/utils'
 import { notifyError } from '@/store/notifications'
 import { setSessionPreviewTarget } from '@/store/preview'
@@ -58,13 +59,15 @@ const MARKDOWN_LINK_RE = /\[([^\]]+)\]\(([^)\s]+)\)/g
 const URL_RE = /https?:\/\/[^\s<>"')]+/g
 const PATH_RE = /(^|[\s("'`：,，])((?:\/|~\/|\.\.?\/)[^\s"'`<>，。；、]+(?:\.[a-z0-9]{1,8})?)/gi
 const IMAGE_EXT_RE = /\.(?:png|jpe?g|gif|webp|svg|bmp)(?:\?.*)?$/i
-const REPORT_EXT_RE = /\.(?:html?|md|markdown|pdf|txt|log|jsonl?|csv|tsv|xml|ya?ml|toml|docx?|xlsx?|pptx?)(?:\?.*)?$/i
+const REPORT_EXT_RE =
+  /\.(?:html?|md|markdown|pdf|txt|log|jsonl?|ndjson|csv|tsv|xml|ya?ml|toml|docx?|xlsx?|pptx?)(?:\?.*)?$/i
 const FILE_EXT_RE =
-  /\.(?:png|jpe?g|gif|webp|svg|bmp|html?|md|markdown|pdf|txt|log|jsonl?|csv|tsv|xml|ya?ml|toml|docx?|xlsx?|pptx?|zip|tar|gz|mp3|wav|mp4|mov)(?:\?.*)?$/i
+  /\.(?:png|jpe?g|gif|webp|svg|bmp|html?|md|markdown|pdf|txt|log|jsonl?|ndjson|csv|tsv|xml|ya?ml|toml|docx?|xlsx?|pptx?|zip|tar|gz|mp3|wav|mp4|mov)(?:\?.*)?$/i
 const REPORT_HINT_RE =
   /(report|summary|analysis|audit|findings|review|assessment|diagnostic|diagnosis|investigation|brief|insight|报告|報告|分析|总结|總結|汇总|匯總|审计|審計|稽核|复盘|復盤|诊断|診斷)/i
 const ALWAYS_REPORT_EXT_RE = /\.(?:html?|md|markdown|pdf|docx?|pptx?)(?:\?.*)?$/i
 const KEY_HINT_RE = /(path|file|url|image|artifact|output|download|result|target|report|summary|analysis)/i
+const RELATIVE_ROOT_PATH_RE = /^[A-Za-z0-9_.@-]+\//
 
 const ARTIFACT_TIME_FMT = new Intl.DateTimeFormat(undefined, {
   day: 'numeric',
@@ -98,12 +101,17 @@ function looksLikePathOrUrl(value: string): boolean {
     value.startsWith('/') ||
     value.startsWith('./') ||
     value.startsWith('../') ||
-    value.startsWith('~/')
+    value.startsWith('~/') ||
+    RELATIVE_ROOT_PATH_RE.test(value)
   )
 }
 
 function looksLikeArtifact(value: string): boolean {
   if (/^(?:https?:\/\/|data:image\/)/.test(value)) {
+    return true
+  }
+
+  if (isPreviewableTarget(value)) {
     return true
   }
 
@@ -129,7 +137,7 @@ function looksLikeReport(value: string): boolean {
 
   const label = artifactLabel(value)
 
-  return REPORT_HINT_RE.test(label) || REPORT_HINT_RE.test(value)
+  return REPORT_HINT_RE.test(label)
 }
 
 function artifactKind(value: string): ArtifactKind {
@@ -146,7 +154,8 @@ function artifactKind(value: string): ArtifactKind {
     value.startsWith('./') ||
     value.startsWith('../') ||
     value.startsWith('~/') ||
-    value.startsWith('file://')
+    value.startsWith('file://') ||
+    RELATIVE_ROOT_PATH_RE.test(value)
   ) {
     return 'file'
   }
@@ -222,6 +231,10 @@ function collectStringValues(
 }
 
 function collectArtifactsFromText(text: string, pushValue: (value: string) => void): void {
+  for (const target of previewTargetsFromChatText(text)) {
+    pushValue(target)
+  }
+
   for (const match of text.matchAll(MARKDOWN_IMAGE_RE)) {
     pushValue(match[2] || '')
   }

@@ -24,6 +24,7 @@ import { SLASH_COMMAND_RE } from '@/lib/chat-runtime'
 import { desktopSlashCommandTakesArgs } from '@/lib/desktop-slash-commands'
 import { DATA_IMAGE_URL_RE } from '@/lib/embedded-images'
 import { triggerHaptic } from '@/lib/haptics'
+import { previewTargetsFromChatText } from '@/lib/preview-targets'
 import { cn } from '@/lib/utils'
 import {
   $composerAttachments,
@@ -132,48 +133,6 @@ const pickPlaceholder = (pool: readonly string[]) => pool[Math.floor(Math.random
  *  items are a registry row, not a composer branch. */
 const COMPLETION_ACTIONS: Record<string, () => void> = {
   'session-picker': () => setSessionPickerOpen(true)
-}
-
-const CHAT_PREVIEW_MARKDOWN_LINK_RE = /\[([^\]]+)\]\(([^)\s]+)\)/g
-const CHAT_PREVIEW_PATH_RE = /(^|[\s("'`：,，])((?:file:\/\/|\/|~\/|\.\.?\/)[^\s"'`<>，。；、]+(?:\.[a-z0-9]{1,8})?)/gi
-const CHAT_PREVIEW_EXT_RE = /\.(?:html?|md|markdown|pdf|txt|log|json|jsonl|csv|tsv|xml|ya?ml|toml)(?:[?#].*)?$/i
-
-function normalizeChatPreviewTarget(value: string): string {
-  return value
-    .trim()
-    .replace(/^`|`$/g, '')
-    .replace(/[),.;，。；、]+$/, '')
-}
-
-function isChatPreviewTarget(value: string): boolean {
-  return Boolean(
-    value &&
-    (/^file:\/\//i.test(value) ||
-      (/^(?:\/|\.{1,2}\/|~\/).+/i.test(value) && CHAT_PREVIEW_EXT_RE.test(value)) ||
-      /^https?:\/\/(?:localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])/i.test(value))
-  )
-}
-
-function previewTargetsFromChatText(text: string): string[] {
-  const targets = new Set<string>()
-
-  for (const match of text.matchAll(CHAT_PREVIEW_MARKDOWN_LINK_RE)) {
-    const target = normalizeChatPreviewTarget(match[2] || '')
-
-    if (isChatPreviewTarget(target)) {
-      targets.add(target)
-    }
-  }
-
-  for (const match of text.matchAll(CHAT_PREVIEW_PATH_RE)) {
-    const target = normalizeChatPreviewTarget(match[2] || '')
-
-    if (isChatPreviewTarget(target)) {
-      targets.add(target)
-    }
-  }
-
-  return Array.from(targets)
 }
 
 /** Map a picked `/` completion to its pill accent. Driven by the completion
@@ -286,19 +245,21 @@ export function ChatBar({
   // session id — gateway events and process.list both speak that id. Only the
   // queue uses the stored-session fallback key (prompts can queue pre-resume).
   const statusSessionId = sessionId ?? null
+  // Preview artifacts are user-facing session content, so they follow the
+  // displayed stored session when browsing projects/history instead of the
+  // currently attached runtime session.
+  const previewSessionId = activeQueueSessionKey
 
   const statusStackVisible = useMemo(
     () =>
       queuedPrompts.length > 0 ||
-      (statusSessionId
-        ? (statusItemsBySession[statusSessionId]?.length ?? 0) > 0 ||
-          (previewStatusBySession[statusSessionId]?.length ?? 0) > 0
-        : false),
-    [previewStatusBySession, queuedPrompts.length, statusItemsBySession, statusSessionId]
+      (statusSessionId ? (statusItemsBySession[statusSessionId]?.length ?? 0) > 0 : false) ||
+      (previewSessionId ? (previewStatusBySession[previewSessionId]?.length ?? 0) > 0 : false),
+    [previewSessionId, previewStatusBySession, queuedPrompts.length, statusItemsBySession, statusSessionId]
   )
 
   useEffect(() => {
-    if (!statusSessionId) {
+    if (!previewSessionId) {
       return
     }
 
@@ -308,10 +269,10 @@ export function ChatBar({
       }
 
       for (const target of previewTargetsFromChatText(chatMessageText(message))) {
-        recordPreviewArtifact(statusSessionId, target, cwd || '')
+        recordPreviewArtifact(previewSessionId, target, cwd || '')
       }
     }
-  }, [cwd, messages, statusSessionId])
+  }, [cwd, messages, previewSessionId])
 
   const composerRef = useRef<HTMLFormElement | null>(null)
   const composerSurfaceRef = useRef<HTMLDivElement | null>(null)
@@ -2123,6 +2084,7 @@ export function ChatBar({
               its own --status-stack-measured-height so the thread's clearance
               accounts for it. Collapses to nothing when every status is empty. */}
           <ComposerStatusStack
+            previewSessionId={previewSessionId}
             queue={
               activeQueueSessionKey && queuedPrompts.length > 0 ? (
                 <QueuePanel

@@ -54,6 +54,7 @@ describe('isPreviewableTarget', () => {
     expect(isPreviewableTarget('/tmp/vigil-report.pdf')).toBe(true)
     expect(isPreviewableTarget('./reports/weekly-summary.csv')).toBe(true)
     expect(isPreviewableTarget('~/reports/task-output.json')).toBe(true)
+    expect(isPreviewableTarget('workspace/reports/build_final_deep_report.py')).toBe(true)
   })
 
   it('keeps arbitrary non-report paths out of the preview status stack', () => {

@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
-import { extractPreviewTargets, previewTargetFromMarkdownHref, stripPreviewTargets } from './preview-targets'
+import {
+  extractPreviewTargets,
+  isPreviewableTarget,
+  previewTargetFromInlineText,
+  previewTargetFromMarkdownHref,
+  previewTargetsFromChatText,
+  stripPreviewTargets
+} from './preview-targets'
 
 describe('preview target detection', () => {
   it('does not infer preview targets from raw paths or URLs', () => {
@@ -16,6 +23,27 @@ describe('preview target detection', () => {
 
   it('extracts preview targets from already-rendered preview markers', () => {
     expect(extractPreviewTargets('[Preview: demo.html](#preview:%2Ftmp%2Fdemo.html)')).toEqual(['/tmp/demo.html'])
+  })
+
+  it('detects generated local files from assistant text', () => {
+    const text = [
+      '`workspace/ailog_today_deep_report/artifacts/final-report.html`',
+      '`workspace/ailog_today_deep_report/build_final_deep_report.py`',
+      '`workspace/ailog_today_deep_report/raw-search-hourly-probe.mjs`'
+    ].join('\n')
+
+    expect(previewTargetsFromChatText(text)).toEqual([
+      'workspace/ailog_today_deep_report/artifacts/final-report.html',
+      'workspace/ailog_today_deep_report/build_final_deep_report.py',
+      'workspace/ailog_today_deep_report/raw-search-hourly-probe.mjs'
+    ])
+  })
+
+  it('allows inline generated file paths but not arbitrary remote URLs', () => {
+    expect(previewTargetFromInlineText('workspace/report/final.html')).toBe('workspace/report/final.html')
+    expect(isPreviewableTarget('workspace/report/build.py')).toBe(true)
+    expect(isPreviewableTarget('https://example.com/report.html')).toBe(false)
+    expect(isPreviewableTarget('/tmp/archive.zip')).toBe(false)
   })
 
   it('strips preview targets from visible assistant text', () => {
