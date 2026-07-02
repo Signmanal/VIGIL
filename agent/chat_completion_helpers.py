@@ -309,7 +309,10 @@ def interruptible_api_call(agent, api_kwargs: dict):
     if _ttfb_timeout <= 0:
         _ttfb_enabled = False
     elif _openai_codex_backend:
-        _ttfb_disable_above = _env_float("VIGIL_CODEX_TTFB_DISABLE_ABOVE_TOKENS", 25_000.0)
+        # Keep the watchdog on for ordinary desktop-sized tasks. The previous
+        # 25k-token cutoff disabled first-byte recovery for common document
+        # assisted turns, leaving the UI busy until the provider read timeout.
+        _ttfb_disable_above = _env_float("VIGIL_CODEX_TTFB_DISABLE_ABOVE_TOKENS", 100_000.0)
         _ttfb_strict = os.environ.get("VIGIL_CODEX_TTFB_STRICT", "").strip().lower() in {
             "1", "true", "yes", "on"
         }

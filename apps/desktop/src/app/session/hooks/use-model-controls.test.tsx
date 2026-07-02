@@ -142,6 +142,45 @@ describe('useModelControls', () => {
     expect(requestGateway).not.toHaveBeenCalledWith('slash.exec', expect.anything())
   })
 
+  it('interrupts and retries when switching models while the session is busy', async () => {
+    let configSetAttempts = 0
+    const requestGateway = vi.fn(async (method: string) => {
+      if (method === 'config.set') {
+        configSetAttempts += 1
+
+        if (configSetAttempts === 1) {
+          throw new Error('4009: session busy')
+        }
+      }
+
+      return {} as never
+    })
+    let controls!: Controls
+
+    render(
+      <Harness
+        activeSessionId="session-1"
+        onReady={value => (controls = value)}
+        requestGateway={requestGateway}
+      />
+    )
+
+    await expect(
+      controls.selectModel({
+        model: 'gpt-5.5',
+        provider: 'openai-codex'
+      })
+    ).resolves.toBe(true)
+
+    expect(requestGateway).toHaveBeenCalledWith('session.interrupt', { session_id: 'session-1' })
+    expect(configSetAttempts).toBe(2)
+    expect(requestGateway).toHaveBeenLastCalledWith('config.set', {
+      session_id: 'session-1',
+      key: 'model',
+      value: 'gpt-5.5 --provider openai-codex'
+    })
+  })
+
   it('stores a no-session pick as UI state with no gateway or global write', async () => {
     const requestGateway = vi.fn()
     let controls!: Controls

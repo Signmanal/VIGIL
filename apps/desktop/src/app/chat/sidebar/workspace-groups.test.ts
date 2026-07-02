@@ -5,6 +5,7 @@ import type { SessionInfo } from '@/types/vigil'
 
 import {
   projectGroupsFor,
+  projectScopedGroupsFor,
   uniqueCwds,
   workspaceGroupsFor,
   workspaceTreeFor,
@@ -100,6 +101,42 @@ describe('projectGroupsFor', () => {
     const groups = projectGroupsFor(['/workspace/xclaw/', '/workspace/xclaw'], [])
 
     expect(groups).toHaveLength(1)
+  })
+})
+
+describe('projectScopedGroupsFor', () => {
+  it('keeps manual projects and adds unassigned workspaces without duplicating sessions', () => {
+    const projectSession = makeSession('/workspace/xclaw/apps/desktop')
+    const otherSession = makeSession('/workspace/other')
+    const groups = projectScopedGroupsFor(['/workspace/xclaw'], [projectSession, otherSession], 'No workspace')
+
+    expect(groups.map(group => group.label)).toEqual(['xclaw', 'other'])
+    expect(groups[0]).toMatchObject({
+      mode: 'project',
+      path: '/workspace/xclaw',
+      removable: true,
+      sessions: [projectSession]
+    })
+    expect(groups[1]).toMatchObject({
+      mode: 'project',
+      path: '/workspace/other',
+      removable: false,
+      sessions: [otherSession]
+    })
+  })
+
+  it('places sessions without cwd under the no-workspace project group', () => {
+    const session = makeSession(null)
+    const groups = projectScopedGroupsFor([], [session], 'No workspace')
+
+    expect(groups).toHaveLength(1)
+    expect(groups[0]).toMatchObject({
+      label: 'No workspace',
+      mode: 'project',
+      path: null,
+      removable: false,
+      sessions: [session]
+    })
   })
 })
 

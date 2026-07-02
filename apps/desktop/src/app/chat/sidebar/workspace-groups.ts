@@ -11,6 +11,7 @@ export interface SidebarSessionGroup {
   loadingMore?: boolean
   mode?: 'profile' | 'project' | 'source' | 'workspace'
   onLoadMore?: () => void
+  removable?: boolean
   sourceId?: string
   totalCount?: number
 }
@@ -176,9 +177,34 @@ export function projectGroupsFor(projectPaths: string[], sessions: SessionInfo[]
       label: baseName(path) || path,
       mode: 'project',
       path,
+      removable: true,
       sessions: sessions.filter(session => isSessionInsideProject(session.cwd, path))
     })
   }
+
+  disambiguateLabels(groups)
+
+  return groups
+}
+
+export function projectScopedGroupsFor(
+  projectPaths: string[],
+  sessions: SessionInfo[],
+  noWorkspaceLabel: string
+): SidebarSessionGroup[] {
+  const manualGroups = projectGroupsFor(projectPaths, sessions)
+  const assignedSessionIds = new Set(manualGroups.flatMap(group => group.sessions.map(session => session.id)))
+  const fallbackGroups = workspaceGroupsFor(
+    sessions.filter(session => !assignedSessionIds.has(session.id)),
+    noWorkspaceLabel,
+    { preserveSessionOrder: true }
+  ).map(group => ({
+    ...group,
+    id: `project:auto:${group.id}`,
+    mode: 'project' as const,
+    removable: false
+  }))
+  const groups = [...manualGroups, ...fallbackGroups]
 
   disambiguateLabels(groups)
 
