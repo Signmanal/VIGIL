@@ -980,6 +980,28 @@ export function ChatSidebar({
               />
             )}
 
+            {!trimmedQuery && showSessionRows && (
+              <SidebarSessionsSection
+                activeSessionId={activeSidebarSessionId}
+                contentClassName={cn('flex max-h-44 flex-col gap-px rounded-lg pb-2 pt-1', GROUP_BODY)}
+                dndSensors={dndSensors}
+                emptyState={<SidebarPinnedEmptyState />}
+                label={s.pinned}
+                onArchiveSession={onArchiveSession}
+                onDeleteSession={onDeleteSession}
+                onReorderSessions={reorderPinned}
+                onResumeSession={onResumeSession}
+                onToggle={() => setSidebarPinsOpen(!pinsOpen)}
+                onTogglePin={unpinSession}
+                open={pinsOpen}
+                pinned
+                rootClassName="shrink-0 p-0 pb-1"
+                sessions={pinnedSessions}
+                sortable={pinnedSessions.length > 1}
+                workingSessionIdSet={workingSessionIdSet}
+              />
+            )}
+
             {!trimmedQuery && showProjectSection && (
               <SidebarSessionsSection
                 activeSessionId={activeSidebarSessionId}
@@ -1015,28 +1037,6 @@ export function ChatSidebar({
                 pinned={false}
                 rootClassName={cn('p-0 pb-1', projectsOpen ? 'min-h-32 flex-1 overflow-hidden' : 'shrink-0')}
                 sessions={[]}
-                workingSessionIdSet={workingSessionIdSet}
-              />
-            )}
-
-            {!trimmedQuery && showSessionRows && (
-              <SidebarSessionsSection
-                activeSessionId={activeSidebarSessionId}
-                contentClassName={cn('flex max-h-44 flex-col gap-px rounded-lg pb-2 pt-1', GROUP_BODY)}
-                dndSensors={dndSensors}
-                emptyState={<SidebarPinnedEmptyState />}
-                label={s.pinned}
-                onArchiveSession={onArchiveSession}
-                onDeleteSession={onDeleteSession}
-                onReorderSessions={reorderPinned}
-                onResumeSession={onResumeSession}
-                onToggle={() => setSidebarPinsOpen(!pinsOpen)}
-                onTogglePin={unpinSession}
-                open={pinsOpen}
-                pinned
-                rootClassName="shrink-0 p-0 pb-1"
-                sessions={pinnedSessions}
-                sortable={pinnedSessions.length > 1}
                 workingSessionIdSet={workingSessionIdSet}
               />
             )}
