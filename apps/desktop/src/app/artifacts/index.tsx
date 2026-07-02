@@ -51,6 +51,7 @@ interface ArtifactRecord {
   cwd?: null | string
   sessionId: string
   sessionTitle: string
+  sortIndex: number
   timestamp: number
 }
 
@@ -313,6 +314,7 @@ function collectArtifactsFromMessage(message: SessionMessage, pushValue: (value:
 export function collectArtifactsForSession(session: SessionInfo, messages: SessionMessage[]): ArtifactRecord[] {
   const found = new Map<string, ArtifactRecord>()
   const title = sessionTitle(session)
+  let sortIndex = 0
 
   for (const message of messages) {
     if (message.role !== 'assistant' && message.role !== 'tool') {
@@ -327,12 +329,8 @@ export function collectArtifactsForSession(session: SessionInfo, messages: Sessi
       }
 
       const key = `${session.id}:${value}`
-
-      if (found.has(key)) {
-        return
-      }
-
-      found.set(key, {
+      const timestamp = message.timestamp || session.last_active || session.started_at || Date.now()
+      const nextRecord: ArtifactRecord = {
         id: key,
         kind: artifactKind(value),
         value,
@@ -341,12 +339,30 @@ export function collectArtifactsForSession(session: SessionInfo, messages: Sessi
         cwd: session.cwd ?? null,
         sessionId: session.id,
         sessionTitle: title,
-        timestamp: message.timestamp || session.last_active || session.started_at || Date.now()
-      })
+        sortIndex: sortIndex++,
+        timestamp
+      }
+      const existing = found.get(key)
+
+      if (existing && compareArtifactsNewestFirst(existing, nextRecord) <= 0) {
+        return
+      }
+
+      found.set(key, nextRecord)
     })
   }
 
-  return Array.from(found.values())
+  return Array.from(found.values()).sort(compareArtifactsNewestFirst)
+}
+
+function compareArtifactsNewestFirst(left: ArtifactRecord, right: ArtifactRecord): number {
+  const byTimestamp = right.timestamp - left.timestamp
+
+  if (byTimestamp !== 0) {
+    return byTimestamp
+  }
+
+  return right.sortIndex - left.sortIndex
 }
 
 function formatArtifactTime(timestamp: number): string {
@@ -442,7 +458,7 @@ export function ArtifactsView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
         nextArtifacts.push(...collectArtifactsForSession(session, result.value.messages))
       })
 
-      setArtifacts(nextArtifacts.sort((left, right) => right.timestamp - left.timestamp))
+      setArtifacts(nextArtifacts.sort(compareArtifactsNewestFirst))
     } catch (err) {
       notifyError(err, a.failedLoad)
       setArtifacts([])
@@ -469,21 +485,23 @@ export function ArtifactsView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
 
     const q = query.trim().toLowerCase()
 
-    return artifacts.filter(artifact => {
-      if (kindFilter !== 'all' && artifact.kind !== kindFilter) {
-        return false
-      }
+    return artifacts
+      .filter(artifact => {
+        if (kindFilter !== 'all' && artifact.kind !== kindFilter) {
+          return false
+        }
 
-      if (!q) {
-        return true
-      }
+        if (!q) {
+          return true
+        }
 
-      return (
-        artifact.label.toLowerCase().includes(q) ||
-        artifact.value.toLowerCase().includes(q) ||
-        artifact.sessionTitle.toLowerCase().includes(q)
-      )
-    })
+        return (
+          artifact.label.toLowerCase().includes(q) ||
+          artifact.value.toLowerCase().includes(q) ||
+          artifact.sessionTitle.toLowerCase().includes(q)
+        )
+      })
+      .sort(compareArtifactsNewestFirst)
   }, [artifacts, kindFilter, query])
 
   const visibleImageArtifacts = useMemo(
