@@ -5,7 +5,7 @@ import type { ClientSessionState, CommandDispatchResponse } from '@/app/types'
 import { formatRefValue } from '@/components/assistant-ui/directive-text'
 import { type ChatMessage, type ChatMessagePart, chatMessageText, textPart } from '@/lib/chat-messages'
 import type { ComposerAttachment } from '@/store/composer'
-import type { ModelOptionsResponse, SessionInfo } from '@/types/vigil'
+import type { ModelOptionsResponse, SessionInfo, UsageStats } from '@/types/vigil'
 
 export const SLASH_COMMAND_RE = /^\/[^\s/]*(?:\s|$)/
 export const BUILTIN_PERSONALITIES = [
@@ -31,6 +31,15 @@ const THINKING_STATUS_PREFIX_RE =
 const EMPTY_THINKING_PLACEHOLDER_RE =
   /\b(?:current rewritten thinking|next thinking to process|provide the thinking content|don't see any .*thinking)\b/i
 
+export function emptyUsageStats(): UsageStats {
+  return {
+    calls: 0,
+    input: 0,
+    output: 0,
+    total: 0
+  }
+}
+
 export function createClientSessionState(
   storedSessionId: string | null = null,
   messages: ChatMessage[] = []
@@ -46,6 +55,7 @@ export function createClientSessionState(
     serviceTier: '',
     fast: false,
     yolo: false,
+    usage: emptyUsageStats(),
     personality: '',
     busy: false,
     awaitingResponse: false,

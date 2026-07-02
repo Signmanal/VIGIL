@@ -1,6 +1,7 @@
 import type * as React from 'react'
 
 import type { ChatMessage } from '@/lib/chat-messages'
+import type { UsageStats } from '@/types/vigil'
 
 export interface ContextSuggestion {
   text: string
@@ -151,6 +152,7 @@ export interface ClientSessionState {
   serviceTier: string
   fast: boolean
   yolo: boolean
+  usage: UsageStats
   personality: string
   busy: boolean
   awaitingResponse: boolean

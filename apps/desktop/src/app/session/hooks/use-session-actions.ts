@@ -5,7 +5,7 @@ import type { NavigateFunction } from 'react-router-dom'
 import { deleteSession, getSession, getSessionMessages, setSessionArchived } from '@/vigil'
 import { useI18n } from '@/i18n'
 import { type ChatMessage, chatMessageText, preserveLocalAssistantErrors, toChatMessages } from '@/lib/chat-messages'
-import { normalizePersonalityValue } from '@/lib/chat-runtime'
+import { emptyUsageStats, normalizePersonalityValue } from '@/lib/chat-runtime'
 import { embeddedImageUrls, textWithoutEmbeddedImages } from '@/lib/embedded-images'
 import { setSessionYolo } from '@/lib/yolo-session'
 import { clearQueuedPrompts } from '@/store/composer-queue'
@@ -42,7 +42,6 @@ import {
   setResumeFailedSessionId,
   setSelectedStoredSessionId,
   setSessions,
-  setSessionStartedAt,
   setSessionsTotal,
   setTurnStartedAt,
   setYoloActive,
@@ -294,7 +293,7 @@ type SessionRuntimeStatePatch = Partial<
     | 'serviceTier'
     | 'yolo'
   >
->
+> & { usage?: Partial<UsageStats> }
 
 function applyRuntimeInfo(info: SessionRuntimeInfo | undefined): SessionRuntimeStatePatch | null {
   if (!info) {
@@ -357,9 +356,22 @@ function applyRuntimeInfo(info: SessionRuntimeInfo | undefined): SessionRuntimeS
 
   if (info.usage) {
     setCurrentUsage(current => ({ ...current, ...info.usage }))
+    sessionState.usage = { ...sessionState.usage, ...info.usage }
   }
 
   return sessionState
+}
+
+function mergeRuntimeState(state: ClientSessionState, patch: SessionRuntimeStatePatch | null | undefined): ClientSessionState {
+  if (!patch) {
+    return state
+  }
+
+  return {
+    ...state,
+    ...patch,
+    usage: patch.usage ? { ...state.usage, ...patch.usage } : state.usage
+  }
 }
 
 function applyStoredSessionPreviewRuntimeInfo(stored: { model?: null | string } | undefined) {
@@ -406,12 +418,8 @@ export function useSessionActions({
       selectedStoredSessionIdRef.current = null
       setMessages([])
       setCurrentUsage({
-        calls: 0,
-        input: 0,
-        output: 0,
-        total: 0
+        ...emptyUsageStats()
       })
-      setSessionStartedAt(null)
       setTurnStartedAt(null)
       // The composer's model/effort/fast is sticky UI state (persisted in
       // localStorage) — a new chat FOLLOWS your last pick instead of snapping
@@ -499,12 +507,11 @@ export function useSessionActions({
         setFreshDraftReady(false)
         setActiveSessionId(created.session_id)
         setSelectedStoredSessionId(stored)
-        setSessionStartedAt(Date.now())
         const yoloArmed = $yoloActive.get()
         const runtimeInfo = applyRuntimeInfo(created.info)
 
         if (runtimeInfo) {
-          updateSessionState(created.session_id, state => ({ ...state, ...runtimeInfo }), stored)
+          updateSessionState(created.session_id, state => mergeRuntimeState(state, runtimeInfo), stored)
         }
 
         // User may have armed YOLO on the new-chat draft before the runtime
@@ -639,8 +646,6 @@ export function useSessionActions({
         syncSessionStateToView(cachedRuntimeId, cachedViewState)
         setCurrentCwd(cachedViewState.cwd)
         setCurrentBranch(cachedViewState.branch)
-        setSessionStartedAt(Date.now())
-
         try {
           const usage = await requestGateway<UsageStats>('session.usage', { session_id: cachedRuntimeId })
 
@@ -649,7 +654,10 @@ export function useSessionActions({
           }
 
           if (usage) {
-            setCurrentUsage(current => ({ ...current, ...usage }))
+            updateSessionState(cachedRuntimeId, state => ({
+              ...state,
+              usage: { ...state.usage, ...usage }
+            }))
           }
 
           return
@@ -677,7 +685,6 @@ export function useSessionActions({
       clearNotifications()
       setSelectedStoredSessionId(storedSessionId)
       selectedStoredSessionIdRef.current = storedSessionId
-      setSessionStartedAt(Date.now())
       const stored = $sessions.get().find(session => sessionMatchesStoredId(session, storedSessionId))
       applyStoredSessionPreviewRuntimeInfo(stored)
 
@@ -767,8 +774,7 @@ export function useSessionActions({
         updateSessionState(
           resumed.session_id,
           state => ({
-            ...state,
-            ...(runtimeInfo ?? {}),
+            ...mergeRuntimeState(state, runtimeInfo),
             messages: messagesForView,
             busy: resumedRunning,
             awaitingResponse: resumedRunning
@@ -930,7 +936,7 @@ export function useSessionActions({
         patchSessionWorkspace(routedSessionId, runtimeInfo?.cwd)
 
         if (runtimeInfo) {
-          updateSessionState(branched.session_id, state => ({ ...state, ...runtimeInfo }), routedSessionId)
+          updateSessionState(branched.session_id, state => mergeRuntimeState(state, runtimeInfo), routedSessionId)
         }
 
         return true

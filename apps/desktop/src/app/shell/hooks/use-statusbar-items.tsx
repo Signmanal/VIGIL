@@ -25,7 +25,6 @@ import {
   $busy,
   $connection,
   $currentUsage,
-  $sessionStartedAt,
   $turnStartedAt,
   $yoloActive,
   setYoloActive
@@ -80,7 +79,6 @@ export function useStatusbarItems({
   const busy = useStore($busy)
   const currentUsage = useStore($currentUsage)
   const gatewayRestarting = useStore($gatewayRestarting)
-  const sessionStartedAt = useStore($sessionStartedAt)
   const turnStartedAt = useStore($turnStartedAt)
   const updateStatus = useStore($updateStatus)
   const updateApply = useStore($updateApply)
@@ -319,14 +317,6 @@ export function useStatusbarItems({
         variant: 'text'
       },
       {
-        detail: <LiveDuration since={sessionStartedAt} />,
-        hidden: !sessionStartedAt,
-        id: 'session-timer',
-        label: copy.session,
-        title: copy.runtimeSessionElapsed,
-        variant: 'text'
-      },
-      {
         className: cn('px-1', yoloActive && 'bg-(--chrome-action-hover)'),
         hidden: !showYoloToggle,
         icon: yoloActive ? (
@@ -357,7 +347,6 @@ export function useStatusbarItems({
       contextBar,
       contextUsage,
       copy,
-      sessionStartedAt,
       showYoloToggle,
       terminalTakeover,
       toggleYolo,

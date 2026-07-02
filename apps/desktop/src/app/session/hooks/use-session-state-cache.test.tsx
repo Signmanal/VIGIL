@@ -9,6 +9,7 @@ import {
   $currentProvider,
   $currentReasoningEffort,
   $currentServiceTier,
+  $currentUsage,
   $messages,
   $turnStartedAt,
   setCurrentFastMode,
@@ -16,6 +17,7 @@ import {
   setCurrentProvider,
   setCurrentReasoningEffort,
   setCurrentServiceTier,
+  setCurrentUsage,
   setTurnStartedAt
 } from '@/store/session'
 
@@ -66,6 +68,7 @@ describe('useSessionStateCache — per-session turn timer', () => {
     setCurrentReasoningEffort('')
     setCurrentServiceTier('')
     setCurrentFastMode(false)
+    setCurrentUsage({ calls: 0, input: 0, output: 0, total: 0 })
   })
 
   afterEach(() => {
@@ -77,6 +80,7 @@ describe('useSessionStateCache — per-session turn timer', () => {
     setCurrentReasoningEffort('')
     setCurrentServiceTier('')
     setCurrentFastMode(false)
+    setCurrentUsage({ calls: 0, input: 0, output: 0, total: 0 })
   })
 
   it("keeps a background session's running turn clock and never mirrors it to the view", () => {
@@ -213,6 +217,78 @@ describe('useSessionStateCache — per-session turn timer', () => {
     expect($currentReasoningEffort.get()).toBe('')
     expect($currentServiceTier.get()).toBe('')
     expect($currentFastMode.get()).toBe(false)
+  })
+
+  it("keeps a background session's usage cached without changing the visible statusbar", () => {
+    let cache!: Cache
+    render(<Harness activeSessionId="fg-runtime" onReady={c => (cache = c)} selectedStoredSessionId="fg-stored" />)
+
+    act(() => {
+      cache.updateSessionState(
+        'bg-runtime',
+        state => ({
+          ...state,
+          usage: {
+            calls: 2,
+            context_max: 272_000,
+            context_percent: 31,
+            context_used: 84_000,
+            input: 80_000,
+            output: 4_000,
+            total: 84_000
+          }
+        }),
+        'bg-stored'
+      )
+    })
+
+    expect(cache.sessionStateByRuntimeIdRef.current.get('bg-runtime')?.usage.context_used).toBe(84_000)
+    expect($currentUsage.get()).toEqual({ calls: 0, input: 0, output: 0, total: 0 })
+  })
+
+  it("mirrors the focused session's cached usage into the statusbar on switch", () => {
+    let cache!: Cache
+    const { rerender } = render(
+      <Harness activeSessionId="fg-runtime" onReady={c => (cache = c)} selectedStoredSessionId="fg-stored" />
+    )
+
+    act(() => {
+      cache.updateSessionState(
+        'bg-runtime',
+        state => ({
+          ...state,
+          usage: {
+            calls: 1,
+            context_max: 272_000,
+            context_percent: 12,
+            context_used: 32_000,
+            input: 30_000,
+            output: 2_000,
+            total: 32_000
+          }
+        }),
+        'bg-stored'
+      )
+    })
+
+    rerender(<Harness activeSessionId="bg-runtime" onReady={c => (cache = c)} selectedStoredSessionId="bg-stored" />)
+
+    const bgState = cache.sessionStateByRuntimeIdRef.current.get('bg-runtime')
+    expect(bgState).toBeTruthy()
+
+    act(() => {
+      cache.syncSessionStateToView('bg-runtime', bgState!)
+    })
+
+    expect($currentUsage.get()).toEqual({
+      calls: 1,
+      context_max: 272_000,
+      context_percent: 12,
+      context_used: 32_000,
+      input: 30_000,
+      output: 2_000,
+      total: 32_000
+    })
   })
 })
 
