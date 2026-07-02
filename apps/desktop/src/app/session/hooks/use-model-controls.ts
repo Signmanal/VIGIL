@@ -24,6 +24,33 @@ interface ModelControlsOptions {
   requestGateway: <T = unknown>(method: string, params?: Record<string, unknown>) => Promise<T>
 }
 
+const MODEL_SWITCH_BUSY_RETRY_TIMEOUT_MS = 6_000
+const MODEL_SWITCH_BUSY_RETRY_INTERVAL_MS = 150
+
+function isSessionBusyError(error: unknown): boolean {
+  return /session busy/i.test(error instanceof Error ? error.message : String(error))
+}
+
+const sleep = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms))
+
+async function retryBusyModelSwitch<T>(call: () => Promise<T>): Promise<T> {
+  const deadline = Date.now() + MODEL_SWITCH_BUSY_RETRY_TIMEOUT_MS
+
+  for (;;) {
+    try {
+      return await call()
+    } catch (err) {
+      if (isSessionBusyError(err) && Date.now() < deadline) {
+        await sleep(MODEL_SWITCH_BUSY_RETRY_INTERVAL_MS)
+
+        continue
+      }
+
+      throw err
+    }
+  }
+}
+
 export function useModelControls({ activeSessionId, queryClient, requestGateway }: ModelControlsOptions) {
   const { t } = useI18n()
   const copy = t.desktop
@@ -99,11 +126,22 @@ export function useModelControls({ activeSessionId, queryClient, requestGateway 
       }
 
       try {
-        await requestGateway('config.set', {
+        const params = {
           session_id: activeSessionId,
           key: 'model',
           value: `${selection.model} --provider ${selection.provider}`
-        })
+        }
+
+        try {
+          await requestGateway('config.set', params)
+        } catch (err) {
+          if (!isSessionBusyError(err)) {
+            throw err
+          }
+
+          await requestGateway('session.interrupt', { session_id: activeSessionId })
+          await retryBusyModelSwitch(() => requestGateway('config.set', params))
+        }
 
         void queryClient.invalidateQueries({ queryKey: ['model-options', activeSessionId] })
 

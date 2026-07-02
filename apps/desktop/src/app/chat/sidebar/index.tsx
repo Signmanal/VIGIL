@@ -113,7 +113,7 @@ import { ProfileRail } from './profile-switcher'
 import { SidebarSessionRow } from './session-row'
 import { VirtualSessionList } from './virtual-session-list'
 import {
-  projectGroupsFor,
+  projectScopedGroupsFor,
   type SidebarSessionGroup,
   type SidebarWorkspaceTree,
   workspaceTreeFor
@@ -581,8 +581,8 @@ export function ChatSidebar({
   const worktreeResolver = useWorktreeInfo(agentSessions, worktreeGroupingActive)
 
   const projectGroups = useMemo(
-    () => projectGroupsFor(sidebarProjectPaths, agentSessions),
-    [sidebarProjectPaths, agentSessions]
+    () => projectScopedGroupsFor(sidebarProjectPaths, agentSessions, s.noWorkspace),
+    [sidebarProjectPaths, agentSessions, s.noWorkspace]
   )
 
   const handleAddProject = useCallback(async () => {
@@ -828,7 +828,8 @@ export function ChatSidebar({
 
   const showProjectSection = !showAllProfiles
   const showSessionRows = showSessionSkeletons || sortedSessions.length > 0
-  const showSessionSections = showSessionRows || showProjectSection || Boolean(trimmedQuery)
+  const showGlobalSessionSection = showSessionRows && showAllProfiles
+  const showSessionSections = showGlobalSessionSection || showProjectSection || Boolean(trimmedQuery)
 
   // Each reorderable list reports its OWN new id order; persisting is a direct,
   // typed write — no id-prefix sniffing to figure out which level moved.
@@ -982,7 +983,7 @@ export function ChatSidebar({
             {!trimmedQuery && showProjectSection && (
               <SidebarSessionsSection
                 activeSessionId={activeSidebarSessionId}
-                contentClassName={cn('flex max-h-52 flex-col gap-px rounded-lg pb-2 pt-1', GROUP_BODY)}
+                contentClassName={cn('flex min-h-0 flex-1 flex-col gap-px rounded-lg pb-2 pt-1', SCROLL_Y)}
                 emptyState={<SidebarProjectsEmptyState onAddProject={() => void handleAddProject()} />}
                 groups={projectGroups}
                 headerAction={
@@ -1012,7 +1013,7 @@ export function ChatSidebar({
                 onTogglePin={pinSession}
                 open={projectsOpen}
                 pinned={false}
-                rootClassName="shrink-0 p-0 pb-1"
+                rootClassName={cn('p-0 pb-1', projectsOpen ? 'min-h-32 flex-1 overflow-hidden' : 'shrink-0')}
                 sessions={[]}
                 workingSessionIdSet={workingSessionIdSet}
               />
@@ -1040,7 +1041,7 @@ export function ChatSidebar({
               />
             )}
 
-            {!trimmedQuery && showSessionRows && (
+            {!trimmedQuery && showGlobalSessionSection && (
               <SidebarSessionsSection
                 activeSessionId={activeSidebarSessionId}
                 contentClassName={cn(
@@ -1580,7 +1581,7 @@ function SidebarWorkspaceGroup({
                 onClick={() => (isProfileGroup ? newSessionInProfile(group.id) : onNewSession?.(group.path))}
               />
             )}
-            {isProjectGroup && group.path && onRemoveProject && (
+            {isProjectGroup && group.path && group.removable && onRemoveProject && (
               <WorkspaceRemoveButton
                 label={s.removeProject(group.label)}
                 onClick={() => onRemoveProject(group.path!)}

@@ -3411,11 +3411,23 @@ def run_conversation(
                     }
 
                 if retry_count >= max_retries:
+                    _codex_oauth_transport_failure = (
+                        agent.api_mode == "codex_responses"
+                        and _provider in {"openai-codex", "xai-oauth"}
+                        and classified.reason == FailoverReason.timeout
+                        and not status_code
+                    )
                     # Before falling back, try rebuilding the primary
                     # client once for transient transport errors (stale
                     # connection pool, TCP reset).  Only attempted once
                     # per API call block.
-                    if not _retry.primary_recovery_attempted and agent._try_recover_primary_transport(
+                    #
+                    # For Codex/xAI OAuth routes, each attempt already uses a
+                    # fresh request-scoped client. Rebuilding the shared seed
+                    # client after three pure connection/read timeouts mostly
+                    # just repeats the same failing turn and keeps the desktop
+                    # session busy longer.
+                    if not _codex_oauth_transport_failure and not _retry.primary_recovery_attempted and agent._try_recover_primary_transport(
                         api_error, retry_count=retry_count, max_retries=max_retries,
                     ):
                         _retry.primary_recovery_attempted = True
@@ -3452,6 +3464,11 @@ def run_conversation(
                         )
                     elif is_rate_limited:
                         agent._emit_status(f"❌ Rate limited after {max_retries} retries — {_final_summary}")
+                    elif _codex_oauth_transport_failure:
+                        agent._emit_status(
+                            f"❌ {_provider} / {_model} is not responding after "
+                            f"{max_retries} attempts — {_final_summary}"
+                        )
                     else:
                         agent._emit_status(f"❌ API failed after {max_retries} retries — {_final_summary}")
                     agent._vprint(f"{agent.log_prefix}   💀 Final error: {_final_summary}", force=True)
@@ -3501,6 +3518,13 @@ def run_conversation(
                             _final_response += f"\n\n{_billing_guidance}"
                     else:
                         _final_response = f"API call failed after {max_retries} retries: {_final_summary}"
+                    if _codex_oauth_transport_failure:
+                        _final_response += (
+                            f"\n\nProvider `{_provider}` with model `{_model}` is currently unreachable "
+                            "or timing out. The turn has been stopped so the session is no longer busy. "
+                            "Try switching to another connected model, reducing attached context, or "
+                            "configuring a fallback provider before retrying."
+                        )
                     if _is_stream_drop:
                         _final_response += (
                             "\n\nThe provider's stream connection keeps "
