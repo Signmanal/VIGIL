@@ -53,7 +53,7 @@ import { broadcastSessionsChanged } from '@/store/session-sync'
 import { clearSessionSubagents, pruneDelegateFallbackSubagents, upsertSubagent } from '@/store/subagents'
 import { setSessionTodos } from '@/store/todos'
 import { recordToolDiff } from '@/store/tool-diffs'
-import type { RpcEvent } from '@/types/vigil'
+import type { RpcEvent, UsageStats } from '@/types/vigil'
 
 import type { ClientSessionState } from '../../types'
 
@@ -83,9 +83,17 @@ interface QueuedStreamDeltas {
 type SessionRuntimeStatePatch = Partial<
   Pick<
     ClientSessionState,
-    'branch' | 'cwd' | 'fast' | 'model' | 'personality' | 'provider' | 'reasoningEffort' | 'serviceTier' | 'yolo'
+    | 'branch'
+    | 'cwd'
+    | 'fast'
+    | 'model'
+    | 'personality'
+    | 'provider'
+    | 'reasoningEffort'
+    | 'serviceTier'
+    | 'yolo'
   >
->
+> & { usage?: Partial<UsageStats> }
 
 function sessionInfoStatePatch(payload: GatewayEventPayload | undefined): SessionRuntimeStatePatch {
   const patch: SessionRuntimeStatePatch = {}
@@ -124,6 +132,10 @@ function sessionInfoStatePatch(payload: GatewayEventPayload | undefined): Sessio
 
   if (typeof payload?.yolo === 'boolean') {
     patch.yolo = payload.yolo
+  }
+
+  if (payload?.usage) {
+    patch.usage = payload.usage
   }
 
   return patch
@@ -779,7 +791,8 @@ export function useMessageStream({
             ...state,
             ...statePatch,
             branch: statePatch.branch ?? state.branch,
-            cwd: statePatch.cwd ?? state.cwd
+            cwd: statePatch.cwd ?? state.cwd,
+            usage: statePatch.usage ? { ...state.usage, ...statePatch.usage } : state.usage
           }))
         }
 
@@ -816,7 +829,7 @@ export function useMessageStream({
           }
         }
 
-        if (payload?.usage && (!explicitSid || isActiveEvent)) {
+        if (payload?.usage && !sessionId && (!explicitSid || isActiveEvent)) {
           setCurrentUsage(current => ({ ...current, ...payload.usage }))
         }
 
@@ -921,7 +934,10 @@ export function useMessageStream({
         }
 
         if (payload?.usage) {
-          setCurrentUsage(current => ({ ...current, ...payload.usage }))
+          updateSessionState(sessionId, state => ({
+            ...state,
+            usage: { ...state.usage, ...payload.usage }
+          }))
         }
       } else if (event.type === 'tool.start' || event.type === 'tool.progress' || event.type === 'tool.generating') {
         if (!sessionId) {

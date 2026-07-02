@@ -16,6 +16,7 @@ import {
   setCurrentProvider,
   setCurrentReasoningEffort,
   setCurrentServiceTier,
+  setCurrentUsage,
   setSessionAttention,
   setSessionWorking,
   setTurnStartedAt,
@@ -62,6 +63,7 @@ function syncRuntimeMetadataToView(state: ClientSessionState) {
   setCurrentServiceTier(state.serviceTier ?? '')
   setCurrentFastMode(state.fast ?? false)
   setYoloActive(state.yolo ?? false)
+  setCurrentUsage({ ...state.usage })
   setCurrentPersonality(state.personality ?? '')
 }
 
