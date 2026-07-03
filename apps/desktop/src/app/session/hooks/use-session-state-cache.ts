@@ -8,6 +8,7 @@ import { setMutableRef } from '@/lib/mutable-ref'
 import {
   $busy,
   $messages,
+  setMessagesSessionKey,
   noteSessionActivity,
   onSessionWatchdogClear,
   setCurrentFastMode,
@@ -163,6 +164,7 @@ export function useSessionStateCache({
     }
 
     viewSessionIdRef.current = pending.sessionId
+    setMessagesSessionKey(pending.state.storedSessionId || pending.sessionId)
 
     syncRuntimeMetadataToView(pending.state)
     setBusy(pending.state.busy)

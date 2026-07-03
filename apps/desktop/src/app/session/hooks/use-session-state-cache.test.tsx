@@ -11,6 +11,7 @@ import {
   $currentServiceTier,
   $currentUsage,
   $messages,
+  $messagesSessionKey,
   $turnStartedAt,
   setCurrentFastMode,
   setCurrentModel,
@@ -18,6 +19,7 @@ import {
   setCurrentReasoningEffort,
   setCurrentServiceTier,
   setCurrentUsage,
+  setMessagesSessionKey,
   setTurnStartedAt
 } from '@/store/session'
 
@@ -69,6 +71,7 @@ describe('useSessionStateCache — per-session turn timer', () => {
     setCurrentServiceTier('')
     setCurrentFastMode(false)
     setCurrentUsage({ calls: 0, input: 0, output: 0, total: 0 })
+    setMessagesSessionKey(null)
   })
 
   afterEach(() => {
@@ -81,6 +84,7 @@ describe('useSessionStateCache — per-session turn timer', () => {
     setCurrentServiceTier('')
     setCurrentFastMode(false)
     setCurrentUsage({ calls: 0, input: 0, output: 0, total: 0 })
+    setMessagesSessionKey(null)
   })
 
   it("keeps a background session's running turn clock and never mirrors it to the view", () => {
@@ -105,6 +109,23 @@ describe('useSessionStateCache — per-session turn timer', () => {
     // ...but the global atom (statusbar timer) is untouched — a background turn
     // must not drive the foreground timer.
     expect($turnStartedAt.get()).toBeNull()
+  })
+
+  it('publishes the stored session key only for the transcript currently shown in the view', () => {
+    let cache!: Cache
+    render(<Harness activeSessionId="fg-runtime" onReady={c => (cache = c)} selectedStoredSessionId="fg-stored" />)
+
+    act(() => {
+      cache.updateSessionState('bg-runtime', state => ({ ...state, messages: [{ id: 'bg', parts: [], role: 'assistant' }] }), 'bg-stored')
+    })
+
+    expect($messagesSessionKey.get()).toBeNull()
+
+    act(() => {
+      cache.updateSessionState('fg-runtime', state => ({ ...state, messages: [{ id: 'fg', parts: [], role: 'assistant' }] }), 'fg-stored')
+    })
+
+    expect($messagesSessionKey.get()).toBe('fg-stored')
   })
 
   it("mirrors the focused session's turn clock into the global atom on view-sync", () => {

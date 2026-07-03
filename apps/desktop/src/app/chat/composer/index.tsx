@@ -20,6 +20,7 @@ import { useMediaQuery } from '@/hooks/use-media-query'
 import { useResizeObserver } from '@/hooks/use-resize-observer'
 import { useI18n } from '@/i18n'
 import { chatMessageText } from '@/lib/chat-messages'
+import { collectGeneratedPreviewTargetsFromChatMessages } from '@/lib/chat-artifacts'
 import { SLASH_COMMAND_RE } from '@/lib/chat-runtime'
 import { desktopSlashCommandTakesArgs } from '@/lib/desktop-slash-commands'
 import { DATA_IMAGE_URL_RE } from '@/lib/embedded-images'
@@ -61,8 +62,8 @@ import {
 } from '@/store/composer-queue'
 import { $statusItemsBySession } from '@/store/composer-status'
 import { notify } from '@/store/notifications'
-import { $previewStatusBySession } from '@/store/preview-status'
-import { $gatewayState, $messages, setSessionPickerOpen } from '@/store/session'
+import { $previewStatusBySession, recordPreviewArtifact } from '@/store/preview-status'
+import { $gatewayState, $messages, $messagesSessionKey, setSessionPickerOpen } from '@/store/session'
 import { $threadScrolledUp } from '@/store/thread-scroll'
 import { isSecondaryWindow } from '@/store/windows'
 import { useTheme } from '@/themes'
@@ -224,6 +225,7 @@ export function ChatBar({
   const queuedPromptsBySession = useStore($queuedPromptsBySession)
   const statusItemsBySession = useStore($statusItemsBySession)
   const previewStatusBySession = useStore($previewStatusBySession)
+  const messagesSessionKey = useStore($messagesSessionKey)
   const scrolledUp = useStore($threadScrolledUp)
   // Pop-out is a shared, persisted state — but secondary windows (the Ctrl+Shift+N
   // tiny window, subagent watch windows) always start docked and can't pop out:
@@ -255,6 +257,16 @@ export function ChatBar({
       (previewSessionId ? (previewStatusBySession[previewSessionId]?.length ?? 0) > 0 : false),
     [previewSessionId, previewStatusBySession, queuedPrompts.length, statusItemsBySession, statusSessionId]
   )
+
+  useEffect(() => {
+    if (busy || !previewSessionId || messagesSessionKey !== previewSessionId) {
+      return
+    }
+
+    for (const target of collectGeneratedPreviewTargetsFromChatMessages($messages.get())) {
+      recordPreviewArtifact(previewSessionId, target, cwd ?? '')
+    }
+  }, [busy, cwd, messagesSessionKey, previewSessionId])
 
   const composerRef = useRef<HTMLFormElement | null>(null)
   const composerSurfaceRef = useRef<HTMLDivElement | null>(null)

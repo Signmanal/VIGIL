@@ -56,6 +56,7 @@ interface PreviewLoadErrorState {
 
 const FILE_RELOAD_DEBOUNCE_MS = 200
 const SERVER_RESTART_TIMEOUT_MS = 45_000
+const EXPANDED_PREVIEW_TOP_CLASS = 'top-[calc(var(--titlebar-height)+3.25rem)]'
 
 function filePathForPreviewTarget(target: PreviewTarget): string {
   if (target.path) {
@@ -786,7 +787,10 @@ export function PreviewPane({
       className={cn(
         'relative flex h-full w-full min-w-0 flex-col overflow-hidden bg-transparent text-muted-foreground',
         expanded &&
-          'fixed inset-x-3 bottom-3 top-[calc(var(--titlebar-height)+0.75rem)] z-[160] rounded-xl border border-border bg-background/95 shadow-2xl backdrop-blur-xl'
+          cn(
+            'fixed inset-x-3 bottom-3 z-[160] rounded-xl border border-border bg-background/95 shadow-2xl backdrop-blur-xl',
+            EXPANDED_PREVIEW_TOP_CLASS
+          )
       )}
     >
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">

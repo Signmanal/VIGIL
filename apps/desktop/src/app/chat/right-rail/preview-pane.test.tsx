@@ -133,4 +133,25 @@ describe('PreviewPane console state', () => {
 
     await waitFor(() => expect(openPathInApp).toHaveBeenCalledWith('/tmp/prototype.html', 'vscode'))
   })
+
+  it('keeps expanded previews below the desktop titlebar and toolbar chrome', () => {
+    const rendered = render(
+      <PreviewPane
+        target={{
+          kind: 'file',
+          label: 'prototype.html',
+          path: '/tmp/prototype.html',
+          previewKind: 'html',
+          source: '/tmp/prototype.html',
+          url: 'file:///tmp/prototype.html'
+        }}
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Expand preview' }))
+
+    expect(rendered.container.querySelector('aside')?.className).toContain(
+      'top-[calc(var(--titlebar-height)+3.25rem)]'
+    )
+  })
 })

@@ -38,6 +38,7 @@ import {
   setFreshDraftReady,
   setIntroSeed,
   setMessages,
+  setMessagesSessionKey,
   setResumeExhaustedSessionId,
   setResumeFailedSessionId,
   setSelectedStoredSessionId,
@@ -417,6 +418,7 @@ export function useSessionActions({
       setSelectedStoredSessionId(null)
       selectedStoredSessionIdRef.current = null
       setMessages([])
+      setMessagesSessionKey(null)
       setCurrentUsage({
         ...emptyUsageStats()
       })
@@ -604,6 +606,7 @@ export function useSessionActions({
         setActiveSessionId(null)
         activeSessionIdRef.current = null
         setMessages([])
+        setMessagesSessionKey(null)
       }
 
       // Swap the single live gateway to this session's profile before any
@@ -730,6 +733,7 @@ export function useSessionActions({
               if (!chatMessageArraysEquivalent($messages.get(), localSnapshot)) {
                 setMessages(localSnapshot)
               }
+              setMessagesSessionKey(storedSessionId)
             }
           }
         } catch {
@@ -802,6 +806,7 @@ export function useSessionActions({
           }
 
           setMessages(preserveLocalAssistantErrors(toChatMessages(fallback.messages), $messages.get()))
+          setMessagesSessionKey(storedSessionId)
         } catch {
           // Fallback also failed: nothing to paint. Leave whatever messages are
           // already shown and fall through to arm the resume-failure latch so

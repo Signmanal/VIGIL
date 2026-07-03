@@ -206,6 +206,7 @@ export const $workingSessionIds = atom<string[]>([])
 export const $activeSessionId = atom<string | null>(null)
 export const $selectedStoredSessionId = atom<string | null>(null)
 export const $messages = atom<ChatMessage[]>([])
+export const $messagesSessionKey = atom<string | null>(null)
 
 // Streaming-stable derivations of $messages. During a token stream the array
 // is replaced ~30×/s; components that only care about coarse facts (is the
@@ -277,6 +278,7 @@ export const setWorkingSessionIds = (next: Updater<string[]>) => updateAtom($wor
 export const setActiveSessionId = (next: Updater<string | null>) => updateAtom($activeSessionId, next)
 export const setSelectedStoredSessionId = (next: Updater<string | null>) => updateAtom($selectedStoredSessionId, next)
 export const setMessages = (next: Updater<ChatMessage[]>) => updateAtom($messages, next)
+export const setMessagesSessionKey = (next: Updater<string | null>) => updateAtom($messagesSessionKey, next)
 export const setFreshDraftReady = (next: Updater<boolean>) => updateAtom($freshDraftReady, next)
 export const setResumeFailedSessionId = (next: Updater<string | null>) => updateAtom($resumeFailedSessionId, next)
 export const setResumeExhaustedSessionId = (next: Updater<string | null>) => updateAtom($resumeExhaustedSessionId, next)
