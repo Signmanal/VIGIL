@@ -1,55 +1,9 @@
 import { isDesktopFsRemoteMode, readDesktopFileText } from '@/lib/desktop-fs'
+import { previewExtension, previewKindForExtension, previewLanguage } from '@/lib/preview-classification'
 import type { PreviewTarget } from '@/store/preview'
-
-const HTML_EXTENSIONS = new Set(['.htm', '.html'])
-const IMAGE_EXTENSIONS = new Set(['.bmp', '.gif', '.jpeg', '.jpg', '.png', '.svg', '.webp'])
-const WEBVIEW_EXTENSIONS = new Set(['.pdf'])
-
-const LANGUAGE_BY_EXT: Record<string, string> = {
-  '.c': 'c',
-  '.conf': 'ini',
-  '.cpp': 'cpp',
-  '.css': 'css',
-  '.csv': 'csv',
-  '.go': 'go',
-  '.graphql': 'graphql',
-  '.h': 'c',
-  '.hpp': 'cpp',
-  '.html': 'html',
-  '.java': 'java',
-  '.js': 'javascript',
-  '.json': 'json',
-  '.jsx': 'jsx',
-  '.log': 'text',
-  '.lua': 'lua',
-  '.md': 'markdown',
-  '.mjs': 'javascript',
-  '.ndjson': 'json',
-  '.py': 'python',
-  '.rb': 'ruby',
-  '.rs': 'rust',
-  '.sh': 'shell',
-  '.sql': 'sql',
-  '.svg': 'xml',
-  '.toml': 'toml',
-  '.ts': 'typescript',
-  '.tsx': 'tsx',
-  '.txt': 'text',
-  '.xml': 'xml',
-  '.yaml': 'yaml',
-  '.yml': 'yaml',
-  '.zsh': 'shell'
-}
 
 function basename(value: string) {
   return value.split(/[\\/]/).filter(Boolean).pop() || value
-}
-
-function extension(value: string) {
-  const clean = value.split(/[?#]/, 1)[0] || value
-  const idx = clean.lastIndexOf('.')
-
-  return idx >= 0 ? clean.slice(idx).toLowerCase() : ''
 }
 
 function joinPath(base: string, rel: string) {
@@ -92,20 +46,17 @@ export function localPreviewTarget(rawTarget: string, cwd?: string | null): Prev
     path = joinPath(cwd, raw)
   }
 
-  const ext = extension(path)
-  const isHtml = HTML_EXTENSIONS.has(ext)
-  const isImage = IMAGE_EXTENSIONS.has(ext)
-  const isWebview = WEBVIEW_EXTENSIONS.has(ext)
+  const ext = previewExtension(path)
 
   return {
     kind: 'file',
     label: basename(path),
-    language: LANGUAGE_BY_EXT[ext] || 'text',
+    language: previewLanguage(ext),
     path,
     // Renderer fallback can't stat/sniff without reading; assume text unless
-    // image/html extension says otherwise. LocalFilePreview still guards
+    // image/webview extension says otherwise. LocalFilePreview still guards
     // binary/large files when readFileText/readFileDataUrl returns metadata.
-    previewKind: isHtml || isWebview ? 'html' : isImage ? 'image' : 'text',
+    previewKind: previewKindForExtension(ext),
     source: raw,
     url: pathToFileUrl(path)
   }

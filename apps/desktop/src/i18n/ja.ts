@@ -2047,7 +2047,8 @@ export const ja = defineLocale({
     previewAnyway: 'とにかくプレビュー',
     truncated: '最初の 512 KB を表示しています。',
     noInlineTitle: 'インラインプレビューなし',
-    noInlineBody: mimeType => `${mimeType || 'このファイルタイプ'} はコンテキストとして添付できます。`,
+    noInlineBody: mimeType => `${mimeType || 'このファイルタイプ'} はシステムアプリで開けます。`,
+    openFile: 'ファイルを開く',
     console: {
       deselect: 'エントリーの選択を解除',
       select: 'エントリーを選択',

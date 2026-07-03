@@ -43,6 +43,7 @@ const { fetchMarketplaceThemes, searchMarketplaceThemes } = require('./vscode-ma
 const { buildDesktopBackendEnv, buildDesktopLookupPath, normalizeVIGILHomeRoot } = require('./backend-env.cjs')
 const { readWindowsUserEnvVar } = require('./windows-user-env.cjs')
 const { readDirForIpc } = require('./fs-read-dir.cjs')
+const previewFileTypes = require('./preview-file-types.json')
 const { readLiveUpdateMarker } = require('./update-marker.cjs')
 const {
   resolveUnpackedRelease,
@@ -530,65 +531,14 @@ function getTitleBarOverlayOptions() {
   }
 }
 
-const MEDIA_MIME_TYPES = {
-  '.avi': 'video/x-msvideo',
-  '.bmp': 'image/bmp',
-  '.flac': 'audio/flac',
-  '.gif': 'image/gif',
-  '.jpeg': 'image/jpeg',
-  '.jpg': 'image/jpeg',
-  '.m4a': 'audio/mp4',
-  '.mkv': 'video/x-matroska',
-  '.mov': 'video/quicktime',
-  '.mp3': 'audio/mpeg',
-  '.mp4': 'video/mp4',
-  '.ogg': 'audio/ogg',
-  '.opus': 'audio/ogg; codecs=opus',
-  '.png': 'image/png',
-  '.svg': 'image/svg+xml',
-  '.wav': 'audio/wav',
-  '.webm': 'video/webm',
-  '.webp': 'image/webp'
-}
-
-const PREVIEW_HTML_EXTENSIONS = new Set(['.html', '.htm'])
+const MEDIA_MIME_TYPES = previewFileTypes.mimeByExt
+const PREVIEW_HTML_EXTENSIONS = new Set(previewFileTypes.htmlExtensions)
+const PREVIEW_WEBVIEW_EXTENSIONS = new Set(previewFileTypes.webviewExtensions)
+const PREVIEW_IMAGE_EXTENSIONS = new Set(previewFileTypes.imageExtensions)
 const PREVIEW_WATCH_DEBOUNCE_MS = 120
 const LOCAL_PREVIEW_HOSTS = new Set(['0.0.0.0', '127.0.0.1', '::1', '[::1]', 'localhost'])
 const TEXT_PREVIEW_MAX_BYTES = 512 * 1024
-const PREVIEW_LANGUAGE_BY_EXT = {
-  '.c': 'c',
-  '.conf': 'ini',
-  '.cpp': 'cpp',
-  '.css': 'css',
-  '.csv': 'csv',
-  '.go': 'go',
-  '.graphql': 'graphql',
-  '.h': 'c',
-  '.hpp': 'cpp',
-  '.html': 'html',
-  '.java': 'java',
-  '.js': 'javascript',
-  '.json': 'json',
-  '.jsx': 'jsx',
-  '.kt': 'kotlin',
-  '.lua': 'lua',
-  '.md': 'markdown',
-  '.mjs': 'javascript',
-  '.py': 'python',
-  '.rb': 'ruby',
-  '.rs': 'rust',
-  '.sh': 'shell',
-  '.sql': 'sql',
-  '.svg': 'xml',
-  '.toml': 'toml',
-  '.ts': 'typescript',
-  '.tsx': 'tsx',
-  '.txt': 'text',
-  '.xml': 'xml',
-  '.yaml': 'yaml',
-  '.yml': 'yaml',
-  '.zsh': 'shell'
-}
+const PREVIEW_LANGUAGE_BY_EXT = previewFileTypes.languageByExt
 
 function looksBinary(buffer) {
   if (!buffer.length) return false
@@ -3765,8 +3715,9 @@ async function previewFileTarget(rawTarget, baseDir) {
   const mimeType = mimeTypeForPath(resolved)
   const metadata = previewFileMetadata(resolved, mimeType)
   const isHtml = PREVIEW_HTML_EXTENSIONS.has(ext)
-  const isImage = mimeType.startsWith('image/')
-  const previewKind = isHtml ? 'html' : isImage ? 'image' : metadata.binary ? 'binary' : 'text'
+  const isWebview = isHtml || PREVIEW_WEBVIEW_EXTENSIONS.has(ext)
+  const isImage = PREVIEW_IMAGE_EXTENSIONS.has(ext) || mimeType.startsWith('image/')
+  const previewKind = isWebview ? 'html' : isImage ? 'image' : metadata.binary ? 'binary' : 'text'
 
   return {
     binary: metadata.binary,

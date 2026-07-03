@@ -2095,7 +2095,8 @@ export const zh: Translations = {
     previewAnyway: '仍然预览',
     truncated: '显示前 512 KB。',
     noInlineTitle: '没有内联预览',
-    noInlineBody: mimeType => `${mimeType || '此文件类型'} 仍可作为上下文附件。`,
+    noInlineBody: mimeType => `${mimeType || '此文件类型'} 仍可用系统应用打开。`,
+    openFile: '打开文件',
     console: {
       deselect: '取消选择条目',
       select: '选择条目',

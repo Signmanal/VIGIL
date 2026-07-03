@@ -1571,6 +1571,7 @@ export interface Translations {
     truncated: string
     noInlineTitle: string
     noInlineBody: (mimeType: string) => string
+    openFile: string
     console: {
       deselect: string
       select: string

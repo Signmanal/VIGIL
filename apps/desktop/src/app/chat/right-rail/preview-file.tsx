@@ -459,6 +459,8 @@ export function LocalFilePreview({ reloadKey, target }: { reloadKey: number; tar
   const [renderMarkdownAsSource, setRenderMarkdownAsSource] = useState(false)
   const filePath = filePathForTarget(target)
   const isImage = target.previewKind === 'image'
+  const openFile = () => void window.vigilDesktop?.openExternal?.(target.url || filePath)
+  const openFileAction = window.vigilDesktop ? { label: t.preview.openFile, onClick: openFile } : undefined
 
   // HTML files are rendered as source code, not in a webview - so they take
   // the same path as plain text files. `previewKind === 'binary'` arrives
@@ -534,7 +536,13 @@ export function LocalFilePreview({ reloadKey, target }: { reloadKey: number; tar
   }
 
   if (state.error) {
-    return <PreviewEmptyState body={state.error} title={t.preview.unavailable} />
+    return (
+      <PreviewEmptyState
+        body={state.error}
+        primaryAction={openFileAction}
+        title={t.preview.unavailable}
+      />
+    )
   }
 
   if (
@@ -553,6 +561,7 @@ export function LocalFilePreview({ reloadKey, target }: { reloadKey: number; tar
             : t.preview.largeBody(target.label, formatBytes(size))
         }
         primaryAction={{ label: t.preview.previewAnyway, onClick: () => setForcePreview(true) }}
+        secondaryAction={openFileAction}
         title={binary ? t.preview.binaryTitle : t.preview.largeTitle}
         tone="warning"
       />
@@ -596,6 +605,7 @@ export function LocalFilePreview({ reloadKey, target }: { reloadKey: number; tar
   return (
     <PreviewEmptyState
       body={t.preview.noInlineBody(target.mimeType || '')}
+      primaryAction={openFileAction}
       title={t.preview.noInlineTitle}
     />
   )

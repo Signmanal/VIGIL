@@ -1979,7 +1979,8 @@ export const zhHant = defineLocale({
     previewAnyway: '仍然預覽',
     truncated: '顯示前 512 KB。',
     noInlineTitle: '沒有行內預覽',
-    noInlineBody: mimeType => `${mimeType || '此檔案類型'} 仍可作為脈絡附件。`,
+    noInlineBody: mimeType => `${mimeType || '此檔案類型'} 仍可用系統應用程式開啟。`,
+    openFile: '開啟檔案',
     console: {
       deselect: '取消選取項目',
       select: '選取項目',

@@ -1926,7 +1926,8 @@ export const en: Translations = {
     previewAnyway: 'Preview anyway',
     truncated: 'Showing first 512 KB.',
     noInlineTitle: 'No inline preview',
-    noInlineBody: mimeType => `${mimeType || 'This file type'} can still be attached as context.`,
+    noInlineBody: mimeType => `${mimeType || 'This file type'} can still be opened with your system app.`,
+    openFile: 'Open file',
     console: {
       deselect: 'Deselect entry',
       select: 'Select entry',
