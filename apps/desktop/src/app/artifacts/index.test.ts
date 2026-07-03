@@ -1,8 +1,29 @@
-import { describe, expect, it } from 'vitest'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { createElement } from 'react'
+import { MemoryRouter } from 'react-router-dom'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { SessionInfo, SessionMessage } from '@/types/vigil'
 
-import { artifactIdsForRetentionCleanup, collectArtifactsForSession, type ArtifactRecord } from './index'
+const getSessionMessages = vi.fn()
+const listAllProfileSessions = vi.fn()
+
+vi.mock('@/vigil', () => ({
+  getSessionMessages: (...args: unknown[]) => getSessionMessages(...args),
+  listAllProfileSessions: (...args: unknown[]) => listAllProfileSessions(...args)
+}))
+
+import { ArtifactsView, artifactIdsForRetentionCleanup, collectArtifactsForSession, type ArtifactRecord } from './index'
+
+beforeEach(() => {
+  window.localStorage.clear()
+  getSessionMessages.mockReset()
+  listAllProfileSessions.mockReset()
+})
+
+afterEach(() => {
+  cleanup()
+})
 
 function makeSession(overrides: Partial<SessionInfo> = {}): SessionInfo {
   return {
@@ -289,5 +310,39 @@ describe('artifactIdsForRetentionCleanup', () => {
     )
 
     expect(Array.from(artifactIdsForRetentionCleanup(artifacts, now))).toEqual(['artifact-0'])
+  })
+})
+
+describe('ArtifactsView retention policy', () => {
+  it('expands cleanup policy, hides old index rows, and restores hidden rows', async () => {
+    const session = makeSession({ id: 'retention-session', title: 'Retention Session' })
+    listAllProfileSessions.mockResolvedValue({ sessions: [session] })
+    getSessionMessages.mockResolvedValue({
+      messages: [
+        {
+          content: '旧报告：`workspace/reports/old-report.md`',
+          role: 'assistant',
+          timestamp: 1000
+        }
+      ]
+    })
+
+    render(createElement(MemoryRouter, null, createElement(ArtifactsView)))
+
+    expect(await screen.findByText('old-report.md')).toBeTruthy()
+
+    const policy = screen.getByRole('button', { name: /Retention and cleanup/i })
+    expect(policy.getAttribute('aria-expanded')).toBe('false')
+    fireEvent.click(policy)
+    expect(policy.getAttribute('aria-expanded')).toBe('true')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Clean now' }))
+
+    await waitFor(() => expect(screen.queryByText('old-report.md')).toBeNull())
+    expect(screen.getAllByText(/1 hidden output/).length).toBeGreaterThan(0)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Restore hidden' }))
+
+    expect(await screen.findByText('old-report.md')).toBeTruthy()
   })
 })

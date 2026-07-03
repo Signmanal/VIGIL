@@ -342,15 +342,8 @@ export function ArtifactsView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
         nextArtifacts.push(...collectArtifactsForSession(session, result.value.messages))
       })
 
-      const sortedArtifacts = nextArtifacts.sort(compareArtifactsNewestFirst)
-      const retention = mergeRetentionCleanup(sortedArtifacts, readHiddenArtifactIds())
-
-      if (retention.added > 0) {
-        writeHiddenArtifactIds(retention.ids)
-        setHiddenArtifactIds(retention.ids)
-      }
-
-      setArtifacts(sortedArtifacts)
+      setHiddenArtifactIds(readHiddenArtifactIds())
+      setArtifacts(nextArtifacts.sort(compareArtifactsNewestFirst))
     } catch (err) {
       notifyError(err, a.failedLoad)
       setArtifacts([])
@@ -696,26 +689,47 @@ function ArtifactRetentionPanel({
   onRestore: () => void
   pendingCleanupCount: number
 }) {
+  const [expanded, setExpanded] = useState(false)
+
   return (
-    <section className="flex flex-col gap-2 rounded-lg border border-(--ui-stroke-tertiary) bg-(--ui-chat-bubble-background) px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
-      <div className="min-w-0">
-        <div className="text-xs font-medium text-foreground">{a.retentionTitle}</div>
-        <div className="mt-0.5 text-[0.68rem] leading-4 text-muted-foreground">
-          {a.retentionPolicy(ARTIFACT_RETENTION_DAYS, ARTIFACT_RETENTION_LIMIT)}
+    <section className="rounded-lg border border-(--ui-stroke-tertiary) bg-(--ui-chat-bubble-background)">
+      <button
+        aria-expanded={expanded}
+        className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left"
+        onClick={() => setExpanded(current => !current)}
+        type="button"
+      >
+        <div className="min-w-0">
+          <div className="text-xs font-medium text-foreground">{a.retentionTitle}</div>
+          <div className="mt-0.5 text-[0.68rem] leading-4 text-muted-foreground">
+            {pendingCleanupCount > 0
+              ? a.retentionPending(pendingCleanupCount)
+              : hiddenCount > 0
+                ? a.retentionHidden(hiddenCount)
+                : a.retentionScope}
+          </div>
         </div>
-        <div className="mt-0.5 text-[0.68rem] leading-4 text-muted-foreground">
-          {hiddenCount > 0 ? a.retentionHidden(hiddenCount) : a.retentionScope}
-          {pendingCleanupCount > 0 ? ` · ${a.retentionPending(pendingCleanupCount)}` : ''}
+        <Codicon className="shrink-0 text-muted-foreground" name={expanded ? 'chevron-up' : 'chevron-down'} size="1rem" />
+      </button>
+      {expanded && (
+        <div className="flex flex-col gap-2 border-t border-(--ui-stroke-tertiary) px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0 text-[0.68rem] leading-4 text-muted-foreground">
+            <div>{a.retentionPolicy(ARTIFACT_RETENTION_DAYS, ARTIFACT_RETENTION_LIMIT)}</div>
+            <div className="mt-0.5">
+              {hiddenCount > 0 ? a.retentionHidden(hiddenCount) : a.retentionScope}
+              {pendingCleanupCount > 0 ? ` · ${a.retentionPending(pendingCleanupCount)}` : ''}
+            </div>
+          </div>
+          <div className="flex shrink-0 items-center gap-1.5">
+            <Button disabled={pendingCleanupCount === 0} onClick={onCleanup} size="xs" type="button" variant="outline">
+              {a.retentionCleanNow}
+            </Button>
+            <Button disabled={hiddenCount === 0} onClick={onRestore} size="xs" type="button" variant="ghost">
+              {a.retentionRestore}
+            </Button>
+          </div>
         </div>
-      </div>
-      <div className="flex shrink-0 items-center gap-1.5">
-        <Button disabled={pendingCleanupCount === 0} onClick={onCleanup} size="xs" type="button" variant="outline">
-          {a.retentionCleanNow}
-        </Button>
-        <Button disabled={hiddenCount === 0} onClick={onRestore} size="xs" type="button" variant="ghost">
-          {a.retentionRestore}
-        </Button>
-      </div>
+      )}
     </section>
   )
 }
