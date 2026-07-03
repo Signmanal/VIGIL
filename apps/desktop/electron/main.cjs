@@ -2052,6 +2052,26 @@ async function readCommitLog(cwd, branch) {
 }
 
 let updateInFlight = false
+const RELEASE_UPDATE_HANDOFF_TIMEOUT_MS = 15_000
+
+function waitForReleaseUpdateHandoff(timeoutMs = RELEASE_UPDATE_HANDOFF_TIMEOUT_MS) {
+  return new Promise(resolve => {
+    let settled = false
+    let timeout = null
+
+    const finish = status => {
+      if (settled) return
+      settled = true
+      if (timeout) clearTimeout(timeout)
+      app.removeListener('before-quit', onBeforeQuit)
+      resolve(status)
+    }
+    const onBeforeQuit = () => finish('handoff')
+
+    timeout = setTimeout(() => finish('timeout'), timeoutMs)
+    app.once('before-quit', onBeforeQuit)
+  })
+}
 
 // Resolve the staged updater binary. The Tauri installer copies itself to
 // VIGIL_HOME/vigil-setup.exe on a successful install (see
@@ -2221,6 +2241,8 @@ async function applyReleaseUpdates() {
     throw new Error('An update is already in progress.')
   }
   updateInFlight = true
+  const previousAutoInstallOnAppQuit = updater.autoInstallOnAppQuit
+  let handedOff = false
 
   try {
     let info = releaseUpdateInfo
@@ -2240,13 +2262,30 @@ async function applyReleaseUpdates() {
       message: `Downloading XCLAW ${info?.version || 'update'}…`,
       percent: 5
     })
+    if (IS_MAC) {
+      // MacUpdater only marks the local Squirrel update as ready during
+      // download when this is enabled. Without it, quitAndInstall can leave the
+      // app alive on the restart overlay with no ShipIt handoff.
+      updater.autoInstallOnAppQuit = true
+    }
     await updater.downloadUpdate()
     emitUpdateProgress({
       stage: 'restart',
       message: `Installing XCLAW ${info?.version || 'update'}…`,
       percent: 100
     })
+    const handoff = waitForReleaseUpdateHandoff()
     updater.quitAndInstall(false, true)
+    const handoffStatus = await handoff
+    if (handoffStatus !== 'handoff') {
+      const message =
+        'XCLAW downloaded the update, but macOS did not take over installation. Quit XCLAW and install the latest release manually.'
+      rememberLog(`[release-updates] handoff timed out after ${RELEASE_UPDATE_HANDOFF_TIMEOUT_MS}ms`)
+      emitUpdateProgress({ stage: 'error', message, error: 'release-handoff-timeout' })
+
+      return { ok: false, channel: 'release', error: 'release-handoff-timeout', message }
+    }
+    handedOff = true
 
     return { ok: true, channel: 'release', handedOff: true }
   } catch (error) {
@@ -2255,6 +2294,9 @@ async function applyReleaseUpdates() {
 
     return { ok: false, channel: 'release', error: 'release-apply-failed', message }
   } finally {
+    if (IS_MAC && !handedOff) {
+      updater.autoInstallOnAppQuit = previousAutoInstallOnAppQuit
+    }
     updateInFlight = false
   }
 }
