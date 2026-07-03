@@ -1716,7 +1716,7 @@ async function checkReleaseUpdates() {
 
   if (!updater) {
     return releaseUpdatesEnabled()
-      ? releaseUnsupportedStatus('no-release-updater', 'Release updater metadata is not available in this build.')
+      ? releaseUnsupportedStatus('no-release-updater-runtime', 'Release updater runtime is not bundled in this build.')
       : null
   }
 
