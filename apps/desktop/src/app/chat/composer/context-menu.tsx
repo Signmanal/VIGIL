@@ -38,11 +38,22 @@ export function ContextMenu({
   // reliably when the parent menu was positioned at the bottom of the
   // window (composer "+" anchor), so we promoted it to a real Dialog —
   // easier to grow with search / descriptions, and no positioning math.
+  const [menuOpen, setMenuOpen] = useState(false)
   const [snippetsOpen, setSnippetsOpen] = useState(false)
+  const runMenuAction = (action?: () => void) => {
+    if (!action) {
+      return undefined
+    }
+
+    return () => {
+      action()
+      setMenuOpen(false)
+    }
+  }
 
   return (
     <>
-      <DropdownMenu>
+      <DropdownMenu onOpenChange={setMenuOpen} open={menuOpen}>
         <Tip label={state.tools.label} side="top">
           <DropdownMenuTrigger asChild>
             <Button
@@ -60,29 +71,39 @@ export function ContextMenu({
             </Button>
           </DropdownMenuTrigger>
         </Tip>
-        <DropdownMenuContent align="start" className={cn('w-60', composerPanelCard)} side="top" sideOffset={6}>
+        <DropdownMenuContent
+          align="start"
+          className={cn('w-60', composerPanelCard)}
+          onCloseAutoFocus={event => event.preventDefault()}
+          side="top"
+          sideOffset={6}
+        >
           <DropdownMenuLabel className="px-2 pb-0.5 pt-0.5 text-[0.625rem] font-semibold uppercase tracking-wider text-(--ui-text-tertiary)">
             {c.attachLabel}
           </DropdownMenuLabel>
-          <ContextMenuItem disabled={!onPickFiles} icon={FileText} onSelect={onPickFiles}>
+          <ContextMenuItem disabled={!onPickFiles} icon={FileText} onSelect={runMenuAction(onPickFiles)}>
             {c.files}
           </ContextMenuItem>
-          <ContextMenuItem disabled={!onPickFolders} icon={FolderOpen} onSelect={onPickFolders}>
+          <ContextMenuItem disabled={!onPickFolders} icon={FolderOpen} onSelect={runMenuAction(onPickFolders)}>
             {c.folder}
           </ContextMenuItem>
-          <ContextMenuItem disabled={!onPickImages} icon={ImageIcon} onSelect={onPickImages}>
+          <ContextMenuItem disabled={!onPickImages} icon={ImageIcon} onSelect={runMenuAction(onPickImages)}>
             {c.images}
           </ContextMenuItem>
-          <ContextMenuItem disabled={!onPasteClipboardImage} icon={Clipboard} onSelect={onPasteClipboardImage}>
+          <ContextMenuItem
+            disabled={!onPasteClipboardImage}
+            icon={Clipboard}
+            onSelect={runMenuAction(onPasteClipboardImage)}
+          >
             {c.pasteImage}
           </ContextMenuItem>
-          <ContextMenuItem icon={Link} onSelect={onOpenUrlDialog}>
+          <ContextMenuItem icon={Link} onSelect={runMenuAction(onOpenUrlDialog)}>
             {c.url}
           </ContextMenuItem>
 
           <DropdownMenuSeparator />
 
-          <ContextMenuItem icon={MessageSquareText} onSelect={() => setSnippetsOpen(true)}>
+          <ContextMenuItem icon={MessageSquareText} onSelect={runMenuAction(() => setSnippetsOpen(true))}>
             {c.promptSnippets}
           </ContextMenuItem>
 
@@ -149,7 +170,14 @@ export function ContextMenuItem({ children, disabled, icon: Icon, onSelect }: Co
     <DropdownMenuItem
       className="text-[length:var(--conversation-tool-font-size)] focus:bg-(--ui-bg-tertiary)"
       disabled={disabled}
-      onSelect={onSelect}
+      onSelect={event => {
+        if (!onSelect) {
+          return
+        }
+
+        event.preventDefault()
+        onSelect()
+      }}
     >
       <Icon />
       <span>{children}</span>
