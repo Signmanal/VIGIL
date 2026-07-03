@@ -172,6 +172,22 @@ The CLI remains installable from source with `pip install -e .` until a package
 registry release is published. If a Release has no installer assets, treat it as
 incomplete for end users.
 
+### macOS Update Signing Chain
+
+`desktop-v0.18.9` is the macOS auto-update signing-chain starting point for the
+community Desktop client. Users who install the `0.18.9` GitHub Release package
+can receive later `0.19.x` Desktop updates through the in-app updater as long as
+every later macOS Release keeps the same signing identity:
+
+- Signing authority: `Apple Development: 2663636294@qq.com (VKULVKP8KD)`.
+- `codesign` TeamIdentifier: `5CG9U4GR44`.
+
+Do not rotate the macOS signing identity for a normal patch or minor release.
+Changing either value breaks the updater trust chain for users who installed
+`0.18.9`; if the identity must change, publish a new manual-install anchor
+release and call that out in the release notes. `apps/desktop/scripts/verify-mac-release-artifacts.cjs`
+enforces this identity for `0.18.9` and later builds.
+
 ### Signed macOS Release Setup
 
 The `Desktop Release Installers` GitHub Actions workflow builds the macOS DMG

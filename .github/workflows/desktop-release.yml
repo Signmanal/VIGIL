@@ -125,6 +125,7 @@ jobs:
       - name: Verify macOS release artifacts
         if: runner.os == 'macOS'
         env:
+          VIGIL_REQUIRE_MAC_GATEKEEPER: '1'
           VIGIL_REQUIRE_MAC_SIGNING: '1'
         run: npm run release:mac:verify-artifacts --workspace apps/desktop
 

@@ -2,14 +2,19 @@ const fs = require('node:fs')
 const crypto = require('node:crypto')
 const os = require('node:os')
 const path = require('node:path')
-const { execFileSync } = require('node:child_process')
+const { execFileSync, spawnSync } = require('node:child_process')
 
 const root = path.join(__dirname, '..')
 const releaseDir = path.join(root, 'release')
 const pkg = require(path.join(root, 'package.json'))
 const expectedVersion = pkg.version
 const productName = pkg.build?.productName || 'XCLAW'
-const requireSigning = process.env.VIGIL_REQUIRE_MAC_SIGNING === '1'
+const SIGNING_CHAIN_START_VERSION = '0.18.9'
+const EXPECTED_MAC_SIGNING_AUTHORITY = 'Apple Development: 2663636294@qq.com (VKULVKP8KD)'
+const EXPECTED_MAC_SIGNING_TEAM_IDENTIFIER = '5CG9U4GR44'
+const versionRequiresPinnedSigning = compareSemver(expectedVersion, SIGNING_CHAIN_START_VERSION) >= 0
+const requireSigning = process.env.VIGIL_REQUIRE_MAC_SIGNING === '1' || versionRequiresPinnedSigning
+const requireGatekeeper = process.env.VIGIL_REQUIRE_MAC_GATEKEEPER === '1'
 
 function fail(message) {
   console.error(message)
@@ -18,6 +23,29 @@ function fail(message) {
 
 function run(command, args, options = {}) {
   return execFileSync(command, args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], ...options })
+}
+
+function runCapture(command, args) {
+  const result = spawnSync(command, args, { encoding: 'utf8' })
+  if (result.status !== 0) {
+    const output = `${result.stdout || ''}${result.stderr || ''}`.trim()
+    fail(`${command} ${args.join(' ')} failed${output ? `:\n${output}` : ''}`)
+  }
+  return `${result.stdout || ''}${result.stderr || ''}`
+}
+
+function compareSemver(left, right) {
+  const parse = (value) =>
+    String(value)
+      .split('.')
+      .map((part) => Number.parseInt(part, 10) || 0)
+  const a = parse(left)
+  const b = parse(right)
+  for (let i = 0; i < Math.max(a.length, b.length); i += 1) {
+    const delta = (a[i] || 0) - (b[i] || 0)
+    if (delta !== 0) return delta
+  }
+  return 0
 }
 
 function listFiles() {
@@ -127,8 +155,23 @@ function assertUpdaterMetadata(appPath) {
 
 function assertSigned(appPath, dmgPath) {
   run('codesign', ['--verify', '--deep', '--strict', '--verbose=2', appPath])
-  run('spctl', ['--assess', '--type', 'execute', '--verbose=2', appPath])
-  run('spctl', ['--assess', '--type', 'open', '--context', 'context:primary-signature', '--verbose=2', dmgPath])
+  assertPinnedSigningIdentity(appPath)
+  if (requireGatekeeper) {
+    run('spctl', ['--assess', '--type', 'execute', '--verbose=2', appPath])
+    run('spctl', ['--assess', '--type', 'open', '--context', 'context:primary-signature', '--verbose=2', dmgPath])
+  }
+}
+
+function assertPinnedSigningIdentity(appPath) {
+  const output = runCapture('codesign', ['-dv', '--verbose=4', appPath])
+  const authorityLine = `Authority=${EXPECTED_MAC_SIGNING_AUTHORITY}`
+  const teamLine = `TeamIdentifier=${EXPECTED_MAC_SIGNING_TEAM_IDENTIFIER}`
+  if (!output.includes(authorityLine)) {
+    fail(`macOS signing authority changed. Expected ${authorityLine}`)
+  }
+  if (!output.includes(teamLine)) {
+    fail(`macOS signing TeamIdentifier changed. Expected ${teamLine}`)
+  }
 }
 
 if (process.platform !== 'darwin') {
@@ -165,5 +208,7 @@ try {
 }
 
 console.log(
-  `macOS release artifacts verified: version=${expectedVersion}, dmg=${path.basename(dmgPath)}, signing=${requireSigning ? 'required' : 'not-required'}`
+  `macOS release artifacts verified: version=${expectedVersion}, dmg=${path.basename(dmgPath)}, signing=${
+    requireSigning ? `${EXPECTED_MAC_SIGNING_AUTHORITY} / ${EXPECTED_MAC_SIGNING_TEAM_IDENTIFIER}` : 'not-required'
+  }, gatekeeper=${requireGatekeeper ? 'required' : 'not-required'}`
 )
