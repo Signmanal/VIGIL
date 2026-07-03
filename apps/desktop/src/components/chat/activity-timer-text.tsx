@@ -5,9 +5,12 @@ import { formatElapsed } from './activity-timer'
 interface ActivityTimerTextProps {
   seconds: number
   className?: string
+  prefix?: string
 }
 
-export function ActivityTimerText({ seconds, className }: ActivityTimerTextProps) {
+export function ActivityTimerText({ seconds, className, prefix }: ActivityTimerTextProps) {
+  const elapsed = formatElapsed(seconds)
+
   return (
     <span
       className={cn(
@@ -18,7 +21,7 @@ export function ActivityTimerText({ seconds, className }: ActivityTimerTextProps
         className
       )}
     >
-      {formatElapsed(seconds)}
+      {prefix ? `${prefix} ${elapsed}` : elapsed}
     </span>
   )
 }

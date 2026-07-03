@@ -374,12 +374,7 @@ const ResponseLoadingIndicator: FC = () => {
     >
       <span aria-hidden="true" className="dither inline-block size-3 rounded-[2px] text-midground/80 animate-pulse" />
       {compacting && <CompactionHint />}
-      {!compacting && (
-        <span className="shrink-0 text-[length:var(--conversation-caption-font-size)] text-(--ui-text-tertiary)">
-          {t.assistant.thread.thinking}
-        </span>
-      )}
-      <ActivityTimerText seconds={elapsed} />
+      <ActivityTimerText prefix={compacting ? undefined : t.assistant.thread.thinking} seconds={elapsed} />
     </StatusRow>
   )
 }
@@ -438,12 +433,7 @@ const StreamStallIndicator: FC = () => {
     >
       <span aria-hidden="true" className="dither inline-block size-3 rounded-[2px] text-midground/80 animate-pulse" />
       {compacting && <CompactionHint />}
-      {!compacting && (
-        <span className="shrink-0 text-[length:var(--conversation-caption-font-size)] text-(--ui-text-tertiary)">
-          {t.assistant.thread.thinking}
-        </span>
-      )}
-      <ActivityTimerText seconds={elapsed} />
+      <ActivityTimerText prefix={compacting ? undefined : t.assistant.thread.thinking} seconds={elapsed} />
     </StatusRow>
   )
 }
