@@ -1,5 +1,6 @@
 import { atom } from 'nanostores'
 
+import { normalizeArtifactValue, previewArtifactPriority } from '@/lib/artifact-detection'
 import { previewName } from '@/lib/preview-targets'
 
 /**
@@ -20,7 +21,8 @@ export interface PreviewArtifact {
   target: string
 }
 
-const MAX_PER_SESSION = 4
+const MAX_STORED_PER_SESSION = 40
+export const MAX_VISIBLE_PREVIEW_ARTIFACTS = 4
 
 export const $previewStatusBySession = atom<Record<string, PreviewArtifact[]>>({})
 
@@ -48,7 +50,7 @@ const writePreviews = (sid: string, items: PreviewArtifact[]) => {
  * must not churn the atom or reorder rows).
  */
 export function recordPreviewArtifact(sid: string, target: string, cwd: string) {
-  const raw = target.trim()
+  const raw = normalizeArtifactValue(target)
 
   if (!sid || !raw) {
     return
@@ -60,7 +62,18 @@ export function recordPreviewArtifact(sid: string, target: string, cwd: string) 
     return
   }
 
-  writePreviews(sid, [...list, { cwd, id: raw, label: previewName(raw), target: raw }].slice(-MAX_PER_SESSION))
+  writePreviews(sid, [...list, { cwd, id: raw, label: previewName(raw), target: raw }].slice(-MAX_STORED_PER_SESSION))
+}
+
+export function selectPreviewArtifactsForDisplay(
+  items: PreviewArtifact[],
+  limit = MAX_VISIBLE_PREVIEW_ARTIFACTS
+): PreviewArtifact[] {
+  return items
+    .map((item, index) => ({ index, item, priority: previewArtifactPriority(item.target) }))
+    .sort((left, right) => right.priority - left.priority || right.index - left.index)
+    .slice(0, limit)
+    .map(entry => entry.item)
 }
 
 export function dismissPreviewArtifact(sid: string, id: string) {

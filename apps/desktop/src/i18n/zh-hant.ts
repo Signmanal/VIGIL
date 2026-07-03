@@ -1382,7 +1382,7 @@ export const zhHant = defineLocale({
     tabFiles: '檔案',
     tabLinks: '連結',
     noArtifactsTitle: '找不到產物',
-    noArtifactsDesc: '對話和排程工作產生或引用的報告、圖片、檔案和連結會集中顯示在這裡。',
+    noArtifactsDesc: '對話和排程工作產生的報告、圖片、檔案和連結會集中顯示在這裡。',
     failedLoad: '產物載入失敗',
     openFailed: '開啟失敗',
     preview: '預覽',
@@ -1391,6 +1391,13 @@ export const zhHant = defineLocale({
     statReports: '報告',
     statSessions: '來源工作階段',
     statRelated: '關聯輸出',
+    retentionTitle: '清理與保留策略',
+    retentionPolicy: (days, limit) => `保留最近 ${days} 天且最多 ${limit} 筆產物；清理只隱藏索引記錄。`,
+    retentionScope: '不會刪除磁碟上的實際檔案。',
+    retentionPending: count => `${count} 筆歷史產物可清理`,
+    retentionHidden: count => `已隱藏 ${count} 筆產物`,
+    retentionCleanNow: '立即清理',
+    retentionRestore: '恢復隱藏記錄',
     itemsReport: '份報告',
     itemsImage: '張圖片',
     itemsLink: '個連結',
@@ -1615,7 +1622,8 @@ export const zhHant = defineLocale({
     running: '執行中',
     stop: '停止',
     dismiss: '關閉',
-    exit: code => `結束碼 ${code}`
+    exit: code => `結束碼 ${code}`,
+    viewAllArtifacts: count => `查看全部 ${count} 個產物`
   },
 
   updates: {

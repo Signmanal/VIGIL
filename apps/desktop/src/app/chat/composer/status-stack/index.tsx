@@ -3,7 +3,7 @@ import { type ReactNode, useEffect, useLayoutEffect, useMemo, useRef } from 'rea
 import { useNavigate } from 'react-router-dom'
 
 import { blurComposerInput } from '@/app/chat/composer/focus'
-import { AGENTS_ROUTE } from '@/app/routes'
+import { AGENTS_ROUTE, ARTIFACTS_ROUTE } from '@/app/routes'
 import { composerDockCard } from '@/components/chat/composer-dock'
 import { StatusSection } from '@/components/chat/status-section'
 import { Button } from '@/components/ui/button'
@@ -19,7 +19,7 @@ import {
   type StatusGroup,
   stopBackgroundProcess
 } from '@/store/composer-status'
-import { $previewStatusBySession, dismissPreviewArtifact } from '@/store/preview-status'
+import { $previewStatusBySession, dismissPreviewArtifact, selectPreviewArtifactsForDisplay } from '@/store/preview-status'
 import { $threadScrolledUp } from '@/store/thread-scroll'
 import { openSessionInNewWindow } from '@/store/windows'
 
@@ -64,6 +64,8 @@ export function ComposerStatusStack({ previewSessionId, queue, sessionId }: Comp
   )
 
   const previews = previewSessionId ? (previewsBySession[previewSessionId] ?? []) : []
+  const visiblePreviews = selectPreviewArtifactsForDisplay(previews)
+  const hiddenPreviewCount = Math.max(0, previews.length - visiblePreviews.length)
 
   // Seed from the registry on session open; event-driven refreshes (terminal /
   // process tool completions) live in use-message-stream.
@@ -135,13 +137,24 @@ export function ComposerStatusStack({ previewSessionId, queue, sessionId }: Comp
       // each individually closeable.
       node: (
         <div className="px-1 py-0.5">
-          {previews.map(item => (
+          {visiblePreviews.map(item => (
             <PreviewStatusRow
               item={item}
               key={item.id}
               onDismiss={id => dismissPreviewArtifact(previewSessionId, id)}
             />
           ))}
+          {hiddenPreviewCount > 0 && (
+            <Button
+              className="ml-4 mt-0.5 text-muted-foreground/75 hover:text-foreground/90"
+              onClick={() => navigate(ARTIFACTS_ROUTE)}
+              size="micro"
+              type="button"
+              variant="text"
+            >
+              {t.statusStack.viewAllArtifacts(previews.length)}
+            </Button>
+          )}
         </div>
       )
     })

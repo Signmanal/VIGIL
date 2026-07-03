@@ -4,7 +4,8 @@ import {
   $previewStatusBySession,
   clearPreviewArtifacts,
   dismissPreviewArtifact,
-  recordPreviewArtifact
+  recordPreviewArtifact,
+  selectPreviewArtifactsForDisplay
 } from './preview-status'
 
 beforeEach(() => $previewStatusBySession.set({}))
@@ -18,15 +19,35 @@ describe('recordPreviewArtifact', () => {
     expect($previewStatusBySession.get().s1.map(i => i.id)).toEqual(['/a/index.html', '/a/about.html'])
   })
 
-  it('caps the list and derives a label', () => {
-    for (const n of [1, 2, 3, 4, 5]) {
+  it('caps the stored list and derives a label', () => {
+    for (let n = 1; n <= 45; n += 1) {
       recordPreviewArtifact('s1', `/a/p${n}.html`, '/work')
     }
 
     const list = $previewStatusBySession.get().s1
-    expect(list).toHaveLength(4)
-    expect(list[0].id).toBe('/a/p2.html')
-    expect(list[3].label).toBe('p5.html')
+    expect(list).toHaveLength(40)
+    expect(list[0].id).toBe('/a/p6.html')
+    expect(list[39].label).toBe('p45.html')
+  })
+
+  it('selects report artifacts for display before auxiliary files', () => {
+    recordPreviewArtifact('s1', '/a/evidence-package-admin.json', '/work')
+    recordPreviewArtifact('s1', '/a/platform-context-admin.json', '/work')
+    recordPreviewArtifact('s1', '/a/raw-log-sample-admin.ndjson', '/work')
+    recordPreviewArtifact('s1', '/a/raw-log-summary-admin.json', '/work')
+    recordPreviewArtifact('s1', '/a/raw-log-analysis-report-admin.html', '/work')
+    recordPreviewArtifact('s1', '/a/raw-log-analysis-report-admin.md', '/work')
+
+    const list = $previewStatusBySession.get().s1
+    const displayIds = selectPreviewArtifactsForDisplay(list).map(item => item.id)
+
+    expect(displayIds).toHaveLength(4)
+    expect(displayIds).toEqual([
+      '/a/raw-log-analysis-report-admin.md',
+      '/a/raw-log-analysis-report-admin.html',
+      '/a/evidence-package-admin.json',
+      '/a/raw-log-summary-admin.json'
+    ])
   })
 
   it('dismiss and clear remove rows', () => {

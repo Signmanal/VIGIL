@@ -1437,8 +1437,7 @@ export const ja = defineLocale({
     tabFiles: 'ファイル',
     tabLinks: 'リンク',
     noArtifactsTitle: '出力が見つかりません',
-    noArtifactsDesc:
-      'チャットやスケジュール実行で生成または参照されたレポート、画像、ファイル、リンクがここに表示されます。',
+    noArtifactsDesc: 'チャットやスケジュール実行で生成されたレポート、画像、ファイル、リンクがここに表示されます。',
     failedLoad: '出力の読み込みに失敗しました',
     openFailed: '開くことができませんでした',
     preview: 'プレビュー',
@@ -1447,6 +1446,13 @@ export const ja = defineLocale({
     statReports: 'レポート',
     statSessions: '元セッション',
     statRelated: '関連出力',
+    retentionTitle: '保持とクリーンアップ',
+    retentionPolicy: (days, limit) => `直近 ${days} 日、最大 ${limit} 件の出力を保持します。クリーンアップは索引のみを非表示にします。`,
+    retentionScope: '実ファイルは削除されません。',
+    retentionPending: count => `${count} 件の古い出力を非表示にできます`,
+    retentionHidden: count => `${count} 件の出力を非表示中`,
+    retentionCleanNow: '今すぐクリーンアップ',
+    retentionRestore: '非表示を復元',
     itemsReport: 'レポート',
     itemsImage: '画像',
     itemsLink: 'リンク',
@@ -1672,7 +1678,8 @@ export const ja = defineLocale({
     running: '実行中',
     stop: '停止',
     dismiss: '閉じる',
-    exit: code => `終了コード ${code}`
+    exit: code => `終了コード ${code}`,
+    viewAllArtifacts: count => `${count} 件の出力をすべて表示`
   },
 
   updates: {

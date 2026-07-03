@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { SessionInfo, SessionMessage } from '@/types/vigil'
 
-import { collectArtifactsForSession } from './index'
+import { artifactIdsForRetentionCleanup, collectArtifactsForSession, type ArtifactRecord } from './index'
 
 function makeSession(overrides: Partial<SessionInfo> = {}): SessionInfo {
   return {
@@ -24,7 +24,7 @@ function makeSession(overrides: Partial<SessionInfo> = {}): SessionInfo {
 }
 
 describe('collectArtifactsForSession', () => {
-  it('indexes plain https links from assistant text', () => {
+  it('does not index plain reference links from assistant text', () => {
     const artifacts = collectArtifactsForSession(makeSession(), [
       {
         content: 'Reference: https://example.com/docs/getting-started',
@@ -33,18 +33,13 @@ describe('collectArtifactsForSession', () => {
       }
     ])
 
-    expect(artifacts).toHaveLength(1)
-    expect(artifacts[0]).toMatchObject({
-      href: 'https://example.com/docs/getting-started',
-      kind: 'link',
-      value: 'https://example.com/docs/getting-started'
-    })
+    expect(artifacts).toHaveLength(0)
   })
 
-  it('indexes http links present in tool JSON payloads', () => {
+  it('indexes generated download links present in tool JSON payloads', () => {
     const messages: SessionMessage[] = [
       {
-        content: JSON.stringify({ source_url: 'https://example.com/changelog/latest' }),
+        content: JSON.stringify({ download_url: 'https://example.com/reports/latest.html' }),
         role: 'tool',
         timestamp: 3000
       }
@@ -54,9 +49,9 @@ describe('collectArtifactsForSession', () => {
 
     expect(artifacts).toHaveLength(1)
     expect(artifacts[0]).toMatchObject({
-      href: 'https://example.com/changelog/latest',
-      kind: 'link',
-      value: 'https://example.com/changelog/latest'
+      href: 'https://example.com/reports/latest.html',
+      kind: 'report',
+      value: 'https://example.com/reports/latest.html'
     })
   })
 
@@ -142,8 +137,8 @@ describe('collectArtifactsForSession', () => {
       kind: 'report',
       label: 'raw-log-analysis-report-admin.md'
     })
-    expect(artifacts.find(artifact => artifact.value.endsWith('.json'))).toMatchObject({
-      kind: 'file',
+    expect(artifacts.find(artifact => artifact.value.endsWith('evidence-package-admin.json'))).toMatchObject({
+      kind: 'report',
       label: 'evidence-package-admin.json'
     })
     expect(artifacts.find(artifact => artifact.value.endsWith('.ndjson'))).toMatchObject({
@@ -199,7 +194,72 @@ describe('collectArtifactsForSession', () => {
     expect(artifacts).toHaveLength(1)
     expect(artifacts[0]).toMatchObject({
       label: 'reused-report.md',
-      timestamp: 12000
+      timestamp: 12000000
     })
+  })
+
+  it('indexes ailog report, evidence, and summary artifacts but excludes skill references', () => {
+    const session = makeSession({ cwd: '/Users/alice/.agents/skills/ueba-rule-generator' })
+    const artifacts = collectArtifactsForSession(session, [
+      {
+        content: [
+          '报告文件：',
+          '- HTML 报告：`/Users/alice/workspace/ailog_analysis/artifacts/raw-log-analysis-report-admin.html`',
+          '- Markdown 报告：`/Users/alice/workspace/ailog_analysis/artifacts/raw-log-analysis-report-admin.md`',
+          '- 统一证据包：`/Users/alice/workspace/ailog_analysis/artifacts/evidence-package-admin.json`',
+          '- 查询摘要：`/Users/alice/workspace/ailog_analysis/artifacts/raw-log-summary-admin.json`',
+          '参考文件：`/Users/alice/.agents/skills/ueba-rule-generator/references/create_empty_rule.md`'
+        ].join('\n'),
+        role: 'assistant',
+        timestamp: 13000
+      }
+    ])
+
+    expect(artifacts.map(artifact => artifact.label)).toEqual([
+      'raw-log-summary-admin.json',
+      'evidence-package-admin.json',
+      'raw-log-analysis-report-admin.md',
+      'raw-log-analysis-report-admin.html'
+    ])
+    expect(artifacts.some(artifact => artifact.label === 'create_empty_rule.md')).toBe(false)
+  })
+})
+
+function makeArtifact(overrides: Partial<ArtifactRecord> = {}): ArtifactRecord {
+  return {
+    cwd: null,
+    href: 'file:///tmp/a.md',
+    id: 'a',
+    kind: 'report',
+    label: 'a.md',
+    sessionId: 'session-1',
+    sessionTitle: 'Session',
+    sortIndex: 0,
+    timestamp: 1_000_000,
+    value: '/tmp/a.md',
+    ...overrides
+  }
+}
+
+describe('artifactIdsForRetentionCleanup', () => {
+  it('marks artifacts older than the retention window', () => {
+    const now = Date.UTC(2026, 6, 3)
+    const old = makeArtifact({ id: 'old', timestamp: now - 8 * 24 * 60 * 60 * 1000 })
+    const recent = makeArtifact({ id: 'recent', timestamp: now - 2 * 24 * 60 * 60 * 1000 })
+
+    expect(Array.from(artifactIdsForRetentionCleanup([old, recent], now))).toEqual(['old'])
+  })
+
+  it('marks the oldest artifacts beyond the retention count limit', () => {
+    const now = Date.UTC(2026, 6, 3)
+    const artifacts = Array.from({ length: 501 }, (_, index) =>
+      makeArtifact({
+        id: `artifact-${index}`,
+        sortIndex: index,
+        timestamp: now
+      })
+    )
+
+    expect(Array.from(artifactIdsForRetentionCleanup(artifacts, now))).toEqual(['artifact-0'])
   })
 })

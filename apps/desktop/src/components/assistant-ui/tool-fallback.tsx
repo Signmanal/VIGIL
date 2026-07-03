@@ -20,6 +20,7 @@ import { GlyphSpinner } from '@/components/ui/glyph-spinner'
 import { ToolIcon } from '@/components/ui/tool-icon'
 import { Tip } from '@/components/ui/tooltip'
 import { useI18n } from '@/i18n'
+import { collectGeneratedArtifactTargetsFromToolResult } from '@/lib/artifact-detection'
 import { PrettyLink, LinkifiedText as SharedLinkifiedText, urlSlugTitleLabel } from '@/lib/external-link'
 import { AlertCircle, CheckCircle2 } from '@/lib/icons'
 import { useEnterAnimation } from '@/lib/use-enter-animation'
@@ -301,13 +302,25 @@ function ToolEntry({ part }: ToolEntryProps) {
   const currentCwd = useStore($currentCwd)
   const previewTarget = view.previewTarget
 
+  const previewTargets = useMemo(() => {
+    const detected = isPending ? [] : collectGeneratedArtifactTargetsFromToolResult(result, toolName)
+
+    if (detected.length > 0) {
+      return detected
+    }
+
+    return previewTarget && isPreviewableTarget(previewTarget) ? [previewTarget] : []
+  }, [isPending, previewTarget, result, toolName])
+
   useEffect(() => {
-    if (isPending || !activeSessionId || !previewTarget || !isPreviewableTarget(previewTarget)) {
+    if (isPending || !activeSessionId || previewTargets.length === 0) {
       return
     }
 
-    recordPreviewArtifact(activeSessionId, previewTarget, currentCwd || '')
-  }, [activeSessionId, currentCwd, isPending, previewTarget])
+    for (const target of previewTargets) {
+      recordPreviewArtifact(activeSessionId, target, currentCwd || '')
+    }
+  }, [activeSessionId, currentCwd, isPending, previewTargets])
 
   const detailSections = useMemo(() => {
     if (!view.detail) {

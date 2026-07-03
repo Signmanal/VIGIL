@@ -13,18 +13,18 @@ import {
   useState
 } from 'react'
 
-import { vigilDirectiveFormatter, type SlashChipKind } from '@/components/assistant-ui/directive-text'
+import { type SlashChipKind, vigilDirectiveFormatter } from '@/components/assistant-ui/directive-text'
 import { composerFill, composerSurfaceGlass } from '@/components/chat/composer-dock'
 import { Button } from '@/components/ui/button'
 import { useMediaQuery } from '@/hooks/use-media-query'
 import { useResizeObserver } from '@/hooks/use-resize-observer'
 import { useI18n } from '@/i18n'
+import { collectGeneratedArtifactTargetsFromText } from '@/lib/artifact-detection'
 import { chatMessageText } from '@/lib/chat-messages'
 import { SLASH_COMMAND_RE } from '@/lib/chat-runtime'
 import { desktopSlashCommandTakesArgs } from '@/lib/desktop-slash-commands'
 import { DATA_IMAGE_URL_RE } from '@/lib/embedded-images'
 import { triggerHaptic } from '@/lib/haptics'
-import { previewTargetsFromChatText } from '@/lib/preview-targets'
 import { cn } from '@/lib/utils'
 import {
   $composerAttachments,
@@ -46,8 +46,8 @@ import {
   $composerPoppedOut,
   POPOUT_WIDTH_REM,
   readPopoutBounds,
-  setComposerPoppedOut,
-  setComposerPopoutPosition
+  setComposerPopoutPosition,
+  setComposerPoppedOut
 } from '@/store/composer-popout'
 import {
   $queuedPromptsBySession,
@@ -61,14 +61,14 @@ import {
   updateQueuedPrompt
 } from '@/store/composer-queue'
 import { $statusItemsBySession } from '@/store/composer-status'
-import { $previewStatusBySession, recordPreviewArtifact } from '@/store/preview-status'
 import { notify } from '@/store/notifications'
+import { $previewStatusBySession, recordPreviewArtifact } from '@/store/preview-status'
 import { $gatewayState, $messages, setSessionPickerOpen } from '@/store/session'
 import { $threadScrolledUp } from '@/store/thread-scroll'
 import { isSecondaryWindow } from '@/store/windows'
 import { useTheme } from '@/themes'
 
-import { extractDroppedFiles, VIGIL_PATHS_MIME, partitionDroppedFiles } from '../hooks/use-composer-actions'
+import { extractDroppedFiles, partitionDroppedFiles, VIGIL_PATHS_MIME } from '../hooks/use-composer-actions'
 
 import { AttachmentList } from './attachments'
 import { ContextMenu } from './context-menu'
@@ -268,7 +268,7 @@ export function ChatBar({
         continue
       }
 
-      for (const target of previewTargetsFromChatText(chatMessageText(message))) {
+      for (const target of collectGeneratedArtifactTargetsFromText(chatMessageText(message))) {
         recordPreviewArtifact(previewSessionId, target, cwd || '')
       }
     }

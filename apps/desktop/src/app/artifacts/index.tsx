@@ -18,18 +18,27 @@ import {
 } from '@/components/ui/pagination'
 import { TextTab, TextTabMeta } from '@/components/ui/text-tab'
 import { Tip } from '@/components/ui/tooltip'
-import { getSessionMessages, listAllProfileSessions } from '@/vigil'
 import { type Translations, useI18n } from '@/i18n'
+import {
+  artifactHref,
+  artifactKind,
+  type ArtifactKind,
+  artifactLabel,
+  artifactTimestampMs,
+  collectGeneratedArtifactTargetsFromText,
+  collectGeneratedArtifactTargetsFromToolResult,
+  looksLikeArtifact,
+  normalizeArtifactValue
+} from '@/lib/artifact-detection'
 import { sessionTitle } from '@/lib/chat-runtime'
 import { ExternalLink, ExternalLinkIcon, hostPathLabel, urlSlugTitleLabel, useLinkTitle } from '@/lib/external-link'
 import { FileImage, FileText, FolderOpen, Link2, MonitorPlay } from '@/lib/icons'
 import { normalizeOrLocalPreviewTarget } from '@/lib/local-preview'
-import { mediaExternalUrl } from '@/lib/media'
-import { isPreviewableTarget, previewTargetsFromChatText } from '@/lib/preview-targets'
 import { cn } from '@/lib/utils'
 import { notifyError } from '@/store/notifications'
 import { setSessionPreviewTarget } from '@/store/preview'
 import type { SessionInfo, SessionMessage } from '@/types/vigil'
+import { getSessionMessages, listAllProfileSessions } from '@/vigil'
 
 import { useRefreshHotkey } from '../hooks/use-refresh-hotkey'
 import { useRouteEnumParam } from '../hooks/use-route-enum-param'
@@ -38,11 +47,10 @@ import { PageSearchShell } from '../page-search-shell'
 import { sessionRoute } from '../routes'
 import type { SetStatusbarItemGroup } from '../shell/statusbar-controls'
 
-type ArtifactKind = 'report' | 'image' | 'file' | 'link'
 type ArtifactFilter = 'all' | ArtifactKind
 const ARTIFACT_FILTERS: readonly ArtifactFilter[] = ['all', 'report', 'image', 'file', 'link']
 
-interface ArtifactRecord {
+export interface ArtifactRecord {
   id: string
   kind: ArtifactKind
   value: string
@@ -55,21 +63,6 @@ interface ArtifactRecord {
   timestamp: number
 }
 
-const MARKDOWN_IMAGE_RE = /!\[([^\]]*)\]\(([^)\s]+)\)/g
-const MARKDOWN_LINK_RE = /\[([^\]]+)\]\(([^)\s]+)\)/g
-const URL_RE = /https?:\/\/[^\s<>"')]+/g
-const PATH_RE = /(^|[\s("'`：,，])((?:\/|~\/|\.\.?\/)[^\s"'`<>，。；、]+(?:\.[a-z0-9]{1,8})?)/gi
-const IMAGE_EXT_RE = /\.(?:png|jpe?g|gif|webp|svg|bmp)(?:\?.*)?$/i
-const REPORT_EXT_RE =
-  /\.(?:html?|md|markdown|pdf|txt|log|jsonl?|ndjson|csv|tsv|xml|ya?ml|toml|docx?|xlsx?|pptx?)(?:\?.*)?$/i
-const FILE_EXT_RE =
-  /\.(?:png|jpe?g|gif|webp|svg|bmp|html?|md|markdown|pdf|txt|log|jsonl?|ndjson|csv|tsv|xml|ya?ml|toml|docx?|xlsx?|pptx?|zip|tar|gz|mp3|wav|mp4|mov)(?:\?.*)?$/i
-const REPORT_HINT_RE =
-  /(report|summary|analysis|audit|findings|review|assessment|diagnostic|diagnosis|investigation|brief|insight|报告|報告|分析|总结|總結|汇总|匯總|审计|審計|稽核|复盘|復盤|诊断|診斷)/i
-const ALWAYS_REPORT_EXT_RE = /\.(?:html?|md|markdown|pdf|docx?|pptx?)(?:\?.*)?$/i
-const KEY_HINT_RE = /(path|file|url|image|artifact|output|download|result|target|report|summary|analysis)/i
-const RELATIVE_ROOT_PATH_RE = /^[A-Za-z0-9_.@-]+\//
-
 const ARTIFACT_TIME_FMT = new Intl.DateTimeFormat(undefined, {
   day: 'numeric',
   hour: 'numeric',
@@ -77,117 +70,10 @@ const ARTIFACT_TIME_FMT = new Intl.DateTimeFormat(undefined, {
   month: 'short'
 })
 
-function normalizeValue(value: string): string {
-  return value.trim().replace(/[),.;，。；、]+$/, '')
-}
-
-function parseMaybeJson(value: string): unknown {
-  if (!value.trim()) {
-    return null
-  }
-
-  try {
-    return JSON.parse(value)
-  } catch {
-    return null
-  }
-}
-
-function looksLikePathOrUrl(value: string): boolean {
-  return (
-    value.startsWith('http://') ||
-    value.startsWith('https://') ||
-    value.startsWith('file://') ||
-    value.startsWith('data:image/') ||
-    value.startsWith('/') ||
-    value.startsWith('./') ||
-    value.startsWith('../') ||
-    value.startsWith('~/') ||
-    RELATIVE_ROOT_PATH_RE.test(value)
-  )
-}
-
-function looksLikeArtifact(value: string): boolean {
-  if (/^(?:https?:\/\/|data:image\/)/.test(value)) {
-    return true
-  }
-
-  if (isPreviewableTarget(value)) {
-    return true
-  }
-
-  if (looksLikePathOrUrl(value) && (IMAGE_EXT_RE.test(value) || FILE_EXT_RE.test(value))) {
-    return true
-  }
-
-  return value.startsWith('/') && value.includes('.')
-}
-
-function looksLikeReport(value: string): boolean {
-  if (value.startsWith('data:image/') || IMAGE_EXT_RE.test(value)) {
-    return false
-  }
-
-  if (!REPORT_EXT_RE.test(value)) {
-    return false
-  }
-
-  if (ALWAYS_REPORT_EXT_RE.test(value)) {
-    return true
-  }
-
-  const label = artifactLabel(value)
-
-  return REPORT_HINT_RE.test(label)
-}
-
-function artifactKind(value: string): ArtifactKind {
-  if (value.startsWith('data:image/') || IMAGE_EXT_RE.test(value)) {
-    return 'image'
-  }
-
-  if (looksLikeReport(value)) {
-    return 'report'
-  }
-
-  if (
-    value.startsWith('/') ||
-    value.startsWith('./') ||
-    value.startsWith('../') ||
-    value.startsWith('~/') ||
-    value.startsWith('file://') ||
-    RELATIVE_ROOT_PATH_RE.test(value)
-  ) {
-    return 'file'
-  }
-
-  return 'link'
-}
-
-function artifactHref(value: string): string {
-  if (value.startsWith('http://') || value.startsWith('https://') || value.startsWith('data:')) {
-    return value
-  }
-
-  if (value.startsWith('file://') || value.startsWith('/')) {
-    return mediaExternalUrl(value)
-  }
-
-  return value
-}
-
-function artifactLabel(value: string): string {
-  try {
-    const url = new URL(value)
-    const item = url.pathname.split('/').filter(Boolean).pop()
-
-    return item || value
-  } catch {
-    const parts = value.split(/[\\/]/).filter(Boolean)
-
-    return parts.pop() || value
-  }
-}
+const ARTIFACT_RETENTION_DAYS = 7
+const ARTIFACT_RETENTION_LIMIT = 500
+const ARTIFACT_RETENTION_STORAGE_KEY = 'vigil.desktop.artifacts.hidden.v1'
+const ARTIFACT_RETENTION_WINDOW_MS = ARTIFACT_RETENTION_DAYS * 24 * 60 * 60 * 1000
 
 function messageText(message: SessionMessage): string {
   if (typeof message.content === 'string' && message.content.trim()) {
@@ -205,109 +91,19 @@ function messageText(message: SessionMessage): string {
   return ''
 }
 
-function collectStringValues(
-  value: unknown,
-  keyPath: string,
-  collector: (value: string, keyPath: string) => void
-): void {
-  if (typeof value === 'string') {
-    collector(value, keyPath)
-
-    return
-  }
-
-  if (Array.isArray(value)) {
-    value.forEach((entry, index) => collectStringValues(entry, `${keyPath}.${index}`, collector))
-
-    return
-  }
-
-  if (!value || typeof value !== 'object') {
-    return
-  }
-
-  for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
-    collectStringValues(child, keyPath ? `${keyPath}.${key}` : key, collector)
-  }
-}
-
-function collectArtifactsFromText(text: string, pushValue: (value: string) => void): void {
-  for (const target of previewTargetsFromChatText(text)) {
-    pushValue(target)
-  }
-
-  for (const match of text.matchAll(MARKDOWN_IMAGE_RE)) {
-    pushValue(match[2] || '')
-  }
-
-  for (const match of text.matchAll(MARKDOWN_LINK_RE)) {
-    const start = match.index ?? 0
-
-    if (start > 0 && text[start - 1] === '!') {
-      continue
-    }
-
-    const value = match[2] || ''
-
-    if (looksLikeArtifact(value)) {
-      pushValue(value)
-    }
-  }
-
-  for (const match of text.matchAll(URL_RE)) {
-    const value = match[0] || ''
-
-    if (looksLikeArtifact(value)) {
-      pushValue(value)
-    }
-  }
-
-  for (const match of text.matchAll(PATH_RE)) {
-    pushValue(match[2] || '')
-  }
-}
-
 function collectArtifactsFromMessage(message: SessionMessage, pushValue: (value: string) => void): void {
   const text = messageText(message)
 
   if (text) {
-    collectArtifactsFromText(text, pushValue)
-  }
-
-  if (message.role !== 'tool' && !Array.isArray(message.tool_calls)) {
-    return
-  }
-
-  if (Array.isArray(message.tool_calls)) {
-    for (const call of message.tool_calls) {
-      collectStringValues(call, 'tool_call', (value, keyPath) => {
-        const normalized = normalizeValue(value)
-
-        if (!normalized) {
-          return
-        }
-
-        if (KEY_HINT_RE.test(keyPath) && (looksLikePathOrUrl(normalized) || FILE_EXT_RE.test(normalized))) {
-          pushValue(normalized)
-        }
-      })
+    for (const target of collectGeneratedArtifactTargetsFromText(text)) {
+      pushValue(target)
     }
   }
 
-  const parsed = parseMaybeJson(text)
-
-  if (parsed !== null) {
-    collectStringValues(parsed, 'tool_result', (value, keyPath) => {
-      const normalized = normalizeValue(value)
-
-      if (!normalized) {
-        return
-      }
-
-      if ((KEY_HINT_RE.test(keyPath) || looksLikePathOrUrl(normalized)) && looksLikeArtifact(normalized)) {
-        pushValue(normalized)
-      }
-    })
+  if (message.role === 'tool') {
+    for (const target of collectGeneratedArtifactTargetsFromToolResult(message.content, message.tool_name)) {
+      pushValue(target)
+    }
   }
 }
 
@@ -322,14 +118,15 @@ export function collectArtifactsForSession(session: SessionInfo, messages: Sessi
     }
 
     collectArtifactsFromMessage(message, candidate => {
-      const value = normalizeValue(candidate)
+      const value = normalizeArtifactValue(candidate)
 
       if (!value || !looksLikeArtifact(value)) {
         return
       }
 
       const key = `${session.id}:${value}`
-      const timestamp = message.timestamp || session.last_active || session.started_at || Date.now()
+      const timestamp = artifactTimestampMs(message.timestamp ?? session.last_active ?? session.started_at)
+
       const nextRecord: ArtifactRecord = {
         id: key,
         kind: artifactKind(value),
@@ -342,6 +139,7 @@ export function collectArtifactsForSession(session: SessionInfo, messages: Sessi
         sortIndex: sortIndex++,
         timestamp
       }
+
       const existing = found.get(key)
 
       if (existing && compareArtifactsNewestFirst(existing, nextRecord) <= 0) {
@@ -363,6 +161,58 @@ function compareArtifactsNewestFirst(left: ArtifactRecord, right: ArtifactRecord
   }
 
   return right.sortIndex - left.sortIndex
+}
+
+function readHiddenArtifactIds(): Set<string> {
+  if (typeof window === 'undefined') {
+    return new Set()
+  }
+
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(ARTIFACT_RETENTION_STORAGE_KEY) || '[]')
+
+    return new Set(Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === 'string') : [])
+  } catch {
+    return new Set()
+  }
+}
+
+function writeHiddenArtifactIds(ids: Set<string>) {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  window.localStorage.setItem(ARTIFACT_RETENTION_STORAGE_KEY, JSON.stringify(Array.from(ids)))
+}
+
+export function artifactIdsForRetentionCleanup(artifacts: ArtifactRecord[], now = Date.now()): Set<string> {
+  const cleanup = new Set<string>()
+  const cutoff = now - ARTIFACT_RETENTION_WINDOW_MS
+  let kept = 0
+
+  for (const artifact of [...artifacts].sort(compareArtifactsNewestFirst)) {
+    if (artifact.timestamp < cutoff || kept >= ARTIFACT_RETENTION_LIMIT) {
+      cleanup.add(artifact.id)
+    } else {
+      kept += 1
+    }
+  }
+
+  return cleanup
+}
+
+function mergeRetentionCleanup(artifacts: ArtifactRecord[], hiddenIds: Set<string>): { added: number; ids: Set<string> } {
+  const next = new Set(hiddenIds)
+  let added = 0
+
+  for (const id of artifactIdsForRetentionCleanup(artifacts)) {
+    if (!next.has(id)) {
+      next.add(id)
+      added += 1
+    }
+  }
+
+  return { added, ids: next }
 }
 
 function formatArtifactTime(timestamp: number): string {
@@ -432,6 +282,7 @@ export function ArtifactsView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
   const a = t.artifacts
   const navigate = useNavigate()
   const [artifacts, setArtifacts] = useState<ArtifactRecord[] | null>(null)
+  const [hiddenArtifactIds, setHiddenArtifactIds] = useState<Set<string>>(() => readHiddenArtifactIds())
   const [query, setQuery] = useState('')
   const [refreshing, setRefreshing] = useState(false)
 
@@ -458,7 +309,15 @@ export function ArtifactsView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
         nextArtifacts.push(...collectArtifactsForSession(session, result.value.messages))
       })
 
-      setArtifacts(nextArtifacts.sort(compareArtifactsNewestFirst))
+      const sortedArtifacts = nextArtifacts.sort(compareArtifactsNewestFirst)
+      const retention = mergeRetentionCleanup(sortedArtifacts, readHiddenArtifactIds())
+
+      if (retention.added > 0) {
+        writeHiddenArtifactIds(retention.ids)
+        setHiddenArtifactIds(retention.ids)
+      }
+
+      setArtifacts(sortedArtifacts)
     } catch (err) {
       notifyError(err, a.failedLoad)
       setArtifacts([])
@@ -478,14 +337,30 @@ export function ArtifactsView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
     setFilePage(1)
   }, [artifacts, kindFilter, query])
 
-  const visibleArtifacts = useMemo(() => {
+  const retainedArtifacts = useMemo(
+    () => (artifacts || []).filter(artifact => !hiddenArtifactIds.has(artifact.id)),
+    [artifacts, hiddenArtifactIds]
+  )
+
+  const retentionCleanupCount = useMemo(() => {
     if (!artifacts) {
-      return []
+      return 0
     }
 
+    const cleanupIds = artifactIdsForRetentionCleanup(artifacts)
+
+    return Array.from(cleanupIds).filter(id => !hiddenArtifactIds.has(id)).length
+  }, [artifacts, hiddenArtifactIds])
+
+  const hiddenArtifactCount = useMemo(
+    () => (artifacts || []).filter(artifact => hiddenArtifactIds.has(artifact.id)).length,
+    [artifacts, hiddenArtifactIds]
+  )
+
+  const visibleArtifacts = useMemo(() => {
     const q = query.trim().toLowerCase()
 
-    return artifacts
+    return retainedArtifacts
       .filter(artifact => {
         if (kindFilter !== 'all' && artifact.kind !== kindFilter) {
           return false
@@ -502,7 +377,7 @@ export function ArtifactsView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
         )
       })
       .sort(compareArtifactsNewestFirst)
-  }, [artifacts, kindFilter, query])
+  }, [kindFilter, query, retainedArtifacts])
 
   const visibleImageArtifacts = useMemo(
     () => visibleArtifacts.filter(artifact => artifact.kind === 'image'),
@@ -530,7 +405,7 @@ export function ArtifactsView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
   )
 
   const counts = useMemo(() => {
-    const all = artifacts || []
+    const all = retainedArtifacts
 
     return {
       all: all.length,
@@ -539,13 +414,34 @@ export function ArtifactsView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
       file: all.filter(artifact => artifact.kind === 'file').length,
       link: all.filter(artifact => artifact.kind === 'link').length
     }
-  }, [artifacts])
+  }, [retainedArtifacts])
 
   const artifactSessionCount = useMemo(() => {
-    const artifactSessionIds = new Set((artifacts || []).map(artifact => artifact.sessionId))
+    const artifactSessionIds = new Set(retainedArtifacts.map(artifact => artifact.sessionId))
 
     return artifactSessionIds.size
+  }, [retainedArtifacts])
+
+  const cleanupArtifactsNow = useCallback(() => {
+    if (!artifacts) {
+      return
+    }
+
+    setHiddenArtifactIds(current => {
+      const retention = mergeRetentionCleanup(artifacts, current)
+
+      writeHiddenArtifactIds(retention.ids)
+
+      return retention.ids
+    })
   }, [artifacts])
+
+  const restoreHiddenArtifacts = useCallback(() => {
+    const empty = new Set<string>()
+
+    writeHiddenArtifactIds(empty)
+    setHiddenArtifactIds(empty)
+  }, [])
 
   const openArtifact = useCallback(
     async (href: string) => {
@@ -641,7 +537,7 @@ export function ArtifactsView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
     >
       {!artifacts ? (
         <PageLoader label={a.indexing} />
-      ) : visibleArtifacts.length === 0 ? (
+      ) : visibleArtifacts.length === 0 && hiddenArtifactCount === 0 ? (
         <div className="grid h-full place-items-center px-6 text-center">
           <div>
             <div className="text-sm font-medium">{a.noArtifactsTitle}</div>
@@ -660,6 +556,14 @@ export function ArtifactsView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
               />
               <ReportStatCard icon={<Link2 className="size-4" />} label={a.statReports} value={counts.report} />
             </div>
+
+            <ArtifactRetentionPanel
+              a={a}
+              hiddenCount={hiddenArtifactCount}
+              onCleanup={cleanupArtifactsNow}
+              onRestore={restoreHiddenArtifacts}
+              pendingCleanupCount={retentionCleanupCount}
+            />
 
             {visibleImageArtifacts.length > 0 && (
               <section className="flex flex-col">
@@ -738,6 +642,43 @@ function ReportStatCard({ icon, label, value }: { icon: React.ReactNode; label: 
   )
 }
 
+function ArtifactRetentionPanel({
+  a,
+  hiddenCount,
+  onCleanup,
+  onRestore,
+  pendingCleanupCount
+}: {
+  a: Translations['artifacts']
+  hiddenCount: number
+  onCleanup: () => void
+  onRestore: () => void
+  pendingCleanupCount: number
+}) {
+  return (
+    <section className="flex flex-col gap-2 rounded-lg border border-(--ui-stroke-tertiary) bg-(--ui-chat-bubble-background) px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+      <div className="min-w-0">
+        <div className="text-xs font-medium text-foreground">{a.retentionTitle}</div>
+        <div className="mt-0.5 text-[0.68rem] leading-4 text-muted-foreground">
+          {a.retentionPolicy(ARTIFACT_RETENTION_DAYS, ARTIFACT_RETENTION_LIMIT)}
+        </div>
+        <div className="mt-0.5 text-[0.68rem] leading-4 text-muted-foreground">
+          {hiddenCount > 0 ? a.retentionHidden(hiddenCount) : a.retentionScope}
+          {pendingCleanupCount > 0 ? ` · ${a.retentionPending(pendingCleanupCount)}` : ''}
+        </div>
+      </div>
+      <div className="flex shrink-0 items-center gap-1.5">
+        <Button disabled={pendingCleanupCount === 0} onClick={onCleanup} size="xs" type="button" variant="outline">
+          {a.retentionCleanNow}
+        </Button>
+        <Button disabled={hiddenCount === 0} onClick={onRestore} size="xs" type="button" variant="ghost">
+          {a.retentionRestore}
+        </Button>
+      </div>
+    </section>
+  )
+}
+
 interface ArtifactsPaginationProps {
   className?: string
   itemLabel: string
@@ -802,6 +743,7 @@ interface ArtifactImageCardProps {
 function ArtifactImageCard({ artifact, failedImage, onImageError, onOpenChat, onPreview }: ArtifactImageCardProps) {
   const { t } = useI18n()
   const a = t.artifacts
+
   const kindLabel =
     artifact.kind === 'image'
       ? a.kindImage

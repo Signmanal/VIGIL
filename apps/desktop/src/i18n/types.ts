@@ -1069,6 +1069,13 @@ export interface Translations {
     statReports: string
     statSessions: string
     statRelated: string
+    retentionTitle: string
+    retentionPolicy: (days: number, limit: number) => string
+    retentionScope: string
+    retentionPending: (count: number) => string
+    retentionHidden: (count: number) => string
+    retentionCleanNow: string
+    retentionRestore: string
     itemsReport: string
     itemsImage: string
     itemsLink: string
@@ -1240,6 +1247,7 @@ export interface Translations {
     stop: string
     dismiss: string
     exit: (code: number) => string
+    viewAllArtifacts: (count: number) => string
   }
 
   updates: {

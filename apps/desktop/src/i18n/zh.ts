@@ -1496,7 +1496,7 @@ export const zh: Translations = {
     tabFiles: '文件',
     tabLinks: '链接',
     noArtifactsTitle: '未找到产物',
-    noArtifactsDesc: '对话和自动化生成或引用的报告、图片、文件、链接会集中显示在这里。',
+    noArtifactsDesc: '对话和自动化生成的报告、图片、文件、链接会集中显示在这里。',
     failedLoad: '产物加载失败',
     openFailed: '打开失败',
     preview: '预览',
@@ -1505,6 +1505,13 @@ export const zh: Translations = {
     statReports: '报告',
     statSessions: '来源会话',
     statRelated: '关联输出',
+    retentionTitle: '清理与保留策略',
+    retentionPolicy: (days, limit) => `保留最近 ${days} 天且最多 ${limit} 条产物；清理只隐藏索引记录。`,
+    retentionScope: '不会删除磁盘上的真实文件。',
+    retentionPending: count => `${count} 条历史产物可清理`,
+    retentionHidden: count => `已隐藏 ${count} 条产物`,
+    retentionCleanNow: '立即清理',
+    retentionRestore: '恢复隐藏记录',
     itemsReport: '份报告',
     itemsImage: '张图片',
     itemsLink: '个链接',
@@ -1730,7 +1737,8 @@ export const zh: Translations = {
     running: '运行中',
     stop: '停止',
     dismiss: '关闭',
-    exit: code => `退出码 ${code}`
+    exit: code => `退出码 ${code}`,
+    viewAllArtifacts: count => `查看全部 ${count} 个产物`
   },
 
   updates: {
