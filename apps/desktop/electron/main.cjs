@@ -1654,7 +1654,10 @@ async function resolveHealedBranch(updateRoot, branch) {
 
 let releaseAutoUpdater = null
 let releaseAutoUpdaterReady = false
+let releaseAutoUpdaterFeedKey = null
 let releaseUpdateInfo = null
+let releaseGitHubTokenResolved = false
+let releaseGitHubToken = null
 
 function releaseUpdateMetadataPath() {
   const candidates = [
@@ -1665,8 +1668,104 @@ function releaseUpdateMetadataPath() {
   return candidates.find(candidate => fileExists(candidate)) || null
 }
 
+function parseReleaseUpdateMetadata(text) {
+  const result = {}
+  for (const line of String(text || '').split(/\r?\n/)) {
+    const match = /^([A-Za-z0-9_-]+):\s*(.*?)\s*$/.exec(line)
+    if (!match) continue
+    const value = match[2].replace(/^['"]|['"]$/g, '')
+    result[match[1]] = value === 'true' ? true : value === 'false' ? false : value
+  }
+  return result
+}
+
+function readReleaseUpdateMetadata() {
+  const metadataPath = releaseUpdateMetadataPath()
+  if (!metadataPath) return null
+  try {
+    return parseReleaseUpdateMetadata(fs.readFileSync(metadataPath, 'utf8'))
+  } catch {
+    return null
+  }
+}
+
 function releaseUpdatesEnabled() {
   return IS_PACKAGED && process.env.VIGIL_DESKTOP_UPDATE_CHANNEL !== 'source' && Boolean(releaseUpdateMetadataPath())
+}
+
+function resolveGitHubReleaseTokenFromGhCli() {
+  const gh = findOnPath('gh')
+  if (!gh) return null
+
+  try {
+    const token = execFileSync(gh, ['auth', 'token', '--hostname', 'github.com'], {
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        PATH: buildDesktopLookupPath({
+          hermesHome: VIGIL_HOME,
+          currentPath: process.env.PATH || '',
+          platform: process.platform,
+          pathModule: path
+        })
+      },
+      stdio: ['ignore', 'pipe', 'ignore'],
+      timeout: 5000
+    }).trim()
+
+    return token && !/[\r\n]/.test(token) ? token : null
+  } catch {
+    return null
+  }
+}
+
+function resolveGitHubReleaseToken() {
+  if (releaseGitHubTokenResolved) return releaseGitHubToken
+
+  releaseGitHubTokenResolved = true
+  releaseGitHubToken = process.env.GH_TOKEN || process.env.GITHUB_TOKEN || resolveGitHubReleaseTokenFromGhCli()
+  if (releaseGitHubToken) {
+    rememberLog('[release-updates] GitHub auth token available for private release checks')
+  }
+  return releaseGitHubToken
+}
+
+function configureReleaseAutoUpdaterFeed(autoUpdater) {
+  const metadata = readReleaseUpdateMetadata()
+  if (!metadata || metadata.provider !== 'github') return null
+
+  const token = resolveGitHubReleaseToken()
+  if (metadata.private === true && !token) {
+    return releaseUnsupportedStatus(
+      'private-release-auth-missing',
+      '私有 GitHub Release 更新需要登录凭据。请先运行 `gh auth login`，或用包含 GH_TOKEN/GITHUB_TOKEN 的环境启动 XCLAW。'
+    )
+  }
+
+  if (!token) return null
+
+  const feed = {
+    provider: 'github',
+    owner: metadata.owner,
+    repo: metadata.repo,
+    private: true,
+    releaseType: metadata.releaseType || 'release',
+    token
+  }
+  const feedKey = JSON.stringify({
+    owner: feed.owner,
+    repo: feed.repo,
+    private: feed.private,
+    releaseType: feed.releaseType,
+    token: 'present'
+  })
+
+  if (releaseAutoUpdaterFeedKey !== feedKey) {
+    autoUpdater.setFeedURL(feed)
+    releaseAutoUpdaterFeedKey = feedKey
+  }
+
+  return null
 }
 
 function getReleaseAutoUpdater() {
@@ -1719,6 +1818,9 @@ async function checkReleaseUpdates() {
       ? releaseUnsupportedStatus('no-release-updater-runtime', 'Release updater runtime is not bundled in this build.')
       : null
   }
+
+  const authStatus = configureReleaseAutoUpdaterFeed(updater)
+  if (authStatus) return authStatus
 
   try {
     const result = await updater.checkForUpdates()

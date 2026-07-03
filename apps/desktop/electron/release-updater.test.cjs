@@ -46,6 +46,15 @@ test('releaseErrorStatus maps thrown errors into check failures', () => {
   assert.equal(status.message, 'network down')
 })
 
+test('releaseErrorStatus maps private GitHub 404s to an actionable message', () => {
+  const status = releaseErrorStatus(new Error('HttpError: 404 Not Found latest-mac.yml GitHub'), 123)
+
+  assert.equal(status.supported, true)
+  assert.equal(status.channel, 'release')
+  assert.equal(status.error, 'private-release-check-failed')
+  assert.match(status.message, /gh auth login/)
+})
+
 test('withSourceChannel marks legacy git update status', () => {
   assert.deepEqual(withSourceChannel({ supported: true, behind: 2 }), {
     supported: true,
