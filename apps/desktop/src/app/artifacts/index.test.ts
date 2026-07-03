@@ -23,6 +23,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup()
+  vi.restoreAllMocks()
 })
 
 function makeSession(overrides: Partial<SessionInfo> = {}): SessionInfo {
@@ -314,13 +315,22 @@ describe('artifactIdsForRetentionCleanup', () => {
 })
 
 describe('ArtifactsView retention policy', () => {
-  it('expands archive policy, hides old rows by adding archive state, and restores archived rows', async () => {
-    const session = makeSession({ id: 'retention-session', title: 'Retention Session' })
+  it('expands deletion policy and moves old generated local files to Trash', async () => {
+    const trashPath = vi.fn(async (path: string) => ({ ok: true, path }))
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    Object.defineProperty(window, 'vigilDesktop', {
+      configurable: true,
+      value: {
+        trashPath
+      }
+    })
+
+    const session = makeSession({ cwd: '/workspace/project', id: 'retention-session', title: 'Retention Session' })
     listAllProfileSessions.mockResolvedValue({ sessions: [session] })
     getSessionMessages.mockResolvedValue({
       messages: [
         {
-          content: '旧报告：`workspace/reports/old-report.md`',
+          content: '旧报告：`workspace/reports/old-report.md`\n引用：`https://example.com/reference`',
           role: 'assistant',
           timestamp: 1000
         }
@@ -331,18 +341,15 @@ describe('ArtifactsView retention policy', () => {
 
     expect(await screen.findByText('old-report.md')).toBeTruthy()
 
-    const policy = screen.getByRole('button', { name: /Retention and archive policy/i })
+    const policy = screen.getByRole('button', { name: /Retention and deletion policy/i })
     expect(policy.getAttribute('aria-expanded')).toBe('false')
     fireEvent.click(policy)
     expect(policy.getAttribute('aria-expanded')).toBe('true')
 
-    fireEvent.click(screen.getByRole('button', { name: 'Archive old records' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Delete old output files' }))
 
     await waitFor(() => expect(screen.queryByText('old-report.md')).toBeNull())
-    expect(screen.getAllByText(/1 archived output/).length).toBeGreaterThan(0)
-
-    fireEvent.click(screen.getByRole('button', { name: 'Restore archived' }))
-
-    expect(await screen.findByText('old-report.md')).toBeTruthy()
+    expect(trashPath).toHaveBeenCalledWith('/workspace/project/workspace/reports/old-report.md')
+    expect(screen.getAllByText(/1 deleted output record/).length).toBeGreaterThan(0)
   })
 })

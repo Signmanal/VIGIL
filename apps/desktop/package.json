@@ -2,7 +2,7 @@
   "name": "vigil",
   "productName": "XCLAW",
   "private": true,
-  "version": "0.19.1",
+  "version": "0.19.2",
   "description": "Native desktop shell for XCLAW Agent.",
   "author": "Signmanal",
   "type": "module",

@@ -93,6 +93,20 @@ export async function desktopWorktrees(cwds: string[]): Promise<Record<string, V
   return desktop.worktrees ? desktop.worktrees(cwds) : {}
 }
 
+export async function trashDesktopPath(path: string): Promise<{ ok: boolean; path: string }> {
+  if (isDesktopFsRemoteMode()) {
+    throw new Error('Deleting remote artifact files is not supported from the desktop app.')
+  }
+
+  const desktop = bridge()
+
+  if (!desktop.trashPath) {
+    throw new Error('Artifact deletion is unavailable in this desktop build.')
+  }
+
+  return desktop.trashPath(path)
+}
+
 export async function desktopDefaultCwd(): Promise<{ branch: string; cwd: string } | null> {
   if (!isDesktopFsRemoteMode()) {
     return null

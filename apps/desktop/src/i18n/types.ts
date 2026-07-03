@@ -1091,6 +1091,9 @@ export interface Translations {
     retentionHidden: (count: number) => string
     retentionCleanNow: string
     retentionRestore: string
+    retentionDeleteConfirm: (count: number) => string
+    retentionDeleteSucceeded: (count: number) => string
+    retentionDeletePartial: (deleted: number, failed: number) => string
     itemsReport: string
     itemsImage: string
     itemsLink: string

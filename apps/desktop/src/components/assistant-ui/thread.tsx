@@ -374,6 +374,11 @@ const ResponseLoadingIndicator: FC = () => {
     >
       <span aria-hidden="true" className="dither inline-block size-3 rounded-[2px] text-midground/80 animate-pulse" />
       {compacting && <CompactionHint />}
+      {!compacting && (
+        <span className="shrink-0 text-[length:var(--conversation-caption-font-size)] text-(--ui-text-tertiary)">
+          {t.assistant.thread.thinking}
+        </span>
+      )}
       <ActivityTimerText seconds={elapsed} />
     </StatusRow>
   )
@@ -393,6 +398,7 @@ const STREAM_STALL_S = 2
 // so that per-token updates re-render only this leaf, not the whole
 // AssistantMessage subtree.
 const StreamStallIndicator: FC = () => {
+  const { t } = useI18n()
   const activity = useAuiState(s => {
     let textLength = 0
 
@@ -432,6 +438,11 @@ const StreamStallIndicator: FC = () => {
     >
       <span aria-hidden="true" className="dither inline-block size-3 rounded-[2px] text-midground/80 animate-pulse" />
       {compacting && <CompactionHint />}
+      {!compacting && (
+        <span className="shrink-0 text-[length:var(--conversation-caption-font-size)] text-(--ui-text-tertiary)">
+          {t.assistant.thread.thinking}
+        </span>
+      )}
       <ActivityTimerText seconds={elapsed} />
     </StatusRow>
   )

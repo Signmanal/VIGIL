@@ -19,6 +19,14 @@ describe('recordPreviewArtifact', () => {
     expect($previewStatusBySession.get().s1.map(i => i.id)).toEqual(['/a/index.html', '/a/about.html'])
   })
 
+  it('keeps preview artifacts isolated by session id', () => {
+    recordPreviewArtifact('s1', '/a/old-session-report.html', '/work/old')
+    recordPreviewArtifact('s2', '/b/current-session-report.html', '/work/current')
+
+    expect($previewStatusBySession.get().s1.map(i => i.id)).toEqual(['/a/old-session-report.html'])
+    expect($previewStatusBySession.get().s2.map(i => i.id)).toEqual(['/b/current-session-report.html'])
+  })
+
   it('caps the stored list and derives a label', () => {
     for (let n = 1; n <= 45; n += 1) {
       recordPreviewArtifact('s1', `/a/p${n}.html`, '/work')

@@ -1030,6 +1030,19 @@ function revealLocalPath(rawPath) {
   return { ok: true, path: localPath }
 }
 
+async function trashLocalPath(rawPath) {
+  const localPath = resolveLocalPathForOpen(rawPath, 'Delete generated artifact file')
+  const stat = await fs.promises.stat(localPath)
+
+  if (!stat.isFile()) {
+    throw new Error('Delete generated artifact file failed: only regular files can be deleted.')
+  }
+
+  await shell.trashItem(localPath)
+
+  return { ok: true, path: localPath }
+}
+
 async function openPreviewInBrowser(rawUrl) {
   const raw = String(rawUrl || '').trim()
   if (!raw) return false
@@ -6763,6 +6776,8 @@ ipcMain.handle('vigil:openPreviewInBrowser', async (_event, url) => {
 })
 
 ipcMain.handle('vigil:revealPath', (_event, filePath) => revealLocalPath(filePath))
+
+ipcMain.handle('vigil:trashPath', (_event, filePath) => trashLocalPath(filePath))
 
 // User-configurable default project directory. The renderer reads this on
 // settings mount and seeds the value into the picker; writing back persists

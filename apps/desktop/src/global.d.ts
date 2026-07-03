@@ -84,6 +84,7 @@ declare global {
       openPathInApp?: (filePath: string, appId: VIGILPathOpenApp) => Promise<VIGILOpenPathResult>
       openPreviewInBrowser?: (url: string) => Promise<void>
       revealPath?: (filePath: string) => Promise<{ ok: boolean; path: string }>
+      trashPath?: (filePath: string) => Promise<{ ok: boolean; path: string }>
       fetchLinkTitle: (url: string) => Promise<string>
       sanitizeWorkspaceCwd: (cwd?: null | string) => Promise<{ cwd: string; sanitized: boolean }>
       settings: {

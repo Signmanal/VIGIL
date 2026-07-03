@@ -31,11 +31,12 @@ import {
   normalizeArtifactValue
 } from '@/lib/artifact-detection'
 import { sessionTitle } from '@/lib/chat-runtime'
+import { trashDesktopPath } from '@/lib/desktop-fs'
 import { ExternalLinkIcon, hostPathLabel, urlSlugTitleLabel, useLinkTitle } from '@/lib/external-link'
 import { FileImage, FileText, FolderOpen, Link2, MonitorPlay } from '@/lib/icons'
 import { normalizeOrLocalPreviewTarget } from '@/lib/local-preview'
 import { cn } from '@/lib/utils'
-import { notifyError } from '@/store/notifications'
+import { notify, notifyError } from '@/store/notifications'
 import type { PreviewTarget } from '@/store/preview'
 import type { SessionInfo, SessionMessage } from '@/types/vigil'
 import { getSessionMessages, listAllProfileSessions } from '@/vigil'
@@ -81,6 +82,7 @@ const ARTIFACT_RETENTION_DAYS = 7
 const ARTIFACT_RETENTION_LIMIT = 500
 const ARTIFACT_RETENTION_STORAGE_KEY = 'vigil.desktop.artifacts.hidden.v1'
 const ARTIFACT_RETENTION_WINDOW_MS = ARTIFACT_RETENTION_DAYS * 24 * 60 * 60 * 1000
+const LOCAL_DELETE_TARGET_RE = /^(?:file:\/\/|\/|~\/|\.{1,2}\/|[A-Za-z0-9_.@-]+\/)/
 
 function messageText(message: SessionMessage): string {
   if (typeof message.content === 'string' && message.content.trim()) {
@@ -214,18 +216,14 @@ export function artifactIdsForRetentionCleanup(artifacts: ArtifactRecord[], now 
   return cleanup
 }
 
-function mergeRetentionCleanup(artifacts: ArtifactRecord[], hiddenIds: Set<string>): { added: number; ids: Set<string> } {
-  const next = new Set(hiddenIds)
-  let added = 0
+function artifactDeleteTarget(artifact: ArtifactRecord): string | null {
+  const value = normalizeArtifactValue(artifact.value)
 
-  for (const id of artifactIdsForRetentionCleanup(artifacts)) {
-    if (!next.has(id)) {
-      next.add(id)
-      added += 1
-    }
+  if (!value || /^(?:https?:|data:)/i.test(value)) {
+    return null
   }
 
-  return { added, ids: next }
+  return LOCAL_DELETE_TARGET_RE.test(value) ? value : null
 }
 
 function formatArtifactTime(timestamp: number): string {
@@ -368,15 +366,19 @@ export function ArtifactsView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
     [artifacts, hiddenArtifactIds]
   )
 
-  const retentionCleanupCount = useMemo(() => {
+  const retentionCleanupCandidates = useMemo(() => {
     if (!artifacts) {
-      return 0
+      return []
     }
 
     const cleanupIds = artifactIdsForRetentionCleanup(artifacts)
 
-    return Array.from(cleanupIds).filter(id => !hiddenArtifactIds.has(id)).length
+    return artifacts.filter(
+      artifact => cleanupIds.has(artifact.id) && !hiddenArtifactIds.has(artifact.id) && artifactDeleteTarget(artifact)
+    )
   }, [artifacts, hiddenArtifactIds])
+
+  const retentionCleanupCount = retentionCleanupCandidates.length
 
   const hiddenArtifactCount = useMemo(
     () => (artifacts || []).filter(artifact => hiddenArtifactIds.has(artifact.id)).length,
@@ -453,26 +455,61 @@ export function ArtifactsView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
     return artifactSessionIds.size
   }, [retainedArtifacts])
 
-  const cleanupArtifactsNow = useCallback(() => {
-    if (!artifacts) {
+  const cleanupArtifactsNow = useCallback(async () => {
+    if (retentionCleanupCandidates.length === 0) {
       return
     }
 
-    setHiddenArtifactIds(current => {
-      const retention = mergeRetentionCleanup(artifacts, current)
+    if (typeof window !== 'undefined' && !window.confirm(a.retentionDeleteConfirm(retentionCleanupCandidates.length))) {
+      return
+    }
 
-      writeHiddenArtifactIds(retention.ids)
+    const deletedIds = new Set<string>()
+    let failed = 0
 
-      return retention.ids
+    for (const artifact of retentionCleanupCandidates) {
+      const rawTarget = artifactDeleteTarget(artifact)
+
+      if (!rawTarget) {
+        continue
+      }
+
+      try {
+        const preview = await normalizeOrLocalPreviewTarget(rawTarget, artifact.cwd || undefined)
+
+        if (!preview || preview.kind !== 'file' || !preview.path) {
+          throw new Error(`Delete generated artifact failed: ${rawTarget} is not a local file.`)
+        }
+
+        await trashDesktopPath(preview.path)
+        deletedIds.add(artifact.id)
+      } catch {
+        failed += 1
+      }
+    }
+
+    if (deletedIds.size > 0) {
+      setHiddenArtifactIds(current => {
+        const next = new Set(current)
+
+        for (const id of deletedIds) {
+          next.add(id)
+        }
+
+        writeHiddenArtifactIds(next)
+
+        return next
+      })
+    }
+
+    notify({
+      kind: failed > 0 ? 'warning' : 'success',
+      message:
+        failed > 0
+          ? a.retentionDeletePartial(deletedIds.size, failed)
+          : a.retentionDeleteSucceeded(deletedIds.size)
     })
-  }, [artifacts])
-
-  const restoreHiddenArtifacts = useCallback(() => {
-    const empty = new Set<string>()
-
-    writeHiddenArtifactIds(empty)
-    setHiddenArtifactIds(empty)
-  }, [])
+  }, [a, retentionCleanupCandidates])
 
   const previewArtifact = useCallback(
     async (artifact: ArtifactRecord) => {
@@ -581,7 +618,6 @@ export function ArtifactsView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
                 a={a}
                 hiddenCount={hiddenArtifactCount}
                 onCleanup={cleanupArtifactsNow}
-                onRestore={restoreHiddenArtifacts}
                 pendingCleanupCount={retentionCleanupCount}
               />
 
@@ -680,13 +716,11 @@ function ArtifactRetentionPanel({
   a,
   hiddenCount,
   onCleanup,
-  onRestore,
   pendingCleanupCount
 }: {
   a: Translations['artifacts']
   hiddenCount: number
-  onCleanup: () => void
-  onRestore: () => void
+  onCleanup: () => void | Promise<void>
   pendingCleanupCount: number
 }) {
   const [expanded, setExpanded] = useState(false)
@@ -721,11 +755,8 @@ function ArtifactRetentionPanel({
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-1.5">
-            <Button disabled={pendingCleanupCount === 0} onClick={onCleanup} size="xs" type="button" variant="outline">
+            <Button disabled={pendingCleanupCount === 0} onClick={() => void onCleanup()} size="xs" type="button" variant="outline">
               {a.retentionCleanNow}
-            </Button>
-            <Button disabled={hiddenCount === 0} onClick={onRestore} size="xs" type="button" variant="ghost">
-              {a.retentionRestore}
             </Button>
           </div>
         </div>

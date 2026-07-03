@@ -2,7 +2,7 @@
 
 import { type ToolCallMessagePartProps, useAuiState } from '@assistant-ui/react'
 import { useStore } from '@nanostores/react'
-import { createContext, type FC, type PropsWithChildren, type ReactNode, useContext, useEffect, useMemo } from 'react'
+import { createContext, type FC, type PropsWithChildren, type ReactNode, useContext, useMemo } from 'react'
 
 import { AnsiText } from '@/components/assistant-ui/ansi-text'
 import { useElapsedSeconds } from '@/components/chat/activity-timer'
@@ -20,13 +20,10 @@ import { GlyphSpinner } from '@/components/ui/glyph-spinner'
 import { ToolIcon } from '@/components/ui/tool-icon'
 import { Tip } from '@/components/ui/tooltip'
 import { useI18n } from '@/i18n'
-import { collectGeneratedArtifactTargetsFromToolResult } from '@/lib/artifact-detection'
 import { PrettyLink, LinkifiedText as SharedLinkifiedText, urlSlugTitleLabel } from '@/lib/external-link'
 import { AlertCircle, CheckCircle2 } from '@/lib/icons'
 import { useEnterAnimation } from '@/lib/use-enter-animation'
 import { cn } from '@/lib/utils'
-import { recordPreviewArtifact } from '@/store/preview-status'
-import { $activeSessionId, $currentCwd } from '@/store/session'
 import { $toolInlineDiffs } from '@/store/tool-diffs'
 import { $toolRowDismissed, dismissToolRow } from '@/store/tool-dismiss'
 import { $toolDisclosureOpen, $toolViewMode, setToolDisclosureOpen } from '@/store/tool-view'
@@ -39,7 +36,6 @@ import {
   countDiffLineStats,
   inlineDiffFromResult,
   isFileEditTool,
-  isPreviewableTarget,
   looksRedundant,
   type SearchResultRow,
   selectMessageRunning,
@@ -293,34 +289,6 @@ function ToolEntry({ part }: ToolEntryProps) {
 
     return buildToolView(p, inlineDiff)
   }, [inlineDiff, isPending, result, stablePart])
-
-  // Surface a previewable artifact (reports, HTML files, localhost URLs) as a compact link
-  // in the composer status stack rather than a bulky inline card. Uses the same
-  // detected target the old inline card did, keyed to the active session the
-  // stack reads from. Idempotent + dedup'd, so re-renders don't churn.
-  const activeSessionId = useStore($activeSessionId)
-  const currentCwd = useStore($currentCwd)
-  const previewTarget = view.previewTarget
-
-  const previewTargets = useMemo(() => {
-    const detected = isPending ? [] : collectGeneratedArtifactTargetsFromToolResult(result, toolName)
-
-    if (detected.length > 0) {
-      return detected
-    }
-
-    return previewTarget && isPreviewableTarget(previewTarget) ? [previewTarget] : []
-  }, [isPending, previewTarget, result, toolName])
-
-  useEffect(() => {
-    if (isPending || !activeSessionId || previewTargets.length === 0) {
-      return
-    }
-
-    for (const target of previewTargets) {
-      recordPreviewArtifact(activeSessionId, target, currentCwd || '')
-    }
-  }, [activeSessionId, currentCwd, isPending, previewTargets])
 
   const detailSections = useMemo(() => {
     if (!view.detail) {

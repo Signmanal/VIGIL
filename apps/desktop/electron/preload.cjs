@@ -73,6 +73,7 @@ contextBridge.exposeInMainWorld('vigilDesktop', {
   openPathInApp: (filePath, appId) => ipcRenderer.invoke('vigil:openPathInApp', filePath, appId),
   openPreviewInBrowser: url => ipcRenderer.invoke('vigil:openPreviewInBrowser', url),
   revealPath: filePath => ipcRenderer.invoke('vigil:revealPath', filePath),
+  trashPath: filePath => ipcRenderer.invoke('vigil:trashPath', filePath),
   fetchLinkTitle: url => ipcRenderer.invoke('vigil:fetchLinkTitle', url),
   sanitizeWorkspaceCwd: cwd => ipcRenderer.invoke('vigil:workspace:sanitize', cwd),
   settings: {

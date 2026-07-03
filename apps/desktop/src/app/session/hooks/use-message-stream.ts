@@ -4,6 +4,10 @@ import { type MutableRefObject, useCallback, useEffect, useRef } from 'react'
 import { readActiveTerminal } from '@/app/right-sidebar/terminal/buffer'
 import { translateNow } from '@/i18n'
 import {
+  collectGeneratedArtifactTargetsFromText,
+  collectGeneratedArtifactTargetsFromToolResult
+} from '@/lib/artifact-detection'
+import {
   appendAssistantTextPart,
   appendReasoningPart,
   assistantTextPart,
@@ -35,6 +39,7 @@ import { dispatchNativeNotification } from '@/store/native-notifications'
 import { notify } from '@/store/notifications'
 import { requestDesktopOnboarding } from '@/store/onboarding'
 import { flashPetActivity, markPetUnread, setPetActivity } from '@/store/pet'
+import { recordPreviewArtifact } from '@/store/preview-status'
 import { clearAllPrompts, setApprovalRequest, setSecretRequest, setSudoRequest } from '@/store/prompts'
 import {
   setCurrentBranch,
@@ -278,6 +283,23 @@ export function useMessageStream({
 }: MessageStreamOptions) {
   const sessionInterrupted = useCallback(
     (sessionId: string) => sessionStateByRuntimeIdRef.current.get(sessionId)?.interrupted ?? false,
+    [sessionStateByRuntimeIdRef]
+  )
+
+  const recordGeneratedArtifacts = useCallback(
+    (sessionId: string, targets: string[], payload?: GatewayEventPayload) => {
+      if (targets.length === 0) {
+        return
+      }
+
+      const state = sessionStateByRuntimeIdRef.current.get(sessionId)
+      const previewSessionId = state?.storedSessionId || sessionId
+      const cwd = (typeof payload?.cwd === 'string' && payload.cwd) || state?.cwd || ''
+
+      for (const target of targets) {
+        recordPreviewArtifact(previewSessionId, target, cwd)
+      }
+    },
     [sessionStateByRuntimeIdRef]
   )
 
@@ -537,8 +559,16 @@ export function useMessageStream({
         () => upsertToolPart([], payload, phase),
         { pending: m => phase !== 'complete' || (m.pending ?? false) }
       )
+
+      if (phase === 'complete') {
+        recordGeneratedArtifacts(
+          sessionId,
+          collectGeneratedArtifactTargetsFromToolResult(payload?.result ?? payload, payload?.name),
+          payload
+        )
+      }
     },
-    [flushQueuedDeltas, mutateStream, sessionInterrupted]
+    [flushQueuedDeltas, mutateStream, recordGeneratedArtifacts, sessionInterrupted]
   )
 
   const completeAssistantMessage = useCallback(
@@ -668,6 +698,8 @@ export function useMessageStream({
         void hydrateFromStoredSession(3, completedState.storedSessionId, sessionId)
       }
 
+      recordGeneratedArtifacts(sessionId, collectGeneratedArtifactTargetsFromText(text))
+
       dispatchNativeNotification({
         body: text.slice(0, 140) || translateNow('notifications.native.turnDoneBody'),
         kind: 'turnDone',
@@ -675,7 +707,7 @@ export function useMessageStream({
         title: translateNow('notifications.native.turnDoneTitle')
       })
     },
-    [hydrateFromStoredSession, refreshSessions, updateSessionState]
+    [hydrateFromStoredSession, recordGeneratedArtifacts, refreshSessions, updateSessionState]
   )
 
   const failAssistantMessage = useCallback(

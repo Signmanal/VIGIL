@@ -1342,13 +1342,20 @@ export const en: Translations = {
     statReports: 'Reports',
     statSessions: 'Source sessions',
     statRelated: 'Related outputs',
-    retentionTitle: 'Retention and archive policy',
-    retentionPolicy: (days, limit) => `Keeps the last ${days} days and up to ${limit} outputs visible. Archiving only adds a hidden-state marker.`,
-    retentionScope: 'Source records and real files are kept; nothing is deleted.',
-    retentionPending: count => `${count} old output${count === 1 ? '' : 's'} ready to archive`,
-    retentionHidden: count => `${count} archived output${count === 1 ? '' : 's'} hidden`,
-    retentionCleanNow: 'Archive old records',
-    retentionRestore: 'Restore archived',
+    retentionTitle: 'Retention and deletion policy',
+    retentionPolicy: (days, limit) =>
+      `Keeps the last ${days} days and up to ${limit} outputs visible. Deletion only targets generated local artifact files.`,
+    retentionScope: 'External links, remote paths, referenced source files, and skill files are never deleted.',
+    retentionPending: count => `${count} generated local output file${count === 1 ? '' : 's'} ready to delete`,
+    retentionHidden: count => `${count} deleted output record${count === 1 ? '' : 's'} hidden`,
+    retentionCleanNow: 'Delete old output files',
+    retentionRestore: 'Restore hidden records',
+    retentionDeleteConfirm: count =>
+      `Move ${count} generated local output file${count === 1 ? '' : 's'} to Trash?`,
+    retentionDeleteSucceeded: count =>
+      `Moved ${count} generated output file${count === 1 ? '' : 's'} to Trash.`,
+    retentionDeletePartial: (deleted, failed) =>
+      `Moved ${deleted} generated output file${deleted === 1 ? '' : 's'} to Trash; ${failed} failed.`,
     itemsReport: 'reports',
     itemsImage: 'images',
     itemsLink: 'links',

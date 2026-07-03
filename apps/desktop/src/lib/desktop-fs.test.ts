@@ -9,7 +9,8 @@ import {
   readDesktopFileDataUrl,
   readDesktopFileText,
   selectDesktopPaths,
-  setDesktopFsRemotePicker
+  setDesktopFsRemotePicker,
+  trashDesktopPath
 } from './desktop-fs'
 
 const readDir = vi.fn(async () => ({ entries: [{ name: 'local', path: '/local', isDirectory: true }] }))
@@ -17,6 +18,7 @@ const readFileText = vi.fn(async () => ({ path: '/local/file.txt', text: 'local'
 const readFileDataUrl = vi.fn(async () => 'data:text/plain;base64,bG9jYWw=')
 const gitRoot = vi.fn(async () => '/local')
 const selectPaths = vi.fn(async () => ['/local'])
+const trashPath = vi.fn(async (path: string) => ({ ok: true, path }))
 const api = vi.fn(async ({ path }: { path: string }) => {
   if (path.startsWith('/api/fs/list?')) return { entries: [{ name: 'remote', path: '/remote', isDirectory: true }] }
   if (path.startsWith('/api/fs/read-text?')) return { path: '/remote/file.txt', text: 'remote', byteSize: 6 }
@@ -34,7 +36,8 @@ function stubBridge() {
       readDir,
       readFileDataUrl,
       readFileText,
-      selectPaths
+      selectPaths,
+      trashPath
     }
   })
 }
@@ -60,12 +63,14 @@ describe('desktop filesystem facade', () => {
     await expect(readDesktopFileDataUrl('/work/file.txt')).resolves.toBe('data:text/plain;base64,bG9jYWw=')
     await expect(desktopGitRoot('/work')).resolves.toBe('/local')
     await expect(selectDesktopPaths({ directories: true })).resolves.toEqual(['/local'])
+    await expect(trashDesktopPath('/work/generated.json')).resolves.toEqual({ ok: true, path: '/work/generated.json' })
 
     expect(readDir).toHaveBeenCalledWith('/work')
     expect(readFileText).toHaveBeenCalledWith('/work/file.txt')
     expect(readFileDataUrl).toHaveBeenCalledWith('/work/file.txt')
     expect(gitRoot).toHaveBeenCalledWith('/work')
     expect(selectPaths).toHaveBeenCalledWith({ directories: true })
+    expect(trashPath).toHaveBeenCalledWith('/work/generated.json')
     expect(api).not.toHaveBeenCalled()
   })
 
@@ -87,6 +92,15 @@ describe('desktop filesystem facade', () => {
     expect(readFileText).not.toHaveBeenCalled()
     expect(readFileDataUrl).not.toHaveBeenCalled()
     expect(gitRoot).not.toHaveBeenCalled()
+    expect(trashPath).not.toHaveBeenCalled()
+  })
+
+  it('does not delete remote files from the desktop facade', async () => {
+    $connection.set({ mode: 'remote' } as never)
+
+    await expect(trashDesktopPath('/home/user/project/generated.json')).rejects.toThrow(/remote artifact files/)
+
+    expect(trashPath).not.toHaveBeenCalled()
   })
 
   it('uses the registered in-app directory picker in remote mode', async () => {

@@ -19,7 +19,6 @@ import { Button } from '@/components/ui/button'
 import { useMediaQuery } from '@/hooks/use-media-query'
 import { useResizeObserver } from '@/hooks/use-resize-observer'
 import { useI18n } from '@/i18n'
-import { collectGeneratedArtifactTargetsFromText } from '@/lib/artifact-detection'
 import { chatMessageText } from '@/lib/chat-messages'
 import { SLASH_COMMAND_RE } from '@/lib/chat-runtime'
 import { desktopSlashCommandTakesArgs } from '@/lib/desktop-slash-commands'
@@ -62,7 +61,7 @@ import {
 } from '@/store/composer-queue'
 import { $statusItemsBySession } from '@/store/composer-status'
 import { notify } from '@/store/notifications'
-import { $previewStatusBySession, recordPreviewArtifact } from '@/store/preview-status'
+import { $previewStatusBySession } from '@/store/preview-status'
 import { $gatewayState, $messages, setSessionPickerOpen } from '@/store/session'
 import { $threadScrolledUp } from '@/store/thread-scroll'
 import { isSecondaryWindow } from '@/store/windows'
@@ -222,7 +221,6 @@ export function ChatBar({
   )
 
   const attachments = useStore($composerAttachments)
-  const messages = useStore($messages)
   const queuedPromptsBySession = useStore($queuedPromptsBySession)
   const statusItemsBySession = useStore($statusItemsBySession)
   const previewStatusBySession = useStore($previewStatusBySession)
@@ -257,22 +255,6 @@ export function ChatBar({
       (previewSessionId ? (previewStatusBySession[previewSessionId]?.length ?? 0) > 0 : false),
     [previewSessionId, previewStatusBySession, queuedPrompts.length, statusItemsBySession, statusSessionId]
   )
-
-  useEffect(() => {
-    if (!previewSessionId) {
-      return
-    }
-
-    for (const message of messages.slice(-8)) {
-      if ((message.role !== 'assistant' && message.role !== 'tool') || message.pending) {
-        continue
-      }
-
-      for (const target of collectGeneratedArtifactTargetsFromText(chatMessageText(message))) {
-        recordPreviewArtifact(previewSessionId, target, cwd || '')
-      }
-    }
-  }, [cwd, messages, previewSessionId])
 
   const composerRef = useRef<HTMLFormElement | null>(null)
   const composerSurfaceRef = useRef<HTMLDivElement | null>(null)
