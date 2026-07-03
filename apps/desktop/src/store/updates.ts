@@ -29,6 +29,9 @@ export interface UpdateApplyState {
   /** When the stage is 'manual': the exact command the user should run
    *  (CLI install with no staged updater). */
   command: string | null
+  /** Release-channel manual updates open this GitHub Release page instead of
+   *  copying a terminal command. */
+  releaseUrl: string | null
   log: readonly { stage: DesktopUpdateStage; message: string; at: number }[]
 }
 
@@ -39,6 +42,7 @@ const IDLE: UpdateApplyState = {
   percent: null,
   error: null,
   command: null,
+  releaseUrl: null,
   log: []
 }
 
@@ -340,12 +344,14 @@ export async function applyUpdates(opts: DesktopUpdateApplyOptions = {}): Promis
     // `vigil update` themselves. Land on a dedicated manual state so the
     // overlay shows the command + copy button instead of a dead retry loop.
     if (result?.manual) {
+      const releaseUrl = result.channel === 'release' ? (result.releaseUrl ?? null) : null
       $updateApply.set({
         ...IDLE,
         applying: false,
         stage: 'manual',
-        message: result.command ?? 'vigil update',
-        command: result.command ?? 'vigil update'
+        message: result.message ?? result.command ?? 'vigil update',
+        command: releaseUrl ? null : (result.command ?? 'vigil update'),
+        releaseUrl
       })
 
       return result
@@ -481,7 +487,12 @@ function ingestBackendActionStatus(status: Awaited<ReturnType<typeof getActionSt
 
 export async function applyBackendUpdate(): Promise<DesktopUpdateApplyResult> {
   dismissNotification(UPDATE_TOAST_ID)
-  $backendUpdateApply.set({ ...IDLE, applying: true, stage: 'prepare', message: translateNow('updates.applyStatus.preparing') })
+  $backendUpdateApply.set({
+    ...IDLE,
+    applying: true,
+    stage: 'prepare',
+    message: translateNow('updates.applyStatus.preparing')
+  })
 
   try {
     const started = await updateVIGIL()
@@ -494,7 +505,12 @@ export async function applyBackendUpdate(): Promise<DesktopUpdateApplyResult> {
       return { ok: false, error: 'manual', manual: true, message, command }
     }
 
-    $backendUpdateApply.set({ ...IDLE, applying: true, stage: 'pull', message: translateNow('updates.applyStatus.pulling') })
+    $backendUpdateApply.set({
+      ...IDLE,
+      applying: true,
+      stage: 'pull',
+      message: translateNow('updates.applyStatus.pulling')
+    })
 
     let last: Awaited<ReturnType<typeof getActionStatus>> | null = null
     for (let attempt = 0; attempt < 30; attempt += 1) {
@@ -521,7 +537,12 @@ export async function applyBackendUpdate(): Promise<DesktopUpdateApplyResult> {
 
     const ok = !!last && (last.exit_code ?? 1) === 0
     if (ok) {
-      $backendUpdateApply.set({ ...$backendUpdateApply.get(), applying: true, stage: 'restart', message: translateNow('updates.applyStatus.restarting') })
+      $backendUpdateApply.set({
+        ...$backendUpdateApply.get(),
+        applying: true,
+        stage: 'restart',
+        message: translateNow('updates.applyStatus.restarting')
+      })
 
       return finishBackendApply(await waitForBackendReturn())
     }
@@ -537,7 +558,13 @@ export async function applyBackendUpdate(): Promise<DesktopUpdateApplyResult> {
     return { ok: false, error: 'apply-failed', message: 'Backend update failed.' }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
-    $backendUpdateApply.set({ ...$backendUpdateApply.get(), applying: false, stage: 'error', error: 'apply-failed', message })
+    $backendUpdateApply.set({
+      ...$backendUpdateApply.get(),
+      applying: false,
+      stage: 'error',
+      error: 'apply-failed',
+      message
+    })
 
     return { ok: false, error: 'apply-failed', message }
   }
@@ -562,6 +589,7 @@ function ingestProgress(payload: DesktopUpdateProgress): void {
     error: payload.error,
     // 'manual' carries the command to run in its message field.
     command: payload.stage === 'manual' ? payload.message : current.command,
+    releaseUrl: current.releaseUrl,
     log
   })
 }
@@ -604,10 +632,13 @@ export function startUpdatePoller(): void {
   })
 
   window.addEventListener('focus', onFocus)
-  backgroundTimer = setInterval(() => {
-    void checkUpdates()
-    void checkBackendUpdates()
-  }, 30 * 60 * 1000)
+  backgroundTimer = setInterval(
+    () => {
+      void checkUpdates()
+      void checkBackendUpdates()
+    },
+    30 * 60 * 1000
+  )
 }
 
 export function stopUpdatePoller(): void {

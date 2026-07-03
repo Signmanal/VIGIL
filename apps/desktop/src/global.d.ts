@@ -254,6 +254,7 @@ export interface DesktopUpdateStatus {
   targetSha?: string
   releaseVersion?: string
   releaseName?: string
+  releaseUrl?: string
   commits?: DesktopUpdateCommit[]
   dirty?: boolean
   fetchedAt?: number
@@ -275,6 +276,7 @@ export interface DesktopUpdateApplyResult {
    *  `vigil update` themselves. `command` is the exact line to run. */
   manual?: boolean
   command?: string
+  releaseUrl?: string
   hermesRoot?: string
   /** True when the backend was updated but the GUI couldn't be relaunched in
    *  place (AppImage / dev run): the new version loads on next launch. */

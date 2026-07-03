@@ -23,13 +23,13 @@ analysis, and controlled tool execution across day-to-day cyber defense work.
 
 ## Product Surfaces
 
-| Surface | Command | Purpose |
-| --- | --- | --- |
-| CLI | `vigil` | Primary terminal workflow for setup, chat, diagnostics, tools, cron jobs, and gateway control. |
-| Agent | `vigil-agent` | Direct agent entrypoint for automation and advanced local runs. |
-| ACP | `vigil-acp` | Agent Client Protocol adapter entrypoint. |
-| Dashboard | `vigil dashboard` | Browser dashboard for local operations, defaulting to `127.0.0.1:9779`. |
-| Desktop | `vigil desktop` | Native desktop workspace for sessions, settings, previews, and local runtime control. |
+| Surface   | Command           | Purpose                                                                                        |
+| --------- | ----------------- | ---------------------------------------------------------------------------------------------- |
+| CLI       | `vigil`           | Primary terminal workflow for setup, chat, diagnostics, tools, cron jobs, and gateway control. |
+| Agent     | `vigil-agent`     | Direct agent entrypoint for automation and advanced local runs.                                |
+| ACP       | `vigil-acp`       | Agent Client Protocol adapter entrypoint.                                                      |
+| Dashboard | `vigil dashboard` | Browser dashboard for local operations, defaulting to `127.0.0.1:9779`.                        |
+| Desktop   | `vigil desktop`   | Native desktop workspace for sessions, settings, previews, and local runtime control.          |
 
 ## Security Posture
 
@@ -172,30 +172,20 @@ The CLI remains installable from source with `pip install -e .` until a package
 registry release is published. If a Release has no installer assets, treat it as
 incomplete for end users.
 
-### macOS Update Signing Chain
-
-`desktop-v0.18.9` is the macOS auto-update signing-chain starting point for the
-community Desktop client. Users who install the `0.18.9` GitHub Release package
-can receive later `0.19.x` Desktop updates through the in-app updater as long as
-every later macOS Release keeps the same signing identity:
-
-- Signing authority: `Apple Development: 2663636294@qq.com (VKULVKP8KD)`.
-- `codesign` TeamIdentifier: `5CG9U4GR44`.
-
-Do not rotate the macOS signing identity for a normal patch or minor release.
-Changing either value breaks the updater trust chain for users who installed
-`0.18.9`; if the identity must change, publish a new manual-install anchor
-release and call that out in the release notes. `apps/desktop/scripts/verify-mac-release-artifacts.cjs`
-enforces this identity for `0.18.9` and later builds.
-
-### Signed macOS Release Setup
+### macOS Release Update Mode
 
 The `Desktop Release Installers` GitHub Actions workflow builds the macOS DMG
-and ZIP on `macos-latest`, signs the app, notarizes the app and DMG, verifies the
-mounted DMG contents, and uploads the complete assets to the matching
-`desktop-v<version>` GitHub Release.
+and ZIP on `macos-latest`, verifies the mounted DMG contents, and uploads the
+complete assets to the matching `desktop-v<version>` GitHub Release.
 
-Configure these repository secrets before cutting a public macOS release:
+Unsigned/ad-hoc macOS releases are allowed for the free community distribution
+path. In that mode, the in-app Release updater checks GitHub for a newer version
+and opens the matching Release download page; it does not auto-download,
+auto-replace, or restart the running `.app`. Users install the downloaded DMG
+manually.
+
+If the repository later has an Apple Developer Program account, configure these
+repository secrets before cutting a signed public macOS release:
 
 - `MAC_CSC_LINK`: base64 encoded Developer ID Application `.p12`, or a secure
   path available to a self-hosted macOS runner.
@@ -208,9 +198,9 @@ Configure these repository secrets before cutting a public macOS release:
   runners; do not use this on GitHub-hosted runners unless the profile is
   created in the job first.
 
-The workflow fails early if macOS signing or notarization credentials are
-missing. This prevents accidentally publishing an unsigned DMG that forces users
-through the Gatekeeper override flow.
+When the signing secrets are missing, the workflow publishes unsigned macOS
+installers and skips notarization. When they are present, it signs, notarizes,
+and verifies the signed artifacts.
 
 ## Development Checks
 

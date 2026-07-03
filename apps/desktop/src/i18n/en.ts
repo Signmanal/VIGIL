@@ -1621,7 +1621,7 @@ export const en: Translations = {
     availableTitle: 'New update available',
     availableBody: 'New source patches are available on main and can be rebuilt locally.',
     availableTitleRelease: 'New XCLAW desktop version available',
-    availableBodyRelease: 'A new desktop installer is ready to download and install.',
+    availableBodyRelease: 'A new desktop installer is ready. Download the DMG, then install it manually.',
     availableTitleBackend: 'Backend update available',
     availableBodyBackend: 'A newer version of the connected XCLAW backend is ready to install.',
     availableBodyNoChangelog: 'A newer version is ready. Release notes aren’t available for this install type.',
@@ -1633,10 +1633,15 @@ export const en: Translations = {
       other: 'Other improvements'
     },
     updateNow: 'Update now',
+    downloadUpdate: 'Download update',
     maybeLater: 'Maybe later',
     moreChanges: count => `+ ${count} more change${count === 1 ? '' : 's'} included.`,
     manualTitle: 'Update from your terminal',
     manualBody: 'You installed XCLAW from the command line, so updates run there too. Paste this into your terminal:',
+    manualReleaseTitle: 'Install the desktop update manually',
+    manualReleaseBody:
+      'The download page opened in your browser. Download the latest DMG from GitHub Releases, quit XCLAW, then drag the new app into Applications.',
+    openDownloadPage: 'Open download page',
     manualPickedUp: 'XCLAW will pick up the new version next time you launch it.',
     guiSkewTitle: 'Update the desktop app',
     guiSkewBody:
