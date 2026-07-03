@@ -13,7 +13,9 @@ function installDesktopBridge(partial: Partial<Window['vigilDesktop']>) {
 
 describe('PreviewPane console state', () => {
   beforeEach(() => {
-    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => window.setTimeout(() => callback(Date.now()), 0))
+    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) =>
+      window.setTimeout(() => callback(Date.now()), 0)
+    )
     vi.stubGlobal('cancelAnimationFrame', (id: number) => window.clearTimeout(id))
   })
 
@@ -107,6 +109,24 @@ describe('PreviewPane console state', () => {
     expect(rendered.container.querySelector('webview')).toBeInstanceOf(HTMLElement)
   })
 
+  it('does not show the removed expand preview control', () => {
+    render(
+      <PreviewPane
+        embedded
+        target={{
+          kind: 'file',
+          label: 'prototype.html',
+          path: '/tmp/prototype.html',
+          previewKind: 'html',
+          source: '/tmp/prototype.html',
+          url: 'file:///tmp/prototype.html'
+        }}
+      />
+    )
+
+    expect(screen.queryByRole('button', { name: 'Expand preview' })).toBeNull()
+  })
+
   it('opens local preview files with the selected IDE', async () => {
     const openPathInApp = vi.fn(async () => ({ app: 'vscode' as const, ok: true, path: '/tmp/prototype.html' }))
     installDesktopBridge({
@@ -132,30 +152,5 @@ describe('PreviewPane console state', () => {
     fireEvent.click(screen.getByRole('menuitem', { name: 'Open in VS Code' }))
 
     await waitFor(() => expect(openPathInApp).toHaveBeenCalledWith('/tmp/prototype.html', 'vscode'))
-  })
-
-  it('keeps expanded previews below the desktop titlebar and toolbar chrome', () => {
-    const rendered = render(
-      <PreviewPane
-        target={{
-          kind: 'file',
-          label: 'prototype.html',
-          path: '/tmp/prototype.html',
-          previewKind: 'html',
-          source: '/tmp/prototype.html',
-          url: 'file:///tmp/prototype.html'
-        }}
-      />
-    )
-
-    fireEvent.click(screen.getByRole('button', { name: 'Expand preview' }))
-
-    expect(rendered.container.querySelector('aside')?.className).toContain(
-      'top-[calc(var(--titlebar-height)+3.25rem)]'
-    )
-    expect(rendered.container.querySelector('aside')?.className).toContain(
-      'md:left-[calc(var(--sidebar-width)+0.75rem)]'
-    )
-    expect(rendered.container.querySelector('aside')?.className).not.toContain('inset-x-3')
   })
 })

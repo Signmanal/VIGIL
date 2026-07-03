@@ -188,6 +188,13 @@ describe('SkillsView toolset management', () => {
     expect(browseSkillHub).toHaveBeenCalledWith('skills-sh')
   })
 
+  it('uses a generic market open button label', async () => {
+    await renderSkills('/skills?tab=market')
+
+    expect(await screen.findByRole('button', { name: 'Open' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Open skills.sh' })).toBeNull()
+  })
+
   it('exposes DasClaw as a marketplace source with its plaza URL', async () => {
     const { buildSkillMarketSourceOptions, skillMarketUrlForSource } = await import('./index')
     const options = buildSkillMarketSourceOptions([], 'All sources')

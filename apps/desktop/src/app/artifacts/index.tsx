@@ -81,8 +81,18 @@ const ARTIFACT_TIME_FMT = new Intl.DateTimeFormat(undefined, {
 const ARTIFACT_RETENTION_DAYS = 7
 const ARTIFACT_RETENTION_LIMIT = 500
 const ARTIFACT_RETENTION_STORAGE_KEY = 'vigil.desktop.artifacts.hidden.v1'
-const ARTIFACT_RETENTION_WINDOW_MS = ARTIFACT_RETENTION_DAYS * 24 * 60 * 60 * 1000
+const ARTIFACT_RETENTION_POLICY_STORAGE_KEY = 'vigil.desktop.artifacts.retention.policy.v1'
 const LOCAL_DELETE_TARGET_RE = /^(?:file:\/\/|\/|~\/|\.{1,2}\/|[A-Za-z0-9_.@-]+\/)/
+
+interface ArtifactRetentionPolicy {
+  days: number
+  limit: number
+}
+
+const DEFAULT_ARTIFACT_RETENTION_POLICY: ArtifactRetentionPolicy = {
+  days: ARTIFACT_RETENTION_DAYS,
+  limit: ARTIFACT_RETENTION_LIMIT
+}
 
 function messageText(message: SessionMessage): string {
   if (typeof message.content === 'string' && message.content.trim()) {
@@ -200,13 +210,58 @@ function writeHiddenArtifactIds(ids: Set<string>) {
   window.localStorage.setItem(ARTIFACT_RETENTION_STORAGE_KEY, JSON.stringify(Array.from(ids)))
 }
 
-export function artifactIdsForRetentionCleanup(artifacts: ArtifactRecord[], now = Date.now()): Set<string> {
+function positiveInteger(value: unknown, fallback: number): number {
+  const parsed = typeof value === 'number' ? value : Number.parseInt(String(value ?? ''), 10)
+
+  return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : fallback
+}
+
+export function normalizeArtifactRetentionPolicy(value: unknown): ArtifactRetentionPolicy {
+  const input = value && typeof value === 'object' ? (value as Partial<ArtifactRetentionPolicy>) : {}
+
+  return {
+    days: Math.min(3650, positiveInteger(input.days, DEFAULT_ARTIFACT_RETENTION_POLICY.days)),
+    limit: Math.min(100_000, positiveInteger(input.limit, DEFAULT_ARTIFACT_RETENTION_POLICY.limit))
+  }
+}
+
+export function readArtifactRetentionPolicy(): ArtifactRetentionPolicy {
+  if (typeof window === 'undefined') {
+    return DEFAULT_ARTIFACT_RETENTION_POLICY
+  }
+
+  try {
+    return normalizeArtifactRetentionPolicy(
+      JSON.parse(window.localStorage.getItem(ARTIFACT_RETENTION_POLICY_STORAGE_KEY) || 'null')
+    )
+  } catch {
+    return DEFAULT_ARTIFACT_RETENTION_POLICY
+  }
+}
+
+function writeArtifactRetentionPolicy(policy: ArtifactRetentionPolicy) {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  window.localStorage.setItem(
+    ARTIFACT_RETENTION_POLICY_STORAGE_KEY,
+    JSON.stringify(normalizeArtifactRetentionPolicy(policy))
+  )
+}
+
+export function artifactIdsForRetentionCleanup(
+  artifacts: ArtifactRecord[],
+  now = Date.now(),
+  policy: ArtifactRetentionPolicy = DEFAULT_ARTIFACT_RETENTION_POLICY
+): Set<string> {
   const cleanup = new Set<string>()
-  const cutoff = now - ARTIFACT_RETENTION_WINDOW_MS
+  const normalizedPolicy = normalizeArtifactRetentionPolicy(policy)
+  const cutoff = now - normalizedPolicy.days * 24 * 60 * 60 * 1000
   let kept = 0
 
   for (const artifact of [...artifacts].sort(compareArtifactsNewestFirst)) {
-    if (artifact.timestamp < cutoff || kept >= ARTIFACT_RETENTION_LIMIT) {
+    if (artifact.timestamp < cutoff || kept >= normalizedPolicy.limit) {
       cleanup.add(artifact.id)
     } else {
       kept += 1
@@ -313,6 +368,7 @@ export function ArtifactsView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
   const navigate = useNavigate()
   const [artifacts, setArtifacts] = useState<ArtifactRecord[] | null>(null)
   const [hiddenArtifactIds, setHiddenArtifactIds] = useState<Set<string>>(() => readHiddenArtifactIds())
+  const [retentionPolicy, setRetentionPolicy] = useState<ArtifactRetentionPolicy>(() => readArtifactRetentionPolicy())
   const [query, setQuery] = useState('')
   const [refreshing, setRefreshing] = useState(false)
   const [selectedPreview, setSelectedPreview] = useState<ArtifactPreviewState | null>(null)
@@ -341,6 +397,7 @@ export function ArtifactsView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
       })
 
       setHiddenArtifactIds(readHiddenArtifactIds())
+      setRetentionPolicy(readArtifactRetentionPolicy())
       setArtifacts(nextArtifacts.sort(compareArtifactsNewestFirst))
     } catch (err) {
       notifyError(err, a.failedLoad)
@@ -371,12 +428,12 @@ export function ArtifactsView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
       return []
     }
 
-    const cleanupIds = artifactIdsForRetentionCleanup(artifacts)
+    const cleanupIds = artifactIdsForRetentionCleanup(artifacts, Date.now(), retentionPolicy)
 
     return artifacts.filter(
       artifact => cleanupIds.has(artifact.id) && !hiddenArtifactIds.has(artifact.id) && artifactDeleteTarget(artifact)
     )
-  }, [artifacts, hiddenArtifactIds])
+  }, [artifacts, hiddenArtifactIds, retentionPolicy])
 
   const retentionCleanupCount = retentionCleanupCandidates.length
 
@@ -432,10 +489,10 @@ export function ArtifactsView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
     [currentFilePage, visibleFileArtifacts]
   )
 
-  const pagedFileSections = useMemo(() => groupTableArtifacts(pagedFileArtifacts, kindFilter), [
-    kindFilter,
-    pagedFileArtifacts
-  ])
+  const pagedFileSections = useMemo(
+    () => groupTableArtifacts(pagedFileArtifacts, kindFilter),
+    [kindFilter, pagedFileArtifacts]
+  )
 
   const counts = useMemo(() => {
     const all = retainedArtifacts
@@ -505,11 +562,29 @@ export function ArtifactsView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
     notify({
       kind: failed > 0 ? 'warning' : 'success',
       message:
-        failed > 0
-          ? a.retentionDeletePartial(deletedIds.size, failed)
-          : a.retentionDeleteSucceeded(deletedIds.size)
+        failed > 0 ? a.retentionDeletePartial(deletedIds.size, failed) : a.retentionDeleteSucceeded(deletedIds.size)
     })
   }, [a, retentionCleanupCandidates])
+
+  const updateRetentionPolicy = useCallback(
+    (policy: ArtifactRetentionPolicy) => {
+      const normalized = normalizeArtifactRetentionPolicy(policy)
+
+      writeArtifactRetentionPolicy(normalized)
+      setRetentionPolicy(normalized)
+      notify({ kind: 'success', message: a.retentionSaved(normalized.days, normalized.limit) })
+    },
+    [a]
+  )
+
+  const resetRetentionPolicy = useCallback(() => {
+    writeArtifactRetentionPolicy(DEFAULT_ARTIFACT_RETENTION_POLICY)
+    setRetentionPolicy(DEFAULT_ARTIFACT_RETENTION_POLICY)
+    notify({
+      kind: 'success',
+      message: a.retentionSaved(DEFAULT_ARTIFACT_RETENTION_POLICY.days, DEFAULT_ARTIFACT_RETENTION_POLICY.limit)
+    })
+  }, [a])
 
   const previewArtifact = useCallback(
     async (artifact: ArtifactRecord) => {
@@ -618,7 +693,10 @@ export function ArtifactsView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
                 a={a}
                 hiddenCount={hiddenArtifactCount}
                 onCleanup={cleanupArtifactsNow}
+                onPolicyChange={updateRetentionPolicy}
+                onPolicyReset={resetRetentionPolicy}
                 pendingCleanupCount={retentionCleanupCount}
+                policy={retentionPolicy}
               />
 
               {visibleImageArtifacts.length > 0 && (
@@ -677,8 +755,8 @@ export function ArtifactsView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
                       artifacts={section.artifacts}
                       ctx={cellCtx}
                       filter={kindFilter}
-                      kind={section.kind}
                       key={section.kind}
+                      kind={section.kind}
                     />
                   ))}
                 </section>
@@ -687,9 +765,9 @@ export function ArtifactsView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
           </div>
           {selectedPreview && (
             <ArtifactInlinePreview
-              preview={selectedPreview}
               onClose={() => setSelectedPreview(null)}
               onOpenChat={sessionId => navigate(sessionRoute(sessionId))}
+              preview={selectedPreview}
             />
           )}
         </div>
@@ -716,14 +794,36 @@ function ArtifactRetentionPanel({
   a,
   hiddenCount,
   onCleanup,
-  pendingCleanupCount
+  onPolicyChange,
+  onPolicyReset,
+  pendingCleanupCount,
+  policy
 }: {
   a: Translations['artifacts']
   hiddenCount: number
   onCleanup: () => void | Promise<void>
+  onPolicyChange: (policy: ArtifactRetentionPolicy) => void
+  onPolicyReset: () => void
   pendingCleanupCount: number
+  policy: ArtifactRetentionPolicy
 }) {
   const [expanded, setExpanded] = useState(false)
+  const [draftDays, setDraftDays] = useState(() => String(policy.days))
+  const [draftLimit, setDraftLimit] = useState(() => String(policy.limit))
+
+  useEffect(() => {
+    setDraftDays(String(policy.days))
+    setDraftLimit(String(policy.limit))
+  }, [policy.days, policy.limit])
+
+  const savePolicy = useCallback(() => {
+    onPolicyChange(
+      normalizeArtifactRetentionPolicy({
+        days: Number.parseInt(draftDays, 10),
+        limit: Number.parseInt(draftLimit, 10)
+      })
+    )
+  }, [draftDays, draftLimit, onPolicyChange])
 
   return (
     <section className="rounded-lg border border-(--ui-stroke-tertiary) bg-(--ui-chat-bubble-background)">
@@ -743,19 +843,61 @@ function ArtifactRetentionPanel({
                 : a.retentionScope}
           </div>
         </div>
-        <Codicon className="shrink-0 text-muted-foreground" name={expanded ? 'chevron-up' : 'chevron-down'} size="1rem" />
+        <Codicon
+          className="shrink-0 text-muted-foreground"
+          name={expanded ? 'chevron-up' : 'chevron-down'}
+          size="1rem"
+        />
       </button>
       {expanded && (
-        <div className="flex flex-col gap-2 border-t border-(--ui-stroke-tertiary) px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="grid gap-3 border-t border-(--ui-stroke-tertiary) px-3 py-2 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
           <div className="min-w-0 text-[0.68rem] leading-4 text-muted-foreground">
-            <div>{a.retentionPolicy(ARTIFACT_RETENTION_DAYS, ARTIFACT_RETENTION_LIMIT)}</div>
+            <div>{a.retentionPolicy(policy.days, policy.limit)}</div>
             <div className="mt-0.5">
               {hiddenCount > 0 ? a.retentionHidden(hiddenCount) : a.retentionScope}
               {pendingCleanupCount > 0 ? ` · ${a.retentionPending(pendingCleanupCount)}` : ''}
             </div>
+            <div className="mt-2 grid gap-2 sm:grid-cols-2">
+              <label className="flex flex-col gap-1">
+                <span>{a.retentionDaysLabel}</span>
+                <input
+                  aria-label={a.retentionDaysLabel}
+                  className="h-8 rounded-md border border-(--ui-stroke-tertiary) bg-(--ui-bg-secondary) px-2 text-xs text-foreground outline-none focus:border-(--ui-accent-primary)"
+                  max={3650}
+                  min={1}
+                  onChange={event => setDraftDays(event.target.value)}
+                  type="number"
+                  value={draftDays}
+                />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span>{a.retentionLimitLabel}</span>
+                <input
+                  aria-label={a.retentionLimitLabel}
+                  className="h-8 rounded-md border border-(--ui-stroke-tertiary) bg-(--ui-bg-secondary) px-2 text-xs text-foreground outline-none focus:border-(--ui-accent-primary)"
+                  max={100000}
+                  min={1}
+                  onChange={event => setDraftLimit(event.target.value)}
+                  type="number"
+                  value={draftLimit}
+                />
+              </label>
+            </div>
           </div>
-          <div className="flex shrink-0 items-center gap-1.5">
-            <Button disabled={pendingCleanupCount === 0} onClick={() => void onCleanup()} size="xs" type="button" variant="outline">
+          <div className="flex shrink-0 flex-wrap items-center gap-1.5 lg:justify-end">
+            <Button onClick={savePolicy} size="xs" type="button" variant="outline">
+              {a.retentionSave}
+            </Button>
+            <Button onClick={onPolicyReset} size="xs" type="button" variant="ghost">
+              {a.retentionResetDefault}
+            </Button>
+            <Button
+              disabled={pendingCleanupCount === 0}
+              onClick={() => void onCleanup()}
+              size="xs"
+              type="button"
+              variant="outline"
+            >
               {a.retentionCleanNow}
             </Button>
           </div>
@@ -914,10 +1056,7 @@ function PrimaryCell({ artifact, ctx }: { artifact: ArtifactRecord; ctx: CellCtx
   const label = isLink ? fetchedTitle || urlSlugTitleLabel(artifact.href) : artifact.label
 
   return (
-    <ArtifactCellAction
-      onClick={() => void ctx.onPreview(artifact)}
-      title={label}
-    >
+    <ArtifactCellAction onClick={() => void ctx.onPreview(artifact)} title={label}>
       <span className="mt-0.5 grid size-6 shrink-0 place-items-center self-start rounded-md bg-(--ui-bg-tertiary) text-(--ui-text-tertiary)">
         <Icon className="size-3.5" />
       </span>

@@ -765,7 +765,7 @@ export const en: Translations = {
     marketTitle: 'Skill market',
     marketDesc:
       'Search the configured Skill Hub, install community skills into the current profile, then refresh the local list.',
-    marketOpen: 'Open skills.sh',
+    marketOpen: 'Open',
     marketSource: 'Source',
     marketAllSources: 'All sources',
     marketLoading: 'Searching skill market...',
@@ -798,7 +798,8 @@ export const en: Translations = {
     manageRoles: 'Manage roles',
     roleHint: 'Reusable experts live in Profiles: edit SOUL.md, then pick that profile from the chat sidebar.',
     currentExpertTitle: 'Current expert',
-    currentExpertDesc: 'This is the active profile serving the current chat context. Delegated sub-experts appear below when a turn fans out.',
+    currentExpertDesc:
+      'This is the active profile serving the current chat context. Delegated sub-experts appear below when a turn fans out.',
     activeBadge: 'Active',
     manageCurrentExpert: 'Edit role',
     currentExpertNoDescription: 'No description yet. Edit SOUL.md or the profile description in role management.',
@@ -814,7 +815,8 @@ export const en: Translations = {
     done: 'Done',
     streaming: 'Streaming',
     activeExpertsTitle: count => `${count} live ${count === 1 ? 'expert' : 'experts'}`,
-    activeExpertsDesc: 'Current delegated workers are shown first as cards, then expanded below as the full activity tree.',
+    activeExpertsDesc:
+      'Current delegated workers are shown first as cards, then expanded below as the full activity tree.',
     currentTool: tool => `Using ${tool}`,
     waiting: 'Waiting for progress...',
     openExpert: 'Open expert',
@@ -1348,12 +1350,15 @@ export const en: Translations = {
     retentionScope: 'External links, remote paths, referenced source files, and skill files are never deleted.',
     retentionPending: count => `${count} generated local output file${count === 1 ? '' : 's'} ready to delete`,
     retentionHidden: count => `${count} deleted output record${count === 1 ? '' : 's'} hidden`,
+    retentionDaysLabel: 'Days to keep',
+    retentionLimitLabel: 'Maximum outputs',
+    retentionSave: 'Save policy',
+    retentionResetDefault: 'Reset default',
+    retentionSaved: (days, limit) => `Retention policy updated to the last ${days} days and ${limit} outputs.`,
     retentionCleanNow: 'Delete old output files',
     retentionRestore: 'Restore hidden records',
-    retentionDeleteConfirm: count =>
-      `Move ${count} generated local output file${count === 1 ? '' : 's'} to Trash?`,
-    retentionDeleteSucceeded: count =>
-      `Moved ${count} generated output file${count === 1 ? '' : 's'} to Trash.`,
+    retentionDeleteConfirm: count => `Move ${count} generated local output file${count === 1 ? '' : 's'} to Trash?`,
+    retentionDeleteSucceeded: count => `Moved ${count} generated output file${count === 1 ? '' : 's'} to Trash.`,
     retentionDeletePartial: (deleted, failed) =>
       `Moved ${deleted} generated output file${deleted === 1 ? '' : 's'} to Trash; ${failed} failed.`,
     itemsReport: 'reports',

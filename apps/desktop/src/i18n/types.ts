@@ -1089,6 +1089,11 @@ export interface Translations {
     retentionScope: string
     retentionPending: (count: number) => string
     retentionHidden: (count: number) => string
+    retentionDaysLabel: string
+    retentionLimitLabel: string
+    retentionSave: string
+    retentionResetDefault: string
+    retentionSaved: (days: number, limit: number) => string
     retentionCleanNow: string
     retentionRestore: string
     retentionDeleteConfirm: (count: number) => string

@@ -1,5 +1,5 @@
 import { useStore } from '@nanostores/react'
-import type { PointerEvent as ReactPointerEvent, ReactNode } from 'react'
+import type { ReactNode, PointerEvent as ReactPointerEvent } from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import type { SetTitlebarToolGroup, TitlebarTool } from '@/app/shell/titlebar-controls'
@@ -15,7 +15,7 @@ import { Tip } from '@/components/ui/tooltip'
 import type { VIGILPathOpenApp } from '@/global'
 import { type Translations, useI18n } from '@/i18n'
 import { isDesktopFsRemoteMode } from '@/lib/desktop-fs'
-import { Bug, ChevronDown, ExternalLink, FolderOpen, Globe, Maximize2, Minimize2, Vscode } from '@/lib/icons'
+import { Bug, ChevronDown, ExternalLink, FolderOpen, Globe, Vscode } from '@/lib/icons'
 import { cn } from '@/lib/utils'
 import { notify, notifyError } from '@/store/notifications'
 import { $previewServerRestart, failPreviewServerRestart, type PreviewTarget } from '@/store/preview'
@@ -56,9 +56,6 @@ interface PreviewLoadErrorState {
 
 const FILE_RELOAD_DEBOUNCE_MS = 200
 const SERVER_RESTART_TIMEOUT_MS = 45_000
-const EXPANDED_PREVIEW_TOP_CLASS = 'top-[calc(var(--titlebar-height)+3.25rem)]'
-const EXPANDED_PREVIEW_SHELL_CLASS =
-  'fixed left-3 right-3 bottom-3 z-[160] rounded-xl border border-border/80 bg-background/95 shadow-[0_24px_80px_rgba(0,0,0,0.45)] backdrop-blur-xl transition-[left,right,top,bottom,border-radius,box-shadow,background-color] duration-200 ease-out motion-reduce:transition-none md:left-[calc(var(--sidebar-width)+0.75rem)]'
 
 function filePathForPreviewTarget(target: PreviewTarget): string {
   if (target.path) {
@@ -248,14 +245,12 @@ export function PreviewPane({
   const hostRef = useRef<HTMLDivElement | null>(null)
   const lastReloadRequestRef = useRef(reloadRequest)
   const lastRestartEventRef = useRef('')
-  const previewContentRef = useRef<HTMLDivElement | null>(null)
   const webviewRef = useRef<PreviewWebview | null>(null)
   const previewServerRestart = useStore($previewServerRestart)
   const consoleHeight = useStore(consoleState.$height)
   const consoleOpen = useStore(consoleState.$open)
   const [currentUrl, setCurrentUrl] = useState(target.url)
   const [devtoolsOpen, setDevtoolsOpen] = useState(false)
-  const [expanded, setExpanded] = useState(false)
   const [renderHtmlAsWeb, setRenderHtmlAsWeb] = useState(false)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<PreviewLoadErrorState | null>(null)
@@ -400,6 +395,7 @@ export function PreviewPane({
       }
 
       const opener = window.vigilDesktop?.openPathInApp
+
       if (!opener) {
         void window.vigilDesktop?.openExternal?.(target.url).catch(error => notifyError(error, t.preview.openFailed))
 
@@ -417,6 +413,7 @@ export function PreviewPane({
     }
 
     const revealer = window.vigilDesktop?.revealPath
+
     if (!revealer) {
       void window.vigilDesktop?.openExternal?.(target.url).catch(error => notifyError(error, t.preview.openFailed))
 
@@ -478,22 +475,6 @@ export function PreviewPane({
   useEffect(() => {
     setRenderHtmlAsWeb(false)
   }, [target.renderMode, target.url])
-
-  useEffect(() => {
-    if (!expanded) {
-      return
-    }
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setExpanded(false)
-      }
-    }
-
-    window.addEventListener('keydown', onKeyDown)
-
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [expanded])
 
   useEffect(() => {
     if (!consoleOpen) {
@@ -785,16 +766,7 @@ export function PreviewPane({
   }, [appendConsoleEntry, consoleState, copy, isWebPreview, target.url])
 
   return (
-    <aside
-      className={cn(
-        'relative flex h-full w-full min-w-0 flex-col overflow-hidden bg-transparent text-muted-foreground',
-        expanded &&
-          cn(
-            EXPANDED_PREVIEW_SHELL_CLASS,
-            EXPANDED_PREVIEW_TOP_CLASS
-          )
-      )}
-    >
+    <aside className="relative flex h-full w-full min-w-0 flex-col overflow-hidden bg-transparent text-muted-foreground">
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <div
           className={cn(
@@ -833,20 +805,10 @@ export function PreviewPane({
             <PreviewToolbarButton disabled={!canOpenLocalPath} label={t.preview.revealFile} onClick={revealFile}>
               <FolderOpen className="size-3.5" />
             </PreviewToolbarButton>
-            <PreviewToolbarButton
-              active={expanded}
-              label={expanded ? t.preview.collapsePreview : t.preview.expandPreview}
-              onClick={() => setExpanded(value => !value)}
-            >
-              {expanded ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}
-            </PreviewToolbarButton>
           </div>
         </div>
 
-        <div
-          className="pointer-events-auto relative min-h-0 flex-1 overflow-hidden bg-transparent"
-          ref={previewContentRef}
-        >
+        <div className="pointer-events-auto relative min-h-0 flex-1 overflow-hidden bg-transparent">
           <div
             className={cn(
               'absolute inset-0 flex bg-transparent',

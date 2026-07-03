@@ -13,7 +13,14 @@ vi.mock('@/vigil', () => ({
   listAllProfileSessions: (...args: unknown[]) => listAllProfileSessions(...args)
 }))
 
-import { ArtifactsView, artifactIdsForRetentionCleanup, collectArtifactsForSession, type ArtifactRecord } from './index'
+import {
+  artifactIdsForRetentionCleanup,
+  type ArtifactRecord,
+  ArtifactsView,
+  collectArtifactsForSession,
+  normalizeArtifactRetentionPolicy,
+  readArtifactRetentionPolicy
+} from './index'
 
 beforeEach(() => {
   window.localStorage.clear()
@@ -79,6 +86,7 @@ describe('collectArtifactsForSession', () => {
 
   it('classifies generated report paths separately from generic files', () => {
     const session = makeSession({ cwd: '/Users/alice/work' })
+
     const artifacts = collectArtifactsForSession(session, [
       {
         content: 'Saved report: ./reports/incident-summary.md\nArchive: ./dist/bundle.zip',
@@ -155,6 +163,7 @@ describe('collectArtifactsForSession', () => {
 
   it('indexes generated workspace-relative report artifacts from assistant text', () => {
     const session = makeSession({ cwd: '/Users/alice/.vigil/skills/xsiam-cli' })
+
     const artifacts = collectArtifactsForSession(session, [
       {
         content: [
@@ -242,6 +251,7 @@ describe('collectArtifactsForSession', () => {
 
   it('indexes ailog report, evidence, and summary artifacts but excludes skill references', () => {
     const session = makeSession({ cwd: '/Users/alice/.agents/skills/ueba-rule-generator' })
+
     const artifacts = collectArtifactsForSession(session, [
       {
         content: [
@@ -300,8 +310,19 @@ describe('artifactIdsForRetentionCleanup', () => {
     expect(Array.from(artifactIdsForRetentionCleanup([old, recent], now))).toEqual(['old'])
   })
 
+  it('uses custom retention policy values', () => {
+    const now = Date.UTC(2026, 6, 3)
+    const eightDaysOld = makeArtifact({ id: 'eight-days-old', timestamp: now - 8 * 24 * 60 * 60 * 1000 })
+
+    expect(Array.from(artifactIdsForRetentionCleanup([eightDaysOld], now, { days: 10, limit: 500 }))).toEqual([])
+    expect(Array.from(artifactIdsForRetentionCleanup([eightDaysOld], now, { days: 7, limit: 500 }))).toEqual([
+      'eight-days-old'
+    ])
+  })
+
   it('marks the oldest artifacts beyond the retention count limit', () => {
     const now = Date.UTC(2026, 6, 3)
+
     const artifacts = Array.from({ length: 501 }, (_, index) =>
       makeArtifact({
         id: `artifact-${index}`,
@@ -311,6 +332,16 @@ describe('artifactIdsForRetentionCleanup', () => {
     )
 
     expect(Array.from(artifactIdsForRetentionCleanup(artifacts, now))).toEqual(['artifact-0'])
+  })
+
+  it('normalizes persisted retention policy values', () => {
+    window.localStorage.setItem(
+      'vigil.desktop.artifacts.retention.policy.v1',
+      JSON.stringify({ days: 30, limit: 1000 })
+    )
+
+    expect(readArtifactRetentionPolicy()).toEqual({ days: 30, limit: 1000 })
+    expect(normalizeArtifactRetentionPolicy({ days: -1, limit: 'bad' })).toEqual({ days: 7, limit: 500 })
   })
 })
 
@@ -345,6 +376,16 @@ describe('ArtifactsView retention policy', () => {
     expect(policy.getAttribute('aria-expanded')).toBe('false')
     fireEvent.click(policy)
     expect(policy.getAttribute('aria-expanded')).toBe('true')
+
+    fireEvent.change(screen.getByLabelText('Days to keep'), { target: { value: '30' } })
+    fireEvent.change(screen.getByLabelText('Maximum outputs'), { target: { value: '1000' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save policy' }))
+
+    expect(JSON.parse(window.localStorage.getItem('vigil.desktop.artifacts.retention.policy.v1') || '{}')).toEqual({
+      days: 30,
+      limit: 1000
+    })
+    expect(screen.getByText(/Keeps the last 30 days and up to 1000 outputs visible/)).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: 'Delete old output files' }))
 
