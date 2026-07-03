@@ -13,7 +13,9 @@ const SIGNING_CHAIN_START_VERSION = '0.18.9'
 const EXPECTED_MAC_SIGNING_AUTHORITY = 'Apple Development: 2663636294@qq.com (VKULVKP8KD)'
 const EXPECTED_MAC_SIGNING_TEAM_IDENTIFIER = '5CG9U4GR44'
 const versionRequiresPinnedSigning = compareSemver(expectedVersion, SIGNING_CHAIN_START_VERSION) >= 0
-const requireSigning = process.env.VIGIL_REQUIRE_MAC_SIGNING === '1' || versionRequiresPinnedSigning
+const allowUnsignedMacRelease = process.env.VIGIL_ALLOW_UNSIGNED_MAC_RELEASE === '1'
+const explicitRequireSigning = process.env.VIGIL_REQUIRE_MAC_SIGNING === '1'
+const requireSigning = explicitRequireSigning || (!allowUnsignedMacRelease && versionRequiresPinnedSigning)
 const requireGatekeeper = process.env.VIGIL_REQUIRE_MAC_GATEKEEPER === '1'
 
 function fail(message) {
@@ -209,6 +211,10 @@ try {
 
 console.log(
   `macOS release artifacts verified: version=${expectedVersion}, dmg=${path.basename(dmgPath)}, signing=${
-    requireSigning ? `${EXPECTED_MAC_SIGNING_AUTHORITY} / ${EXPECTED_MAC_SIGNING_TEAM_IDENTIFIER}` : 'not-required'
+    requireSigning
+      ? `${EXPECTED_MAC_SIGNING_AUTHORITY} / ${EXPECTED_MAC_SIGNING_TEAM_IDENTIFIER}`
+      : allowUnsignedMacRelease
+        ? 'unsigned-allowed'
+        : 'not-required'
   }, gatekeeper=${requireGatekeeper ? 'required' : 'not-required'}`
 )

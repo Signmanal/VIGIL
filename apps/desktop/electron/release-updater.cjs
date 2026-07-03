@@ -32,15 +32,15 @@ function releaseUnsupportedStatus(reason, message, now = Date.now()) {
 
 function releaseErrorStatus(error, now = Date.now()) {
   const rawMessage = error instanceof Error ? error.message : String(error)
-  const privateGitHubHint = /GitHub|latest-mac\.yml|releases?|404|Not Found/i.test(rawMessage)
-  const message = privateGitHubHint
-    ? '无法访问 GitHub Release 更新通道。如果仓库是私有仓库，请确认本机已运行 `gh auth login`，且 token 具有 repo 权限。'
+  const githubReleaseHint = /GitHub|latest-mac\.yml|releases?|404|Not Found/i.test(rawMessage)
+  const message = githubReleaseHint
+    ? '无法访问 GitHub Release 更新通道。请确认网络可访问 GitHub，且最新 Release 已包含当前平台的更新元数据；macOS 需要 latest-mac.yml。私有仓库才需要 `gh auth login` 或 GH_TOKEN/GITHUB_TOKEN。'
     : rawMessage
 
   return {
     supported: true,
     channel: 'release',
-    error: privateGitHubHint ? 'private-release-check-failed' : 'release-check-failed',
+    error: githubReleaseHint ? 'release-channel-check-failed' : 'release-check-failed',
     message,
     fetchedAt: now
   }
