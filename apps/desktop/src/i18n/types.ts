@@ -689,6 +689,10 @@ export interface Translations {
     subtitle: string
     manageRoles: string
     roleHint: string
+    currentExpertTitle: string
+    currentExpertDesc: string
+    activeBadge: string
+    manageCurrentExpert: string
     emptyTitle: string
     emptyDesc: string
     running: string

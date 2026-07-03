@@ -1,5 +1,5 @@
 import { useStore } from '@nanostores/react'
-import { type ReactNode, useEffect, useMemo, useState } from 'react'
+import { type CSSProperties, type ReactNode, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { useElapsedSeconds } from '@/components/chat/activity-timer'
@@ -8,9 +8,17 @@ import { Button } from '@/components/ui/button'
 import { FadeText } from '@/components/ui/fade-text'
 import { GlyphSpinner } from '@/components/ui/glyph-spinner'
 import { type Translations, useI18n } from '@/i18n'
-import { AlertCircle, CheckCircle2, Sparkles } from '@/lib/icons'
+import { AlertCircle, Brain, CheckCircle2, Sparkles } from '@/lib/icons'
+import { profileColorSoft, resolveProfileColor } from '@/lib/profile-color'
 import { useEnterAnimation } from '@/lib/use-enter-animation'
 import { cn } from '@/lib/utils'
+import {
+  $activeGatewayProfile,
+  $profileColors,
+  $profiles,
+  normalizeProfileKey,
+  refreshActiveProfile
+} from '@/store/profile'
 import {
   $subagentsBySession,
   allSubagents,
@@ -20,6 +28,7 @@ import {
   type SubagentStreamEntry
 } from '@/store/subagents'
 import { openSessionInNewWindow } from '@/store/windows'
+import type { ProfileInfo } from '@/types/vigil'
 
 import { OverlayView } from '../overlays/overlay-view'
 import { PROFILES_ROUTE } from '../routes'
@@ -83,11 +92,28 @@ export function AgentsView({ onClose }: AgentsViewProps) {
   const { t } = useI18n()
   const navigate = useNavigate()
   const subagentsBySession = useStore($subagentsBySession)
+  const profiles = useStore($profiles)
+  const profileColors = useStore($profileColors)
+  const activeGatewayProfile = useStore($activeGatewayProfile)
+  const activeProfileKey = normalizeProfileKey(activeGatewayProfile)
 
   // Aggregate every session, matching the status-bar indicator — a subagent
   // running in a background session must still be visible here, or the two
   // desync ("Agents N running" vs an empty tree).
   const tree = useMemo(() => buildSubagentTree(allSubagents(subagentsBySession)), [subagentsBySession])
+
+  const activeProfile = useMemo(
+    () =>
+      profiles.find(profile => normalizeProfileKey(profile.name) === activeProfileKey) ??
+      fallbackProfile(activeProfileKey),
+    [activeProfileKey, profiles]
+  )
+
+  const activeProfileColor = resolveProfileColor(activeProfile.name, profileColors)
+
+  useEffect(() => {
+    void refreshActiveProfile()
+  }, [])
 
   return (
     <OverlayView
@@ -116,8 +142,112 @@ export function AgentsView({ onClose }: AgentsViewProps) {
           {t.agents.manageRoles}
         </Button>
       </header>
+      <ActiveProfileCard
+        color={activeProfileColor}
+        onManage={() => navigate(PROFILES_ROUTE)}
+        profile={activeProfile}
+      />
       <SubagentTree tree={tree} />
     </OverlayView>
+  )
+}
+
+function profileDisplayName(profile: ProfileInfo): string {
+  const displayName = profile.display_name?.trim()
+
+  return displayName || profile.name
+}
+
+function enabledSkillCount(profile: ProfileInfo): number {
+  return profile.enabled_skill_count ?? profile.skill_count
+}
+
+function fallbackProfile(name: string): ProfileInfo {
+  const key = normalizeProfileKey(name)
+
+  return {
+    has_env: false,
+    is_default: key === 'default',
+    model: null,
+    name: key,
+    path: '',
+    provider: null,
+    skill_count: 0
+  }
+}
+
+function ActiveProfileCard({
+  color,
+  onManage,
+  profile
+}: {
+  color: null | string
+  onManage: () => void
+  profile: ProfileInfo
+}) {
+  const { t } = useI18n()
+  const displayName = profileDisplayName(profile)
+  const showsAlias = displayName !== profile.name
+  const accent = color ?? 'var(--dt-primary)'
+
+  const style = {
+    '--active-expert-accent': accent,
+    '--active-expert-soft': color ? profileColorSoft(color, 14) : 'color-mix(in srgb, var(--dt-primary) 14%, transparent)'
+  } as CSSProperties
+
+  const meta = [
+    showsAlias ? profile.name : '',
+    profile.is_default ? t.profiles.default : '',
+    profile.provider,
+    profile.model,
+    profile.has_env ? t.profiles.env : ''
+  ].filter(Boolean)
+
+  return (
+    <section className="mb-4 grid gap-2">
+      <div>
+        <p className="text-[0.68rem] font-semibold tracking-[0.18em] text-primary/85 uppercase">
+          {t.agents.currentExpertTitle}
+        </p>
+        <p className="mt-1 text-[0.7rem] leading-relaxed text-muted-foreground/70">{t.agents.currentExpertDesc}</p>
+      </div>
+      <article
+        className="relative overflow-hidden rounded-2xl border border-border/65 bg-card/70 p-4 shadow-sm shadow-black/5 ring-1 ring-white/5"
+        style={style}
+      >
+        <span aria-hidden className="absolute inset-y-0 left-0 w-1 bg-[var(--active-expert-accent)]" />
+        <div className="flex min-w-0 items-start gap-3">
+          <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--active-expert-soft)] text-[var(--active-expert-accent)] ring-1 ring-[var(--active-expert-accent)]/20">
+            <Brain className="size-6" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="flex min-w-0 items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h3 className="truncate text-[0.95rem] leading-snug font-semibold text-foreground/95">{displayName}</h3>
+                {meta.length > 0 ? (
+                  <p className="mt-1 truncate text-[0.68rem] text-muted-foreground/75">{meta.join(' · ')}</p>
+                ) : null}
+              </div>
+              <span className="shrink-0 rounded-full bg-primary/12 px-2 py-1 text-[0.64rem] font-medium text-primary">
+                {t.agents.activeBadge}
+              </span>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2 border-t border-border/55 pt-3">
+              <span className="rounded-full bg-background/45 px-2 py-1 text-[0.68rem] text-muted-foreground/80">
+                {t.profiles.enabledSkills(enabledSkillCount(profile), profile.skill_count)}
+              </span>
+              <button
+                className="rounded-full bg-background/55 px-2 py-1 text-[0.68rem] font-medium text-foreground/80 transition-colors hover:bg-background/80"
+                onClick={onManage}
+                type="button"
+              >
+                {t.agents.manageCurrentExpert}
+              </button>
+            </div>
+          </div>
+        </div>
+      </article>
+    </section>
   )
 }
 

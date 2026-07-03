@@ -797,6 +797,10 @@ export const en: Translations = {
     subtitle: 'Monitor running sub-experts and manage reusable roles for chat sessions.',
     manageRoles: 'Manage roles',
     roleHint: 'Reusable experts live in Profiles: edit SOUL.md, then pick that profile from the chat sidebar.',
+    currentExpertTitle: 'Current expert',
+    currentExpertDesc: 'This is the active profile serving the current chat context. Delegated sub-experts appear below when a turn fans out.',
+    activeBadge: 'Active',
+    manageCurrentExpert: 'Edit role',
     emptyTitle: 'No live sub-experts',
     emptyDesc:
       'When a turn delegates work, child experts stream their progress here. Use roles to switch the assistant persona before starting a session.',

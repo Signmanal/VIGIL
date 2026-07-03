@@ -130,6 +130,11 @@ not just source snapshots. A tagged client release should include the platform
 artifacts from `apps/desktop/release/` plus release notes that state the runtime
 version and supported platforms.
 
+Desktop installer releases use `desktop-v20*` tags, for example
+`desktop-v2026.7.3`. The separate Python package publishing workflow uses
+`v20*` tags, so do not use a plain `v20*` tag when the intent is only to ship
+Desktop client installers.
+
 The CLI remains installable from source with `pip install -e .` until a package
 registry release is published. If a Release has no installer assets, treat it as
 incomplete for end users.
