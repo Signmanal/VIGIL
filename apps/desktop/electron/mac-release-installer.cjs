@@ -117,6 +117,21 @@ if [ ! -d "$SRC" ]; then
   exit 1
 fi
 
+SRC_BUNDLE_ID="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$SRC/Contents/Info.plist" 2>/dev/null || true)"
+DST_BUNDLE_ID="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$DST/Contents/Info.plist" 2>/dev/null || true)"
+if [ -z "$SRC_BUNDLE_ID" ]; then
+  log "extracted app bundle id missing"
+  exit 1
+fi
+if [ -n "$DST_BUNDLE_ID" ] && [ "$SRC_BUNDLE_ID" != "$DST_BUNDLE_ID" ]; then
+  log "bundle id mismatch: src=$SRC_BUNDLE_ID dst=$DST_BUNDLE_ID"
+  exit 1
+fi
+if ! /usr/bin/codesign --verify --deep --strict --verbose=2 "$SRC" >> "$LOG" 2>&1; then
+  log "code signature verification failed"
+  exit 1
+fi
+
 for _ in $(/usr/bin/seq 1 240); do
   if [ "$APP_PID" -le 0 ] || ! /bin/kill -0 "$APP_PID" 2>/dev/null; then
     break

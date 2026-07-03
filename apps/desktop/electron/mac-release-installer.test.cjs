@@ -57,6 +57,9 @@ test('buildMacReleaseInstallScript extracts the downloaded zip and relaunches th
 
   assert.match(script, /APP_PID=1234/)
   assert.match(script, /\/usr\/bin\/ditto -x -k "\$ZIP" "\$WORK"/)
+  assert.match(script, /PlistBuddy -c 'Print :CFBundleIdentifier'/)
+  assert.match(script, /bundle id mismatch/)
+  assert.match(script, /\/usr\/bin\/codesign --verify --deep --strict --verbose=2 "\$SRC"/)
   assert.match(script, /\/usr\/bin\/open "\$DST"/)
   assert.match(script, /com\.apple\.quarantine/)
   assert.match(script, /'\/tmp\/XCLAW'\\''s update\.zip'/)
