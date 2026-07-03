@@ -1738,7 +1738,8 @@ export const ja = defineLocale({
     availableTitle: '新しい更新が利用可能',
     availableBody: 'main ブランチに新しいソースパッチがあり、ローカルで再ビルドできます。',
     availableTitleRelease: '新しい XCLAW デスクトップ版があります',
-    availableBodyRelease: '新しいデスクトップインストーラーをダウンロードしてインストールできます。',
+    availableBodyRelease:
+      '新しいデスクトップインストーラーを利用できます。DMG をダウンロードして手動でインストールしてください。',
     availableTitleBackend: 'バックエンドの更新があります',
     availableBodyBackend: '接続中の XCLAW バックエンドの新しいバージョンをインストールできます。',
     availableBodyNoChangelog:
@@ -1751,11 +1752,16 @@ export const ja = defineLocale({
       other: 'その他の改善'
     },
     updateNow: '今すぐ更新',
+    downloadUpdate: '更新をダウンロード',
     maybeLater: '後で',
     moreChanges: count => `さらに ${count} 件の変更が含まれています。`,
     manualTitle: 'ターミナルから更新',
     manualBody:
       'XCLAW をコマンドラインからインストールしたため、更新もそこで実行されます。これをターミナルに貼り付けてください:',
+    manualReleaseTitle: 'デスクトップ更新を手動でインストール',
+    manualReleaseBody:
+      'ダウンロードページをブラウザで開きました。GitHub Releases から最新の DMG をダウンロードし、XCLAW を終了してから新しいアプリを Applications にドラッグしてください。',
+    openDownloadPage: 'ダウンロードページを開く',
     manualPickedUp: 'XCLAW は次回起動時に新しいバージョンを読み込みます。',
     guiSkewTitle: 'デスクトップアプリを更新してください',
     guiSkewBody:

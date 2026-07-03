@@ -20,6 +20,22 @@ function releaseStatusFromUpdateInfo(info, currentVersion, now = Date.now()) {
   }
 }
 
+function githubReleaseUrl(metadata, version) {
+  if (!metadata || metadata.provider !== 'github' || !metadata.owner || !metadata.repo) {
+    return null
+  }
+
+  const owner = encodeURIComponent(String(metadata.owner))
+  const repo = encodeURIComponent(String(metadata.repo))
+  const normalizedVersion = normalizeVersion(version)
+  if (!normalizedVersion) {
+    return `https://github.com/${owner}/${repo}/releases/latest`
+  }
+
+  const tag = `desktop-v${normalizedVersion.replace(/^v/, '')}`
+  return `https://github.com/${owner}/${repo}/releases/tag/${encodeURIComponent(tag)}`
+}
+
 function releaseUnsupportedStatus(reason, message, now = Date.now()) {
   return {
     supported: false,
@@ -51,6 +67,7 @@ function withSourceChannel(status) {
 }
 
 module.exports = {
+  githubReleaseUrl,
   normalizeVersion,
   releaseErrorStatus,
   releaseStatusFromUpdateInfo,

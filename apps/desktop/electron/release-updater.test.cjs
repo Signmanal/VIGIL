@@ -2,6 +2,7 @@ const assert = require('node:assert/strict')
 const test = require('node:test')
 
 const {
+  githubReleaseUrl,
   releaseErrorStatus,
   releaseStatusFromUpdateInfo,
   releaseUnsupportedStatus,
@@ -62,4 +63,18 @@ test('withSourceChannel marks legacy git update status', () => {
     behind: 2,
     channel: 'source'
   })
+})
+
+test('githubReleaseUrl points release users at the desktop tag download page', () => {
+  assert.equal(
+    githubReleaseUrl({ provider: 'github', owner: 'Signmanal', repo: 'VIGIL' }, '0.19.14'),
+    'https://github.com/Signmanal/VIGIL/releases/tag/desktop-v0.19.14'
+  )
+})
+
+test('githubReleaseUrl falls back to latest release when version is unavailable', () => {
+  assert.equal(
+    githubReleaseUrl({ provider: 'github', owner: 'Signmanal', repo: 'VIGIL' }, ''),
+    'https://github.com/Signmanal/VIGIL/releases/latest'
+  )
 })

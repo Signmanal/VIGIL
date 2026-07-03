@@ -1680,7 +1680,7 @@ export const zhHant = defineLocale({
     availableTitle: '有可用更新',
     availableBody: 'main 分支有新的原始碼補丁，可更新並重新建置本機應用程式。',
     availableTitleRelease: '有新的 XCLAW 桌面版本',
-    availableBodyRelease: '新的桌面安裝包已可下載並安裝。',
+    availableBodyRelease: '新的桌面安裝包已可下載。請下載 DMG 後手動安裝。',
     availableTitleBackend: '後端有可用更新',
     availableBodyBackend: '已連接的 XCLAW 後端有新版本可安裝。',
     availableBodyNoChangelog: '已有新版本可用。此安裝方式無法顯示更新日誌。',
@@ -1692,10 +1692,15 @@ export const zhHant = defineLocale({
       other: '其他改進'
     },
     updateNow: '立即更新',
+    downloadUpdate: '下載更新',
     maybeLater: '稍後再說',
     moreChanges: count => `另有 ${count} 項變更。`,
     manualTitle: '從終端機更新',
     manualBody: '您是從命令列安裝的 XCLAW，因此更新也需要在那裡執行。請將此指令貼到終端機：',
+    manualReleaseTitle: '手動安裝桌面端更新',
+    manualReleaseBody:
+      '下載頁已在瀏覽器中開啟。請從 GitHub Releases 下載最新 DMG，退出 XCLAW 後拖入「應用程式」完成替換。',
+    openDownloadPage: '開啟下載頁',
     manualPickedUp: '下次啟動 XCLAW 時會使用新版本。',
     guiSkewTitle: '請更新桌面應用程式',
     guiSkewBody:

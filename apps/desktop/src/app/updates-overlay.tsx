@@ -81,10 +81,7 @@ export function UpdatesOverlay() {
 
     if (
       !next &&
-      (apply.stage === 'error' ||
-        apply.stage === 'restart' ||
-        apply.stage === 'manual' ||
-        apply.stage === 'guiSkew')
+      (apply.stage === 'error' || apply.stage === 'restart' || apply.stage === 'manual' || apply.stage === 'guiSkew')
     ) {
       resetUpdateApplyState()
     }
@@ -103,12 +100,15 @@ export function UpdatesOverlay() {
         {phase === 'applying' && <ApplyingView apply={apply} isBackend={isBackend} />}
 
         {phase === 'manual' && (
-          <ManualView command={apply.command ?? null} message={apply.message} onDone={() => handleClose(false)} />
+          <ManualView
+            command={apply.command ?? null}
+            message={apply.message}
+            onDone={() => handleClose(false)}
+            releaseUrl={apply.releaseUrl}
+          />
         )}
 
-        {phase === 'guiSkew' && (
-          <GuiSkewView message={apply.message} onDone={() => handleClose(false)} />
-        )}
+        {phase === 'guiSkew' && <GuiSkewView message={apply.message} onDone={() => handleClose(false)} />}
 
         {phase === 'error' && (
           <ErrorView message={apply.message} onDismiss={() => handleClose(false)} onRetry={handleInstall} />
@@ -155,7 +155,10 @@ function IdleView({
 
   if (!status && checking) {
     return (
-      <CenteredStatus icon={<Loader className="size-12" label={u.checking} type="lemniscate-bloom" />} title={u.checking} />
+      <CenteredStatus
+        icon={<Loader className="size-12" label={u.checking} type="lemniscate-bloom" />}
+        title={u.checking}
+      />
     )
   }
 
@@ -202,11 +205,7 @@ function IdleView({
     return (
       <CenteredStatus
         body={
-          target === 'backend'
-            ? u.latestBodyBackend
-            : status.channel === 'release'
-              ? u.latestBodyRelease
-              : u.latestBody
+          target === 'backend' ? u.latestBodyBackend : status.channel === 'release' ? u.latestBodyRelease : u.latestBody
         }
         icon={<CheckCircle2 className="size-7 text-emerald-600 dark:text-emerald-400" />}
         title={u.allSetTitle}
@@ -223,6 +222,7 @@ function IdleView({
   // show (e.g. pip/non-git backend), degrade to honest "no release notes" copy
   // instead of generic filler.
   const { title, body } = resolveUpdateCopy({ channel: status.channel, target, shownItems, copy: u })
+  const isReleaseUpdate = target === 'client' && status.channel === 'release'
 
   return (
     <div className="grid gap-5 px-6 pb-6 pt-7 pr-8">
@@ -230,9 +230,7 @@ function IdleView({
         <BrandMark className="size-16" />
 
         <DialogTitle className="text-center text-xl">{title}</DialogTitle>
-        <DialogDescription className="text-center text-sm">
-          {body}
-        </DialogDescription>
+        <DialogDescription className="text-center text-sm">{body}</DialogDescription>
       </div>
 
       <div className="grid gap-3 rounded-xl border border-border/70 bg-muted/20 px-4 py-3">
@@ -255,18 +253,14 @@ function IdleView({
 
       <div className="grid gap-2">
         <Button className="font-semibold" onClick={onInstall} size="lg">
-          {u.updateNow}
+          {isReleaseUpdate ? u.downloadUpdate : u.updateNow}
         </Button>
         <Button className="font-medium" onClick={onLater} type="button" variant="text">
           {u.maybeLater}
         </Button>
       </div>
 
-      {remaining > 0 && (
-        <p className="text-center text-xs text-muted-foreground">
-          {u.moreChanges(remaining)}
-        </p>
-      )}
+      {remaining > 0 && <p className="text-center text-xs text-muted-foreground">{u.moreChanges(remaining)}</p>}
     </div>
   )
 }
@@ -274,15 +268,49 @@ function IdleView({
 function ManualView({
   command,
   message,
-  onDone
+  onDone,
+  releaseUrl
 }: {
   command: string | null
   message?: string
   onDone: () => void
+  releaseUrl?: null | string
 }) {
   const { t } = useI18n()
   const u = t.updates
   const [copied, setCopied] = useState(false)
+
+  const handleOpenRelease = () => {
+    if (!releaseUrl) {
+      return
+    }
+
+    void window.vigilDesktop?.openExternal?.(releaseUrl)
+  }
+
+  if (releaseUrl) {
+    return (
+      <div className="grid gap-5 px-6 pb-6 pt-7 pr-8">
+        <div className="flex flex-col items-center gap-3 text-center">
+          <Terminal className="size-8 text-primary" />
+
+          <DialogTitle className="text-center text-xl">{u.manualReleaseTitle}</DialogTitle>
+          <DialogDescription className="text-center text-sm">{u.manualReleaseBody}</DialogDescription>
+        </div>
+
+        <div className="grid gap-2">
+          <Button className="font-semibold" onClick={handleOpenRelease} size="lg">
+            {u.openDownloadPage}
+          </Button>
+          <Button className="font-semibold" onClick={onDone} size="lg" variant="secondary">
+            {u.done}
+          </Button>
+        </div>
+
+        {message ? <p className="break-words text-center text-xs text-muted-foreground">{message}</p> : null}
+      </div>
+    )
+  }
 
   const handleCopy = () => {
     if (!command) {
@@ -304,9 +332,7 @@ function ManualView({
           <Terminal className="size-8 text-primary" />
 
           <DialogTitle className="text-center text-xl">{u.manualTitle}</DialogTitle>
-          <DialogDescription className="text-center text-sm">
-            {message || u.manualPickedUp}
-          </DialogDescription>
+          <DialogDescription className="text-center text-sm">{message || u.manualPickedUp}</DialogDescription>
         </div>
 
         <Button className="font-semibold" onClick={onDone} size="lg" variant="secondary">
@@ -322,9 +348,7 @@ function ManualView({
         <Terminal className="size-8 text-primary" />
 
         <DialogTitle className="text-center text-xl">{u.manualTitle}</DialogTitle>
-        <DialogDescription className="text-center text-sm">
-          {u.manualBody}
-        </DialogDescription>
+        <DialogDescription className="text-center text-sm">{u.manualBody}</DialogDescription>
       </div>
 
       <button
@@ -351,9 +375,7 @@ function ManualView({
         </span>
       </button>
 
-      <p className="text-center text-xs text-muted-foreground">
-        {u.manualPickedUp}
-      </p>
+      <p className="text-center text-xs text-muted-foreground">{u.manualPickedUp}</p>
 
       <Button className="font-semibold" onClick={onDone} size="lg" variant="secondary">
         {u.done}
@@ -407,14 +429,10 @@ function ApplyingView({ apply, isBackend }: { apply: UpdateApplyState; isBackend
         <Loader className="size-16" label={label} type="lemniscate-bloom" />
 
         <DialogTitle className="text-center text-xl">{label}</DialogTitle>
-        <DialogDescription className="text-center text-sm">
-          {body}
-        </DialogDescription>
+        <DialogDescription className="text-center text-sm">{body}</DialogDescription>
 
         {currentMessage ? (
-          <p className="max-w-lg break-words text-center text-xs leading-5 text-muted-foreground">
-            {currentMessage}
-          </p>
+          <p className="max-w-lg break-words text-center text-xs leading-5 text-muted-foreground">{currentMessage}</p>
         ) : null}
       </div>
 
@@ -455,9 +473,7 @@ function ErrorView({ message, onDismiss, onRetry }: { message: string; onDismiss
           {message || u.errorBody}
         </DialogDescription>
       }
-      title={
-        <DialogTitle className="text-center text-xl font-semibold tracking-tight">{u.errorTitle}</DialogTitle>
-      }
+      title={<DialogTitle className="text-center text-xl font-semibold tracking-tight">{u.errorTitle}</DialogTitle>}
     >
       <Button className="font-semibold" onClick={onRetry} size="lg">
         {u.tryAgain}

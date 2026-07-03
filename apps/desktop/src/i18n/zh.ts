@@ -1795,7 +1795,7 @@ export const zh: Translations = {
     availableTitle: '有可用更新',
     availableBody: 'main 分支有新的源码补丁，可更新并重建本地应用。',
     availableTitleRelease: '有新的 XCLAW 客户端版本',
-    availableBodyRelease: '新的客户端安装包已可下载并安装。',
+    availableBodyRelease: '新的客户端安装包已可下载。请下载 DMG 后手动安装。',
     availableTitleBackend: '后端有可用更新',
     availableBodyBackend: '已连接的 XCLAW 后端有新版本可安装。',
     availableBodyNoChangelog: '已有新版本可用。此安装方式无法显示更新日志。',
@@ -1807,10 +1807,15 @@ export const zh: Translations = {
       other: '其他改进'
     },
     updateNow: '立即更新',
+    downloadUpdate: '下载更新',
     maybeLater: '稍后再说',
     moreChanges: count => `另有 ${count} 项更改。`,
     manualTitle: '从终端更新',
     manualBody: '你是从命令行安装的 XCLAW，因此更新也需要在那里运行。请将此命令粘贴到终端：',
+    manualReleaseTitle: '手动安装桌面端更新',
+    manualReleaseBody:
+      '下载页已在浏览器中打开。请从 GitHub Releases 下载最新 DMG，退出 XCLAW 后拖入“应用程序”完成替换。',
+    openDownloadPage: '打开下载页',
     manualPickedUp: '下次启动 XCLAW 时会使用新版本。',
     guiSkewTitle: '请更新桌面应用',
     guiSkewBody:

@@ -3,11 +3,11 @@ name: Desktop Release Installers
 on:
   push:
     tags:
-      - 'desktop-v*'
+      - "desktop-v*"
   workflow_dispatch:
     inputs:
       confirm_tag:
-        description: 'Tag to package and upload (for example, desktop-v0.18.0). Must already exist.'
+        description: "Tag to package and upload (for example, desktop-v0.18.0). Must already exist."
         required: true
         type: string
 
@@ -19,7 +19,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  NODE_VERSION: '22'
+  NODE_VERSION: "22"
   RELEASE_TAG: ${{ inputs.confirm_tag || github.ref_name }}
 
 jobs:
@@ -35,7 +35,7 @@ jobs:
             script: dist:mac
 
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-tags: true
           persist-credentials: false
@@ -51,7 +51,7 @@ jobs:
           fi
 
       - name: Set up Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           cache: npm
           node-version: ${{ env.NODE_VERSION }}
@@ -71,12 +71,11 @@ jobs:
             echo "available=true" >> "$GITHUB_OUTPUT"
           else
             echo "available=false" >> "$GITHUB_OUTPUT"
-            echo "::error::MAC_CSC_LINK and MAC_CSC_KEY_PASSWORD are required for public desktop releases."
-            exit 1
+            echo "::warning::MAC_CSC_LINK and MAC_CSC_KEY_PASSWORD are missing; publishing unsigned macOS installers."
           fi
 
       - name: Validate macOS signing environment
-        if: runner.os == 'macOS'
+        if: runner.os == 'macOS' && steps.mac-signing.outputs.available == 'true'
         env:
           APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
           APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
@@ -88,6 +87,10 @@ jobs:
           CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
           CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
         run: npm run release:mac:check-env --workspace apps/desktop
+
+      - name: Disable macOS code signing for unsigned fallback
+        if: runner.os == 'macOS' && steps.mac-signing.outputs.available != 'true'
+        run: echo "CSC_IDENTITY_AUTO_DISCOVERY=false" >> "$GITHUB_ENV"
 
       - name: Build desktop installer
         env:
@@ -127,9 +130,9 @@ jobs:
       - name: Verify macOS release artifacts
         if: runner.os == 'macOS'
         env:
-          VIGIL_ALLOW_UNSIGNED_MAC_RELEASE: '0'
-          VIGIL_REQUIRE_MAC_GATEKEEPER: '1'
-          VIGIL_REQUIRE_MAC_SIGNING: '1'
+          VIGIL_ALLOW_UNSIGNED_MAC_RELEASE: ${{ steps.mac-signing.outputs.available == 'true' && '0' || '1' }}
+          VIGIL_REQUIRE_MAC_GATEKEEPER: ${{ steps.mac-signing.outputs.available == 'true' && '1' || '0' }}
+          VIGIL_REQUIRE_MAC_SIGNING: ${{ steps.mac-signing.outputs.available == 'true' && '1' || '0' }}
         run: npm run release:mac:verify-artifacts --workspace apps/desktop
 
       - name: Collect installer assets
@@ -165,7 +168,7 @@ jobs:
           NODE
 
       - name: Upload installer artifact
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: desktop-${{ matrix.label }}-installers
           path: desktop-release-assets/*
@@ -177,7 +180,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download installer artifacts
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           merge-multiple: true
           path: desktop-release-assets

@@ -318,6 +318,24 @@ describe('applyUpdates terminal state', () => {
     expect(notifySpy).not.toHaveBeenCalled()
   })
 
+  it('keeps release manual updates as a download page, not a terminal command', async () => {
+    applyMock.mockResolvedValue({
+      ok: true,
+      channel: 'release',
+      manual: true,
+      message: 'Opened the download page.',
+      releaseUrl: 'https://github.com/Signmanal/VIGIL/releases/tag/desktop-v0.19.14'
+    })
+
+    await applyUpdates()
+
+    expect($updateApply.get().stage).toBe('manual')
+    expect($updateApply.get().command).toBeNull()
+    expect($updateApply.get().releaseUrl).toBe('https://github.com/Signmanal/VIGIL/releases/tag/desktop-v0.19.14')
+    expect($updateOverlayOpen.get()).toBe(true)
+    expect(notifySpy).not.toHaveBeenCalled()
+  })
+
   it('lands on the guiSkew terminal state for a GUI/backend skew (AppImage/.deb/.rpm), without claiming a GUI update', async () => {
     // Linux: backend updated, but the running desktop package was NOT replaced.
     // Must NOT toast "loads next launch" — that's the dishonest message #45205
@@ -370,7 +388,16 @@ describe('applyBackendUpdate recovery', () => {
     checkVIGILUpdateSpy.mockReset()
     updateVIGILSpy.mockReset()
     getActionStatusSpy.mockReset()
-    $backendUpdateApply.set({ applying: false, stage: 'idle', message: '', percent: null, error: null, command: null, log: [] })
+    $backendUpdateApply.set({
+      applying: false,
+      stage: 'idle',
+      message: '',
+      percent: null,
+      error: null,
+      command: null,
+      releaseUrl: null,
+      log: []
+    })
     vi.useFakeTimers()
   })
 
@@ -381,7 +408,15 @@ describe('applyBackendUpdate recovery', () => {
   it('waits for the backend to return after the restart drops the connection, then clears the overlay', async () => {
     updateVIGILSpy.mockResolvedValue({ ok: true, name: 'update', pid: 1 })
     getActionStatusSpy.mockRejectedValue(new Error('ECONNREFUSED'))
-    checkVIGILUpdateSpy.mockResolvedValue({ install_method: 'git', current_version: '0.16.0', behind: 0, update_available: false, can_apply: true, update_command: 'vigil update', message: null })
+    checkVIGILUpdateSpy.mockResolvedValue({
+      install_method: 'git',
+      current_version: '0.16.0',
+      behind: 0,
+      update_available: false,
+      can_apply: true,
+      update_command: 'vigil update',
+      message: null
+    })
 
     const promise = applyBackendUpdate()
     await vi.advanceTimersByTimeAsync(5000)

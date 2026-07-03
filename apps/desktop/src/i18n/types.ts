@@ -1302,10 +1302,14 @@ export interface Translations {
       other: string
     }
     updateNow: string
+    downloadUpdate: string
     maybeLater: string
     moreChanges: (count: number) => string
     manualTitle: string
     manualBody: string
+    manualReleaseTitle: string
+    manualReleaseBody: string
+    openDownloadPage: string
     manualPickedUp: string
     /** GUI/backend skew (#45205): backend updated but the running desktop app
      *  package (AppImage/.deb/.rpm) was not changed and must be reinstalled. */

@@ -54,16 +54,14 @@ const {
   collectRelaunchEnv,
   buildRelaunchScript
 } = require('./update-relaunch.cjs')
-const {
-  buildMacReleaseInstallScript,
-  resolveDownloadedMacReleaseZip
-} = require('./mac-release-installer.cjs')
+const { buildMacReleaseInstallScript, resolveDownloadedMacReleaseZip } = require('./mac-release-installer.cjs')
 const { gitRootForIpc } = require('./git-root.cjs')
 const { worktreesForIpc } = require('./git-worktrees.cjs')
 const { OFFICIAL_REPO_HTTPS_URL, isOfficialSshRemote } = require('./update-remote.cjs')
 const { resolveBehindCount, shouldCountCommits } = require('./update-count.cjs')
 const { runRebuildWithRetry } = require('./update-rebuild.cjs')
 const {
+  githubReleaseUrl,
   releaseErrorStatus,
   releaseStatusFromUpdateInfo,
   releaseUnsupportedStatus,
@@ -1779,6 +1777,10 @@ function readReleaseUpdateMetadata() {
   }
 }
 
+function releaseDownloadPageUrl(info = releaseUpdateInfo) {
+  return githubReleaseUrl(readReleaseUpdateMetadata(), info?.version)
+}
+
 function releaseUpdatesEnabled() {
   return IS_PACKAGED && process.env.VIGIL_DESKTOP_UPDATE_CHANNEL !== 'source' && Boolean(releaseUpdateMetadataPath())
 }
@@ -1916,7 +1918,10 @@ async function checkReleaseUpdates() {
     const result = await updater.checkForUpdates()
     releaseUpdateInfo = result?.updateInfo || null
 
-    return releaseStatusFromUpdateInfo(releaseUpdateInfo, app.getVersion())
+    const status = releaseStatusFromUpdateInfo(releaseUpdateInfo, app.getVersion())
+    const releaseUrl = releaseDownloadPageUrl(releaseUpdateInfo)
+
+    return releaseUrl ? { ...status, releaseUrl } : status
   } catch (error) {
     return releaseErrorStatus(error)
   }
@@ -2309,8 +2314,6 @@ async function applyReleaseUpdates() {
     throw new Error('An update is already in progress.')
   }
   updateInFlight = true
-  const previousAutoInstallOnAppQuit = updater.autoInstallOnAppQuit
-  let handedOff = false
 
   try {
     let info = releaseUpdateInfo
@@ -2325,58 +2328,33 @@ async function applyReleaseUpdates() {
       info = releaseUpdateInfo
     }
 
-    emitUpdateProgress({
-      stage: 'fetch',
-      message: `Downloading XCLAW ${info?.version || 'update'}…`,
-      percent: 5
-    })
-    const downloadResult = await updater.downloadUpdate()
-    emitUpdateProgress({
-      stage: 'restart',
-      message: `Installing XCLAW ${info?.version || 'update'}…`,
-      percent: 100
-    })
+    const releaseUrl = releaseDownloadPageUrl(info)
+    if (!releaseUrl) {
+      const message = 'XCLAW found a release update, but could not resolve the GitHub Release download page.'
+      emitUpdateProgress({ stage: 'error', message, error: 'release-download-page-missing' })
 
-    if (IS_MAC) {
-      try {
-        const macZipHandoff = handOffMacReleaseZipInstall(downloadResult)
-        if (macZipHandoff) {
-          handedOff = true
-          return macZipHandoff
-        }
-      } catch (error) {
-        rememberLog(`[release-updates] mac release zip handoff failed: ${error?.message || error}`)
-      }
-
-      // Fallback to electron-updater's native handoff when the downloaded zip
-      // cannot be found. This keeps the legacy path available, but the normal
-      // macOS route no longer waits 15s for a ShipIt handoff that never starts.
-      updater.autoInstallOnAppQuit = true
+      return { ok: false, channel: 'release', error: 'release-download-page-missing', message }
     }
 
-    const handoff = waitForReleaseUpdateHandoff()
-    updater.quitAndInstall(false, true)
-    const handoffStatus = await handoff
-    if (handoffStatus !== 'handoff') {
-      const message =
-        'XCLAW downloaded the update, but macOS did not take over installation. Quit XCLAW and install the latest release manually.'
-      rememberLog(`[release-updates] handoff timed out after ${RELEASE_UPDATE_HANDOFF_TIMEOUT_MS}ms`)
-      emitUpdateProgress({ stage: 'error', message, error: 'release-handoff-timeout' })
+    const opened = openExternalUrl(releaseUrl)
+    const message = `Opened the XCLAW ${info?.version || 'latest'} download page. Download the DMG and install it manually.`
+    emitUpdateProgress({
+      stage: 'manual',
+      message,
+      percent: null
+    })
 
-      return { ok: false, channel: 'release', error: 'release-handoff-timeout', message }
+    if (!opened) {
+      return { ok: false, channel: 'release', error: 'release-download-page-open-failed', message, releaseUrl }
     }
-    handedOff = true
 
-    return { ok: true, channel: 'release', handedOff: true }
+    return { ok: true, channel: 'release', manual: true, message, releaseUrl }
   } catch (error) {
     const message = error?.message || String(error)
     emitUpdateProgress({ stage: 'error', message, error: 'release-apply-failed' })
 
     return { ok: false, channel: 'release', error: 'release-apply-failed', message }
   } finally {
-    if (IS_MAC && !handedOff) {
-      updater.autoInstallOnAppQuit = previousAutoInstallOnAppQuit
-    }
     updateInFlight = false
   }
 }
@@ -3189,7 +3167,10 @@ function resolveVIGILBackend(dashboardArgs) {
   const syncStatus = activeRuntimeSyncStatus(activeInstallReady)
   if (syncStatus.needsRepair) {
     logRuntimeSyncRepair(syncStatus)
-    return createBootstrapNeededBackend(dashboardArgs, 'VIGIL Agent runtime is out of sync with this desktop build; repair required')
+    return createBootstrapNeededBackend(
+      dashboardArgs,
+      'VIGIL Agent runtime is out of sync with this desktop build; repair required'
+    )
   }
 
   if (isVIGILSourceRoot(ACTIVE_VIGIL_ROOT) && !activeInstallReady) {
