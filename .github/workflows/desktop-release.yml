@@ -71,11 +71,12 @@ jobs:
             echo "available=true" >> "$GITHUB_OUTPUT"
           else
             echo "available=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::MAC_CSC_LINK or MAC_CSC_KEY_PASSWORD is not configured. Building an unsigned macOS installer."
+            echo "::error::MAC_CSC_LINK and MAC_CSC_KEY_PASSWORD are required for public desktop releases."
+            exit 1
           fi
 
       - name: Validate macOS signing environment
-        if: runner.os == 'macOS' && steps.mac-signing.outputs.available == 'true'
+        if: runner.os == 'macOS'
         env:
           APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
           APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
@@ -87,13 +88,6 @@ jobs:
           CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
           CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
         run: npm run release:mac:check-env --workspace apps/desktop
-
-      - name: Disable macOS code signing for unsigned fallback
-        if: runner.os == 'macOS' && steps.mac-signing.outputs.available != 'true'
-        shell: bash
-        run: |
-          echo "CSC_IDENTITY_AUTO_DISCOVERY=false" >> "$GITHUB_ENV"
-          echo "VIGIL_DESKTOP_UNSIGNED_MAC_RELEASE=1" >> "$GITHUB_ENV"
 
       - name: Build desktop installer
         env:
@@ -133,9 +127,9 @@ jobs:
       - name: Verify macOS release artifacts
         if: runner.os == 'macOS'
         env:
-          VIGIL_ALLOW_UNSIGNED_MAC_RELEASE: ${{ steps.mac-signing.outputs.available == 'true' && '0' || '1' }}
-          VIGIL_REQUIRE_MAC_GATEKEEPER: ${{ steps.mac-signing.outputs.available == 'true' && '1' || '0' }}
-          VIGIL_REQUIRE_MAC_SIGNING: ${{ steps.mac-signing.outputs.available == 'true' && '1' || '0' }}
+          VIGIL_ALLOW_UNSIGNED_MAC_RELEASE: '0'
+          VIGIL_REQUIRE_MAC_GATEKEEPER: '1'
+          VIGIL_REQUIRE_MAC_SIGNING: '1'
         run: npm run release:mac:verify-artifacts --workspace apps/desktop
 
       - name: Collect installer assets

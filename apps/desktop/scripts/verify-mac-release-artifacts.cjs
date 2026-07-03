@@ -182,29 +182,50 @@ if (process.platform !== 'darwin') {
 
 const files = listFiles()
 const dmgPath = firstMatching(files, new RegExp(`^${productName}-${expectedVersion}-mac-.*\\.dmg$`), 'macOS DMG')
-firstMatching(files, new RegExp(`^${productName}-${expectedVersion}-mac-.*\\.zip$`), 'macOS ZIP')
+const zipPath = firstMatching(files, new RegExp(`^${productName}-${expectedVersion}-mac-.*\\.zip$`), 'macOS ZIP')
 firstMatching(files, new RegExp(`^${productName}-${expectedVersion}-mac-.*\\.dmg\\.blockmap$`), 'macOS DMG blockmap')
 firstMatching(files, new RegExp(`^${productName}-${expectedVersion}-mac-.*\\.zip\\.blockmap$`), 'macOS ZIP blockmap')
 assertLatestMacYml(path.join(releaseDir, 'latest-mac.yml'))
+
+function assertReleaseApp(appPath, label, dmgPathForGatekeeper = null) {
+  if (!fs.existsSync(appPath)) {
+    fail(`${label} does not contain ${productName}.app`)
+  }
+  const plistPath = path.join(appPath, 'Contents', 'Info.plist')
+  const actualVersion = readPlistValue(plistPath, 'CFBundleShortVersionString')
+  if (actualVersion !== expectedVersion) {
+    fail(`${label} app version mismatch: expected ${expectedVersion}, got ${actualVersion}`)
+  }
+  const bundleId = readPlistValue(plistPath, 'CFBundleIdentifier')
+  if (bundleId !== pkg.build?.appId) {
+    fail(`${label} app bundle id mismatch: expected ${pkg.build?.appId}, got ${bundleId}`)
+  }
+  assertUpdaterMetadata(appPath)
+  if (requireSigning) {
+    assertSigned(appPath, dmgPathForGatekeeper || dmgPath)
+  }
+}
+
+const zipExtractDir = fs.mkdtempSync(path.join(os.tmpdir(), 'xclaw-zip-'))
+try {
+  run('ditto', ['-x', '-k', zipPath, zipExtractDir])
+  assertReleaseApp(path.join(zipExtractDir, `${productName}.app`), 'macOS ZIP')
+} finally {
+  try {
+    fs.rmSync(zipExtractDir, { force: true, recursive: true })
+  } catch {
+    // Best-effort cleanup.
+  }
+}
 
 const mounted = mountDmg(dmgPath)
 try {
   const appPath = path.join(mounted.mountPoint, `${productName}.app`)
   const applicationsLink = path.join(mounted.mountPoint, 'Applications')
-  if (!fs.existsSync(appPath)) {
-    fail(`DMG does not contain ${productName}.app`)
-  }
   if (!fs.existsSync(applicationsLink)) {
     fail('DMG does not contain the Applications shortcut')
   }
-  const actualVersion = readPlistValue(path.join(appPath, 'Contents', 'Info.plist'), 'CFBundleShortVersionString')
-  if (actualVersion !== expectedVersion) {
-    fail(`DMG app version mismatch: expected ${expectedVersion}, got ${actualVersion}`)
-  }
-  assertUpdaterMetadata(appPath)
-  if (requireSigning) {
-    assertSigned(appPath, dmgPath)
-  }
+  assertReleaseApp(appPath, 'macOS DMG', dmgPath)
 } finally {
   mounted.cleanup()
 }
