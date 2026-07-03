@@ -27,7 +27,7 @@ jobs:
       - name: Install guard tools
         shell: bash
         run: |
-          go install github.com/gitleaks/gitleaks/v8@latest
+          go install github.com/zricethezav/gitleaks/v8@latest
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
           if command -v rg >/dev/null 2>&1; then
             exit 0

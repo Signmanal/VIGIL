@@ -3785,7 +3785,7 @@ wheels = [
 
 [[package]]
 name = "vigil-agent"
-version = "0.17.0"
+version = "0.17.1"
 source = { editable = "." }
 dependencies = [
     { name = "certifi" },
