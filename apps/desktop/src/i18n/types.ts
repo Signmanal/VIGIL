@@ -1139,6 +1139,7 @@ export interface Translations {
     shiftClickHint: string
     noWorkspace: string
     newSessionIn: (label: string) => string
+    confirmRemoveProject: (label: string) => string
     removeProject: (label: string) => string
     reorderWorkspace: (label: string) => string
     showMoreIn: (count: number, label: string) => string

@@ -1523,6 +1523,8 @@ export const ja = defineLocale({
     shiftClickHint: 'Shift クリックでピン留め · ドラッグで並べ替え',
     noWorkspace: 'ワークスペースなし',
     newSessionIn: label => `${label} で新しいセッション`,
+    confirmRemoveProject: label =>
+      `サイドバーからプロジェクト ${label} を削除しますか？\n\nプロジェクトのショートカットのみ削除します。ファイルやセッションは削除されません。`,
     removeProject: label => `プロジェクト ${label} を削除`,
     reorderWorkspace: label => `ワークスペース ${label} を並べ替え`,
     showMoreIn: (count, label) => `${label} でさらに ${count} 件を表示`,

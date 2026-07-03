@@ -1404,6 +1404,8 @@ export const en: Translations = {
     shiftClickHint: 'Shift-click a chat to pin',
     noWorkspace: 'No workspace',
     newSessionIn: label => `New session in ${label}`,
+    confirmRemoveProject: label =>
+      `Remove ${label} from the sidebar?\n\nThis only removes the project shortcut. It will not delete files or sessions.`,
     removeProject: label => `Remove project ${label}`,
     reorderWorkspace: label => `Reorder workspace ${label}`,
     showMoreIn: (count, label) => `Show ${count} more in ${label}`,

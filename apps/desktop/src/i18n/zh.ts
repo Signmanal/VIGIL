@@ -1582,6 +1582,7 @@ export const zh: Translations = {
     shiftClickHint: 'Shift+ 单击对话以置顶 · 拖动以重新排序',
     noWorkspace: '无工作区',
     newSessionIn: label => `在 ${label} 中新建会话`,
+    confirmRemoveProject: label => `从左侧栏移除项目 ${label}？\n\n只会移除项目快捷入口，不会删除磁盘文件或会话。`,
     removeProject: label => `移除项目 ${label}`,
     reorderWorkspace: label => `重新排序工作区 ${label}`,
     showMoreIn: (count, label) => `在 ${label} 中再显示 ${count} 个`,

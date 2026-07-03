@@ -1468,6 +1468,7 @@ export const zhHant = defineLocale({
     shiftClickHint: 'Shift + 點擊聊天以釘選 · 拖曳以重新排序',
     noWorkspace: '無工作區',
     newSessionIn: label => `在 ${label} 中新建工作階段`,
+    confirmRemoveProject: label => `從左側欄移除專案 ${label}？\n\n只會移除專案捷徑，不會刪除磁碟檔案或工作階段。`,
     removeProject: label => `移除專案 ${label}`,
     reorderWorkspace: label => `重新排序工作區 ${label}`,
     showMoreIn: (count, label) => `在 ${label} 中再顯示 ${count} 個`,

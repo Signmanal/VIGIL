@@ -1584,7 +1584,14 @@ function SidebarWorkspaceGroup({
             {isProjectGroup && group.path && group.removable && onRemoveProject && (
               <WorkspaceRemoveButton
                 label={s.removeProject(group.label)}
-                onClick={() => onRemoveProject(group.path!)}
+                onClick={() => {
+                  const shouldRemove =
+                    typeof window === 'undefined' || window.confirm(s.confirmRemoveProject(group.label))
+
+                  if (shouldRemove) {
+                    onRemoveProject(group.path!)
+                  }
+                }}
               />
             )}
           </div>
@@ -1842,7 +1849,7 @@ function WorkspaceRemoveButton({ label, onClick }: { label: string; onClick: () 
     <Tip label={label}>
       <button
         aria-label={label}
-        className="grid size-4 shrink-0 place-items-center rounded-sm bg-transparent text-(--ui-text-quaternary) opacity-0 transition-opacity hover:bg-(--ui-control-hover-background) hover:text-destructive group-hover/workspace:opacity-100"
+        className="grid size-4 shrink-0 place-items-center rounded-sm bg-transparent text-(--ui-text-quaternary) opacity-45 transition-opacity hover:bg-(--ui-control-hover-background) hover:text-destructive hover:opacity-100 focus-visible:opacity-100 group-hover/workspace:opacity-100"
         onClick={event => {
           event.stopPropagation()
           onClick()
