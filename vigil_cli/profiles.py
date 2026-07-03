@@ -547,6 +547,8 @@ class ProfileInfo:
     has_env: bool = False
     skill_count: int = 0
     enabled_skill_count: int = 0
+    tool_count: int = 0
+    mcp_count: int = 0
     alias_path: Optional[Path] = None
     # Custom alias name (the wrapper file name) when it differs from ``name``;
     # falls back to ``name`` when a profile-named wrapper exists. None if no
@@ -594,23 +596,31 @@ def _read_distribution_meta(profile_dir: Path) -> tuple:
         return None, None, None
 
 
-def _read_config_model(profile_dir: Path) -> tuple:
-    """Read model/provider from a profile's config.yaml. Returns (model, provider)."""
+def _read_profile_config(profile_dir: Path) -> dict:
+    """Read a profile's config.yaml as a dict, swallowing malformed legacy files."""
     config_path = profile_dir / "config.yaml"
-    if not config_path.exists():
-        return None, None
+    if not config_path.is_file():
+        return {}
     try:
         import yaml
         with open(config_path, "r", encoding="utf-8") as f:
             cfg = yaml.safe_load(f) or {}
-        model_cfg = cfg.get("model", {})
-        if isinstance(model_cfg, str):
-            return model_cfg, None
-        if isinstance(model_cfg, dict):
-            return model_cfg.get("default") or model_cfg.get("model"), model_cfg.get("provider")
-        return None, None
+        return cfg if isinstance(cfg, dict) else {}
     except Exception:
+        return {}
+
+
+def _read_config_model(profile_dir: Path) -> tuple:
+    """Read model/provider from a profile's config.yaml. Returns (model, provider)."""
+    cfg = _read_profile_config(profile_dir)
+    if not cfg:
         return None, None
+    model_cfg = cfg.get("model", {})
+    if isinstance(model_cfg, str):
+        return model_cfg, None
+    if isinstance(model_cfg, dict):
+        return model_cfg.get("default") or model_cfg.get("model"), model_cfg.get("provider")
+    return None, None
 
 
 def _check_gateway_running(profile_dir: Path) -> bool:
@@ -670,20 +680,43 @@ def _count_enabled_skills(profile_dir: Path) -> int:
     if not installed:
         return 0
     try:
-        import yaml
         from vigil_cli.skills_config import get_disabled_skills
 
-        config_path = profile_dir / "config.yaml"
-        if not config_path.is_file():
-            return len(installed)
-        with open(config_path, "r", encoding="utf-8") as f:
-            cfg = yaml.safe_load(f) or {}
-        if not isinstance(cfg, dict):
+        cfg = _read_profile_config(profile_dir)
+        if not cfg:
             return len(installed)
         disabled = get_disabled_skills(cfg)
         return sum(1 for name in installed if name not in disabled)
     except Exception:
         return len(installed)
+
+
+def _count_enabled_toolsets(profile_dir: Path) -> int:
+    """Count enabled configurable toolsets for the desktop/CLI profile."""
+    try:
+        from vigil_cli.tools_config import _get_platform_tools, enabled_mcp_server_names
+
+        cfg = _read_profile_config(profile_dir)
+        enabled = _get_platform_tools(
+            cfg,
+            "cli",
+            include_default_mcp_servers=False,
+        )
+        return len(set(enabled) - enabled_mcp_server_names(cfg))
+    except Exception:
+        return 0
+
+
+def _count_enabled_mcp_servers(profile_dir: Path) -> int:
+    """Count enabled MCP server configs in a profile."""
+    servers = _read_profile_config(profile_dir).get("mcp_servers")
+    if not isinstance(servers, dict):
+        return 0
+    return sum(
+        1
+        for server in servers.values()
+        if not (isinstance(server, dict) and server.get("disabled") is True)
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -792,6 +825,8 @@ def list_profiles() -> List[ProfileInfo]:
             has_env=(default_home / ".env").exists(),
             skill_count=_count_skills(default_home),
             enabled_skill_count=_count_enabled_skills(default_home),
+            tool_count=_count_enabled_toolsets(default_home),
+            mcp_count=_count_enabled_mcp_servers(default_home),
             distribution_name=dist_name,
             distribution_version=dist_version,
             distribution_source=dist_source,
@@ -830,6 +865,8 @@ def list_profiles() -> List[ProfileInfo]:
                 has_env=(entry / ".env").exists(),
                 skill_count=_count_skills(entry),
                 enabled_skill_count=_count_enabled_skills(entry),
+                tool_count=_count_enabled_toolsets(entry),
+                mcp_count=_count_enabled_mcp_servers(entry),
                 alias_path=alias_path if (alias_path and alias_path.exists()) else None,
                 alias_name=alias_name,
                 distribution_name=dist_name,

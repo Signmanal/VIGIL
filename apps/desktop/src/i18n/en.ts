@@ -801,6 +801,10 @@ export const en: Translations = {
     currentExpertDesc: 'This is the active profile serving the current chat context. Delegated sub-experts appear below when a turn fans out.',
     activeBadge: 'Active',
     manageCurrentExpert: 'Edit role',
+    currentExpertNoDescription: 'No description yet. Edit SOUL.md or the profile description in role management.',
+    skillMetric: (enabled, total) => `${enabled}/${total} Skill`,
+    toolMetric: count => `${count} Tools`,
+    mcpMetric: count => `${count} MCP`,
     emptyTitle: 'No live sub-experts',
     emptyDesc:
       'When a turn delegates work, child experts stream their progress here. Use roles to switch the assistant persona before starting a session.',

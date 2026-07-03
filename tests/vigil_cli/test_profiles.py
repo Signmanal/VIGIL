@@ -1448,6 +1448,29 @@ class TestEdgeCases:
         assert default.skill_count == 2
         assert default.enabled_skill_count == 1
 
+    def test_list_profiles_counts_enabled_toolsets_and_mcp_servers(self, profile_env, monkeypatch):
+        default_home = profile_env / ".vigil"
+        monkeypatch.setattr(
+            "vigil_cli.tools_config._get_platform_tools",
+            lambda config, platform, *, include_default_mcp_servers=True: {"context7", "file", "terminal"},
+        )
+        (default_home / "config.yaml").write_text(
+            yaml.safe_dump({
+                "platform_toolsets": {"cli": ["file", "terminal"]},
+                "mcp_servers": {
+                    "context7": {"command": "context7"},
+                    "disabled-demo": {"command": "demo", "disabled": True},
+                },
+            }),
+            encoding="utf-8",
+        )
+
+        profiles = list_profiles()
+        default = [p for p in profiles if p.name == "default"][0]
+
+        assert default.tool_count == 2
+        assert default.mcp_count == 1
+
     def test_gateway_running_check_with_pid_file(self, profile_env):
         """Verify _check_gateway_running uses the shared gateway PID validator."""
         from vigil_cli.profiles import _check_gateway_running

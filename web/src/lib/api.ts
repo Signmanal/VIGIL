@@ -1838,6 +1838,9 @@ export interface ProfileInfo {
   provider: string | null;
   has_env: boolean;
   skill_count: number;
+  enabled_skill_count: number;
+  tool_count: number;
+  mcp_count: number;
   gateway_running: boolean;
   description: string;
   description_auto: boolean;

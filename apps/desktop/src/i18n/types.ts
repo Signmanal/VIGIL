@@ -693,6 +693,10 @@ export interface Translations {
     currentExpertDesc: string
     activeBadge: string
     manageCurrentExpert: string
+    currentExpertNoDescription: string
+    skillMetric: (enabled: number, total: number) => string
+    toolMetric: (count: number) => string
+    mcpMetric: (count: number) => string
     emptyTitle: string
     emptyDesc: string
     running: string

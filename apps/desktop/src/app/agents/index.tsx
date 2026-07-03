@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { FadeText } from '@/components/ui/fade-text'
 import { GlyphSpinner } from '@/components/ui/glyph-spinner'
 import { type Translations, useI18n } from '@/i18n'
-import { AlertCircle, Brain, CheckCircle2, Sparkles } from '@/lib/icons'
+import { AlertCircle, Brain, CheckCircle2, Cpu, Link2, NotebookTabs, Sparkles } from '@/lib/icons'
 import { profileColorSoft, resolveProfileColor } from '@/lib/profile-color'
 import { useEnterAnimation } from '@/lib/use-enter-animation'
 import { cn } from '@/lib/utils'
@@ -168,12 +168,23 @@ function fallbackProfile(name: string): ProfileInfo {
   return {
     has_env: false,
     is_default: key === 'default',
+    mcp_count: 0,
     model: null,
     name: key,
     path: '',
     provider: null,
-    skill_count: 0
+    skill_count: 0,
+    tool_count: 0
   }
+}
+
+function ExpertMetric({ children, icon }: { children: ReactNode; icon: ReactNode }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-background/45 px-2 py-1 text-[0.68rem] text-muted-foreground/85">
+      <span className="text-muted-foreground/70">{icon}</span>
+      <span>{children}</span>
+    </span>
+  )
 }
 
 function ActiveProfileCard({
@@ -189,6 +200,7 @@ function ActiveProfileCard({
   const displayName = profileDisplayName(profile)
   const showsAlias = displayName !== profile.name
   const accent = color ?? 'var(--dt-primary)'
+  const description = profile.description?.trim() || t.agents.currentExpertNoDescription
 
   const style = {
     '--active-expert-accent': accent,
@@ -216,9 +228,9 @@ function ActiveProfileCard({
         style={style}
       >
         <span aria-hidden className="absolute inset-y-0 left-0 w-1 bg-[var(--active-expert-accent)]" />
-        <div className="flex min-w-0 items-start gap-3">
-          <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--active-expert-soft)] text-[var(--active-expert-accent)] ring-1 ring-[var(--active-expert-accent)]/20">
-            <Brain className="size-6" />
+        <div className="flex min-w-0 items-start gap-4">
+          <span className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-[var(--active-expert-soft)] text-[var(--active-expert-accent)] ring-1 ring-[var(--active-expert-accent)]/20">
+            <Brain className="size-7" />
           </span>
           <div className="min-w-0 flex-1">
             <div className="flex min-w-0 items-start justify-between gap-3">
@@ -232,10 +244,13 @@ function ActiveProfileCard({
                 {t.agents.activeBadge}
               </span>
             </div>
-            <div className="mt-3 flex flex-wrap gap-2 border-t border-border/55 pt-3">
-              <span className="rounded-full bg-background/45 px-2 py-1 text-[0.68rem] text-muted-foreground/80">
-                {t.profiles.enabledSkills(enabledSkillCount(profile), profile.skill_count)}
-              </span>
+            <p className="mt-3 line-clamp-2 text-[0.78rem] leading-relaxed text-muted-foreground/80">{description}</p>
+            <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border/55 pt-3">
+              <ExpertMetric icon={<NotebookTabs className="size-3.5" />}>
+                {t.agents.skillMetric(enabledSkillCount(profile), profile.skill_count)}
+              </ExpertMetric>
+              <ExpertMetric icon={<Cpu className="size-3.5" />}>{t.agents.toolMetric(profile.tool_count ?? 0)}</ExpertMetric>
+              <ExpertMetric icon={<Link2 className="size-3.5" />}>{t.agents.mcpMetric(profile.mcp_count ?? 0)}</ExpertMetric>
               <button
                 className="rounded-full bg-background/55 px-2 py-1 text-[0.68rem] font-medium text-foreground/80 transition-colors hover:bg-background/80"
                 onClick={onManage}

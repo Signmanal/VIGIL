@@ -9739,6 +9739,8 @@ def _profile_to_dict(info) -> Dict[str, Any]:
         "has_env": bool(_profile_attr(info, "has_env", False)),
         "skill_count": int(_profile_attr(info, "skill_count", 0) or 0),
         "enabled_skill_count": int(_profile_attr(info, "enabled_skill_count", 0) or 0),
+        "tool_count": int(_profile_attr(info, "tool_count", 0) or 0),
+        "mcp_count": int(_profile_attr(info, "mcp_count", 0) or 0),
         "gateway_running": bool(_profile_attr(info, "gateway_running", False)),
         "description": _profile_attr(info, "description", "") or "",
         "description_auto": bool(_profile_attr(info, "description_auto", False)),

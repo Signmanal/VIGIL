@@ -536,15 +536,19 @@ export interface ProfileCreateMcpServer {
 }
 
 export interface ProfileInfo {
+  description?: string
+  description_auto?: boolean
   display_name?: string
   enabled_skill_count?: number
   has_env: boolean
   is_default: boolean
+  mcp_count?: number
   model: null | string
   name: string
   path: string
   provider: null | string
   skill_count: number
+  tool_count?: number
 }
 
 export interface ProfileSetupCommand {
