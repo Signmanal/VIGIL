@@ -3,11 +3,11 @@ name: Desktop Release Installers
 on:
   push:
     tags:
-      - 'desktop-v20*'
+      - 'desktop-v*'
   workflow_dispatch:
     inputs:
       confirm_tag:
-        description: 'Tag to package and upload (for example, desktop-v2026.7.3). Must already exist.'
+        description: 'Tag to package and upload (for example, desktop-v0.18.0). Must already exist.'
         required: true
         type: string
 
@@ -19,7 +19,6 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  CSC_IDENTITY_AUTO_DISCOVERY: 'false'
   NODE_VERSION: '22'
   RELEASE_TAG: ${{ inputs.confirm_tag || github.ref_name }}
 
@@ -73,7 +72,16 @@ jobs:
         run: npm ci
 
       - name: Build desktop installer
-        run: npm run ${{ matrix.script }} --workspace apps/desktop
+        env:
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
+          CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
+          GH_TOKEN: ${{ github.token }}
+          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+        run: npm run ${{ matrix.script }} --workspace apps/desktop -- --publish never
 
       - name: Collect installer assets
         shell: bash

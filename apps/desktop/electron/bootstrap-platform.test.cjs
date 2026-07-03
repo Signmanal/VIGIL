@@ -95,7 +95,9 @@ test('packaged electron entrypoints do not require unpackaged npm modules', () =
   //   has a try/catch fallback at line ~38 that resolves the staged copy when the
   //   bare require fails in the packaged asar, so the bare require itself is by
   //   design rather than an oversight.
-  const allowedBareRequires = new Set(['electron', 'node-pty'])
+  // - electron-updater: production dependency of apps/desktop and packaged by
+  //   electron-builder with the app for the Release installer update channel.
+  const allowedBareRequires = new Set(['electron', 'electron-updater', 'node-pty'])
   const requirePattern = /require\(['"]([^'"]+)['"]\)/g
 
   for (const entrypoint of entrypoints) {

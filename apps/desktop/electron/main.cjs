@@ -59,6 +59,12 @@ const { OFFICIAL_REPO_HTTPS_URL, isOfficialSshRemote } = require('./update-remot
 const { resolveBehindCount, shouldCountCommits } = require('./update-count.cjs')
 const { runRebuildWithRetry } = require('./update-rebuild.cjs')
 const {
+  releaseErrorStatus,
+  releaseStatusFromUpdateInfo,
+  releaseUnsupportedStatus,
+  withSourceChannel
+} = require('./release-updater.cjs')
+const {
   buildPosixCleanupScript,
   buildWindowsCleanupScript,
   modeRemovesAgent,
@@ -1647,7 +1653,76 @@ async function resolveHealedBranch(updateRoot, branch) {
   return 'main'
 }
 
-async function checkUpdates() {
+let releaseAutoUpdater = null
+let releaseAutoUpdaterReady = false
+let releaseUpdateInfo = null
+
+function releaseUpdatesEnabled() {
+  return IS_PACKAGED && process.env.VIGIL_DESKTOP_UPDATE_CHANNEL !== 'source'
+}
+
+function getReleaseAutoUpdater() {
+  if (!releaseUpdatesEnabled()) {
+    return null
+  }
+
+  if (releaseAutoUpdaterReady) {
+    return releaseAutoUpdater
+  }
+
+  releaseAutoUpdaterReady = true
+  try {
+    const { autoUpdater } = require('electron-updater')
+    autoUpdater.autoDownload = false
+    autoUpdater.autoInstallOnAppQuit = false
+    autoUpdater.allowPrerelease = false
+    autoUpdater.on('download-progress', progress => {
+      emitUpdateProgress({
+        stage: 'fetch',
+        message: `Downloading XCLAW ${releaseUpdateInfo?.version || 'update'}…`,
+        percent: typeof progress?.percent === 'number' ? progress.percent : null
+      })
+    })
+    autoUpdater.on('update-downloaded', info => {
+      releaseUpdateInfo = info || releaseUpdateInfo
+      emitUpdateProgress({
+        stage: 'restart',
+        message: `Installing XCLAW ${releaseUpdateInfo?.version || 'update'}…`,
+        percent: 100
+      })
+    })
+    autoUpdater.on('error', error => {
+      rememberLog(`[release-updates] ${error?.message || error}`)
+    })
+    releaseAutoUpdater = autoUpdater
+  } catch (error) {
+    rememberLog(`[release-updates] electron-updater unavailable: ${error?.message || error}`)
+    releaseAutoUpdater = null
+  }
+
+  return releaseAutoUpdater
+}
+
+async function checkReleaseUpdates() {
+  const updater = getReleaseAutoUpdater()
+
+  if (!updater) {
+    return releaseUpdatesEnabled()
+      ? releaseUnsupportedStatus('no-release-updater', 'Release updater metadata is not available in this build.')
+      : null
+  }
+
+  try {
+    const result = await updater.checkForUpdates()
+    releaseUpdateInfo = result?.updateInfo || null
+
+    return releaseStatusFromUpdateInfo(releaseUpdateInfo, app.getVersion())
+  } catch (error) {
+    return releaseErrorStatus(error)
+  }
+}
+
+async function checkSourceUpdates() {
   const updateRoot = resolveUpdateRoot()
   let { branch } = readDesktopUpdateConfig()
   const gitDir = path.join(updateRoot, '.git')
@@ -1751,6 +1826,15 @@ async function checkUpdates() {
     hermesRoot: updateRoot,
     fetchedAt: Date.now()
   }
+}
+
+async function checkUpdates() {
+  const releaseStatus = await checkReleaseUpdates()
+  if (releaseStatus) {
+    return releaseStatus
+  }
+
+  return withSourceChannel(await checkSourceUpdates())
 }
 
 async function readCommitLog(cwd, branch) {
@@ -1928,17 +2012,58 @@ async function releaseBackendLock(updateRoot, tag) {
   return { unlocked: false }
 }
 
-// applyUpdates — hand off to the installer's --update flow, then exit.
-//
-// The desktop is a pure consumer: it does NOT git pull / pip install / rebuild
-// itself (the old open-coded git dance lived here and drifted from
-// `vigil update`). Instead we spawn the staged VIGIL-Setup binary with
-// --update and quit, so it can run `vigil update` (which refuses while we
-// hold the venv shim) and rebuild the desktop with our exe already gone.
-//
-// Detection (checkUpdates / commit changelog / "N behind") stays in the UI;
-// only this apply action changed.
-async function applyUpdates(opts = {}) {
+// Packaged client updates use GitHub Release metadata and installer assets.
+// Source/git updates remain below as the development fallback and can be forced
+// with VIGIL_DESKTOP_UPDATE_CHANNEL=source.
+async function applyReleaseUpdates() {
+  const updater = getReleaseAutoUpdater()
+  if (!updater) {
+    return { ok: false, error: 'release-updater-unavailable', message: 'Release updater is not available.' }
+  }
+
+  if (updateInFlight) {
+    throw new Error('An update is already in progress.')
+  }
+  updateInFlight = true
+
+  try {
+    let info = releaseUpdateInfo
+    if (!info) {
+      const status = await checkReleaseUpdates()
+      if (status?.error) {
+        return { ok: false, channel: 'release', error: status.error, message: status.message }
+      }
+      if ((status?.behind ?? 0) <= 0) {
+        return { ok: true, channel: 'release', message: 'No release update available.' }
+      }
+      info = releaseUpdateInfo
+    }
+
+    emitUpdateProgress({
+      stage: 'fetch',
+      message: `Downloading XCLAW ${info?.version || 'update'}…`,
+      percent: 5
+    })
+    await updater.downloadUpdate()
+    emitUpdateProgress({
+      stage: 'restart',
+      message: `Installing XCLAW ${info?.version || 'update'}…`,
+      percent: 100
+    })
+    updater.quitAndInstall(false, true)
+
+    return { ok: true, channel: 'release', handedOff: true }
+  } catch (error) {
+    const message = error?.message || String(error)
+    emitUpdateProgress({ stage: 'error', message, error: 'release-apply-failed' })
+
+    return { ok: false, channel: 'release', error: 'release-apply-failed', message }
+  } finally {
+    updateInFlight = false
+  }
+}
+
+async function applySourceUpdates(opts = {}) {
   if (updateInFlight) {
     throw new Error('An update is already in progress.')
   }
@@ -1979,7 +2104,7 @@ async function applyUpdates(opts = {}) {
       }
       rememberLog(`[updates] no staged updater; surfacing manual \`${command}\` for CLI install at ${updateRoot}`)
       emitUpdateProgress({ stage: 'manual', message: command, percent: null })
-      return { ok: true, manual: true, command, hermesRoot: updateRoot }
+      return { ok: true, channel: 'source', manual: true, command, hermesRoot: updateRoot }
     }
 
     emitUpdateProgress({
@@ -2032,10 +2157,18 @@ async function applyUpdates(opts = {}) {
       app.quit()
     }, UPDATE_HANDOFF_DWELL_MS)
 
-    return { ok: true, handedOff: true, updater }
+    return { ok: true, channel: 'source', handedOff: true, updater }
   } finally {
     updateInFlight = false
   }
+}
+
+async function applyUpdates(opts = {}) {
+  if (getReleaseAutoUpdater()) {
+    return applyReleaseUpdates()
+  }
+
+  return applySourceUpdates(opts)
 }
 
 async function handOffWindowsBootstrapRecovery(reason) {

@@ -11,8 +11,8 @@ import type { DesktopUpdateCommit, DesktopUpdateStage, DesktopUpdateStatus } fro
 import { useI18n } from '@/i18n'
 import { buildCommitChangelog, type CommitGroup } from '@/lib/commit-changelog'
 import { AlertCircle, Check, CheckCircle2, Copy, Terminal } from '@/lib/icons'
-import { cn } from '@/lib/utils'
 import { resolveUpdateCopy, type UpdateTarget } from '@/lib/update-copy'
+import { cn } from '@/lib/utils'
 import {
   $backendUpdateApply,
   $backendUpdateChecking,
@@ -201,7 +201,13 @@ function IdleView({
   if (behind === 0) {
     return (
       <CenteredStatus
-        body={target === 'backend' ? u.latestBodyBackend : u.latestBody}
+        body={
+          target === 'backend'
+            ? u.latestBodyBackend
+            : status.channel === 'release'
+              ? u.latestBodyRelease
+              : u.latestBody
+        }
         icon={<CheckCircle2 className="size-7 text-emerald-600 dark:text-emerald-400" />}
         title={u.allSetTitle}
       />
@@ -216,7 +222,7 @@ function IdleView({
   // backend, not the local client — say so. When there are no commit rows to
   // show (e.g. pip/non-git backend), degrade to honest "no release notes" copy
   // instead of generic filler.
-  const { title, body } = resolveUpdateCopy({ target, shownItems, copy: u })
+  const { title, body } = resolveUpdateCopy({ channel: status.channel, target, shownItems, copy: u })
 
   return (
     <div className="grid gap-5 px-6 pb-6 pt-7 pr-8">
@@ -279,7 +285,10 @@ function ManualView({
   const [copied, setCopied] = useState(false)
 
   const handleCopy = () => {
-    if (!command) return
+    if (!command) {
+      return
+    }
+
     void writeClipboardText(command).then(() => {
       setCopied(true)
       window.setTimeout(() => setCopied(false), 1800)

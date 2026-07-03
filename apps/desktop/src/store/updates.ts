@@ -13,12 +13,12 @@ import type {
   DesktopUpdateStatus,
   DesktopVersionInfo
 } from '@/global'
-import { checkVIGILUpdate, getActionStatus, updateVIGIL } from '@/vigil'
 import { translateNow } from '@/i18n'
 import { persistString, storedString } from '@/lib/storage'
 import { dismissNotification, notify } from '@/store/notifications'
 import { $connection } from '@/store/session'
 import type { BackendUpdateCheckResponse } from '@/types/vigil'
+import { checkVIGILUpdate, getActionStatus, updateVIGIL } from '@/vigil'
 
 export interface UpdateApplyState {
   applying: boolean
@@ -248,6 +248,7 @@ function mapBackendCheck(res: BackendUpdateCheckResponse): DesktopUpdateStatus {
 
   return {
     supported: res.can_apply,
+    channel: 'backend',
     message: res.message ?? undefined,
     behind,
     targetSha: res.update_available ? `backend:${res.current_version}` : undefined,
@@ -272,6 +273,7 @@ export async function checkBackendUpdates(): Promise<DesktopUpdateStatus | null>
   } catch (error) {
     const fallback: DesktopUpdateStatus = {
       supported: $backendUpdateStatus.get()?.supported ?? true,
+      channel: 'backend',
       error: 'check-failed',
       message: error instanceof Error ? error.message : String(error),
       fetchedAt: Date.now()
@@ -306,6 +308,7 @@ export async function checkUpdates(): Promise<DesktopUpdateStatus | null> {
 
     const fallback: DesktopUpdateStatus = {
       supported: previous?.supported ?? true,
+      channel: previous?.channel,
       branch: previous?.branch,
       error: 'check-failed',
       message: error instanceof Error ? error.message : String(error),

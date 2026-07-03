@@ -225,8 +225,11 @@ export interface DesktopUpdateCommit {
   at: number
 }
 
+export type DesktopUpdateChannel = 'backend' | 'release' | 'source'
+
 export interface DesktopUpdateStatus {
   supported: boolean
+  channel?: DesktopUpdateChannel
   branch?: string
   currentBranch?: string
   reason?: string
@@ -235,6 +238,8 @@ export interface DesktopUpdateStatus {
   behind?: number
   currentSha?: string
   targetSha?: string
+  releaseVersion?: string
+  releaseName?: string
   commits?: DesktopUpdateCommit[]
   dirty?: boolean
   fetchedAt?: number
@@ -248,6 +253,7 @@ export interface DesktopUpdateApplyOptions {
 
 export interface DesktopUpdateApplyResult {
   ok: boolean
+  channel?: DesktopUpdateChannel
   branch?: string
   error?: string
   message?: string

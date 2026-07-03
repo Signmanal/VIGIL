@@ -5,6 +5,8 @@ import { resolveUpdateCopy } from './update-copy'
 const copy = {
   availableTitle: 'New update available',
   availableBody: 'A new version of XCLAW is ready to install.',
+  availableTitleRelease: 'New XCLAW version available',
+  availableBodyRelease: 'A signed desktop installer is ready to download and install.',
   availableTitleBackend: 'Backend update available',
   availableBodyBackend: 'A newer version of the connected XCLAW backend is ready to install.',
   availableBodyNoChangelog: 'A newer version is ready. Release notes aren’t available for this install type.'
@@ -34,5 +36,11 @@ describe('resolveUpdateCopy', () => {
     const r = resolveUpdateCopy({ target: 'client', shownItems: 0, copy })
     expect(r.title).toBe('New update available')
     expect(r.body).toBe(copy.availableBodyNoChangelog)
+  })
+
+  it('release client update uses installer copy even without commit rows', () => {
+    const r = resolveUpdateCopy({ channel: 'release', target: 'client', shownItems: 0, copy })
+    expect(r.title).toBe('New XCLAW version available')
+    expect(r.body).toBe('A signed desktop installer is ready to download and install.')
   })
 })

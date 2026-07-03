@@ -1275,10 +1275,13 @@ export interface Translations {
     unsupportedMessage: string
     connectionRetry: string
     latestBody: string
+    latestBodyRelease: string
     latestBodyBackend: string
     allSetTitle: string
     availableTitle: string
     availableBody: string
+    availableTitleRelease: string
+    availableBodyRelease: string
     availableTitleBackend: string
     availableBodyBackend: string
     availableBodyNoChangelog: string

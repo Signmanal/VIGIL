@@ -9,16 +9,20 @@
  */
 
 export type UpdateTarget = 'client' | 'backend'
+export type UpdateChannel = 'backend' | 'release' | 'source'
 
 export interface UpdateCopyStrings {
   availableTitle: string
   availableBody: string
+  availableTitleRelease: string
+  availableBodyRelease: string
   availableTitleBackend: string
   availableBodyBackend: string
   availableBodyNoChangelog: string
 }
 
 export interface ResolveUpdateCopyInput {
+  channel?: UpdateChannel
   target: UpdateTarget
   /** Number of commit rows actually shown in the changelog. 0 → no notes. */
   shownItems: number
@@ -30,7 +34,14 @@ export interface UpdateCopyResult {
   body: string
 }
 
-export function resolveUpdateCopy({ target, shownItems, copy }: ResolveUpdateCopyInput): UpdateCopyResult {
+export function resolveUpdateCopy({ channel, target, shownItems, copy }: ResolveUpdateCopyInput): UpdateCopyResult {
+  if (target === 'client' && channel === 'release') {
+    return {
+      title: copy.availableTitleRelease,
+      body: copy.availableBodyRelease
+    }
+  }
+
   const title = target === 'backend' ? copy.availableTitleBackend : copy.availableTitle
 
   const body =
