@@ -35,6 +35,14 @@ function electronBuilderCli() {
   return path.join(path.dirname(pkgJson), rel)
 }
 
+function wantsUnsignedMacRelease(cliArgs) {
+  return (
+    process.platform === "darwin" &&
+    process.env.VIGIL_DESKTOP_UNSIGNED_MAC_RELEASE === "1" &&
+    cliArgs.some(arg => arg === "--mac" || arg === "-m" || arg.startsWith("--mac="))
+  )
+}
+
 const dist = electronDistDir()
 const args = []
 if (dist && fs.existsSync(distBinary(dist))) {
@@ -45,7 +53,17 @@ if (dist && fs.existsSync(distBinary(dist))) {
       "via @electron/get (electronVersion + ELECTRON_MIRROR)."
   )
 }
-args.push(...process.argv.slice(2))
+const cliArgs = process.argv.slice(2)
+args.push(...cliArgs)
+
+if (wantsUnsignedMacRelease(cliArgs)) {
+  args.push(
+    "-c.mac.identity=null",
+    "-c.mac.hardenedRuntime=false",
+    "-c.mac.entitlements=null",
+    "-c.mac.entitlementsInherit=null"
+  )
+}
 
 const result = spawnSync(process.execPath, [electronBuilderCli(), ...args], {
   stdio: "inherit",
