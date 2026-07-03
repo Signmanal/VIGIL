@@ -208,6 +208,20 @@ Configure these repository secrets before cutting a public macOS release:
   runners; do not use this on GitHub-hosted runners unless the profile is
   created in the job first.
 
+Use the setup helper to configure the required GitHub repository secrets from a
+local Developer ID `.p12` and App Store Connect `.p8` key:
+
+```bash
+bash scripts/setup_desktop_release_secrets.sh \
+  --repo Signmanal/VIGIL \
+  --p12 ~/Desktop/DeveloperIDApplication.p12 \
+  --api-key ~/Desktop/AuthKey_XXXXXXXXXX.p8 \
+  --api-key-id XXXXXXXXXX \
+  --issuer-id xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx \
+  --dispatch-tag desktop-v0.19.13 \
+  --watch
+```
+
 The workflow fails early if macOS signing or notarization credentials are
 missing. This prevents accidentally publishing an unsigned DMG that forces users
 through the Gatekeeper override flow.
