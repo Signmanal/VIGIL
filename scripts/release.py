@@ -145,6 +145,7 @@ AUTHOR_MAP = {
     "devran.an12@gmail.com": "devorun",
     "xtpeeps@qq.com": "x7peeps",
     "sommerhoff@gmail.com": "andressommerhoff",
+    "chiyu.zhou@dbappsecurity.com.cn": "Signmanal",
     "pwnda.zhang@dbappsecurity.com.cn": "x7peeps",
     "palkin.dominik@gmail.com": "skyc1e",
     "namredips@users.noreply.github.com": "namredips",
