@@ -71,8 +71,23 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Validate macOS signing environment
+      - name: Check macOS signing availability
+        id: mac-signing
         if: runner.os == 'macOS'
+        shell: bash
+        env:
+          CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
+          CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
+        run: |
+          if [[ -n "$CSC_LINK" && -n "$CSC_KEY_PASSWORD" ]]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping macOS installer because MAC_CSC_LINK or MAC_CSC_KEY_PASSWORD is not configured."
+          fi
+
+      - name: Validate macOS signing environment
+        if: runner.os == 'macOS' && steps.mac-signing.outputs.available == 'true'
         env:
           APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
           APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
@@ -99,10 +114,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
           WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+        if: runner.os != 'macOS' || steps.mac-signing.outputs.available == 'true'
         run: npm run ${{ matrix.script }} --workspace apps/desktop -- --publish never
 
       - name: Notarize macOS DMG
-        if: runner.os == 'macOS'
+        if: runner.os == 'macOS' && steps.mac-signing.outputs.available == 'true'
         shell: bash
         env:
           APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
@@ -119,17 +135,18 @@ jobs:
           done
 
       - name: Refresh macOS update metadata
-        if: runner.os == 'macOS'
+        if: runner.os == 'macOS' && steps.mac-signing.outputs.available == 'true'
         run: npm run release:mac:refresh-metadata --workspace apps/desktop
 
       - name: Verify macOS release artifacts
-        if: runner.os == 'macOS'
+        if: runner.os == 'macOS' && steps.mac-signing.outputs.available == 'true'
         env:
           VIGIL_REQUIRE_MAC_GATEKEEPER: '1'
           VIGIL_REQUIRE_MAC_SIGNING: '1'
         run: npm run release:mac:verify-artifacts --workspace apps/desktop
 
       - name: Collect installer assets
+        if: runner.os != 'macOS' || steps.mac-signing.outputs.available == 'true'
         shell: bash
         run: |
           mkdir -p desktop-release-assets
@@ -162,6 +179,7 @@ jobs:
           NODE
 
       - name: Upload installer artifact
+        if: runner.os != 'macOS' || steps.mac-signing.outputs.available == 'true'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         with:
           name: desktop-${{ matrix.label }}-installers
