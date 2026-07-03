@@ -80,6 +80,7 @@ STAGE_NAME=""
 JSON_OUTPUT=false
 NON_INTERACTIVE=false
 INCLUDE_DESKTOP=false
+STAGE_SKIPPED_CODE=78
 
 # Detect non-interactive mode (e.g. curl | bash)
 # When stdin is not a terminal, read -p will fail with EOF,
@@ -239,6 +240,173 @@ json_escape() {
     printf '%s' "$1" | tr '\n' ' ' | sed \
         -e 's/\\/\\\\/g' \
         -e 's/"/\\"/g'
+}
+
+hash_file() {
+    local file="$1"
+    if [ ! -f "$file" ]; then
+        printf 'missing'
+        return 0
+    fi
+
+    if command -v shasum >/dev/null 2>&1; then
+        shasum -a 256 "$file" | awk '{print $1}'
+    elif command -v openssl >/dev/null 2>&1; then
+        openssl dgst -sha256 "$file" | awk '{print $NF}'
+    else
+        cksum "$file" | awk '{print $1 "-" $2}'
+    fi
+}
+
+marker_pinned_commit() {
+    local marker="$INSTALL_DIR/.vigil-bootstrap-complete"
+    [ -f "$marker" ] || return 1
+    sed -n 's/.*"pinnedCommit"[[:space:]]*:[[:space:]]*"\([0-9a-fA-F]\{7,40\}\)".*/\1/p' "$marker" | head -n 1
+}
+
+files_unchanged_since_bootstrap_marker() {
+    local pinned
+    pinned="$(marker_pinned_commit || true)"
+    [ -n "$pinned" ] || return 1
+    [ -d "$INSTALL_DIR/.git" ] || return 1
+    git -C "$INSTALL_DIR" cat-file -e "$pinned^{commit}" 2>/dev/null || return 1
+    git -C "$INSTALL_DIR" diff --quiet "$pinned" HEAD -- "$@"
+}
+
+stage_skip_if_protocol() {
+    if [ -n "$STAGE_NAME" ]; then
+        return "$STAGE_SKIPPED_CODE"
+    fi
+    return 0
+}
+
+venv_python_usable() {
+    local py="$INSTALL_DIR/venv/bin/python"
+    [ -x "$py" ] || return 1
+    if [ "$DISTRO" = "termux" ]; then
+        "$py" - <<'PY' >/dev/null 2>&1
+import sys
+raise SystemExit(0 if sys.version_info >= (3, 11) else 1)
+PY
+    else
+        "$py" - "$PYTHON_VERSION" <<'PY' >/dev/null 2>&1
+import sys
+want = tuple(int(part) for part in sys.argv[1].split(".")[:2])
+raise SystemExit(0 if sys.version_info[:2] == want else 1)
+PY
+    fi
+}
+
+python_deps_stamp_path() {
+    printf '%s\n' "$INSTALL_DIR/venv/.vigil-python-deps.stamp"
+}
+
+python_deps_fingerprint() {
+    local py="$INSTALL_DIR/venv/bin/python"
+    local pyver="missing"
+    if [ -x "$py" ]; then
+        pyver="$("$py" - <<'PY' 2>/dev/null || printf 'unknown'
+import sys
+print(".".join(str(part) for part in sys.version_info[:3]))
+PY
+)"
+    fi
+
+    printf 'python=%s\n' "$pyver"
+    printf 'pyproject=%s\n' "$(hash_file "$INSTALL_DIR/pyproject.toml")"
+    printf 'uvlock=%s\n' "$(hash_file "$INSTALL_DIR/uv.lock")"
+    printf 'constraints-termux=%s\n' "$(hash_file "$INSTALL_DIR/constraints-termux.txt")"
+}
+
+write_python_deps_stamp() {
+    local stamp
+    stamp="$(python_deps_stamp_path)"
+    mkdir -p "$(dirname "$stamp")"
+    python_deps_fingerprint > "$stamp"
+}
+
+python_deps_import_smoke_ok() {
+    local py="$INSTALL_DIR/venv/bin/python"
+    [ -x "$py" ] || return 1
+    "$py" - <<'PY' >/dev/null 2>&1
+import importlib.metadata
+importlib.util
+
+importlib.metadata.version("vigil-agent")
+for name in ("openai", "fastapi", "vigil_cli.main"):
+    if importlib.util.find_spec(name) is None:
+        raise SystemExit(1)
+PY
+}
+
+python_deps_already_current() {
+    [ "$USE_VENV" = true ] || return 1
+    python_deps_import_smoke_ok || return 1
+
+    local stamp expected actual
+    stamp="$(python_deps_stamp_path)"
+    expected="$(python_deps_fingerprint)"
+    if [ -f "$stamp" ]; then
+        actual="$(cat "$stamp" 2>/dev/null || true)"
+        if [ "$actual" = "$expected" ]; then
+            return 0
+        fi
+    fi
+
+    if files_unchanged_since_bootstrap_marker pyproject.toml uv.lock constraints-termux.txt; then
+        write_python_deps_stamp
+        return 0
+    fi
+
+    return 1
+}
+
+node_deps_stamp_path() {
+    printf '%s\n' "$INSTALL_DIR/node_modules/.vigil-node-deps.stamp"
+}
+
+node_deps_fingerprint() {
+    printf 'package=%s\n' "$(hash_file "$INSTALL_DIR/package.json")"
+    printf 'package-lock=%s\n' "$(hash_file "$INSTALL_DIR/package-lock.json")"
+    printf 'ui-tui-package=%s\n' "$(hash_file "$INSTALL_DIR/ui-tui/package.json")"
+    printf 'ui-tui-package-lock=%s\n' "$(hash_file "$INSTALL_DIR/ui-tui/package-lock.json")"
+}
+
+write_node_deps_stamp() {
+    [ -d "$INSTALL_DIR/node_modules" ] || return 0
+    local stamp
+    stamp="$(node_deps_stamp_path)"
+    mkdir -p "$(dirname "$stamp")"
+    node_deps_fingerprint > "$stamp"
+}
+
+node_deps_smoke_ok() {
+    if [ -f "$INSTALL_DIR/package.json" ]; then
+        [ -d "$INSTALL_DIR/node_modules" ] || return 1
+        [ -x "$INSTALL_DIR/node_modules/.bin/agent-browser" ] || [ -d "$INSTALL_DIR/node_modules/agent-browser" ] || return 1
+    fi
+    return 0
+}
+
+node_deps_already_current() {
+    node_deps_smoke_ok || return 1
+
+    local stamp expected actual
+    stamp="$(node_deps_stamp_path)"
+    expected="$(node_deps_fingerprint)"
+    if [ -f "$stamp" ]; then
+        actual="$(cat "$stamp" 2>/dev/null || true)"
+        if [ "$actual" = "$expected" ]; then
+            return 0
+        fi
+    fi
+
+    if files_unchanged_since_bootstrap_marker package.json package-lock.json ui-tui/package.json ui-tui/package-lock.json; then
+        write_node_deps_stamp
+        return 0
+    fi
+
+    return 1
 }
 
 # npm rewrites tracked package-lock.json files non-deterministically during
@@ -1242,10 +1410,16 @@ setup_venv() {
     fi
 
     if [ "$DISTRO" = "termux" ]; then
+        if venv_python_usable; then
+            log_success "Virtual environment already ready ($(./venv/bin/python --version 2>/dev/null))"
+            stage_skip_if_protocol
+            return $?
+        fi
+
         log_info "Creating virtual environment with Termux Python..."
 
         if [ -d "venv" ]; then
-            log_info "Virtual environment already exists, recreating..."
+            log_info "Virtual environment exists but is not usable, recreating..."
             rm -rf venv
         fi
 
@@ -1254,10 +1428,17 @@ setup_venv() {
         return 0
     fi
 
+    if venv_python_usable; then
+        export UV_PYTHON="$INSTALL_DIR/venv/bin/python"
+        log_success "Virtual environment already ready ($("$INSTALL_DIR/venv/bin/python" --version 2>/dev/null))"
+        stage_skip_if_protocol
+        return $?
+    fi
+
     log_info "Creating virtual environment with Python $PYTHON_VERSION..."
 
     if [ -d "venv" ]; then
-        log_info "Virtual environment already exists, recreating..."
+        log_info "Virtual environment exists but does not match Python $PYTHON_VERSION, recreating..."
         rm -rf venv
     fi
 
@@ -1279,8 +1460,6 @@ setup_venv() {
 }
 
 install_deps() {
-    log_info "Installing dependencies..."
-
     # Re-pin UV_PYTHON to the venv interpreter. setup_venv already does this,
     # but the bootstrap runs install stages (`venv`, `python-deps`) as separate
     # processes, so an export from setup_venv does NOT survive into a separate
@@ -1290,6 +1469,14 @@ install_deps() {
     if [ "$DISTRO" != "termux" ] && [ -x "$INSTALL_DIR/venv/bin/python" ]; then
         export UV_PYTHON="$INSTALL_DIR/venv/bin/python"
     fi
+
+    if python_deps_already_current; then
+        log_success "Python dependencies already current"
+        stage_skip_if_protocol
+        return $?
+    fi
+
+    log_info "Installing dependencies..."
 
     if [ "$DISTRO" = "termux" ]; then
         if [ "$USE_VENV" = true ]; then
@@ -1338,6 +1525,7 @@ install_deps() {
             fi
         fi
 
+        write_python_deps_stamp
         log_success "Main package installed"
         log_info "Termux note: matrix e2ee and local faster-whisper extras are excluded from .[termux-all] due to upstream Android wheel/toolchain blockers."
         log_info "Termux note: browser/WhatsApp tooling is not installed by default; see the Termux guide for optional follow-up steps."
@@ -1417,6 +1605,7 @@ install_deps() {
         # uv's own progress UI handles TTY detection and downgrades
         # gracefully when stdout/stderr aren't terminals.
         if UV_PROJECT_ENVIRONMENT="$INSTALL_DIR/venv" $UV_CMD sync --extra all --locked; then
+            write_python_deps_stamp
             log_success "Main package installed (hash-verified via uv.lock)"
             log_success "All dependencies installed"
             return 0
@@ -1527,6 +1716,7 @@ PY
         log_info "PyPI/network issue, re-run: $UV_CMD pip install -e '.[all]'"
     fi
 
+    write_python_deps_stamp
     log_success "Main package installed"
 
     log_success "All dependencies installed"
@@ -1881,6 +2071,12 @@ install_node_deps() {
         return 0
     fi
 
+    if node_deps_already_current; then
+        log_success "Node/browser dependencies already current"
+        stage_skip_if_protocol
+        return $?
+    fi
+
     if [ -f "$INSTALL_DIR/package.json" ]; then
         log_info "Installing Node.js dependencies (browser tools)..."
         cd "$INSTALL_DIR"
@@ -1993,6 +2189,7 @@ install_node_deps() {
 
     # Keep the checkout clean so `vigil update` doesn't autostash every run.
     restore_dirty_lockfiles "$INSTALL_DIR"
+    write_node_deps_stamp
 }
 
 run_setup_wizard() {
@@ -2794,9 +2991,15 @@ run_stage_protocol() {
     if [ "$JSON_OUTPUT" = true ]; then
         if [ "$code" -eq 0 ]; then
             emit_stage_json "$stage" true false
+        elif [ "$code" -eq "$STAGE_SKIPPED_CODE" ]; then
+            emit_stage_json "$stage" true true
+            return 0
         else
             emit_stage_json "$stage" false false "exit code $code"
         fi
+    fi
+    if [ "$code" -eq "$STAGE_SKIPPED_CODE" ]; then
+        return 0
     fi
     return "$code"
 }
