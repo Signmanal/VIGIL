@@ -77,6 +77,26 @@ describe('collectArtifactsForSession', () => {
     })
   })
 
+  it('keeps generated html pages in links and skips ordinary local files', () => {
+    const artifacts = collectArtifactsForSession(makeSession(), [
+      {
+        content: [
+          'Generated output: `/Users/alice/workspace/demo/outputs/dashboard.html`',
+          '读取文件：`/Users/alice/Downloads/old-report.pdf`'
+        ].join('\n'),
+        role: 'assistant',
+        timestamp: 4500
+      }
+    ])
+
+    expect(artifacts).toHaveLength(1)
+    expect(artifacts[0]).toMatchObject({
+      kind: 'link',
+      label: 'dashboard.html',
+      value: '/Users/alice/workspace/demo/outputs/dashboard.html'
+    })
+  })
+
   it('classifies report tool outputs as reports', () => {
     const artifacts = collectArtifactsForSession(makeSession(), [
       {

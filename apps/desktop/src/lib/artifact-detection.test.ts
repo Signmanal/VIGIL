@@ -54,6 +54,20 @@ describe('artifact detection', () => {
     ).toBe(true)
   })
 
+  it('does not treat ordinary local files as generated outputs', () => {
+    expect(
+      collectGeneratedArtifactTargetsFromText('读取文件：`/Users/alice/Downloads/old-report.pdf`，用于参考。')
+    ).toEqual([])
+    expect(isGeneratedArtifactTarget('/Users/alice/Downloads/old-report.pdf', '文件路径')).toBe(false)
+  })
+
+  it('classifies generated html pages without report semantics as links', () => {
+    const target = '/Users/alice/workspace/demo/outputs/dashboard.html'
+
+    expect(isGeneratedArtifactTarget(target, 'Generated output: dashboard page')).toBe(true)
+    expect(artifactKind(target)).toBe('link')
+  })
+
   it('collects generated tool output artifacts but skips read-only tool results', () => {
     const result = {
       report_path: '/Users/alice/workspace/ailog_analysis/artifacts/raw-log-analysis-report-admin.html',

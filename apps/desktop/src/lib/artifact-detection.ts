@@ -19,11 +19,15 @@ const REPORT_HINT_RE =
   /(report|summary|analysis|audit|findings|review|assessment|diagnostic|diagnosis|investigation|brief|insight|evidence-package|报告|報告|分析|总结|總結|汇总|匯總|审计|審計|稽核|复盘|復盤|诊断|診斷|证据|證據)/i
 
 const ALWAYS_REPORT_EXT_RE = /\.(?:html?|md|markdown|pdf|docx?|pptx?)(?:[?#].*)?$/i
+const HTML_EXT_RE = /\.html?(?:[?#].*)?$/i
 const KEY_HINT_RE = /(path|file|url|image|artifact|output|download|result|target|report|summary|analysis|evidence)/i
 const RELATIVE_ROOT_PATH_RE = /^[A-Za-z0-9_.@-]+\//
 
 const GENERATED_CONTEXT_RE =
-  /(generated|created|saved|wrote|written|exported|output|outputs|artifact|artifacts|report|reports|evidence|summary|analysis|download|file path|生成|创建|建立|保存|已保存|写入|导出|输出|产物|报告|證據|证据|摘要|总结|分析|文件|路径|路徑)/i
+  /(archive|generated|created|saved|wrote|written|exported|output|outputs|artifact|artifacts|report|reports|evidence|summary|analysis|download|生成|创建|建立|保存|已保存|写入|导出|输出|产物|报告|證據|证据|摘要|总结|分析)/i
+
+const GENERATED_FILENAME_RE =
+  /(artifact|context|created|draft|evidence|export|generated|output|package|report|result|results|sample|summary|verified|产物|上下文|报告|結果|结果|草稿|输出|样本|摘要|总结|證據|证据)/i
 
 const GENERATED_DIR_SEGMENTS = new Set([
   'artifact',
@@ -109,6 +113,7 @@ export function artifactLabel(value: string): string {
 
 export function looksLikeReport(value: string): boolean {
   const normalized = normalizeArtifactValue(value)
+  const label = artifactLabel(normalized)
 
   if (normalized.startsWith('data:image/') || IMAGE_EXT_RE.test(normalized)) {
     return false
@@ -118,11 +123,11 @@ export function looksLikeReport(value: string): boolean {
     return false
   }
 
-  if (ALWAYS_REPORT_EXT_RE.test(normalized)) {
+  if (ALWAYS_REPORT_EXT_RE.test(normalized) && (REPORT_HINT_RE.test(label) || REPORT_HINT_RE.test(normalized))) {
     return true
   }
 
-  return REPORT_HINT_RE.test(artifactLabel(normalized))
+  return REPORT_HINT_RE.test(label)
 }
 
 export function artifactKind(value: string): ArtifactKind {
@@ -134,6 +139,10 @@ export function artifactKind(value: string): ArtifactKind {
 
   if (looksLikeReport(normalized)) {
     return 'report'
+  }
+
+  if (/^https?:\/\//i.test(normalized) || HTML_EXT_RE.test(normalized)) {
+    return 'link'
   }
 
   if (
@@ -207,8 +216,34 @@ function hasGeneratedContext(text: string): boolean {
   return GENERATED_CONTEXT_RE.test(text)
 }
 
+function hasGeneratedFilename(value: string): boolean {
+  return GENERATED_FILENAME_RE.test(artifactLabel(value))
+}
+
+function contextWithoutTarget(context: string, target: string): string {
+  const label = artifactLabel(target)
+
+  return context.split(target).join('').split(label).join('')
+}
+
+function contextWindowForTarget(context: string, target: string): string {
+  const idx = context.indexOf(target)
+
+  if (idx < 0) {
+    return context
+  }
+
+  const lineStart = context.lastIndexOf('\n', idx) + 1
+  const nextLineBreak = context.indexOf('\n', idx + target.length)
+  const lineEnd = nextLineBreak >= 0 ? nextLineBreak : context.length
+  const line = context.slice(lineStart, lineEnd)
+
+  return line.trim() ? line : context.slice(Math.max(0, idx - 160), Math.min(context.length, idx + target.length + 160))
+}
+
 export function isGeneratedArtifactTarget(value: string, context = ''): boolean {
   const normalized = normalizeArtifactValue(value)
+  const contextOnly = contextWithoutTarget(context, normalized)
 
   if (!normalized || !looksLikeArtifact(normalized) || isReferencePath(normalized)) {
     return false
@@ -218,15 +253,19 @@ export function isGeneratedArtifactTarget(value: string, context = ''): boolean 
     return true
   }
 
+  if (hasGeneratedFilename(normalized) && hasGeneratedContext(contextOnly)) {
+    return true
+  }
+
   if (looksLikeReport(normalized)) {
-    return hasGeneratedContext(`${context}\n${artifactLabel(normalized)}`)
+    return hasGeneratedContext(contextOnly)
   }
 
   if (IMAGE_EXT_RE.test(normalized) || FILE_EXT_RE.test(normalized)) {
-    return hasGeneratedContext(`${context}\n${artifactLabel(normalized)}`)
+    return hasGeneratedContext(contextOnly)
   }
 
-  return /^https?:\/\//i.test(normalized) && hasGeneratedContext(context)
+  return /^https?:\/\//i.test(normalized) && hasGeneratedContext(contextOnly)
 }
 
 function uniqueGeneratedTargets(values: string[], context: string): string[] {
@@ -236,7 +275,7 @@ function uniqueGeneratedTargets(values: string[], context: string): string[] {
   for (const value of values) {
     const normalized = normalizeArtifactValue(value)
 
-    if (!seen.has(normalized) && isGeneratedArtifactTarget(normalized, context)) {
+    if (!seen.has(normalized) && isGeneratedArtifactTarget(normalized, contextWindowForTarget(context, normalized))) {
       seen.add(normalized)
       out.push(normalized)
     }

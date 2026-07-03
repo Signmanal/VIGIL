@@ -31,15 +31,16 @@ import {
   normalizeArtifactValue
 } from '@/lib/artifact-detection'
 import { sessionTitle } from '@/lib/chat-runtime'
-import { ExternalLink, ExternalLinkIcon, hostPathLabel, urlSlugTitleLabel, useLinkTitle } from '@/lib/external-link'
+import { ExternalLinkIcon, hostPathLabel, urlSlugTitleLabel, useLinkTitle } from '@/lib/external-link'
 import { FileImage, FileText, FolderOpen, Link2, MonitorPlay } from '@/lib/icons'
 import { normalizeOrLocalPreviewTarget } from '@/lib/local-preview'
 import { cn } from '@/lib/utils'
 import { notifyError } from '@/store/notifications'
-import { setSessionPreviewTarget } from '@/store/preview'
+import type { PreviewTarget } from '@/store/preview'
 import type { SessionInfo, SessionMessage } from '@/types/vigil'
 import { getSessionMessages, listAllProfileSessions } from '@/vigil'
 
+import { PreviewPane } from '../chat/right-rail/preview-pane'
 import { useRefreshHotkey } from '../hooks/use-refresh-hotkey'
 import { useRouteEnumParam } from '../hooks/use-route-enum-param'
 import { PAGE_INSET_NEG_X, PAGE_INSET_X } from '../layout-constants'
@@ -49,6 +50,7 @@ import type { SetStatusbarItemGroup } from '../shell/statusbar-controls'
 
 type ArtifactFilter = 'all' | ArtifactKind
 const ARTIFACT_FILTERS: readonly ArtifactFilter[] = ['all', 'report', 'image', 'file', 'link']
+const TABLE_KIND_RANK: Record<ArtifactKind, number> = { report: 0, image: 1, file: 2, link: 3 }
 
 export interface ArtifactRecord {
   id: string
@@ -61,6 +63,11 @@ export interface ArtifactRecord {
   sessionTitle: string
   sortIndex: number
   timestamp: number
+}
+
+interface ArtifactPreviewState {
+  artifact: ArtifactRecord
+  target: PreviewTarget
 }
 
 const ARTIFACT_TIME_FMT = new Intl.DateTimeFormat(undefined, {
@@ -163,6 +170,12 @@ function compareArtifactsNewestFirst(left: ArtifactRecord, right: ArtifactRecord
   return right.sortIndex - left.sortIndex
 }
 
+function compareArtifactsForTable(left: ArtifactRecord, right: ArtifactRecord): number {
+  const byKind = TABLE_KIND_RANK[left.kind] - TABLE_KIND_RANK[right.kind]
+
+  return byKind || compareArtifactsNewestFirst(left, right)
+}
+
 function readHiddenArtifactIds(): Set<string> {
   if (typeof window === 'undefined') {
     return new Set()
@@ -257,7 +270,6 @@ function paginationItems(page: number, pageCount: number): Array<number | 'ellip
 }
 
 type CellCtx = {
-  onOpen: (href: string) => void | Promise<void>
   onOpenChat: (sessionId: string) => void
   onPreview: (artifact: ArtifactRecord) => void | Promise<void>
 }
@@ -273,6 +285,26 @@ interface ArtifactColumn {
 const itemsLabel = (f: ArtifactFilter, a: Translations['artifacts']) =>
   f === 'report' ? a.itemsReport : f === 'link' ? a.itemsLink : f === 'file' ? a.itemsFile : a.itemsGeneric
 
+function artifactKindLabel(kind: ArtifactKind, a: Translations['artifacts']): string {
+  return kind === 'report' ? a.kindReport : kind === 'image' ? a.kindImage : kind === 'link' ? a.kindLink : a.kindFile
+}
+
+function artifactKindIcon(kind: ArtifactKind) {
+  return kind === 'image' ? FileImage : kind === 'link' ? Link2 : FileText
+}
+
+function groupTableArtifacts(
+  artifacts: readonly ArtifactRecord[],
+  filter: ArtifactFilter
+): Array<{ artifacts: ArtifactRecord[]; kind: ArtifactKind }> {
+  const kinds: readonly ArtifactKind[] = filter === 'all' ? ['report', 'file', 'link'] : [filter]
+
+  return kinds
+    .filter(kind => kind !== 'image')
+    .map(kind => ({ artifacts: artifacts.filter(artifact => artifact.kind === kind), kind }))
+    .filter(section => section.artifacts.length > 0)
+}
+
 interface ArtifactsViewProps extends React.ComponentProps<'section'> {
   setStatusbarItemGroup?: SetStatusbarItemGroup
 }
@@ -285,6 +317,7 @@ export function ArtifactsView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
   const [hiddenArtifactIds, setHiddenArtifactIds] = useState<Set<string>>(() => readHiddenArtifactIds())
   const [query, setQuery] = useState('')
   const [refreshing, setRefreshing] = useState(false)
+  const [selectedPreview, setSelectedPreview] = useState<ArtifactPreviewState | null>(null)
 
   const [kindFilter, setKindFilter] = useRouteEnumParam('tab', ARTIFACT_FILTERS, 'all')
 
@@ -385,7 +418,7 @@ export function ArtifactsView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
   )
 
   const visibleFileArtifacts = useMemo(
-    () => visibleArtifacts.filter(artifact => artifact.kind !== 'image'),
+    () => visibleArtifacts.filter(artifact => artifact.kind !== 'image').sort(compareArtifactsForTable),
     [visibleArtifacts]
   )
 
@@ -403,6 +436,11 @@ export function ArtifactsView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
     () => visibleFileArtifacts.slice((currentFilePage - 1) * 100, currentFilePage * 100),
     [currentFilePage, visibleFileArtifacts]
   )
+
+  const pagedFileSections = useMemo(() => groupTableArtifacts(pagedFileArtifacts, kindFilter), [
+    kindFilter,
+    pagedFileArtifacts
+  ])
 
   const counts = useMemo(() => {
     const all = retainedArtifacts
@@ -443,21 +481,6 @@ export function ArtifactsView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
     setHiddenArtifactIds(empty)
   }, [])
 
-  const openArtifact = useCallback(
-    async (href: string) => {
-      try {
-        if (window.vigilDesktop?.openExternal) {
-          await window.vigilDesktop.openExternal(href)
-        } else {
-          window.open(href, '_blank', 'noopener,noreferrer')
-        }
-      } catch (err) {
-        notifyError(err, a.openFailed)
-      }
-    },
-    [a]
-  )
-
   const previewArtifact = useCallback(
     async (artifact: ArtifactRecord) => {
       const rawTarget = artifact.kind === 'link' ? artifact.href : artifact.value
@@ -469,13 +492,12 @@ export function ArtifactsView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
           throw new Error(`Could not open preview target: ${rawTarget}`)
         }
 
-        setSessionPreviewTarget(artifact.sessionId, preview, 'explicit-link', rawTarget)
-        navigate(sessionRoute(artifact.sessionId))
+        setSelectedPreview({ artifact, target: preview })
       } catch (err) {
         notifyError(err, a.previewFailed)
       }
     },
-    [a, navigate]
+    [a]
   )
 
   const markImageFailed = useCallback((id: string) => {
@@ -489,7 +511,6 @@ export function ArtifactsView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
   }, [])
 
   const cellCtx: CellCtx = {
-    onOpen: openArtifact,
     onOpenChat: sessionId => navigate(sessionRoute(sessionId)),
     onPreview: previewArtifact
   }
@@ -545,83 +566,103 @@ export function ArtifactsView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
           </div>
         </div>
       ) : (
-        <div className="h-full overflow-y-auto">
-          <div className={cn('flex flex-col gap-3 pb-2', PAGE_INSET_X)}>
-            <div className="grid grid-cols-1 gap-2 pt-2 sm:grid-cols-3">
-              <ReportStatCard icon={<FileText className="size-4" />} label={a.statArtifacts} value={counts.all} />
-              <ReportStatCard
-                icon={<FolderOpen className="size-4" />}
-                label={a.statSessions}
-                value={artifactSessionCount}
+        <div
+          className={cn(
+            'grid h-full min-h-0 gap-3',
+            selectedPreview && 'xl:grid-cols-[minmax(0,1fr)_minmax(24rem,38vw)]'
+          )}
+        >
+          <div className="min-h-0 overflow-y-auto">
+            <div className={cn('flex flex-col gap-3 pb-2', PAGE_INSET_X)}>
+              <div className="grid grid-cols-1 gap-2 pt-2 sm:grid-cols-3">
+                <ReportStatCard icon={<FileText className="size-4" />} label={a.statArtifacts} value={counts.all} />
+                <ReportStatCard
+                  icon={<FolderOpen className="size-4" />}
+                  label={a.statSessions}
+                  value={artifactSessionCount}
+                />
+                <ReportStatCard icon={<Link2 className="size-4" />} label={a.statReports} value={counts.report} />
+              </div>
+
+              <ArtifactRetentionPanel
+                a={a}
+                hiddenCount={hiddenArtifactCount}
+                onCleanup={cleanupArtifactsNow}
+                onRestore={restoreHiddenArtifacts}
+                pendingCleanupCount={retentionCleanupCount}
               />
-              <ReportStatCard icon={<Link2 className="size-4" />} label={a.statReports} value={counts.report} />
-            </div>
 
-            <ArtifactRetentionPanel
-              a={a}
-              hiddenCount={hiddenArtifactCount}
-              onCleanup={cleanupArtifactsNow}
-              onRestore={restoreHiddenArtifacts}
-              pendingCleanupCount={retentionCleanupCount}
-            />
+              {visibleImageArtifacts.length > 0 && (
+                <section className="flex flex-col">
+                  <div
+                    className={cn(
+                      'sticky top-0 z-10 flex h-7 items-center gap-3 overflow-x-auto bg-background',
+                      PAGE_INSET_NEG_X,
+                      PAGE_INSET_X
+                    )}
+                  >
+                    <ArtifactsPagination
+                      className="ml-auto justify-end px-0"
+                      itemLabel={a.itemsImage}
+                      onPageChange={setImagePage}
+                      page={currentImagePage}
+                      pageSize={24}
+                      total={visibleImageArtifacts.length}
+                    />
+                  </div>
+                  <div className="grid grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] items-start gap-2 pt-1.5">
+                    {pagedImageArtifacts.map(artifact => (
+                      <ArtifactImageCard
+                        artifact={artifact}
+                        failedImage={failedImageIds.has(artifact.id)}
+                        key={artifact.id}
+                        onImageError={markImageFailed}
+                        onOpenChat={sessionId => navigate(sessionRoute(sessionId))}
+                        onPreview={previewArtifact}
+                      />
+                    ))}
+                  </div>
+                </section>
+              )}
 
-            {visibleImageArtifacts.length > 0 && (
-              <section className="flex flex-col">
-                <div
-                  className={cn(
-                    'sticky top-0 z-10 flex h-7 items-center gap-3 overflow-x-auto bg-background',
-                    PAGE_INSET_NEG_X,
-                    PAGE_INSET_X
-                  )}
-                >
-                  <ArtifactsPagination
-                    className="ml-auto justify-end px-0"
-                    itemLabel={a.itemsImage}
-                    onPageChange={setImagePage}
-                    page={currentImagePage}
-                    pageSize={24}
-                    total={visibleImageArtifacts.length}
-                  />
-                </div>
-                <div className="grid grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] items-start gap-2 pt-1.5">
-                  {pagedImageArtifacts.map(artifact => (
-                    <ArtifactImageCard
-                      artifact={artifact}
-                      failedImage={failedImageIds.has(artifact.id)}
-                      key={artifact.id}
-                      onImageError={markImageFailed}
-                      onOpenChat={sessionId => navigate(sessionRoute(sessionId))}
-                      onPreview={previewArtifact}
+              {visibleFileArtifacts.length > 0 && (
+                <section className="flex flex-col gap-2">
+                  <div
+                    className={cn(
+                      'sticky top-0 z-10 flex h-7 items-center gap-3 overflow-x-auto bg-background',
+                      PAGE_INSET_NEG_X,
+                      PAGE_INSET_X
+                    )}
+                  >
+                    <ArtifactsPagination
+                      className="ml-auto justify-end px-0"
+                      itemLabel={itemsLabel(kindFilter, a)}
+                      onPageChange={setFilePage}
+                      page={currentFilePage}
+                      pageSize={100}
+                      total={visibleFileArtifacts.length}
+                    />
+                  </div>
+                  {pagedFileSections.map(section => (
+                    <ArtifactTableSection
+                      artifacts={section.artifacts}
+                      ctx={cellCtx}
+                      filter={kindFilter}
+                      kind={section.kind}
+                      key={section.kind}
                     />
                   ))}
-                </div>
-              </section>
-            )}
-
-            {visibleFileArtifacts.length > 0 && (
-              <section className="flex flex-col">
-                <div
-                  className={cn(
-                    'sticky top-0 z-10 flex h-7 items-center gap-3 overflow-x-auto bg-background',
-                    PAGE_INSET_NEG_X,
-                    PAGE_INSET_X
-                  )}
-                >
-                  <ArtifactsPagination
-                    className="ml-auto justify-end px-0"
-                    itemLabel={itemsLabel(kindFilter, a)}
-                    onPageChange={setFilePage}
-                    page={currentFilePage}
-                    pageSize={100}
-                    total={visibleFileArtifacts.length}
-                  />
-                </div>
-                <div className="overflow-x-auto rounded-lg border border-(--ui-stroke-tertiary) bg-(--ui-chat-bubble-background)">
-                  <ArtifactTable artifacts={pagedFileArtifacts} ctx={cellCtx} filter={kindFilter} />
-                </div>
-              </section>
-            )}
+                </section>
+              )}
+            </div>
           </div>
+          {selectedPreview && (
+            <ArtifactInlinePreview
+              preview={selectedPreview}
+              onClose={() => setSelectedPreview(null)}
+              onOpenChat={sessionId => navigate(sessionRoute(sessionId))}
+            />
+          )}
         </div>
       )}
     </PageSearchShell>
@@ -743,15 +784,7 @@ interface ArtifactImageCardProps {
 function ArtifactImageCard({ artifact, failedImage, onImageError, onOpenChat, onPreview }: ArtifactImageCardProps) {
   const { t } = useI18n()
   const a = t.artifacts
-
-  const kindLabel =
-    artifact.kind === 'image'
-      ? a.kindImage
-      : artifact.kind === 'report'
-        ? a.kindReport
-        : artifact.kind === 'file'
-          ? a.kindFile
-          : a.kindLink
+  const kindLabel = artifactKindLabel(artifact.kind, a)
 
   return (
     <article className="group/artifact overflow-hidden rounded-lg border border-(--ui-stroke-tertiary) bg-(--ui-chat-bubble-background)">
@@ -806,37 +839,22 @@ function ArtifactImageCard({ artifact, failedImage, onImageError, onOpenChat, on
   )
 }
 
-// Single click target for any row cell. External URLs render as <ExternalLink>;
-// local actions render as <button>. Padding lives here, NOT on the <td>, so
-// the entire cell area is hoverable and clickable in both branches.
+// Single click target for any row cell. Padding lives here, NOT on the <td>, so
+// the entire cell area is hoverable and clickable.
 function ArtifactCellAction({
   children,
-  href,
   onClick,
   title
 }: {
   children: React.ReactNode
-  href?: string
   onClick?: () => void
   title?: string
 }) {
-  if (href) {
-    return (
-      <ExternalLink
-        className="flex h-full w-full min-w-0 items-center gap-2 px-2.5 py-1.5 text-left text-[length:var(--conversation-caption-font-size)] leading-(--conversation-caption-line-height) font-normal text-(--ui-text-secondary) no-underline underline-offset-4 decoration-current/20 transition-colors hover:text-foreground hover:underline"
-        href={href}
-        showExternalIcon={false}
-        title={title}
-      >
-        {children}
-      </ExternalLink>
-    )
-  }
-
   return (
     <button
       className="flex h-full w-full min-w-0 items-center gap-2 px-2.5 py-1.5 text-left text-[length:var(--conversation-caption-font-size)] leading-(--conversation-caption-line-height) font-normal text-(--ui-text-secondary) no-underline underline-offset-4 decoration-current/20 transition-colors hover:text-foreground hover:underline"
       onClick={onClick}
+      title={title}
       type="button"
     >
       {children}
@@ -846,14 +864,13 @@ function ArtifactCellAction({
 
 function PrimaryCell({ artifact, ctx }: { artifact: ArtifactRecord; ctx: CellCtx }) {
   const isLink = artifact.kind === 'link'
-  const Icon = isLink ? Link2 : FileText
+  const Icon = artifactKindIcon(artifact.kind)
   const fetchedTitle = useLinkTitle(isLink ? artifact.href : null)
   const label = isLink ? fetchedTitle || urlSlugTitleLabel(artifact.href) : artifact.label
 
   return (
     <ArtifactCellAction
-      href={isLink ? artifact.href : undefined}
-      onClick={isLink ? undefined : () => void ctx.onPreview(artifact)}
+      onClick={() => void ctx.onPreview(artifact)}
       title={label}
     >
       <span className="mt-0.5 grid size-6 shrink-0 place-items-center self-start rounded-md bg-(--ui-bg-tertiary) text-(--ui-text-tertiary)">
@@ -908,6 +925,75 @@ function SessionCell({ artifact, ctx }: { artifact: ArtifactRecord; ctx: CellCtx
         </span>
       </span>
     </ArtifactCellAction>
+  )
+}
+
+function ArtifactInlinePreview({
+  onClose,
+  onOpenChat,
+  preview
+}: {
+  onClose: () => void
+  onOpenChat: (sessionId: string) => void
+  preview: ArtifactPreviewState
+}) {
+  const { t } = useI18n()
+  const a = t.artifacts
+  const Icon = artifactKindIcon(preview.artifact.kind)
+
+  return (
+    <aside className="mx-2 mb-2 flex min-h-[28rem] min-w-0 flex-col overflow-hidden rounded-xl border border-(--ui-stroke-tertiary) bg-background shadow-sm xl:sticky xl:top-2 xl:mr-3 xl:h-[calc(100vh-var(--titlebar-height)-5.5rem)]">
+      <div className="flex min-h-11 items-center gap-2 border-b border-(--ui-stroke-tertiary) px-3">
+        <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-(--ui-bg-tertiary) text-(--ui-text-tertiary)">
+          <Icon className="size-3.5" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-xs font-medium text-foreground">{preview.artifact.label}</div>
+          <div className="truncate text-[0.65rem] text-(--ui-text-tertiary)">
+            {artifactKindLabel(preview.artifact.kind, a)} · {preview.artifact.sessionTitle}
+          </div>
+        </div>
+        <Button onClick={() => onOpenChat(preview.artifact.sessionId)} size="xs" type="button" variant="ghost">
+          {a.chat}
+        </Button>
+        <Button aria-label={t.common.close} onClick={onClose} size="icon-xs" type="button" variant="ghost">
+          <Codicon name="close" size="0.875rem" />
+        </Button>
+      </div>
+      <div className="min-h-0 flex-1">
+        <PreviewPane embedded target={preview.target} />
+      </div>
+    </aside>
+  )
+}
+
+function ArtifactTableSection({
+  artifacts,
+  ctx,
+  filter,
+  kind
+}: {
+  artifacts: readonly ArtifactRecord[]
+  ctx: CellCtx
+  filter: ArtifactFilter
+  kind: ArtifactKind
+}) {
+  const { t } = useI18n()
+  const Icon = artifactKindIcon(kind)
+
+  return (
+    <section className="overflow-hidden rounded-lg border border-(--ui-stroke-tertiary) bg-(--ui-chat-bubble-background)">
+      {filter === 'all' && (
+        <div className="flex h-8 items-center gap-2 border-b border-(--ui-stroke-tertiary) bg-(--ui-bg-quinary) px-2.5 text-[0.65rem] font-medium uppercase tracking-[0.08em] text-(--ui-text-tertiary)">
+          <Icon className="size-3.5" />
+          {artifactKindLabel(kind, t.artifacts)}
+          <span className="font-normal normal-case tracking-normal">({artifacts.length})</span>
+        </div>
+      )}
+      <div className="overflow-x-auto">
+        <ArtifactTable artifacts={artifacts} ctx={ctx} filter={kind} />
+      </div>
+    </section>
   )
 }
 
