@@ -54,6 +54,10 @@ const {
   collectRelaunchEnv,
   buildRelaunchScript
 } = require('./update-relaunch.cjs')
+const {
+  buildMacReleaseInstallScript,
+  resolveDownloadedMacReleaseZip
+} = require('./mac-release-installer.cjs')
 const { gitRootForIpc } = require('./git-root.cjs')
 const { worktreesForIpc } = require('./git-worktrees.cjs')
 const { OFFICIAL_REPO_HTTPS_URL, isOfficialSshRemote } = require('./update-remote.cjs')
@@ -2073,6 +2077,70 @@ function waitForReleaseUpdateHandoff(timeoutMs = RELEASE_UPDATE_HANDOFF_TIMEOUT_
   })
 }
 
+function macReleaseUpdateCacheDirs() {
+  if (!IS_MAC) return []
+
+  const dirs = []
+  const add = dir => {
+    if (dir && !dirs.includes(dir)) dirs.push(dir)
+  }
+
+  try {
+    const appCache = app.getPath('cache')
+    add(path.join(appCache, 'vigil-updater', 'pending'))
+    add(path.join(path.dirname(appCache), 'vigil-updater', 'pending'))
+  } catch {
+    // app paths can be unavailable in narrow test harnesses.
+  }
+
+  try {
+    add(path.join(app.getPath('home'), 'Library', 'Caches', 'vigil-updater', 'pending'))
+  } catch {
+    // best effort; the direct download result is still authoritative.
+  }
+
+  return dirs
+}
+
+function handOffMacReleaseZipInstall(downloadResult) {
+  if (!IS_MAC) return null
+
+  const targetApp = runningAppBundle()
+  if (!targetApp) {
+    rememberLog('[release-updates] mac release zip handoff skipped: running app bundle not found')
+    return null
+  }
+
+  const zipPath = resolveDownloadedMacReleaseZip({
+    downloadResult,
+    cacheDirs: macReleaseUpdateCacheDirs(),
+    fileExists,
+    readJson
+  })
+  if (!zipPath) {
+    rememberLog('[release-updates] mac release zip handoff skipped: downloaded zip not found')
+    return null
+  }
+
+  const timestamp = Date.now()
+  const scriptPath = path.join(app.getPath('temp'), `xclaw-release-update-${timestamp}.sh`)
+  const logPath = path.join(app.getPath('temp'), `xclaw-release-update-${timestamp}.log`)
+  const installScript = buildMacReleaseInstallScript({
+    appPid: process.pid,
+    zipPath,
+    targetApp,
+    logPath
+  })
+  fs.writeFileSync(scriptPath, installScript, { mode: 0o755 })
+
+  const child = spawn('/bin/bash', [scriptPath], { detached: true, stdio: 'ignore' })
+  child.unref()
+  rememberLog(`[release-updates] launched mac release installer: ${scriptPath} zip=${zipPath} target=${targetApp}`)
+
+  setTimeout(() => app.quit(), UPDATE_HANDOFF_DWELL_MS)
+  return { ok: true, channel: 'release', handedOff: true, installer: 'mac-zip', zipPath, targetApp, logPath }
+}
+
 // Resolve the staged updater binary. The Tauri installer copies itself to
 // VIGIL_HOME/vigil-setup.exe on a successful install (see
 // apps/bootstrap-installer paths::copy_self_to_vigil_home). That binary owns
@@ -2262,18 +2330,30 @@ async function applyReleaseUpdates() {
       message: `Downloading XCLAW ${info?.version || 'update'}…`,
       percent: 5
     })
-    if (IS_MAC) {
-      // MacUpdater only marks the local Squirrel update as ready during
-      // download when this is enabled. Without it, quitAndInstall can leave the
-      // app alive on the restart overlay with no ShipIt handoff.
-      updater.autoInstallOnAppQuit = true
-    }
-    await updater.downloadUpdate()
+    const downloadResult = await updater.downloadUpdate()
     emitUpdateProgress({
       stage: 'restart',
       message: `Installing XCLAW ${info?.version || 'update'}…`,
       percent: 100
     })
+
+    if (IS_MAC) {
+      try {
+        const macZipHandoff = handOffMacReleaseZipInstall(downloadResult)
+        if (macZipHandoff) {
+          handedOff = true
+          return macZipHandoff
+        }
+      } catch (error) {
+        rememberLog(`[release-updates] mac release zip handoff failed: ${error?.message || error}`)
+      }
+
+      // Fallback to electron-updater's native handoff when the downloaded zip
+      // cannot be found. This keeps the legacy path available, but the normal
+      // macOS route no longer waits 15s for a ShipIt handoff that never starts.
+      updater.autoInstallOnAppQuit = true
+    }
+
     const handoff = waitForReleaseUpdateHandoff()
     updater.quitAndInstall(false, true)
     const handoffStatus = await handoff
