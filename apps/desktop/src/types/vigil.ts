@@ -582,6 +582,7 @@ export interface SkillHubSourceInfo {
   id: string
   label: string
   rate_limited?: boolean
+  url?: string
 }
 
 export interface SkillHubResult {

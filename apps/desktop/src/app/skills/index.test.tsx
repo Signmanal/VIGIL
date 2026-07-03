@@ -187,4 +187,18 @@ describe('SkillsView toolset management', () => {
     expect(screen.queryByText('Configured sources')).toBeNull()
     expect(browseSkillHub).toHaveBeenCalledWith('skills-sh')
   })
+
+  it('exposes DasClaw as a marketplace source with its plaza URL', async () => {
+    const { buildSkillMarketSourceOptions, skillMarketUrlForSource } = await import('./index')
+    const options = buildSkillMarketSourceOptions([], 'All sources')
+
+    expect(options).toContainEqual({
+      id: 'dasclaw',
+      label: 'DasClaw',
+      url: 'https://skills.das-security.cn/dasclaw-frontend/skills-plaza'
+    })
+    expect(skillMarketUrlForSource('dasclaw', options)).toBe(
+      'https://skills.das-security.cn/dasclaw-frontend/skills-plaza'
+    )
+  })
 })

@@ -50,7 +50,7 @@ describe('collectArtifactsForSession', () => {
     expect(artifacts).toHaveLength(1)
     expect(artifacts[0]).toMatchObject({
       href: 'https://example.com/reports/latest.html',
-      kind: 'report',
+      kind: 'link',
       value: 'https://example.com/reports/latest.html'
     })
   })
@@ -158,7 +158,7 @@ describe('collectArtifactsForSession', () => {
       label: 'raw-log-analysis-report-admin.md'
     })
     expect(artifacts.find(artifact => artifact.value.endsWith('evidence-package-admin.json'))).toMatchObject({
-      kind: 'report',
+      kind: 'file',
       label: 'evidence-package-admin.json'
     })
     expect(artifacts.find(artifact => artifact.value.endsWith('.ndjson'))).toMatchObject({
@@ -241,6 +241,14 @@ describe('collectArtifactsForSession', () => {
       'raw-log-analysis-report-admin.md',
       'raw-log-analysis-report-admin.html'
     ])
+    expect(artifacts.find(artifact => artifact.label === 'raw-log-summary-admin.json')).toMatchObject({ kind: 'file' })
+    expect(artifacts.find(artifact => artifact.label === 'evidence-package-admin.json')).toMatchObject({ kind: 'file' })
+    expect(artifacts.find(artifact => artifact.label === 'raw-log-analysis-report-admin.md')).toMatchObject({
+      kind: 'report'
+    })
+    expect(artifacts.find(artifact => artifact.label === 'raw-log-analysis-report-admin.html')).toMatchObject({
+      kind: 'report'
+    })
     expect(artifacts.some(artifact => artifact.label === 'create_empty_rule.md')).toBe(false)
   })
 })

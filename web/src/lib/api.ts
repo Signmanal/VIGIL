@@ -1241,6 +1241,8 @@ export interface SkillHubSearchResponse {
 export interface SkillHubSource {
   id: string;
   label: string;
+  /** Optional public marketplace URL for opening this source in a browser. */
+  url?: string;
   /** GitHub only: whether the API is currently rate-limited. */
   rate_limited?: boolean;
   /** vigil-index only: whether the centralized index loaded. */

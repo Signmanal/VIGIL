@@ -9282,6 +9282,7 @@ _SKILL_HUB_SOURCE_LABELS = {
     "url": "Direct URL",
     "github": "GitHub",
     "clawhub": "ClawHub",
+    "dasclaw": "DasClaw",
     "claude-marketplace": "Claude Marketplace",
     "lobehub": "LobeHub",
     "browse-sh": "browse.sh",
@@ -9371,6 +9372,8 @@ async def list_skills_hub_sources(profile: Optional[str] = None):
                 "id": sid,
                 "label": _SKILL_HUB_SOURCE_LABELS.get(sid, sid),
             }
+            if sid == "dasclaw":
+                entry["url"] = "https://skills.das-security.cn/dasclaw-frontend/skills-plaza"
             # GitHub exposes a rate-limit flag; the index an availability flag.
             if sid == "github":
                 try:

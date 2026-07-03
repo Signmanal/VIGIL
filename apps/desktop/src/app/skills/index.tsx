@@ -36,8 +36,37 @@ import type { SetStatusbarItemGroup } from '../shell/statusbar-controls'
 const SKILLS_MODES = ['skills', 'toolsets', 'market'] as const
 type SkillsMode = (typeof SKILLS_MODES)[number]
 const SKILLS_MARKET_URL = 'https://www.skills.sh/'
+const DASCLAW_MARKET_URL = 'https://skills.das-security.cn/dasclaw-frontend/skills-plaza'
 const DEFAULT_MARKET_SOURCE = 'skills-sh'
 const DIRECT_SKILL_IDENTIFIER_RE = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/
+
+export function buildSkillMarketSourceOptions(
+  sources: SkillHubSourceInfo[],
+  allSourcesLabel: string
+): SkillHubSourceInfo[] {
+  const known = new Map<string, SkillHubSourceInfo>()
+
+  for (const item of sources) {
+    known.set(item.id, item)
+  }
+
+  if (!known.has('skills-sh')) {
+    known.set('skills-sh', { id: 'skills-sh', label: 'skills.sh' })
+  }
+
+  if (!known.has('dasclaw')) {
+    known.set('dasclaw', { id: 'dasclaw', label: 'DasClaw', url: DASCLAW_MARKET_URL })
+  }
+
+  return [{ id: 'all', label: allSourcesLabel }, ...Array.from(known.values())]
+}
+
+export function skillMarketUrlForSource(source: string, sourceOptions: SkillHubSourceInfo[]): string {
+  return (
+    sourceOptions.find(option => option.id === source)?.url ||
+    (source === 'dasclaw' ? DASCLAW_MARKET_URL : SKILLS_MARKET_URL)
+  )
+}
 
 function categoryFor(skill: SkillInfo): string {
   return asText(skill.category) || 'general'
@@ -485,19 +514,11 @@ function SkillMarketPanel({ onInstalled, query }: { onInstalled: () => Promise<v
     }
   }, [deferredQuery, source, t])
 
-  const sourceOptions = useMemo(() => {
-    const known = new Map<string, SkillHubSourceInfo>()
-
-    for (const item of sources) {
-      known.set(item.id, item)
-    }
-
-    if (!known.has('skills-sh')) {
-      known.set('skills-sh', { id: 'skills-sh', label: 'skills.sh' })
-    }
-
-    return [{ id: 'all', label: t.skills.marketAllSources }, ...Array.from(known.values())]
-  }, [sources, t])
+  const sourceOptions = useMemo(
+    () => buildSkillMarketSourceOptions(sources, t.skills.marketAllSources),
+    [sources, t]
+  )
+  const selectedSourceUrl = skillMarketUrlForSource(source, sourceOptions)
 
   async function handleInstall(identifier: string) {
     setInstalling(identifier)
@@ -570,7 +591,7 @@ function SkillMarketPanel({ onInstalled, query }: { onInstalled: () => Promise<v
               <h3 className="text-sm font-semibold">{t.skills.marketTitle}</h3>
               <p className="mt-1 max-w-2xl text-xs leading-5 text-muted-foreground">{t.skills.marketDesc}</p>
             </div>
-            <Button onClick={() => openExternalLink(SKILLS_MARKET_URL)} size="sm" type="button" variant="outline">
+            <Button onClick={() => openExternalLink(selectedSourceUrl)} size="sm" type="button" variant="outline">
               <Codicon name="link-external" size="0.8rem" />
               {t.skills.marketOpen}
             </Button>

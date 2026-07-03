@@ -68,6 +68,16 @@ describe('artifact detection', () => {
     expect(artifactKind(target)).toBe('link')
   })
 
+  it('keeps artifact center categories distinct', () => {
+    expect(artifactKind('/tmp/raw-log-analysis-report-admin.html')).toBe('report')
+    expect(artifactKind('/tmp/diagnostic-summary.md')).toBe('report')
+    expect(artifactKind('/tmp/screenshots/finding.png')).toBe('image')
+    expect(artifactKind('/tmp/evidence-package-admin.json')).toBe('file')
+    expect(artifactKind('/tmp/raw-log-summary-admin.ndjson')).toBe('file')
+    expect(artifactKind('/tmp/demo/prototype.html')).toBe('link')
+    expect(artifactKind('https://example.com/report')).toBe('link')
+  })
+
   it('collects generated tool output artifacts but skips read-only tool results', () => {
     const result = {
       report_path: '/Users/alice/workspace/ailog_analysis/artifacts/raw-log-analysis-report-admin.html',
@@ -88,7 +98,7 @@ describe('artifact detection', () => {
 
   it('classifies and prioritizes reports ahead of auxiliary files', () => {
     expect(artifactKind('/tmp/raw-log-analysis-report-admin.html')).toBe('report')
-    expect(artifactKind('/tmp/evidence-package-admin.json')).toBe('report')
+    expect(artifactKind('/tmp/evidence-package-admin.json')).toBe('file')
     expect(previewArtifactPriority('/tmp/raw-log-analysis-report-admin.html')).toBeGreaterThan(
       previewArtifactPriority('/tmp/raw-log-sample-admin.ndjson')
     )

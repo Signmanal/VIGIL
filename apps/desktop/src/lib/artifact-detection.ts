@@ -9,16 +9,15 @@ const URL_RE = /https?:\/\/[^\s<>"')]+/g
 const PATH_RE = /(^|[\s("'`：,，])((?:\/|~\/|\.\.?\/)[^\s"'`<>，。；、]+(?:\.[a-z0-9]{1,10})?)/gi
 const IMAGE_EXT_RE = /\.(?:png|jpe?g|gif|webp|svg|bmp)(?:[?#].*)?$/i
 
-const REPORT_EXT_RE =
-  /\.(?:html?|md|markdown|pdf|txt|log|jsonl?|ndjson|csv|tsv|xml|ya?ml|toml|docx?|xlsx?|pptx?)(?:[?#].*)?$/i
+// Artifact center buckets are semantic: report docs, visual assets, data files,
+// and browser-openable links/pages. Evidence JSON stays in `file`, not report.
+const REPORT_EXT_RE = /\.(?:html?|md|markdown|pdf|docx?|pptx?)(?:[?#].*)?$/i
 
 const FILE_EXT_RE =
   /\.(?:png|jpe?g|gif|webp|svg|bmp|html?|md|markdown|pdf|txt|log|jsonl?|ndjson|csv|tsv|xml|ya?ml|toml|docx?|xlsx?|pptx?|zip|tar|gz|mp3|wav|mp4|mov)(?:[?#].*)?$/i
 
 const REPORT_HINT_RE =
-  /(report|summary|analysis|audit|findings|review|assessment|diagnostic|diagnosis|investigation|brief|insight|evidence-package|报告|報告|分析|总结|總結|汇总|匯總|审计|審計|稽核|复盘|復盤|诊断|診斷|证据|證據)/i
-
-const ALWAYS_REPORT_EXT_RE = /\.(?:html?|md|markdown|pdf|docx?|pptx?)(?:[?#].*)?$/i
+  /(report|summary|analysis|audit|findings|review|assessment|diagnostic|diagnosis|investigation|brief|insight|报告|報告|分析|总结|總結|汇总|匯總|审计|審計|稽核|复盘|復盤|诊断|診斷)/i
 const HTML_EXT_RE = /\.html?(?:[?#].*)?$/i
 const KEY_HINT_RE = /(path|file|url|image|artifact|output|download|result|target|report|summary|analysis|evidence)/i
 const RELATIVE_ROOT_PATH_RE = /^[A-Za-z0-9_.@-]+\//
@@ -123,11 +122,7 @@ export function looksLikeReport(value: string): boolean {
     return false
   }
 
-  if (ALWAYS_REPORT_EXT_RE.test(normalized) && (REPORT_HINT_RE.test(label) || REPORT_HINT_RE.test(normalized))) {
-    return true
-  }
-
-  return REPORT_HINT_RE.test(label)
+  return REPORT_HINT_RE.test(label) || REPORT_HINT_RE.test(normalized)
 }
 
 export function artifactKind(value: string): ArtifactKind {
@@ -137,11 +132,15 @@ export function artifactKind(value: string): ArtifactKind {
     return 'image'
   }
 
+  if (/^https?:\/\//i.test(normalized)) {
+    return 'link'
+  }
+
   if (looksLikeReport(normalized)) {
     return 'report'
   }
 
-  if (/^https?:\/\//i.test(normalized) || HTML_EXT_RE.test(normalized)) {
+  if (HTML_EXT_RE.test(normalized)) {
     return 'link'
   }
 
@@ -384,7 +383,7 @@ export function previewArtifactPriority(value: string): number {
   const normalized = normalizeArtifactValue(value)
   const label = artifactLabel(normalized)
 
-  if (ALWAYS_REPORT_EXT_RE.test(normalized) && REPORT_HINT_RE.test(label)) {
+  if (looksLikeReport(normalized)) {
     return 50
   }
 
@@ -394,10 +393,6 @@ export function previewArtifactPriority(value: string): number {
 
   if (/summary|analysis|report|报告|分析|总结/i.test(label)) {
     return 20
-  }
-
-  if (looksLikeReport(normalized)) {
-    return 40
   }
 
   if (IMAGE_EXT_RE.test(normalized)) {

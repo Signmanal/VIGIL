@@ -524,7 +524,7 @@ class TestSkillsHubSourcesEndpoint:
                 return [_FakeMeta("vigil-index/featured-skill", "trusted")]
 
         def _fake_router():
-            srcs = [_Src("official"), _Src("github")]
+            srcs = [_Src("official"), _Src("github"), _Src("dasclaw")]
             # vigil-index source advertises availability + featured search.
             idx = _Src("vigil-index")
             idx.is_available = True
@@ -537,8 +537,11 @@ class TestSkillsHubSourcesEndpoint:
         r = self.client.get("/api/skills/hub/sources")
         assert r.status_code == 200
         body = r.json()
-        ids = {s["id"] for s in body["sources"]}
+        sources = {s["id"]: s for s in body["sources"]}
+        ids = set(sources)
         assert {"official", "github", "vigil-index"} <= ids
+        assert sources["dasclaw"]["label"] == "DasClaw"
+        assert sources["dasclaw"]["url"] == "https://skills.das-security.cn/dasclaw-frontend/skills-plaza"
         # Every source carries a human label.
         assert all(s.get("label") for s in body["sources"])
         assert body["index_available"] is True

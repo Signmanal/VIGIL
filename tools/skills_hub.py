@@ -2480,6 +2480,178 @@ class ClawHubSource(SkillSource):
 
 
 # ---------------------------------------------------------------------------
+# DasClaw source adapter
+# ---------------------------------------------------------------------------
+
+class DasClawSource(SkillSource):
+    """Fetch public skills from the DasClaw skills plaza."""
+
+    BASE_URL = "https://skills.das-security.cn/dasclaw-backend"
+    FRONTEND_URL = "https://skills.das-security.cn/dasclaw-frontend/skills-plaza"
+
+    def source_id(self) -> str:
+        return "dasclaw"
+
+    def trust_level_for(self, identifier: str) -> str:
+        return "community"
+
+    @staticmethod
+    def _normalize_tags(value: Any) -> List[str]:
+        if not isinstance(value, list):
+            return []
+        return [str(item) for item in value if str(item).strip()]
+
+    @staticmethod
+    def _safe_bundle_name(data: Dict[str, Any], fallback: str) -> str:
+        for key in ("title", "name", "skill_id"):
+            value = data.get(key)
+            if isinstance(value, str) and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", value):
+                return value
+        return re.sub(r"[^A-Za-z0-9._-]+", "-", fallback).strip("-") or "dasclaw-skill"
+
+    @staticmethod
+    def _identifier(value: Any) -> str:
+        return f"dasclaw/{value}"
+
+    @staticmethod
+    def _strip_identifier(identifier: str) -> str:
+        value = identifier.strip()
+        if value.startswith("dasclaw/"):
+            return value.split("/", 1)[1]
+        return value.split("/")[-1]
+
+    @classmethod
+    def _to_meta(cls, data: Dict[str, Any]) -> Optional[SkillMeta]:
+        raw_id = data.get("id") or data.get("skill_id") or data.get("name")
+        if raw_id is None:
+            return None
+
+        name = (
+            data.get("display_name")
+            or data.get("title")
+            or data.get("name")
+            or data.get("skill_id")
+            or str(raw_id)
+        )
+        description = data.get("display_description") or data.get("description") or ""
+        detail_id = str(data.get("id") or raw_id)
+
+        return SkillMeta(
+            name=str(name),
+            description=str(description),
+            source="dasclaw",
+            identifier=cls._identifier(raw_id),
+            trust_level="community",
+            tags=cls._normalize_tags(data.get("tags")),
+            extra={
+                "detail_url": f"{cls.FRONTEND_URL}/{detail_id}",
+                "endpoint": f"{cls.BASE_URL}/api/skills/plaza/{detail_id}",
+                "installs": data.get("downloads"),
+                "rating": data.get("rating"),
+                "version": data.get("version"),
+            },
+        )
+
+    def _get_json(self, path: str, *, params: Optional[Dict[str, Any]] = None, timeout: int = 20) -> Optional[Any]:
+        try:
+            resp = httpx.get(f"{self.BASE_URL}{path}", params=params, timeout=timeout)
+            if resp.status_code != 200:
+                return None
+            return resp.json()
+        except (httpx.HTTPError, json.JSONDecodeError):
+            return None
+
+    def _list_plaza(self, query: str = "", limit: int = 20) -> List[SkillMeta]:
+        params: Dict[str, Any] = {
+            "page": 1,
+            "per_page": min(max(limit, 1), 100),
+        }
+        if query.strip():
+            params["q"] = query.strip()
+
+        payload = self._get_json("/api/skills/plaza", params=params)
+        if not isinstance(payload, dict):
+            return []
+
+        rows = payload.get("skills")
+        if not isinstance(rows, list):
+            return []
+
+        results: List[SkillMeta] = []
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            meta = self._to_meta(row)
+            if meta:
+                results.append(meta)
+        return results[:limit]
+
+    def search(self, query: str, limit: int = 10) -> List[SkillMeta]:
+        return self._list_plaza(query=query, limit=limit)
+
+    def inspect(self, identifier: str) -> Optional[SkillMeta]:
+        data = self._detail(identifier)
+        return self._to_meta(data) if data else None
+
+    def fetch(self, identifier: str) -> Optional[SkillBundle]:
+        data = self._detail(identifier)
+        if not data:
+            return None
+
+        skill_md = data.get("skill_md_content")
+        if not isinstance(skill_md, str) or not skill_md.strip():
+            skill_md = self._fallback_skill_md(data)
+
+        raw_id = data.get("id") or data.get("skill_id") or data.get("name") or self._strip_identifier(identifier)
+        name = self._safe_bundle_name(data, str(raw_id))
+        files: Dict[str, Union[str, bytes]] = {"SKILL.md": skill_md}
+        skill_json = data.get("skill_json_content")
+        if isinstance(skill_json, str) and skill_json.strip():
+            files["skill.json"] = skill_json
+
+        return SkillBundle(
+            name=name,
+            files=files,
+            source="dasclaw",
+            identifier=self._identifier(raw_id),
+            trust_level="community",
+            metadata={
+                "detail_url": f"{self.FRONTEND_URL}/{raw_id}",
+                "endpoint": f"{self.BASE_URL}/api/skills/plaza/{raw_id}",
+                "version": data.get("version"),
+            },
+        )
+
+    def _detail(self, identifier: str) -> Optional[Dict[str, Any]]:
+        key = self._strip_identifier(identifier)
+        data = self._get_json(f"/api/skills/plaza/{key}")
+        if isinstance(data, dict):
+            return data
+        return None
+
+    def _fallback_skill_md(self, data: Dict[str, Any]) -> str:
+        raw_id = data.get("id") or data.get("skill_id") or data.get("name") or "dasclaw-skill"
+        safe_name = self._safe_bundle_name(data, str(raw_id))
+        description = data.get("display_description") or data.get("description") or ""
+        title = data.get("display_name") or data.get("title") or safe_name
+        frontmatter = {
+            "name": safe_name,
+            "description": str(description),
+            "source": "dasclaw",
+            "version": data.get("version") or "1.0.0",
+        }
+        body = [
+            "---",
+            yaml.safe_dump(frontmatter, allow_unicode=True, sort_keys=False).strip(),
+            "---",
+            f"# {title}",
+            "",
+            str(description).strip() or "DasClaw skill.",
+        ]
+        return "\n".join(body) + "\n"
+
+
+# ---------------------------------------------------------------------------
 # Claude Code marketplace source adapter
 # ---------------------------------------------------------------------------
 
@@ -3456,6 +3628,7 @@ def bundle_content_hash(bundle: SkillBundle) -> str:
 def _source_matches(source: SkillSource, source_name: str) -> bool:
     aliases = {
         "skills.sh": "skills-sh",
+        "das-claw": "dasclaw",
     }
     normalized = aliases.get(source_name, source_name)
     return source.source_id() == normalized
@@ -3699,7 +3872,7 @@ class VIGILIndexSource(SkillSource):
 
         # Try without source prefix (e.g. "skills-sh/" stripped)
         normalized = identifier
-        for prefix in ("skills-sh/", "skills.sh/", "official/", "github/", "clawhub/"):
+        for prefix in ("skills-sh/", "skills.sh/", "official/", "github/", "clawhub/", "dasclaw/"):
             if identifier.startswith(prefix):
                 normalized = identifier[len(prefix):]
                 break
@@ -3709,7 +3882,7 @@ class VIGILIndexSource(SkillSource):
             sid = s.get("identifier", "")
             # Strip prefix from stored identifier too
             stored_normalized = sid
-            for prefix in ("skills-sh/", "skills.sh/", "official/", "github/", "clawhub/"):
+            for prefix in ("skills-sh/", "skills.sh/", "official/", "github/", "clawhub/", "dasclaw/"):
                 if sid.startswith(prefix):
                     stored_normalized = sid[len(prefix):]
                     break
@@ -3752,6 +3925,7 @@ def create_source_router(auth: Optional[GitHubAuth] = None) -> List[SkillSource]
         UrlSource(),                  # Direct HTTP(S) URL to a SKILL.md file
         GitHubSource(auth=auth, extra_taps=extra_taps),
         ClawHubSource(),
+        DasClawSource(),
         ClaudeMarketplaceSource(auth=auth),
         LobeHubSource(),
         BrowseShSource(),   # browse.sh: 169+ site-specific browser automation skills
@@ -3796,7 +3970,7 @@ def parallel_search_sources(
     # clawhub, etc.) — the index already has their data.  This avoids
     # ~70 GitHub API calls per search for unauthenticated users.
     _index_available = False
-    _api_source_ids = frozenset({"github", "skills-sh", "clawhub",
+    _api_source_ids = frozenset({"github", "skills-sh", "clawhub", "dasclaw",
                                   "claude-marketplace", "lobehub", "well-known"})
     if source_filter == "all":
         for src in sources:

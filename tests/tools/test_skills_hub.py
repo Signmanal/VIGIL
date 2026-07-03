@@ -11,6 +11,7 @@ import pytest
 from tools.skills_hub import (
     GitHubAuth,
     GitHubSource,
+    DasClawSource,
     LobeHubSource,
     SkillsShSource,
     UrlSource,
@@ -1286,6 +1287,10 @@ class TestCreateSourceRouter:
     def test_includes_skills_sh_source(self):
         sources = create_source_router(auth=MagicMock(spec=GitHubAuth))
         assert any(isinstance(src, SkillsShSource) for src in sources)
+
+    def test_includes_dasclaw_source(self):
+        sources = create_source_router(auth=MagicMock(spec=GitHubAuth))
+        assert any(isinstance(src, DasClawSource) for src in sources)
 
     def test_includes_well_known_source(self):
         sources = create_source_router(auth=MagicMock(spec=GitHubAuth))

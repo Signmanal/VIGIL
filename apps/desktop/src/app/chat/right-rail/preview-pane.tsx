@@ -786,7 +786,7 @@ export function PreviewPane({
       className={cn(
         'relative flex h-full w-full min-w-0 flex-col overflow-hidden bg-transparent text-muted-foreground',
         expanded &&
-          'fixed inset-3 z-[160] rounded-xl border border-border bg-background/95 shadow-2xl backdrop-blur-xl'
+          'fixed inset-x-3 bottom-3 top-[calc(var(--titlebar-height)+0.75rem)] z-[160] rounded-xl border border-border bg-background/95 shadow-2xl backdrop-blur-xl'
       )}
     >
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
