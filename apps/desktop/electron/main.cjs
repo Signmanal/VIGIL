@@ -64,6 +64,7 @@ const {
   releaseUnsupportedStatus,
   withSourceChannel
 } = require('./release-updater.cjs')
+const { resolveRuntimeSyncStatus } = require('./runtime-sync.cjs')
 const {
   buildPosixCleanupScript,
   buildWindowsCleanupScript,
@@ -2668,14 +2669,12 @@ function isBootstrapComplete() {
   if (!marker || typeof marker !== 'object') return false
   if (marker.schemaVersion !== BOOTSTRAP_MARKER_SCHEMA_VERSION) return false
   if (typeof marker.pinnedCommit !== 'string' || marker.pinnedCommit.length < 7) return false
-  // We DELIBERATELY do NOT verify that the checkout is currently at the
-  // pinned commit -- users update via the in-app update path or `vigil
-  // update`, which moves HEAD legitimately. The marker just attests "we
-  // ran the bootstrap successfully at least once." We DO additionally require
-  // a runnable venv: an interrupted or split-home install can leave the marker
-  // + checkout without a venv, and trusting that spawns a dead backend
-  // ("gateway offline") instead of re-running bootstrap to repair it.
-  return isActiveInstallReady()
+  // The marker attests that bootstrap completed, but packaged desktop builds
+  // must also match the bundled install stamp. Otherwise a newly installed app
+  // can keep spawning an older ~/.vigil/vigil-agent backend and fail at the
+  // renderer/backend protocol boundary even though model calls themselves work.
+  if (!isActiveInstallReady()) return false
+  return !activeRuntimeSyncStatus(true).needsRepair
 }
 
 function writeBootstrapMarker(payload) {
@@ -2702,12 +2701,33 @@ function activeRootGitValue(args) {
   }
 }
 
+function activeRuntimeSyncStatus(activeReady = isActiveInstallReady()) {
+  return resolveRuntimeSyncStatus({
+    isPackaged: IS_PACKAGED,
+    installStamp: INSTALL_STAMP,
+    activeReady,
+    activeCommit: activeRootGitValue(['rev-parse', 'HEAD'])
+  })
+}
+
+function logRuntimeSyncRepair(status) {
+  const expected = status.expectedCommit ? status.expectedCommit.slice(0, 12) : '<unknown>'
+  const active = status.activeCommit ? status.activeCommit.slice(0, 12) : '<unknown>'
+  rememberLog(`[bootstrap] active runtime requires repair (${status.reason}): active=${active} expected=${expected}`)
+}
+
 function ensureBootstrapMarkerForActiveInstall() {
   if (isBootstrapComplete()) {
     return true
   }
 
   if (!isActiveInstallReady()) {
+    return false
+  }
+
+  const syncStatus = activeRuntimeSyncStatus(true)
+  if (syncStatus.needsRepair) {
+    logRuntimeSyncRepair(syncStatus)
     return false
   }
 
@@ -2730,6 +2750,23 @@ function ensureBootstrapMarkerForActiveInstall() {
   } catch (error) {
     rememberLog(`[bootstrap] failed to adopt existing active install: ${error.message}`)
     return false
+  }
+}
+
+function createBootstrapNeededBackend(dashboardArgs, reason) {
+  return {
+    kind: 'bootstrap-needed',
+    label: reason || 'VIGIL Agent not installed yet; bootstrap required',
+    command: null,
+    args: dashboardArgs,
+    bootstrap: true,
+    env: {},
+    shell: false,
+    // Hints for the bootstrap runner / UI layer:
+    activeRoot: ACTIVE_VIGIL_ROOT,
+    installStamp: INSTALL_STAMP, // may be null in dev
+    isPackaged: IS_PACKAGED,
+    platform: process.platform
   }
 }
 
@@ -2941,6 +2978,18 @@ function resolveVIGILBackend(dashboardArgs) {
     if (backend) return backend
   }
 
+  const activeInstallReady = isActiveInstallReady()
+  const syncStatus = activeRuntimeSyncStatus(activeInstallReady)
+  if (syncStatus.needsRepair) {
+    logRuntimeSyncRepair(syncStatus)
+    return createBootstrapNeededBackend(dashboardArgs, 'VIGIL Agent runtime is out of sync with this desktop build; repair required')
+  }
+
+  if (isVIGILSourceRoot(ACTIVE_VIGIL_ROOT) && !activeInstallReady) {
+    rememberLog('[bootstrap] active install exists but is not runnable; starting repair bootstrap')
+    return createBootstrapNeededBackend(dashboardArgs, 'VIGIL Agent install is incomplete; repair required')
+  }
+
   // 3. Bootstrap-complete ACTIVE_VIGIL_ROOT -- the canonical install at
   //    %LOCALAPPDATA%\vigil\vigil-agent (Windows) or ~/.vigil/vigil-agent.
   //    The bootstrap marker means install.ps1 stages finished and the user
@@ -3043,20 +3092,7 @@ function resolveVIGILBackend(dashboardArgs) {
   //    resolveVIGILBackend was the old "no payload" path and forced the
   //    user into a dead end. With the bootstrap protocol, "no install yet"
   //    is a recoverable state the GUI can drive through.
-  return {
-    kind: 'bootstrap-needed',
-    label: 'VIGIL Agent not installed yet; bootstrap required',
-    command: null,
-    args: dashboardArgs,
-    bootstrap: true,
-    env: {},
-    shell: false,
-    // Hints for the bootstrap runner / UI layer:
-    activeRoot: ACTIVE_VIGIL_ROOT,
-    installStamp: INSTALL_STAMP, // may be null in dev
-    isPackaged: IS_PACKAGED,
-    platform: process.platform
-  }
+  return createBootstrapNeededBackend(dashboardArgs, 'VIGIL Agent not installed yet; bootstrap required')
 }
 
 async function ensureRuntime(backend) {
