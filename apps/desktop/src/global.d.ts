@@ -81,7 +81,9 @@ declare global {
       setTranslucency?: (payload: { intensity: number }) => void
       setPreviewShortcutActive?: (active: boolean) => void
       openExternal: (url: string) => Promise<void>
+      openPathInApp?: (filePath: string, appId: VIGILPathOpenApp) => Promise<VIGILOpenPathResult>
       openPreviewInBrowser?: (url: string) => Promise<void>
+      revealPath?: (filePath: string) => Promise<{ ok: boolean; path: string }>
       fetchLinkTitle: (url: string) => Promise<string>
       sanitizeWorkspaceCwd: (cwd?: null | string) => Promise<{ cwd: string; sanitized: boolean }>
       settings: {
@@ -179,6 +181,16 @@ export interface VIGILTerminalSession {
 export interface VIGILTerminalExit {
   code: number | null
   signal: string | null
+}
+
+export type VIGILPathOpenApp = 'choose' | 'cursor' | 'system' | 'vscode'
+
+export interface VIGILOpenPathResult {
+  app?: VIGILPathOpenApp
+  appPath?: string
+  canceled?: boolean
+  ok: boolean
+  path: string
 }
 
 export interface DesktopVersionInfo {

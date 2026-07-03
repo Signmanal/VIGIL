@@ -908,6 +908,128 @@ function openExternalUrl(rawUrl) {
   return true
 }
 
+const PREVIEW_OPEN_APPS = new Set(['choose', 'cursor', 'system', 'vscode'])
+
+function resolveLocalPathForOpen(rawPath, purpose) {
+  const localPath = resolveRequestedPathForIpc(String(rawPath || ''), { purpose })
+  if (!fileExists(localPath)) {
+    throw new Error(`${purpose} failed: file does not exist.`)
+  }
+  return localPath
+}
+
+function spawnDetachedApp(command, args) {
+  return new Promise((resolve, reject) => {
+    const proc = spawn(command, args, {
+      detached: true,
+      stdio: 'ignore',
+      windowsHide: true
+    })
+    proc.once('error', reject)
+    proc.once('spawn', () => {
+      proc.unref()
+      resolve(true)
+    })
+  })
+}
+
+async function tryOpenWithCli(commands, args) {
+  for (const command of commands) {
+    const binary = findOnPath(command)
+    if (!binary) {
+      continue
+    }
+
+    await spawnDetachedApp(binary, args)
+    return true
+  }
+
+  return false
+}
+
+function tryOpenWithMacApplication(application, localPath) {
+  if (!IS_MAC) {
+    return false
+  }
+
+  try {
+    execFileSync('/usr/bin/open', ['-a', application, localPath], { stdio: 'ignore' })
+    return true
+  } catch {
+    return false
+  }
+}
+
+async function openLocalPathWithSystem(localPath) {
+  const error = await shell.openPath(localPath)
+  if (error) {
+    throw new Error(error)
+  }
+  return { app: 'system', ok: true, path: localPath }
+}
+
+async function chooseApplicationAndOpen(event, localPath) {
+  const owner = BrowserWindow.fromWebContents(event.sender)
+  const options = {
+    buttonLabel: 'Open',
+    defaultPath: IS_MAC ? '/Applications' : undefined,
+    filters: IS_MAC ? [{ extensions: ['app'], name: 'Applications' }] : undefined,
+    message: 'Choose an application to open this preview file.',
+    properties: ['openFile'],
+    title: 'Open With'
+  }
+  const result = owner ? await dialog.showOpenDialog(owner, options) : await dialog.showOpenDialog(options)
+
+  if (result.canceled || !result.filePaths[0]) {
+    return { canceled: true, ok: false, path: localPath }
+  }
+
+  const appPath = result.filePaths[0]
+  if (IS_MAC) {
+    execFileSync('/usr/bin/open', ['-a', appPath, localPath], { stdio: 'ignore' })
+  } else {
+    await spawnDetachedApp(appPath, [localPath])
+  }
+
+  return { app: 'choose', appPath, ok: true, path: localPath }
+}
+
+async function openLocalPathInApp(event, rawPath, appId) {
+  const requested = String(appId || 'system').trim()
+  const app = PREVIEW_OPEN_APPS.has(requested) ? requested : 'system'
+  const localPath = resolveLocalPathForOpen(rawPath, 'Open local preview file')
+
+  if (app === 'choose') {
+    return chooseApplicationAndOpen(event, localPath)
+  }
+
+  if (app === 'vscode') {
+    if (await tryOpenWithCli(['code'], ['-r', localPath])) {
+      return { app, ok: true, path: localPath }
+    }
+    if (tryOpenWithMacApplication('Visual Studio Code', localPath)) {
+      return { app, ok: true, path: localPath }
+    }
+  }
+
+  if (app === 'cursor') {
+    if (await tryOpenWithCli(['cursor'], ['-r', localPath])) {
+      return { app, ok: true, path: localPath }
+    }
+    if (tryOpenWithMacApplication('Cursor', localPath)) {
+      return { app, ok: true, path: localPath }
+    }
+  }
+
+  return openLocalPathWithSystem(localPath)
+}
+
+function revealLocalPath(rawPath) {
+  const localPath = resolveLocalPathForOpen(rawPath, 'Reveal local preview file')
+  shell.showItemInFolder(localPath)
+  return { ok: true, path: localPath }
+}
+
 async function openPreviewInBrowser(rawUrl) {
   const raw = String(rawUrl || '').trim()
   if (!raw) return false
@@ -6632,11 +6754,15 @@ ipcMain.handle('vigil:openExternal', (_event, url) => {
   }
 })
 
+ipcMain.handle('vigil:openPathInApp', async (event, filePath, appId) => openLocalPathInApp(event, filePath, appId))
+
 ipcMain.handle('vigil:openPreviewInBrowser', async (_event, url) => {
   if (!(await openPreviewInBrowser(url))) {
     throw new Error('Invalid preview URL')
   }
 })
+
+ipcMain.handle('vigil:revealPath', (_event, filePath) => revealLocalPath(filePath))
 
 // User-configurable default project directory. The renderer reads this on
 // settings mount and seeds the value into the picker; writing back persists

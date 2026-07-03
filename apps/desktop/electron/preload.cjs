@@ -70,7 +70,9 @@ contextBridge.exposeInMainWorld('vigilDesktop', {
   setTranslucency: payload => ipcRenderer.send('vigil:translucency', payload),
   setPreviewShortcutActive: active => ipcRenderer.send('vigil:previewShortcutActive', Boolean(active)),
   openExternal: url => ipcRenderer.invoke('vigil:openExternal', url),
+  openPathInApp: (filePath, appId) => ipcRenderer.invoke('vigil:openPathInApp', filePath, appId),
   openPreviewInBrowser: url => ipcRenderer.invoke('vigil:openPreviewInBrowser', url),
+  revealPath: filePath => ipcRenderer.invoke('vigil:revealPath', filePath),
   fetchLinkTitle: url => ipcRenderer.invoke('vigil:fetchLinkTitle', url),
   sanitizeWorkspaceCwd: cwd => ipcRenderer.invoke('vigil:workspace:sanitize', cwd),
   settings: {

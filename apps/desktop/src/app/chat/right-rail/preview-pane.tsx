@@ -1,12 +1,21 @@
 import { useStore } from '@nanostores/react'
-import type { PointerEvent as ReactPointerEvent } from 'react'
+import type { PointerEvent as ReactPointerEvent, ReactNode } from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import type { SetTitlebarToolGroup, TitlebarTool } from '@/app/shell/titlebar-controls'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu'
 import { Tip } from '@/components/ui/tooltip'
+import type { VIGILPathOpenApp } from '@/global'
 import { type Translations, useI18n } from '@/i18n'
 import { isDesktopFsRemoteMode } from '@/lib/desktop-fs'
-import { Bug } from '@/lib/icons'
+import { Bug, ChevronDown, ExternalLink, FolderOpen, Globe, Maximize2, Minimize2, Vscode } from '@/lib/icons'
 import { cn } from '@/lib/utils'
 import { notify, notifyError } from '@/store/notifications'
 import { $previewServerRestart, failPreviewServerRestart, type PreviewTarget } from '@/store/preview'
@@ -47,6 +56,29 @@ interface PreviewLoadErrorState {
 
 const FILE_RELOAD_DEBOUNCE_MS = 200
 const SERVER_RESTART_TIMEOUT_MS = 45_000
+
+function filePathForPreviewTarget(target: PreviewTarget): string {
+  if (target.path) {
+    return target.path
+  }
+
+  try {
+    const url = new URL(target.url)
+
+    return url.protocol === 'file:' ? decodeURIComponent(url.pathname) : ''
+  } catch {
+    return target.kind === 'file' ? target.url : ''
+  }
+}
+
+function previewActionClass(active = false) {
+  return cn(
+    'inline-flex h-6 shrink-0 items-center gap-1 rounded-md border px-2 text-[0.6875rem] font-medium transition-colors',
+    active
+      ? 'border-primary/35 bg-primary/15 text-primary'
+      : 'border-border/70 bg-background/70 text-muted-foreground hover:bg-accent hover:text-foreground'
+  )
+}
 
 function loadErrorTitle(error: PreviewLoadErrorState, copy: Translations['preview']['web']): string {
   const description = error.description.toLowerCase()
@@ -120,6 +152,84 @@ function PreviewLoadError({
 
 const TITLEBAR_GROUP_ID = 'preview'
 
+function PreviewToolbarButton({
+  active,
+  children,
+  disabled,
+  label,
+  onClick
+}: {
+  active?: boolean
+  children: ReactNode
+  disabled?: boolean
+  label: string
+  onClick: () => void
+}) {
+  return (
+    <Tip label={label}>
+      <button
+        aria-label={label}
+        className={cn(previewActionClass(active), 'disabled:cursor-default disabled:opacity-50')}
+        disabled={disabled}
+        onClick={onClick}
+        type="button"
+      >
+        {children}
+      </button>
+    </Tip>
+  )
+}
+
+function PreviewOpenMenu({
+  canOpenBrowser,
+  canOpenLocalPath,
+  onOpenBrowser,
+  onOpenLocal
+}: {
+  canOpenBrowser: boolean
+  canOpenLocalPath: boolean
+  onOpenBrowser: () => void
+  onOpenLocal: (app: VIGILPathOpenApp) => void
+}) {
+  const { t } = useI18n()
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className={previewActionClass()} type="button">
+          <ExternalLink className="size-3.5" />
+          <span>{t.preview.openWith}</span>
+          <ChevronDown className="size-3" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-48">
+        <DropdownMenuLabel>{t.preview.openWith}</DropdownMenuLabel>
+        <DropdownMenuItem disabled={!canOpenBrowser} onSelect={onOpenBrowser}>
+          <Globe className="size-3.5" />
+          {t.preview.openInBrowser}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem disabled={!canOpenLocalPath} onSelect={() => onOpenLocal('vscode')}>
+          <Vscode className="size-3.5" />
+          {t.preview.openInVsCode}
+        </DropdownMenuItem>
+        <DropdownMenuItem disabled={!canOpenLocalPath} onSelect={() => onOpenLocal('cursor')}>
+          <ExternalLink className="size-3.5" />
+          {t.preview.openInCursor}
+        </DropdownMenuItem>
+        <DropdownMenuItem disabled={!canOpenLocalPath} onSelect={() => onOpenLocal('system')}>
+          <ExternalLink className="size-3.5" />
+          {t.preview.openInDefaultApp}
+        </DropdownMenuItem>
+        <DropdownMenuItem disabled={!canOpenLocalPath} onSelect={() => onOpenLocal('choose')}>
+          <ExternalLink className="size-3.5" />
+          {t.preview.chooseLocalApp}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
 export function PreviewPane({
   embedded = false,
   onRestartServer,
@@ -142,10 +252,16 @@ export function PreviewPane({
   const consoleOpen = useStore(consoleState.$open)
   const [currentUrl, setCurrentUrl] = useState(target.url)
   const [devtoolsOpen, setDevtoolsOpen] = useState(false)
+  const [expanded, setExpanded] = useState(false)
+  const [renderHtmlAsWeb, setRenderHtmlAsWeb] = useState(false)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<PreviewLoadErrorState | null>(null)
   const [localReloadKey, setLocalReloadKey] = useState(0)
-  const isWebPreview = target.kind === 'url' || (target.previewKind === 'html' && target.renderMode !== 'source')
+  const isHtmlFile = target.kind === 'file' && target.previewKind === 'html'
+  const localPath = filePathForPreviewTarget(target)
+  const canOpenLocalPath = Boolean(localPath && target.kind === 'file' && window.vigilDesktop)
+  const isWebPreview = target.kind === 'url' || (isHtmlFile && (target.renderMode !== 'source' || renderHtmlAsWeb))
+  const canOpenBrowser = target.kind === 'url' || isHtmlFile
   const currentLabel = compactUrl(currentUrl)
 
   const previewLabel =
@@ -264,6 +380,49 @@ export function PreviewPane({
     }
   }, [appendConsoleEntry, consoleState, copy, currentUrl, onRestartServer])
 
+  const openBrowser = useCallback(() => {
+    const opener = window.vigilDesktop?.openPreviewInBrowser ?? window.vigilDesktop?.openExternal
+
+    if (!opener) {
+      return
+    }
+
+    void opener(currentUrl).catch(error => notifyError(error, t.preview.openFailed))
+  }, [currentUrl, t.preview.openFailed])
+
+  const openLocal = useCallback(
+    (app: VIGILPathOpenApp) => {
+      if (!localPath) {
+        return
+      }
+
+      const opener = window.vigilDesktop?.openPathInApp
+      if (!opener) {
+        void window.vigilDesktop?.openExternal?.(target.url).catch(error => notifyError(error, t.preview.openFailed))
+
+        return
+      }
+
+      void opener(localPath, app).catch(error => notifyError(error, t.preview.openFailed))
+    },
+    [localPath, t.preview.openFailed, target.url]
+  )
+
+  const revealFile = useCallback(() => {
+    if (!localPath) {
+      return
+    }
+
+    const revealer = window.vigilDesktop?.revealPath
+    if (!revealer) {
+      void window.vigilDesktop?.openExternal?.(target.url).catch(error => notifyError(error, t.preview.openFailed))
+
+      return
+    }
+
+    void revealer(localPath).catch(error => notifyError(error, t.preview.openFailed))
+  }, [localPath, t.preview.openFailed, target.url])
+
   const toggleDevTools = useCallback(() => {
     const webview = webviewRef.current
 
@@ -312,6 +471,26 @@ export function PreviewPane({
 
     return () => setTitlebarToolGroup(TITLEBAR_GROUP_ID, [])
   }, [consoleOpen, consoleState, copy, devtoolsOpen, isWebPreview, setTitlebarToolGroup, toggleDevTools])
+
+  useEffect(() => {
+    setRenderHtmlAsWeb(false)
+  }, [target.renderMode, target.url])
+
+  useEffect(() => {
+    if (!expanded) {
+      return
+    }
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setExpanded(false)
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [expanded])
 
   useEffect(() => {
     if (!consoleOpen) {
@@ -603,24 +782,60 @@ export function PreviewPane({
   }, [appendConsoleEntry, consoleState, copy, isWebPreview, target.url])
 
   return (
-    <aside className="relative flex h-full w-full min-w-0 flex-col overflow-hidden bg-transparent text-muted-foreground">
+    <aside
+      className={cn(
+        'relative flex h-full w-full min-w-0 flex-col overflow-hidden bg-transparent text-muted-foreground',
+        expanded &&
+          'fixed inset-3 z-[160] rounded-xl border border-border bg-background/95 shadow-2xl backdrop-blur-xl'
+      )}
+    >
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        {!embedded && (
-          <div className="pointer-events-none flex min-h-(--titlebar-height) items-center gap-1.5 border-b border-border/60 bg-background px-2 py-1">
-            <div className="min-w-0 flex-1">
-              <Tip label={copy.openTarget(currentUrl)}>
-                <a
-                  className="pointer-events-auto inline max-w-full truncate text-left text-xs font-medium text-foreground underline-offset-4 decoration-current/20 transition-colors hover:text-primary hover:underline"
-                  href={currentUrl}
-                  rel="noreferrer"
-                  target="_blank"
-                >
-                  {previewLabel || copy.fallbackTitle}
-                </a>
-              </Tip>
-            </div>
+        <div
+          className={cn(
+            'pointer-events-none flex shrink-0 items-center gap-2 border-b border-border/60 bg-background/85 px-2 py-1.5 backdrop-blur',
+            !embedded && 'min-h-(--titlebar-height)'
+          )}
+        >
+          <div className="min-w-0 flex-1">
+            <Tip label={copy.openTarget(currentUrl)}>
+              <button
+                className="pointer-events-auto block max-w-full truncate text-left text-xs font-medium text-foreground underline-offset-4 decoration-current/20 transition-colors hover:text-primary hover:underline"
+                onClick={canOpenBrowser ? openBrowser : () => openLocal('system')}
+                type="button"
+              >
+                {previewLabel || copy.fallbackTitle}
+              </button>
+            </Tip>
           </div>
-        )}
+          <div className="pointer-events-auto flex shrink-0 items-center gap-1">
+            {isHtmlFile && (
+              <PreviewToolbarButton
+                active={isWebPreview}
+                label={isWebPreview ? t.preview.sourceMode : t.preview.webPreviewMode}
+                onClick={() => setRenderHtmlAsWeb(value => !value)}
+              >
+                <Globe className="size-3.5" />
+                <span className="hidden sm:inline">{isWebPreview ? t.preview.source : t.preview.webPreview}</span>
+              </PreviewToolbarButton>
+            )}
+            <PreviewOpenMenu
+              canOpenBrowser={canOpenBrowser}
+              canOpenLocalPath={canOpenLocalPath}
+              onOpenBrowser={openBrowser}
+              onOpenLocal={openLocal}
+            />
+            <PreviewToolbarButton disabled={!canOpenLocalPath} label={t.preview.revealFile} onClick={revealFile}>
+              <FolderOpen className="size-3.5" />
+            </PreviewToolbarButton>
+            <PreviewToolbarButton
+              active={expanded}
+              label={expanded ? t.preview.collapsePreview : t.preview.expandPreview}
+              onClick={() => setExpanded(value => !value)}
+            >
+              {expanded ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}
+            </PreviewToolbarButton>
+          </div>
+        </div>
 
         <div
           className="pointer-events-auto relative min-h-0 flex-1 overflow-hidden bg-transparent"

@@ -1558,7 +1558,19 @@ export interface Translations {
     opening: string
     hide: string
     openPreview: string
+    openWith: string
     openInBrowser: string
+    openInVsCode: string
+    openInCursor: string
+    openInDefaultApp: string
+    chooseLocalApp: string
+    revealFile: string
+    expandPreview: string
+    collapsePreview: string
+    webPreview: string
+    webPreviewMode: string
+    sourceMode: string
+    openFailed: string
     sourceLineTitle: string
     source: string
     renderedPreview: string
