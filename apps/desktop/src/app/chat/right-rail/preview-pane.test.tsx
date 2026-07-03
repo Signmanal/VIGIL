@@ -153,5 +153,9 @@ describe('PreviewPane console state', () => {
     expect(rendered.container.querySelector('aside')?.className).toContain(
       'top-[calc(var(--titlebar-height)+3.25rem)]'
     )
+    expect(rendered.container.querySelector('aside')?.className).toContain(
+      'md:left-[calc(var(--sidebar-width)+0.75rem)]'
+    )
+    expect(rendered.container.querySelector('aside')?.className).not.toContain('inset-x-3')
   })
 })

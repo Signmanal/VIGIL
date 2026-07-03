@@ -57,6 +57,8 @@ interface PreviewLoadErrorState {
 const FILE_RELOAD_DEBOUNCE_MS = 200
 const SERVER_RESTART_TIMEOUT_MS = 45_000
 const EXPANDED_PREVIEW_TOP_CLASS = 'top-[calc(var(--titlebar-height)+3.25rem)]'
+const EXPANDED_PREVIEW_SHELL_CLASS =
+  'fixed left-3 right-3 bottom-3 z-[160] rounded-xl border border-border/80 bg-background/95 shadow-[0_24px_80px_rgba(0,0,0,0.45)] backdrop-blur-xl transition-[left,right,top,bottom,border-radius,box-shadow,background-color] duration-200 ease-out motion-reduce:transition-none md:left-[calc(var(--sidebar-width)+0.75rem)]'
 
 function filePathForPreviewTarget(target: PreviewTarget): string {
   if (target.path) {
@@ -788,7 +790,7 @@ export function PreviewPane({
         'relative flex h-full w-full min-w-0 flex-col overflow-hidden bg-transparent text-muted-foreground',
         expanded &&
           cn(
-            'fixed inset-x-3 bottom-3 z-[160] rounded-xl border border-border bg-background/95 shadow-2xl backdrop-blur-xl',
+            EXPANDED_PREVIEW_SHELL_CLASS,
             EXPANDED_PREVIEW_TOP_CLASS
           )
       )}

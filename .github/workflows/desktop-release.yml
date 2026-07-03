@@ -33,12 +33,6 @@ jobs:
           - label: macOS
             runner: macos-latest
             script: dist:mac
-          - label: Windows
-            runner: windows-latest
-            script: dist:win
-          - label: Linux
-            runner: ubuntu-latest
-            script: dist:linux
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
@@ -61,12 +55,6 @@ jobs:
         with:
           cache: npm
           node-version: ${{ env.NODE_VERSION }}
-
-      - name: Install Linux packaging tools
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y fakeroot rpm
 
       - name: Install dependencies
         run: npm ci
@@ -119,8 +107,6 @@ jobs:
           CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
           CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
           GH_TOKEN: ${{ github.token }}
-          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
-          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
         run: npm run ${{ matrix.script }} --workspace apps/desktop -- --publish never
 
       - name: Notarize macOS DMG
@@ -162,7 +148,7 @@ jobs:
 
           const source = path.join('apps', 'desktop', 'release')
           const target = 'desktop-release-assets'
-          const assetPattern = /\.(AppImage|blockmap|deb|dmg|exe|msi|rpm|yml|zip)$/i
+          const assetPattern = /\.(blockmap|dmg|yml|zip)$/i
 
           if (!fs.existsSync(source)) {
             throw new Error(`Missing release directory: ${source}`)
