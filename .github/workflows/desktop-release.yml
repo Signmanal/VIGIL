@@ -90,7 +90,9 @@ jobs:
 
       - name: Disable macOS code signing for unsigned fallback
         if: runner.os == 'macOS' && steps.mac-signing.outputs.available != 'true'
-        run: echo "CSC_IDENTITY_AUTO_DISCOVERY=false" >> "$GITHUB_ENV"
+        run: |
+          echo "CSC_IDENTITY_AUTO_DISCOVERY=false" >> "$GITHUB_ENV"
+          echo "VIGIL_DESKTOP_UNSIGNED_MAC_RELEASE=1" >> "$GITHUB_ENV"
 
       - name: Build desktop installer
         env:
