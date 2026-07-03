@@ -27,6 +27,7 @@ __pycache__/web_tools.cpython-310.pyc
 logs/
 data/
 .pytest_cache/
+.ruff_cache/
 test_durations.json
 .pytest-cache/
 tmp/
@@ -97,6 +98,7 @@ website/static/api/automation-blueprints-index.json
 models-dev-upstream/
 
 # Local editor / agent tooling (machine-specific; keep in global config, not the repo)
+.codegraph/
 .codex/
 .cursor/
 .gemini/
