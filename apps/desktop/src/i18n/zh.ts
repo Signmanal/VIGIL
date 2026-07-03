@@ -986,9 +986,16 @@ export const zh: Translations = {
     emptyTitle: '暂无活跃子专家',
     emptyDesc: '当某个回合派发任务时，子专家会在此实时显示进度。开始会话前可通过角色切换助手人格。',
     running: '运行中',
+    queued: '排队中',
     failed: '失败',
     done: '完成',
     streaming: '流式传输',
+    activeExpertsTitle: count => `${count} 个活跃专家`,
+    activeExpertsDesc: '当前派发中的专家优先以卡片展示，完整执行树会保留在下方。',
+    currentTool: tool => `正在使用 ${tool}`,
+    waiting: '等待进度更新…',
+    openExpert: '打开专家',
+    taskProgress: (current, total) => `步骤 ${current}/${total}`,
     files: '文件',
     moreFiles: count => `还有 ${count} 个文件`,
     delegation: index => `派发 ${index}`,
@@ -1738,7 +1745,8 @@ export const zh: Translations = {
     stop: '停止',
     dismiss: '关闭',
     exit: code => `退出码 ${code}`,
-    viewAllArtifacts: count => `查看全部 ${count} 个产物`
+    viewAllArtifacts: count => `查看全部 ${count} 个产物`,
+    collapseArtifacts: '收起产物'
   },
 
   updates: {

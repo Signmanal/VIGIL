@@ -50,6 +50,24 @@ describe('recordPreviewArtifact', () => {
     ])
   })
 
+  it('returns every artifact when the display limit is expanded', () => {
+    recordPreviewArtifact('s1', '/a/evidence-package-admin.json', '/work')
+    recordPreviewArtifact('s1', '/a/platform-context-admin.json', '/work')
+    recordPreviewArtifact('s1', '/a/raw-log-sample-admin.ndjson', '/work')
+    recordPreviewArtifact('s1', '/a/raw-log-summary-admin.json', '/work')
+    recordPreviewArtifact('s1', '/a/raw-log-analysis-report-admin.html', '/work')
+    recordPreviewArtifact('s1', '/a/raw-log-analysis-report-admin.md', '/work')
+
+    const list = $previewStatusBySession.get().s1
+    const displayIds = selectPreviewArtifactsForDisplay(list, list.length).map(item => item.id)
+
+    expect(displayIds).toHaveLength(6)
+    expect(displayIds.slice(0, 2)).toEqual([
+      '/a/raw-log-analysis-report-admin.md',
+      '/a/raw-log-analysis-report-admin.html'
+    ])
+  })
+
   it('dismiss and clear remove rows', () => {
     recordPreviewArtifact('s1', '/a/index.html', '/work')
     recordPreviewArtifact('s1', '/a/about.html', '/work')

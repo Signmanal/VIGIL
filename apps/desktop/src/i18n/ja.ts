@@ -914,9 +914,16 @@ export const ja = defineLocale({
     emptyTitle: 'ライブサブエキスパートはありません',
     emptyDesc: 'ターンで作業を委任すると、子エキスパートの進捗状況がここにストリームされます。',
     running: '実行中',
+    queued: '待機中',
     failed: '失敗',
     done: '完了',
     streaming: 'ストリーミング中',
+    activeExpertsTitle: count => `ライブエキスパート ${count} 件`,
+    activeExpertsDesc: '現在委任中のエキスパートをカードで先に表示し、完全な実行ツリーは下に残します。',
+    currentTool: tool => `${tool} を使用中`,
+    waiting: '進捗更新を待機中…',
+    openExpert: 'エキスパートを開く',
+    taskProgress: (current, total) => `ステップ ${current}/${total}`,
     files: 'ファイル',
     moreFiles: count => `+${count} 件のファイル`,
     delegation: index => `委任 ${index}`,
@@ -1679,7 +1686,8 @@ export const ja = defineLocale({
     stop: '停止',
     dismiss: '閉じる',
     exit: code => `終了コード ${code}`,
-    viewAllArtifacts: count => `${count} 件の出力をすべて表示`
+    viewAllArtifacts: count => `${count} 件の出力をすべて表示`,
+    collapseArtifacts: '出力を折りたたむ'
   },
 
   updates: {

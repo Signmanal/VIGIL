@@ -801,9 +801,16 @@ export const en: Translations = {
     emptyDesc:
       'When a turn delegates work, child experts stream their progress here. Use roles to switch the assistant persona before starting a session.',
     running: 'Running',
+    queued: 'Queued',
     failed: 'Failed',
     done: 'Done',
     streaming: 'Streaming',
+    activeExpertsTitle: count => `${count} live ${count === 1 ? 'expert' : 'experts'}`,
+    activeExpertsDesc: 'Current delegated workers are shown first as cards, then expanded below as the full activity tree.',
+    currentTool: tool => `Using ${tool}`,
+    waiting: 'Waiting for progress...',
+    openExpert: 'Open expert',
+    taskProgress: (current, total) => `Step ${current}/${total}`,
     files: 'Files',
     moreFiles: count => `+${count} more files`,
     delegation: index => `Delegation ${index}`,
@@ -1560,7 +1567,8 @@ export const en: Translations = {
     stop: 'Stop',
     dismiss: 'Dismiss',
     exit: code => `exit ${code}`,
-    viewAllArtifacts: count => `View all ${count} outputs`
+    viewAllArtifacts: count => `View all ${count} outputs`,
+    collapseArtifacts: 'Show fewer outputs'
   },
 
   updates: {

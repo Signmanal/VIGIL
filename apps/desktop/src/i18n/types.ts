@@ -692,9 +692,16 @@ export interface Translations {
     emptyTitle: string
     emptyDesc: string
     running: string
+    queued: string
     failed: string
     done: string
     streaming: string
+    activeExpertsTitle: (count: number) => string
+    activeExpertsDesc: string
+    currentTool: (tool: string) => string
+    waiting: string
+    openExpert: string
+    taskProgress: (current: number, total: number) => string
     files: string
     moreFiles: (count: number) => string
     delegation: (index: number) => string
@@ -1248,6 +1255,7 @@ export interface Translations {
     dismiss: string
     exit: (code: number) => string
     viewAllArtifacts: (count: number) => string
+    collapseArtifacts: string
   }
 
   updates: {

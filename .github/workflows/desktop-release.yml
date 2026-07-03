@@ -1,0 +1,148 @@
+name: Desktop Release Installers
+
+on:
+  push:
+    tags:
+      - 'v20*'
+  workflow_dispatch:
+    inputs:
+      confirm_tag:
+        description: 'Tag to package and upload (for example, v2026.7.3). Must already exist.'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: desktop-release-${{ inputs.confirm_tag || github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+  NODE_VERSION: '22'
+  RELEASE_TAG: ${{ inputs.confirm_tag || github.ref_name }}
+
+jobs:
+  build:
+    name: Build ${{ matrix.label }} installer
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: macOS
+            runner: macos-latest
+            script: dist:mac
+          - label: Windows
+            runner: windows-latest
+            script: dist:win
+          - label: Linux
+            runner: ubuntu-latest
+            script: dist:linux
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          fetch-tags: true
+          persist-credentials: false
+          ref: ${{ inputs.confirm_tag || github.ref }}
+
+      - name: Validate tag exists
+        if: github.event_name == 'workflow_dispatch'
+        shell: bash
+        run: |
+          if ! git tag -l "$RELEASE_TAG" | grep -q .; then
+            echo "::error::Tag '$RELEASE_TAG' does not exist in the repo"
+            exit 1
+          fi
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
+        with:
+          cache: npm
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install Linux packaging tools
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fakeroot rpm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build desktop installer
+        run: npm run ${{ matrix.script }} --workspace apps/desktop
+
+      - name: Collect installer assets
+        shell: bash
+        run: |
+          mkdir -p desktop-release-assets
+          node <<'NODE'
+          const fs = require('fs')
+          const path = require('path')
+
+          const source = path.join('apps', 'desktop', 'release')
+          const target = 'desktop-release-assets'
+          const assetPattern = /\.(AppImage|blockmap|deb|dmg|exe|msi|rpm|yml|zip)$/i
+
+          if (!fs.existsSync(source)) {
+            throw new Error(`Missing release directory: ${source}`)
+          }
+
+          for (const name of fs.readdirSync(source)) {
+            const from = path.join(source, name)
+            if (!fs.statSync(from).isFile() || !assetPattern.test(name)) {
+              continue
+            }
+            fs.copyFileSync(from, path.join(target, name))
+          }
+
+          const assets = fs.readdirSync(target)
+          if (assets.length === 0) {
+            throw new Error('No desktop installer assets were produced')
+          }
+
+          console.log(assets.join('\n'))
+          NODE
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+        with:
+          name: desktop-${{ matrix.label }}-installers
+          path: desktop-release-assets/*
+          if-no-files-found: error
+
+  publish:
+    name: Upload installers to GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download installer artifacts
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
+        with:
+          merge-multiple: true
+          path: desktop-release-assets
+
+      - name: Ensure release exists
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release $RELEASE_TAG already exists"
+            exit 0
+          fi
+
+          gh release create "$RELEASE_TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "XCLAW $RELEASE_TAG" \
+            --notes "Desktop installers for $RELEASE_TAG." \
+            --verify-tag
+
+      - name: Upload desktop installers
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          find desktop-release-assets -maxdepth 1 -type f -print
+          gh release upload "$RELEASE_TAG" desktop-release-assets/* --repo "$GITHUB_REPOSITORY" --clobber

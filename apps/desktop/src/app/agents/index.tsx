@@ -19,6 +19,7 @@ import {
   type SubagentStatus,
   type SubagentStreamEntry
 } from '@/store/subagents'
+import { openSessionInNewWindow } from '@/store/windows'
 
 import { OverlayView } from '../overlays/overlay-view'
 import { PROFILES_ROUTE } from '../routes'
@@ -93,7 +94,7 @@ export function AgentsView({ onClose }: AgentsViewProps) {
       closeLabel={t.agents.close}
       contentClassName="px-5 pt-5 pb-4 sm:px-6"
       onClose={onClose}
-      rootClassName="mx-auto max-w-3xl"
+      rootClassName="mx-auto max-w-5xl"
     >
       <header className="mb-3 flex shrink-0 items-start justify-between gap-4">
         <div className="min-w-0">
@@ -166,6 +167,8 @@ const fmtAge = (updatedAt: number, nowMs: number, a: Translations['agents']) => 
 const flatten = (nodes: readonly SubagentNode[]): SubagentNode[] =>
   nodes.flatMap(node => [node, ...flatten(node.children)])
 
+const isLive = (node: SubagentNode) => node.status === 'running' || node.status === 'queued'
+
 interface RootGroup {
   id: string
   delegationIndex: number
@@ -209,7 +212,8 @@ function SubagentTree({ tree }: { tree: SubagentNode[] }) {
   const groups = useMemo(() => groupDelegations(tree), [tree])
   const [nowMs, setNowMs] = useState(() => Date.now())
 
-  const active = flat.filter(n => n.status === 'running' || n.status === 'queued').length
+  const activeNodes = flat.filter(isLive)
+  const active = activeNodes.length
   const failed = flat.filter(n => n.status === 'failed' || n.status === 'interrupted').length
   const tools = flat.reduce((sum, n) => sum + (n.toolCount ?? 0), 0)
   const files = flat.reduce((sum, n) => sum + n.filesRead.length + n.filesWritten.length, 0)
@@ -248,6 +252,7 @@ function SubagentTree({ tree }: { tree: SubagentNode[] }) {
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 overflow-hidden">
+      {activeNodes.length > 0 ? <ActiveExpertCards nodes={activeNodes} nowMs={nowMs} /> : null}
       <p className="shrink-0 text-[0.7rem] text-muted-foreground/70">{summary.join(' · ')}</p>
       <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain pr-1">
         <div className="flex min-w-0 flex-col gap-6">
@@ -257,6 +262,97 @@ function SubagentTree({ tree }: { tree: SubagentNode[] }) {
         </div>
       </div>
     </div>
+  )
+}
+
+function ActiveExpertCards({ nodes, nowMs }: { nodes: SubagentNode[]; nowMs: number }) {
+  const { t } = useI18n()
+
+  return (
+    <section className="grid gap-2">
+      <div className="flex items-end justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[0.68rem] font-semibold tracking-[0.18em] text-primary/85 uppercase">
+            {t.agents.activeExpertsTitle(nodes.length)}
+          </p>
+          <p className="mt-1 text-[0.7rem] leading-relaxed text-muted-foreground/70">{t.agents.activeExpertsDesc}</p>
+        </div>
+      </div>
+      <div className="grid gap-3 md:grid-cols-2">
+        {nodes.map(node => (
+          <ActiveExpertCard key={node.id} node={node} nowMs={nowMs} />
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function ActiveExpertCard({ node, nowMs }: { node: SubagentNode; nowMs: number }) {
+  const { t } = useI18n()
+  const elapsed = useElapsedSeconds(true, `subagent-card:${node.id}`)
+
+  const durationSeconds =
+    typeof node.durationSeconds === 'number' ? Math.max(0, Math.round(node.durationSeconds)) : elapsed
+
+  const tokenText = fmtTokens((node.inputTokens ?? 0) + (node.outputTokens ?? 0), t.agents)
+  const fileCount = node.filesRead.length + node.filesWritten.length
+  const latest = node.currentTool ? t.agents.currentTool(node.currentTool) : (node.stream.at(-1)?.text ?? t.agents.waiting)
+  const initial = node.goal.trim().slice(0, 2).toLocaleUpperCase() || 'AI'
+  const statusText = node.status === 'queued' ? t.agents.queued : t.agents.running
+
+  const meta = [
+    statusText,
+    fmtDuration(durationSeconds, t.agents),
+    node.model,
+    node.taskCount > 1 ? t.agents.taskProgress(node.taskIndex + 1, node.taskCount) : ''
+  ].filter(Boolean)
+
+  const metrics = [
+    node.toolCount ? t.agents.toolsCount(node.toolCount) : '',
+    fileCount ? t.agents.filesCount(fileCount) : '',
+    tokenText,
+    t.agents.updatedAgo(fmtAge(node.updatedAt, nowMs, t.agents))
+  ].filter(Boolean)
+
+  return (
+    <article className="group relative overflow-hidden rounded-2xl border border-border/65 bg-card/65 p-4 shadow-sm shadow-black/5 ring-1 ring-white/5 transition-colors hover:border-primary/35">
+      <span aria-hidden className="absolute inset-y-0 left-0 w-1 bg-primary/85" />
+      <div className="flex min-w-0 items-start gap-3">
+        <span className="relative flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary/12 text-sm font-semibold text-primary ring-1 ring-primary/15">
+          {initial}
+          <span className="absolute -right-1 -bottom-1 flex size-5 items-center justify-center rounded-full border border-background bg-background">
+            {statusGlyph(node.status, t.agents)}
+          </span>
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 items-start justify-between gap-2">
+            <div className="min-w-0">
+              <h3 className="line-clamp-2 text-[0.9rem] leading-snug font-semibold text-foreground/95">{node.goal}</h3>
+              {meta.length > 0 ? (
+                <p className="mt-1 truncate text-[0.68rem] text-muted-foreground/75">{meta.join(' · ')}</p>
+              ) : null}
+            </div>
+            {node.sessionId ? (
+              <Button
+                className="shrink-0 text-[0.66rem]"
+                onClick={() => void openSessionInNewWindow(node.sessionId!, { watch: true })}
+                size="micro"
+                type="button"
+                variant="secondary"
+              >
+                {t.agents.openExpert}
+              </Button>
+            ) : null}
+          </div>
+          <p className="mt-3 line-clamp-2 text-[0.73rem] leading-relaxed text-muted-foreground/85">{latest}</p>
+          {metrics.length > 0 ? (
+            <p className="mt-3 truncate border-t border-border/55 pt-2 text-[0.66rem] text-muted-foreground/65">
+              {metrics.join(' · ')}
+            </p>
+          ) : null}
+        </div>
+      </div>
+    </article>
   )
 }
 

@@ -1,9 +1,9 @@
 import { useStore } from '@nanostores/react'
-import { type ReactNode, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
+import { type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { blurComposerInput } from '@/app/chat/composer/focus'
-import { AGENTS_ROUTE, ARTIFACTS_ROUTE } from '@/app/routes'
+import { AGENTS_ROUTE } from '@/app/routes'
 import { composerDockCard } from '@/components/chat/composer-dock'
 import { StatusSection } from '@/components/chat/status-section'
 import { Button } from '@/components/ui/button'
@@ -57,6 +57,7 @@ export function ComposerStatusStack({ previewSessionId, queue, sessionId }: Comp
   const itemsBySession = useStore($statusItemsBySession)
   const previewsBySession = useStore($previewStatusBySession)
   const scrolledUp = useStore($threadScrolledUp)
+  const [showAllPreviews, setShowAllPreviews] = useState(false)
 
   const groups = useMemo(
     () => groupStatusItems(sessionId ? (itemsBySession[sessionId] ?? []) : []),
@@ -64,7 +65,11 @@ export function ComposerStatusStack({ previewSessionId, queue, sessionId }: Comp
   )
 
   const previews = previewSessionId ? (previewsBySession[previewSessionId] ?? []) : []
-  const visiblePreviews = selectPreviewArtifactsForDisplay(previews)
+
+  const visiblePreviews = showAllPreviews
+    ? selectPreviewArtifactsForDisplay(previews, previews.length)
+    : selectPreviewArtifactsForDisplay(previews)
+
   const hiddenPreviewCount = Math.max(0, previews.length - visiblePreviews.length)
 
   // Seed from the registry on session open; event-driven refreshes (terminal /
@@ -74,6 +79,10 @@ export function ComposerStatusStack({ previewSessionId, queue, sessionId }: Comp
       void refreshBackgroundProcesses(sessionId)
     }
   }, [sessionId])
+
+  useEffect(() => {
+    setShowAllPreviews(false)
+  }, [previewSessionId])
 
   const hasRunningBackground = groups.some(g => g.type === 'background' && g.items.some(i => i.state === 'running'))
 
@@ -144,15 +153,16 @@ export function ComposerStatusStack({ previewSessionId, queue, sessionId }: Comp
               onDismiss={id => dismissPreviewArtifact(previewSessionId, id)}
             />
           ))}
-          {hiddenPreviewCount > 0 && (
+          {(hiddenPreviewCount > 0 || showAllPreviews) && (
             <Button
+              aria-expanded={showAllPreviews}
               className="ml-4 mt-0.5 text-muted-foreground/75 hover:text-foreground/90"
-              onClick={() => navigate(ARTIFACTS_ROUTE)}
+              onClick={() => setShowAllPreviews(v => !v)}
               size="micro"
               type="button"
               variant="text"
             >
-              {t.statusStack.viewAllArtifacts(previews.length)}
+              {showAllPreviews ? t.statusStack.collapseArtifacts : t.statusStack.viewAllArtifacts(previews.length)}
             </Button>
           )}
         </div>

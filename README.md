@@ -47,25 +47,92 @@ VIGIL is built around explicit local boundaries:
 
 See `SECURITY.md` for operational security notes and vulnerability reporting.
 
-## Quick Start
+## Install
+
+### Desktop Client
+
+For analyst workstations, use the native Desktop client. GitHub Releases should
+carry the complete client installers built from `apps/desktop`:
+
+- macOS: `XCLAW-<version>-mac-<arch>.dmg` or `.zip`
+- Windows: `XCLAW-<version>-win-<arch>.exe` or `.msi`
+- Linux: `XCLAW-<version>-linux-<arch>.AppImage`, `.deb`, or `.rpm`
+
+Download the matching installer from the repository's Releases page, install it,
+then open **XCLAW**. The desktop app starts and manages the local VIGIL runtime
+for sessions, previews, settings, and tools.
+
+### CLI From Source
+
+Use the CLI when you want terminal-first setup, diagnostics, automation, or
+server-style workflows:
 
 ```bash
+git clone https://github.com/Signmanal/VIGIL.git
+cd VIGIL
 python -m venv .venv
 . .venv/bin/activate
-pip install -e ".[dev]"
+pip install -e .
 
 vigil setup
 vigil --help
-vigil dashboard --no-open --port 9779
+vigil
 ```
 
-On Windows, use the PowerShell installer at `scripts/install.ps1`.
+For development, install the extra tooling:
+
+```bash
+pip install -e ".[dev]"
+```
+
+### Desktop From Source
+
+If no Release installer is available for your platform yet, build and run the
+desktop client locally:
+
+```bash
+npm ci
+npm run start --workspace apps/desktop
+```
+
+To create local installer artifacts:
+
+```bash
+npm run dist:mac --workspace apps/desktop
+npm run dist:win --workspace apps/desktop
+npm run dist:linux --workspace apps/desktop
+```
+
+Artifacts are written to `apps/desktop/release/`.
+
+On Windows, use the PowerShell installer at `scripts/install.ps1` for the CLI
+runtime bootstrap when working from source.
+
+## Quick Start
+
+After installation:
+
+```bash
+vigil setup
+vigil dashboard --no-open --port 9779
+```
 
 If your dashboard CLI supports `--host`, bind explicitly:
 
 ```bash
 vigil dashboard --no-open --host 127.0.0.1 --port 9779
 ```
+
+## Release Assets
+
+GitHub Releases are the delivery channel for complete Desktop client installers,
+not just source snapshots. A tagged client release should include the platform
+artifacts from `apps/desktop/release/` plus release notes that state the runtime
+version and supported platforms.
+
+The CLI remains installable from source with `pip install -e .` until a package
+registry release is published. If a Release has no installer assets, treat it as
+incomplete for end users.
 
 ## Development Checks
 

@@ -881,9 +881,16 @@ export const zhHant = defineLocale({
     emptyTitle: '暫無活躍子專家',
     emptyDesc: '當某個回合派發任務時，子專家會在此即時顯示進度。',
     running: '執行中',
+    queued: '排隊中',
     failed: '失敗',
     done: '完成',
     streaming: '串流傳輸中',
+    activeExpertsTitle: count => `${count} 個活躍專家`,
+    activeExpertsDesc: '目前派發中的專家會優先以卡片展示，完整執行樹會保留在下方。',
+    currentTool: tool => `正在使用 ${tool}`,
+    waiting: '等待進度更新…',
+    openExpert: '開啟專家',
+    taskProgress: (current, total) => `步驟 ${current}/${total}`,
     files: '檔案',
     moreFiles: count => `還有 ${count} 個檔案`,
     delegation: index => `派發 ${index}`,
@@ -1623,7 +1630,8 @@ export const zhHant = defineLocale({
     stop: '停止',
     dismiss: '關閉',
     exit: code => `結束碼 ${code}`,
-    viewAllArtifacts: count => `查看全部 ${count} 個產物`
+    viewAllArtifacts: count => `查看全部 ${count} 個產物`,
+    collapseArtifacts: '收起產物'
   },
 
   updates: {
