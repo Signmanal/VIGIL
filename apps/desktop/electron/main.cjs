@@ -644,13 +644,12 @@ app.setName(APP_NAME)
 if (IS_WINDOWS) {
   app.setAppUserModelId('com.signmanal.vigil')
 }
-// Seed the native About panel with the live VIGIL version. This is refreshed
-// on every open via the explicit "About" menu handler (refreshAboutPanel), so
-// an in-place `vigil update` mid-session is reflected without an app restart;
-// the seed here just covers the first open and any non-menu invocation path.
+// Seed the native About panel with the desktop app version. This is refreshed
+// on every open via the explicit "About" menu handler; the seed here just
+// covers the first open and any non-menu invocation path.
 app.setAboutPanelOptions({
   applicationName: APP_NAME,
-  applicationVersion: resolveVIGILVersion(),
+  applicationVersion: resolveDesktopAppVersion(),
   copyright: 'Copyright © 2026 Signmanal'
 })
 
@@ -1657,8 +1656,17 @@ let releaseAutoUpdater = null
 let releaseAutoUpdaterReady = false
 let releaseUpdateInfo = null
 
+function releaseUpdateMetadataPath() {
+  const candidates = [
+    process.resourcesPath ? path.join(process.resourcesPath, 'app-update.yml') : null,
+    path.join(APP_ROOT, 'dev-app-update.yml')
+  ].filter(Boolean)
+
+  return candidates.find(candidate => fileExists(candidate)) || null
+}
+
 function releaseUpdatesEnabled() {
-  return IS_PACKAGED && process.env.VIGIL_DESKTOP_UPDATE_CHANNEL !== 'source'
+  return IS_PACKAGED && process.env.VIGIL_DESKTOP_UPDATE_CHANNEL !== 'source' && Boolean(releaseUpdateMetadataPath())
 }
 
 function getReleaseAutoUpdater() {
@@ -6882,12 +6890,14 @@ ipcMain.handle('vigil:updates:branch:set', async (_event, name) => {
   return { branch }
 })
 
-// Resolve the canonical VIGIL version (the one `release.py` bumps in
-// vigil_cli/__init__.py + pyproject.toml) so the desktop About panel shows the
-// real VIGIL version instead of the Electron app's own package.json version,
-// which historically drifted (stuck at 0.0.2). Falls back to app.getVersion()
-// when the source tree can't be read (e.g. a packaged build without the repo).
-function resolveVIGILVersion() {
+function resolveDesktopAppVersion() {
+  return app.getVersion()
+}
+
+// Resolve the VIGIL runtime version (the one `release.py` bumps in
+// vigil_cli/__init__.py + pyproject.toml). This is intentionally separate from
+// the Electron desktop package version shown in the status bar/About panel.
+function resolveVIGILRuntimeVersion() {
   try {
     const root = resolveUpdateRoot()
     const initPath = path.join(root, 'vigil_cli', '__init__.py')
@@ -6899,26 +6909,25 @@ function resolveVIGILVersion() {
       }
     }
   } catch {
-    // Fall through to the Electron app version below.
+    // Fall through to null below.
   }
-  return app.getVersion()
+  return null
 }
 
-// Re-resolve the live VIGIL version and push it into the native About panel
-// just before showing it, so an in-place `vigil update` is reflected without
-// an app restart. macOS only — `showAboutPanel()` is a no-op elsewhere, and the
-// other platforms don't use this menu item.
+// Re-resolve the desktop version just before showing the native About panel.
+// macOS only — `showAboutPanel()` is a no-op elsewhere, and the other platforms
+// don't use this menu item.
 function showAboutPanelFresh() {
   app.setAboutPanelOptions({
     applicationName: APP_NAME,
-    applicationVersion: resolveVIGILVersion(),
+    applicationVersion: resolveDesktopAppVersion(),
     copyright: 'Copyright © 2026 Nous Research'
   })
   app.showAboutPanel()
 }
 
 ipcMain.handle('vigil:version', async () => ({
-  appVersion: resolveVIGILVersion(),
+  appVersion: resolveDesktopAppVersion(),
   buildBranch: INSTALL_STAMP?.branch || null,
   buildCommit: INSTALL_STAMP?.commit || null,
   buildCommitShort: INSTALL_STAMP?.commit ? INSTALL_STAMP.commit.slice(0, 7) : null,
@@ -6927,6 +6936,7 @@ ipcMain.handle('vigil:version', async () => ({
   electronVersion: process.versions.electron,
   nodeVersion: process.versions.node,
   platform: process.platform,
+  runtimeVersion: resolveVIGILRuntimeVersion(),
   hermesRoot: resolveUpdateRoot()
 }))
 

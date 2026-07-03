@@ -191,6 +191,7 @@ export interface DesktopVersionInfo {
   electronVersion: string
   nodeVersion: string
   platform: string
+  runtimeVersion?: null | string
   hermesRoot: string
 }
 
