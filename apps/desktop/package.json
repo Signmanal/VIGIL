@@ -31,6 +31,9 @@
     "dist:win:msi": "npm run build && npm run builder -- --win msi",
     "dist:win:nsis": "npm run build && npm run builder -- --win nsis",
     "dist:linux": "npm run build && npm run builder -- --linux AppImage deb rpm",
+    "release:mac:check-env": "node scripts/verify-mac-release-env.cjs",
+    "release:mac:refresh-metadata": "node scripts/refresh-mac-update-metadata.cjs",
+    "release:mac:verify-artifacts": "node scripts/verify-mac-release-artifacts.cjs",
     "test:desktop": "node scripts/test-desktop.mjs",
     "test:desktop:all": "node scripts/test-desktop.mjs all",
     "test:desktop:dmg": "node scripts/test-desktop.mjs dmg",
@@ -169,6 +172,7 @@
     ],
     "beforeBuild": "scripts/before-build.cjs",
     "beforePack": "scripts/before-pack.cjs",
+    "afterSign": "scripts/notarize.cjs",
     "afterPack": "scripts/after-pack.cjs",
     "extraResources": [
       {

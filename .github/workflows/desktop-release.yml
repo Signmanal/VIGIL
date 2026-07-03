@@ -71,10 +71,28 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build desktop installer
+      - name: Validate macOS signing environment
+        if: runner.os == 'macOS'
         env:
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_NOTARY_PROFILE: ${{ secrets.APPLE_NOTARY_PROFILE }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
+          CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
+        run: npm run release:mac:check-env --workspace apps/desktop
+
+      - name: Build desktop installer
+        env:
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_NOTARY_PROFILE: ${{ secrets.APPLE_NOTARY_PROFILE }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
           CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
@@ -82,6 +100,33 @@ jobs:
           WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
           WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
         run: npm run ${{ matrix.script }} --workspace apps/desktop -- --publish never
+
+      - name: Notarize macOS DMG
+        if: runner.os == 'macOS'
+        shell: bash
+        env:
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_NOTARY_PROFILE: ${{ secrets.APPLE_NOTARY_PROFILE }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          shopt -s nullglob
+          for dmg in apps/desktop/release/*.dmg; do
+            node apps/desktop/scripts/notarize-artifact.cjs "$dmg"
+          done
+
+      - name: Refresh macOS update metadata
+        if: runner.os == 'macOS'
+        run: npm run release:mac:refresh-metadata --workspace apps/desktop
+
+      - name: Verify macOS release artifacts
+        if: runner.os == 'macOS'
+        env:
+          VIGIL_REQUIRE_MAC_SIGNING: '1'
+        run: npm run release:mac:verify-artifacts --workspace apps/desktop
 
       - name: Collect installer assets
         shell: bash
