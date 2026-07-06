@@ -33,6 +33,12 @@ jobs:
           - label: macOS
             runner: macos-latest
             script: dist:mac
+          - label: Windows
+            runner: windows-latest
+            script: dist:win
+          - label: Linux
+            runner: ubuntu-latest
+            script: dist:linux
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -147,7 +153,8 @@ jobs:
 
           const source = path.join('apps', 'desktop', 'release')
           const target = 'desktop-release-assets'
-          const assetPattern = /\.(blockmap|dmg|yml|zip)$/i
+          const installerPattern = /\.(AppImage|blockmap|deb|dmg|exe|msi|rpm|zip)$/i
+          const metadataPattern = /^latest.*\.yml$/i
 
           if (!fs.existsSync(source)) {
             throw new Error(`Missing release directory: ${source}`)
@@ -155,7 +162,7 @@ jobs:
 
           for (const name of fs.readdirSync(source)) {
             const from = path.join(source, name)
-            if (!fs.statSync(from).isFile() || !assetPattern.test(name)) {
+            if (!fs.statSync(from).isFile() || (!installerPattern.test(name) && !metadataPattern.test(name))) {
               continue
             }
             fs.copyFileSync(from, path.join(target, name))
